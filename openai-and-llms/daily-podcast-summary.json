@@ -1,0 +1,1840 @@
+{
+  "name": "Daily Podcast Summary",
+  "workflowSlug": "daily-podcast-summary",
+  "description": "Converted from the n8n template \"Daily Podcast Summary\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_b2ea939b87",
+      "actorId": "actor_b2ea939b87",
+      "type": "NodeCron",
+      "label": "Schedule",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 8 * * *"
+      }
+    },
+    {
+      "nodeId": "node_dc1b979cfb",
+      "actorId": "actor_dc1b979cfb",
+      "type": "NodeTransform",
+      "label": "Genre",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"genre\"] = \"TECHNOLOGY\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_5c7283dd30",
+      "actorId": "actor_5c7283dd30",
+      "type": "NodeHttpRequest",
+      "label": "TaddyTopDaily",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://api.taddy.org/",
+        "headers": {},
+        "body": {
+          "query": "query { getTopChartsByGenres( limitPerPage:10, filterByCountry:UNITED_STATES_OF_AMERICA, taddyType:PODCASTEPISODE, genres:PODCASTSERIES_{{last.transformed.genre}}){ topChartsId podcastEpisodes{ uuid name audioUrl podcastSeries{ uuid name } } } }"
+        }
+      }
+    },
+    {
+      "nodeId": "node_9bb1090fd4",
+      "actorId": "actor_9bb1090fd4",
+      "type": "NodeTransform",
+      "label": "Split Out",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"data.getTopChartsByGenres.podcastEpisodes\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"data.getTopChartsByGenres.podcastEpisodes\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"data.getTopChartsByGenres.podcastEpisodes\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_c282f9eb4b",
+      "actorId": "actor_c282f9eb4b",
+      "type": "NodeCdeConnector",
+      "label": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-storage",
+        "connectorLabel": "Yantra storage",
+        "action": "YANTRA_STORAGE_HTTP_SEND",
+        "params": {
+          "url": "{{last.transformed.audioUrl}}",
+          "method": "GET",
+          "responseType": "base64"
+        }
+      }
+    },
+    {
+      "nodeId": "node_9a3a262dd4",
+      "actorId": "actor_9a3a262dd4",
+      "type": "NodeTransform",
+      "label": "Download Podcast: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The response the way the n8n HTTP node handed it on: the parsed body; a file body is { bodyBase64, filename, mimeType }.\nconst __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' && 'status' in source.data ? source.data : source;\nconst __body = __r?.bodyBase64 !== undefined ? { bodyBase64: __r.bodyBase64, filename: __r.filename, mimeType: __r.contentType, bytes: __r.bytes } : __r?.bodyJson !== undefined ? __r.bodyJson : __r?.bodyText;\nreturn __body;"
+      }
+    },
+    {
+      "nodeId": "node_74fcafdd40",
+      "actorId": "actor_74fcafdd40",
+      "type": "NodeTransform",
+      "label": "Params: Request Audio Crop",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The upstream file as { contentBase64 | fileUrl, filename, mimeType }: n8n binary data travels as base64 bytes or a file URL on Yantra.\nconst __b64 = (t) => { const b = new TextEncoder().encode(String(t)); let s = ''; for (let i = 0; i < b.length; i += 1) s += String.fromCharCode(b[i]); return btoa(s); };\nconst __fileRef = (v, prop) => {\n  const s = (x) => (typeof x === 'string' && x !== '' ? x : undefined);\n  let r = Array.isArray(v) ? v[0] : v;\n  const bin = r && typeof r === 'object' && r.binary && typeof r.binary === 'object' ? r.binary[prop] ?? Object.values(r.binary)[0] : undefined;\n  if (bin && s(bin.data)) return { contentBase64: bin.data, filename: s(r.filename) ?? s(bin.fileName) ?? 'file', mimeType: s(bin.mimeType) };\n  if (r && typeof r === 'object' && r.data && typeof r.data === 'object' && !Array.isArray(r.data)) r = { ...r, ...r.data };\n  const dl = r?.downloaded_file_content ?? r?.file;\n  const filename = s(r?.filename) ?? s(r?.fileName) ?? s(dl?.name) ?? s(r?.name) ?? 'file';\n  const mimeType = s(r?.mimeType) ?? s(r?.contentType) ?? s(dl?.mimetype) ?? s(r?.mimetype);\n  if (s(r?.bodyBase64)) return { contentBase64: r.bodyBase64, filename, mimeType };\n  const url = s(dl?.s3url) ?? s(r?.s3url) ?? s(r?.fileUrl) ?? s(r?.imageUrl) ?? s(r?.imageUrls?.[0]) ?? s(r?.audioUrl) ?? s(r?.videoUrl) ?? s(r?.secure_url);\n  if (url) return { fileUrl: url, filename, mimeType };\n  if (s(r?.data)) return { contentBase64: r.encoding !== 'base64' && /^(?:text\\/|application\\/(?:json|xml|javascript|x-tex))|\\+(?:xml|json)$/.test(mimeType ?? '') ? __b64(r.data) : r.data, filename, mimeType };\n  throw new Error('No file on the upstream step: expected file bytes (base64) or a file URL.');\n};\n// Params for yantra-storage/YANTRA_STORAGE_HTTP_SEND (n8n node \"Request Audio Crop\").\nreturn { \"url\": \"https://api.products.aspose.app/audio/cutter/api/cutter\", \"method\": \"POST\", \"headers\": { \"Accept\": \"*/*(\", \"Connection\": \"keep-alive\", \"Origin\": \"https://products.aspose.app\", \"Referer\": \"https://products.aspose.app\", \"Sec-Fetch-Dest\": \"empty\", \"Sec-Fetch-Mode\": \"cors\", \"Sec-Fetch-Site\": \"same-site\" }, \"bodyType\": \"multipart\", \"fields\": { \"convertOption\": \"{\\\"startTime\\\":\\\"00:08:00\\\",\\\"endTime\\\":\\\"00:24:00\\\",\\\"audioFormat\\\":\\\"mp3\\\"}\" }, \"files\": [{ \"field\": \"1\", ...__fileRef(source, \"data\") }], \"responseType\": \"auto\" };"
+      }
+    },
+    {
+      "nodeId": "node_286280406b",
+      "actorId": "actor_286280406b",
+      "type": "NodeCdeConnector",
+      "label": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-storage",
+        "connectorLabel": "Yantra storage",
+        "action": "YANTRA_STORAGE_HTTP_SEND"
+      }
+    },
+    {
+      "nodeId": "node_69c8d514f9",
+      "actorId": "actor_69c8d514f9",
+      "type": "NodeTransform",
+      "label": "Request Audio Crop: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The response the way the n8n HTTP node handed it on: the parsed body; a file body is { bodyBase64, filename, mimeType }.\nconst __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' && 'status' in source.data ? source.data : source;\nconst __body = __r?.bodyBase64 !== undefined ? { bodyBase64: __r.bodyBase64, filename: __r.filename, mimeType: __r.contentType, bytes: __r.bytes } : __r?.bodyJson !== undefined ? __r.bodyJson : __r?.bodyText;\nreturn __body;"
+      }
+    },
+    {
+      "nodeId": "node_2c4306ac4e",
+      "actorId": "actor_2c4306ac4e",
+      "type": "NodeTransform",
+      "label": "Before repeat: Get Download Link",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_c974950a7a",
+      "actorId": "actor_c974950a7a",
+      "type": "NodeRepeatUntil",
+      "label": "Repeat: Get Download Link",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "delaySeconds": 0,
+        "maxAttempts": 30
+      }
+    },
+    {
+      "nodeId": "node_9784d5af94",
+      "actorId": "actor_9784d5af94",
+      "type": "NodeTransform",
+      "label": "Return to repeat: Get Download Link",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8060,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_b3a8b6e49b",
+      "actorId": "actor_b3a8b6e49b",
+      "type": "NodeTransform",
+      "label": "Ready: Get Download Link",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8440,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.ready;"
+      }
+    },
+    {
+      "nodeId": "node_862a82c7a3",
+      "actorId": "actor_862a82c7a3",
+      "type": "NodeTransform",
+      "label": "Check input: Get Download Link",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "const ctx = {{ctx}};\nreturn ctx.steps?.[\"Repeat: Get Download Link\"]?.[\"attempt\"] === 1 ? ctx.steps?.[\"Before repeat: Get Download Link\"]?.[\"transformed\"] : ctx.steps?.[\"Return to repeat: Get Download Link\"]?.[\"transformed\"]?.value;"
+      }
+    },
+    {
+      "nodeId": "node_ab3bb245e7",
+      "actorId": "actor_ab3bb245e7",
+      "type": "NodeTransform",
+      "label": "Failed: Repeat: Get Download Link",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "throw Object.assign(new Error(source?.message || 'Repeat Until failed'), { name: source?.name || 'Error' });"
+      }
+    },
+    {
+      "nodeId": "node_9ef8414c7e",
+      "actorId": "actor_9ef8414c7e",
+      "type": "NodeHttpRequest",
+      "label": "Get Download Link",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "headers": {
+          "Accept": "application/json, text/javascript, */*; q=0.01",
+          "Connection": "keep-alive",
+          "Origin": "https://products.aspose.app",
+          "Referer": "https://products.aspose.app",
+          "Sec-Fetch-Dest": "same-site"
+        }
+      }
+    },
+    {
+      "nodeId": "node_854dc978b8",
+      "actorId": "actor_854dc978b8",
+      "type": "NodeTransform",
+      "label": "URL: Get Download Link",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Request Audio Crop\": __namedCtx.steps?.[\"Request Audio Crop: response\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"Get Download Link\".\nreturn `https://api.products.aspose.app/audio/cutter/api/cutter/HandleStatus?fileRequestId=${$('Request Audio Crop').item.json.Data.FileRequestId}`;"
+      }
+    },
+    {
+      "nodeId": "node_0f1d8445aa",
+      "actorId": "actor_0f1d8445aa",
+      "type": "NodeTransform",
+      "label": "Get Download Link: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "const ctx = {{ctx}};\nconst response = ctx.steps[\"Get Download Link\"];\nif (response.error && (response.statusCode == null || true)) throw new Error(response.error.message || 'HTTP check failed');\nif (response.body == null) throw new Error('HTTP check returned an empty body');\nreturn response.body;"
+      }
+    },
+    {
+      "nodeId": "node_e665a5fc7e",
+      "actorId": "actor_e665a5fc7e",
+      "type": "NodeTransform",
+      "label": "If Downloads Ready: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\nreturn Boolean(((($input.all().map(x=>x.json.Data.DownloadLink).reduce((accumulator, currentValue) => accumulator && currentValue, true))) === true || (($input.all().map(x=>x.json.Data.DownloadLink).reduce((accumulator, currentValue) => accumulator && currentValue, true))) === 'true'));"
+      }
+    },
+    {
+      "nodeId": "node_3d6ff8f7ca",
+      "actorId": "actor_3d6ff8f7ca",
+      "type": "NodeBranch",
+      "label": "If Downloads Ready: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_9b5ec26a0b",
+      "actorId": "actor_9b5ec26a0b",
+      "type": "NodeCdeConnector",
+      "label": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 5400,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-storage",
+        "connectorLabel": "Yantra storage",
+        "action": "YANTRA_STORAGE_HTTP_SEND",
+        "params": {
+          "url": "{{last.transformed.Data.DownloadLink}}",
+          "method": "GET",
+          "responseType": "base64"
+        }
+      }
+    },
+    {
+      "nodeId": "node_3ce9826bee",
+      "actorId": "actor_3ce9826bee",
+      "type": "NodeTransform",
+      "label": "Download Cut MP3: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The response the way the n8n HTTP node handed it on: the parsed body; a file body is { bodyBase64, filename, mimeType }.\nconst __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' && 'status' in source.data ? source.data : source;\nconst __body = __r?.bodyBase64 !== undefined ? { bodyBase64: __r.bodyBase64, filename: __r.filename, mimeType: __r.contentType, bytes: __r.bytes } : __r?.bodyJson !== undefined ? __r.bodyJson : __r?.bodyText;\nreturn __body;"
+      }
+    },
+    {
+      "nodeId": "node_4fafafdd56",
+      "actorId": "actor_4fafafdd56",
+      "type": "NodeTransform",
+      "label": "Before wait: Wait",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_55e1794644",
+      "actorId": "actor_55e1794644",
+      "type": "NodeTransform",
+      "label": "Seconds: Wait",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return Number(5) * 1;"
+      }
+    },
+    {
+      "nodeId": "node_f81580686d",
+      "actorId": "actor_f81580686d",
+      "type": "NodeRepeatUntil",
+      "label": "Wait",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "delaySeconds": 0,
+        "maxAttempts": 2
+      }
+    },
+    {
+      "nodeId": "node_2b5285bbcb",
+      "actorId": "actor_2b5285bbcb",
+      "type": "NodeTransform",
+      "label": "Wait elapsed: Wait",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7680,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source === 2;"
+      }
+    },
+    {
+      "nodeId": "node_dba24be10d",
+      "actorId": "actor_dba24be10d",
+      "type": "NodeTransform",
+      "label": "Failed: Wait",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7680,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "throw Object.assign(new Error(source?.message || 'Repeat Until failed'), { name: source?.name || 'Error' });"
+      }
+    },
+    {
+      "nodeId": "node_fb7a9ad767",
+      "actorId": "actor_fb7a9ad767",
+      "type": "NodeTransform",
+      "label": "Params: Whisper Transcribe Audio",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The upstream file as { contentBase64 | fileUrl, filename, mimeType }: n8n binary data travels as base64 bytes or a file URL on Yantra.\nconst __b64 = (t) => { const b = new TextEncoder().encode(String(t)); let s = ''; for (let i = 0; i < b.length; i += 1) s += String.fromCharCode(b[i]); return btoa(s); };\nconst __fileRef = (v, prop) => {\n  const s = (x) => (typeof x === 'string' && x !== '' ? x : undefined);\n  let r = Array.isArray(v) ? v[0] : v;\n  const bin = r && typeof r === 'object' && r.binary && typeof r.binary === 'object' ? r.binary[prop] ?? Object.values(r.binary)[0] : undefined;\n  if (bin && s(bin.data)) return { contentBase64: bin.data, filename: s(r.filename) ?? s(bin.fileName) ?? 'file', mimeType: s(bin.mimeType) };\n  if (r && typeof r === 'object' && r.data && typeof r.data === 'object' && !Array.isArray(r.data)) r = { ...r, ...r.data };\n  const dl = r?.downloaded_file_content ?? r?.file;\n  const filename = s(r?.filename) ?? s(r?.fileName) ?? s(dl?.name) ?? s(r?.name) ?? 'file';\n  const mimeType = s(r?.mimeType) ?? s(r?.contentType) ?? s(dl?.mimetype) ?? s(r?.mimetype);\n  if (s(r?.bodyBase64)) return { contentBase64: r.bodyBase64, filename, mimeType };\n  const url = s(dl?.s3url) ?? s(r?.s3url) ?? s(r?.fileUrl) ?? s(r?.imageUrl) ?? s(r?.imageUrls?.[0]) ?? s(r?.audioUrl) ?? s(r?.videoUrl) ?? s(r?.secure_url);\n  if (url) return { fileUrl: url, filename, mimeType };\n  if (s(r?.data)) return { contentBase64: r.encoding !== 'base64' && /^(?:text\\/|application\\/(?:json|xml|javascript|x-tex))|\\+(?:xml|json)$/.test(mimeType ?? '') ? __b64(r.data) : r.data, filename, mimeType };\n  throw new Error('No file on the upstream step: expected file bytes (base64) or a file URL.');\n};\n// Params for yantra-voicebox/YANTRA_VOICEBOX_TRANSCRIBE (n8n node \"Whisper Transcribe Audio\").\nreturn (() => { const __f = __fileRef(source, \"data\"); return __f.contentBase64 !== undefined ? { \"audioBase64\": __f.contentBase64, \"filename\": __f.filename, \"mimeType\": __f.mimeType } : { \"audioUrl\": __f.fileUrl, \"filename\": __f.filename, \"mimeType\": __f.mimeType }; })();"
+      }
+    },
+    {
+      "nodeId": "node_97f5c34cb6",
+      "actorId": "actor_97f5c34cb6",
+      "type": "NodeCdeConnector",
+      "label": "yantra-voicebox/YANTRA_VOICEBOX_TRANSCRIBE",
+      "color": "#6366F1",
+      "position": {
+        "x": 6540,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-voicebox",
+        "connectorLabel": "Audio",
+        "action": "YANTRA_VOICEBOX_TRANSCRIBE"
+      }
+    },
+    {
+      "nodeId": "node_d0b48705d4",
+      "actorId": "actor_d0b48705d4",
+      "type": "NodeTransform",
+      "label": "Whisper Transcribe Audio: text",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6920,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The transcription the way the Whisper API returned it ({ text }).\nconst __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' ? source.data : source;\nreturn typeof __r === 'string' ? { text: __r } : { ...__r, text: __r?.text ?? __r?.transcript ?? '' };"
+      }
+    },
+    {
+      "nodeId": "node_092a763793",
+      "actorId": "actor_092a763793",
+      "type": "NodeLlmChain",
+      "label": "Summarize Podcast",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 7680,
+        "y": 620
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_82ba73adcb",
+      "actorId": "actor_82ba73adcb",
+      "type": "NodeTransform",
+      "label": "Prompt: Summarize Podcast",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Summarize Podcast.\nconst __promptValue = `Summarize the major points of the following podcast: ${$json.text}. Start your answer by saying 'This episode focuses on', 'This episode is about', etc. Contain your answer to 3-4 paragraphs max, and focus on only key information. `;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_c17eb77401",
+      "actorId": "actor_c17eb77401",
+      "type": "NodeTransform",
+      "label": "Final Data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8060,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"TaddyTopDaily\": __namedCtx.steps?.[\"TaddyTopDaily\"]?.[\"body\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\nconst $workflow = { id: '', name: '', active: true }; const $execution = { id: '', mode: 'manual', resumeUrl: '' }; const $executionId = $execution.id;\nconst $runIndex = 0; const $itemIndex = 0; const $binary = {}; const $prevNode = { name: '', outputIndex: 0, runIndex: 0 }; const $parameter = {}; const $position = 0;\n// Set fields from JSON (n8n Set node, JSON mode): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const __raw = `{\n\"podcast\": \"${$('TaddyTopDaily').item.json.data.getTopChartsByGenres.podcastEpisodes[$itemIndex].podcastSeries.name}\",\n\"name\": \"${$('TaddyTopDaily').item.json.data.getTopChartsByGenres.podcastEpisodes[$itemIndex].name.replace(/\\\"/g,'\\\"')}\",\n \"url\":\"${$('TaddyTopDaily').item.json.data.getTopChartsByGenres.podcastEpisodes[$itemIndex].audioUrl.replace(/\"/g,'')}\",\n\"summary\":\"${$json.replace(/\\\\/g, '\\\\\\\\').replace(/\"/g, '\\\\\"').replace(/\\n/g, '[\"br/\"]').replace(/\\r/g, '\\\\r').replace(/\\t/g, '\\\\t')}\"\n \n}\n`;\n  let __obj;\n  try { __obj = typeof __raw === 'string' ? JSON.parse(__raw) : __raw; } catch (e) { throw new Error('Set node JSON is not valid JSON: ' + e.message); }\n  return __obj;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_33faf67fd9",
+      "actorId": "actor_33faf67fd9",
+      "type": "NodeTransform",
+      "label": "Merge Results",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8440,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Merge Results\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  return [{fields:$input.all().map(x=>x.json)}]\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_b788dc3188",
+      "actorId": "actor_b788dc3188",
+      "type": "NodeTransform",
+      "label": "HTML",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8820,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn { html: `<!DOCTYPE html>\n<html>\n<head>\n <meta charset=\"UTF-8\" />\n</head>\n<body>\n <table>\n <tr> \n ${['Podcast', 'Episode', 'Summary'].map(propname=>'[\"td\"][\"h4\"]'+propname+'[\"/h4\"][\"/td\"]').join('')}\n </tr>\n ${$json.fields.map(ep=>{ return `[\"tr\"][\"td\"]${ep.podcast}[\"/td\"][\"td\"][\"a href=\\\"${ep.url}\\\"\"]${ep.name}[\"/a\"][\"/td\"][\"td\"]${ep.summary}[\"/td\"][\"td\"][\"/td\"][\"/tr\"]`} )}\n </table>\n</body>\n</html>\n\n<style>\ntr { \n border: 1px solid #000; \n padding: 8px; \n }\n.container {\n background-color: #ffffff;\n text-align: center;\n padding: 16px;\n border-radius: 8px;\n}\n\nh1 {\n color: #ff6d5a;\n font-size: 24px;\n font-weight: bold;\n padding: 8px;\n}\n\nh2 {\n color: #909399;\n font-size: 18px;\n font-weight: bold;\n padding: 8px;\n}\n</style>\n` };"
+      }
+    },
+    {
+      "nodeId": "node_664429c61e",
+      "actorId": "actor_664429c61e",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 9200,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_SEND_EMAIL",
+        "params": {
+          "subject": "Podcast Review",
+          "body": "{{last.transformed.html}}",
+          "recipient_email": "{{recipientEmail}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_b75f834370",
+      "actorId": "actor_b75f834370",
+      "type": "NodeTransform",
+      "label": "Retry: Wait (0)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7680,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return { ready: false, route: 0, value: source };"
+      }
+    },
+    {
+      "nodeId": "node_626da2e954",
+      "actorId": "actor_626da2e954",
+      "type": "NodeTransform",
+      "label": "Finish: If Downloads Ready (0)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return { ready: true, route: 1, value: source };"
+      }
+    },
+    {
+      "nodeId": "node_37c8121075",
+      "actorId": "actor_37c8121075",
+      "type": "NodeTransform",
+      "label": "Exit 1: Get Download Link",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.route === 1;"
+      }
+    },
+    {
+      "nodeId": "node_b07ea582ee",
+      "actorId": "actor_b07ea582ee",
+      "type": "NodeBranch",
+      "label": "Select exit 1: Get Download Link",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_09ad0b73c2",
+      "actorId": "actor_09ad0b73c2",
+      "type": "NodeTransform",
+      "label": "Result 1: Get Download Link",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.value;"
+      }
+    },
+    {
+      "nodeId": "node_1ed4aceb50",
+      "actorId": "actor_1ed4aceb50",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 9580,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f004d42620",
+      "actorId": "actor_f004d42620",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 1140
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "recipientEmail": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_cc56a364c1",
+      "actorId": "actor_cc56a364c1",
+      "type": "NodeChatModel",
+      "label": "Summarize Podcast: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 7680,
+        "y": 1240
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_c282f9eb4b",
+      "target": "node_9a3a262dd4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c282f9eb4b",
+      "target": "node_9a3a262dd4",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_74fcafdd40",
+      "target": "node_286280406b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_74fcafdd40",
+      "target": "node_286280406b",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_286280406b",
+      "target": "node_69c8d514f9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_286280406b",
+      "target": "node_69c8d514f9",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2c4306ac4e",
+      "target": "node_c974950a7a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_9784d5af94",
+      "target": "node_b3a8b6e49b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9784d5af94",
+      "target": "node_b3a8b6e49b",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b3a8b6e49b",
+      "target": "node_c974950a7a",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_b3a8b6e49b",
+      "target": "node_c974950a7a",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_9784d5af94",
+      "target": "node_c974950a7a",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_c974950a7a",
+      "target": "node_862a82c7a3",
+      "sourceOutput": "onCheck",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c974950a7a",
+      "target": "node_ab3bb245e7",
+      "sourceOutput": "onError",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c974950a7a",
+      "target": "node_ab3bb245e7",
+      "sourceOutput": "error",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_854dc978b8",
+      "target": "node_9ef8414c7e",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_854dc978b8",
+      "target": "node_9ef8414c7e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_9ef8414c7e",
+      "target": "node_0f1d8445aa",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e665a5fc7e",
+      "target": "node_3d6ff8f7ca",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_e665a5fc7e",
+      "target": "node_3d6ff8f7ca",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_9b5ec26a0b",
+      "target": "node_3ce9826bee",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9b5ec26a0b",
+      "target": "node_3ce9826bee",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4fafafdd56",
+      "target": "node_55e1794644",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4fafafdd56",
+      "target": "node_55e1794644",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_55e1794644",
+      "target": "node_f81580686d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_55e1794644",
+      "target": "node_f81580686d",
+      "sourceOutput": "transformed",
+      "targetInput": "delaySeconds",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_f81580686d",
+      "target": "node_2b5285bbcb",
+      "sourceOutput": "onCheck",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f81580686d",
+      "target": "node_2b5285bbcb",
+      "sourceOutput": "attempt",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2b5285bbcb",
+      "target": "node_f81580686d",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_2b5285bbcb",
+      "target": "node_f81580686d",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_4fafafdd56",
+      "target": "node_f81580686d",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_f81580686d",
+      "target": "node_dba24be10d",
+      "sourceOutput": "onError",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f81580686d",
+      "target": "node_dba24be10d",
+      "sourceOutput": "error",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fb7a9ad767",
+      "target": "node_97f5c34cb6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_fb7a9ad767",
+      "target": "node_97f5c34cb6",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_97f5c34cb6",
+      "target": "node_d0b48705d4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_97f5c34cb6",
+      "target": "node_d0b48705d4",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_82ba73adcb",
+      "target": "node_092a763793",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_5c7283dd30",
+      "target": "node_9bb1090fd4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5c7283dd30",
+      "target": "node_9bb1090fd4",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dc1b979cfb",
+      "target": "node_5c7283dd30",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_9bb1090fd4",
+      "target": "node_c282f9eb4b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d0b48705d4",
+      "target": "node_82ba73adcb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d0b48705d4",
+      "target": "node_82ba73adcb",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c17eb77401",
+      "target": "node_33faf67fd9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c17eb77401",
+      "target": "node_33faf67fd9",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_33faf67fd9",
+      "target": "node_b788dc3188",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_33faf67fd9",
+      "target": "node_b788dc3188",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b788dc3188",
+      "target": "node_664429c61e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_092a763793",
+      "target": "node_c17eb77401",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_092a763793",
+      "target": "node_c17eb77401",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b2ea939b87",
+      "target": "node_dc1b979cfb",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b2ea939b87",
+      "target": "node_dc1b979cfb",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0f1d8445aa",
+      "target": "node_e665a5fc7e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0f1d8445aa",
+      "target": "node_e665a5fc7e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3ce9826bee",
+      "target": "node_fb7a9ad767",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3ce9826bee",
+      "target": "node_fb7a9ad767",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9a3a262dd4",
+      "target": "node_74fcafdd40",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9a3a262dd4",
+      "target": "node_74fcafdd40",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3d6ff8f7ca",
+      "target": "node_4fafafdd56",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0f1d8445aa",
+      "target": "node_4fafafdd56",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_862a82c7a3",
+      "target": "node_854dc978b8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_862a82c7a3",
+      "target": "node_854dc978b8",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_69c8d514f9",
+      "target": "node_2c4306ac4e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_69c8d514f9",
+      "target": "node_2c4306ac4e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f81580686d",
+      "target": "node_b75f834370",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f81580686d",
+      "target": "node_b75f834370",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b75f834370",
+      "target": "node_9784d5af94",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b75f834370",
+      "target": "node_9784d5af94",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3d6ff8f7ca",
+      "target": "node_626da2e954",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0f1d8445aa",
+      "target": "node_626da2e954",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_626da2e954",
+      "target": "node_9784d5af94",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_626da2e954",
+      "target": "node_9784d5af94",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c974950a7a",
+      "target": "node_37c8121075",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c974950a7a",
+      "target": "node_37c8121075",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_37c8121075",
+      "target": "node_b07ea582ee",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_37c8121075",
+      "target": "node_b07ea582ee",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_b07ea582ee",
+      "target": "node_09ad0b73c2",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c974950a7a",
+      "target": "node_09ad0b73c2",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_09ad0b73c2",
+      "target": "node_9b5ec26a0b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_664429c61e",
+      "target": "node_1ed4aceb50",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_cc56a364c1",
+      "target": "node_092a763793",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "",
+    "connectors": [
+      "googlesuper",
+      "openai",
+      "yantra-storage",
+      "yantra-voicebox"
+    ],
+    "setupVars": [
+      {
+        "key": "recipientEmail",
+        "label": "Recipient email address",
+        "type": "email",
+        "example": "you@example.com",
+        "usedBy": [
+          "Gmail"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate daily-podcast-summary",
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeRepeatUntil",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 16,
+      "yantraSteps": 42,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/Daily Podcast Summary.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "action-pending-publish",
+        "node": "Download Cut MP3",
+        "detail": "yantra-storage/YANTRA_STORAGE_HTTP_SEND waits for the yantra-storage HTTP send and signatures patch (1.4.1) to be published"
+      },
+      {
+        "code": "action-pending-publish",
+        "node": "Download Podcast",
+        "detail": "yantra-storage/YANTRA_STORAGE_HTTP_SEND waits for the yantra-storage HTTP send and signatures patch (1.4.1) to be published"
+      },
+      {
+        "code": "action-pending-publish",
+        "node": "Request Audio Crop",
+        "detail": "yantra-storage/YANTRA_STORAGE_HTTP_SEND waits for the yantra-storage HTTP send and signatures patch (1.4.1) to be published"
+      },
+      {
+        "code": "action-pending-publish",
+        "node": "Whisper Transcribe Audio",
+        "detail": "yantra-voicebox/YANTRA_VOICEBOX_TRANSCRIBE audioBase64, mimeType, filename waits for the yantra-voicebox transcribe base64 patch (1.0.8) to be published"
+      }
+    ],
+    "setup": [
+      "\"Download Cut MP3\": yantra-storage/YANTRA_STORAGE_HTTP_SEND comes from the yantra-storage HTTP send and signatures patch (1.4.1), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
+      "\"Download Podcast\": yantra-storage/YANTRA_STORAGE_HTTP_SEND comes from the yantra-storage HTTP send and signatures patch (1.4.1), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
+      "\"Request Audio Crop\": yantra-storage/YANTRA_STORAGE_HTTP_SEND comes from the yantra-storage HTTP send and signatures patch (1.4.1), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
+      "\"Whisper Transcribe Audio\": yantra-voicebox/YANTRA_VOICEBOX_TRANSCRIBE sends audioBase64, mimeType, filename, which the yantra-voicebox transcribe base64 patch (1.0.8) adds and which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
+      "Setup value recipientEmail: Recipient email address (for example you@example.com). Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "After import, start the schedule: cdecli cron activate daily-podcast-summary."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Download Podcast",
+          "n8n": "httpRequest.file-response",
+          "action": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+          "soft": true
+        },
+        {
+          "node": "Request Audio Crop",
+          "n8n": "httpRequest.multipart-form-data",
+          "action": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+          "soft": true
+        },
+        {
+          "node": "Download Cut MP3",
+          "n8n": "httpRequest.file-response",
+          "action": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+          "soft": true
+        },
+        {
+          "node": "Whisper Transcribe Audio",
+          "n8n": "httpRequest.openai.audio.transcriptions",
+          "action": "yantra-voicebox/YANTRA_VOICEBOX_TRANSCRIBE",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "Schedule",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "\"Download Podcast\" sends its request body and reads the response as a file with yantra-storage HTTP_SEND (public https hosts only, 25 MB, 120 s).",
+        "\"Request Audio Crop\" sends its multipart-form-data body with yantra-storage HTTP_SEND (public https hosts only, 25 MB, 120 s); the file comes from \"Download Podcast\".",
+        "\"Repeat: Get Download Link\" uses NodeRepeatUntil: carry each retry's state, return readiness through NEXT, and resume the selected exit only after onDone. Original interval waits are preserved. The attempt limit defaults to 30; adjust maxAttempts for the service or retry budget. Exhaustion stops with an error.",
+        "\"Get Download Link\": a request field used $('OtherNode'); on Yantra $() resolves via the named upstream map when that node ran earlier, else the immediate upstream - check that expression.",
+        "\"Download Cut MP3\" sends its request body and reads the response as a file with yantra-storage HTTP_SEND (public https hosts only, 25 MB, 120 s).",
+        "\"Whisper Transcribe Audio\" authenticated with openAiApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Whisper Transcribe Audio\" called OpenAI Whisper over HTTP; it now runs on the platform transcription (no API key) with the audio from \"Download Cut MP3\", and later steps read the text as before.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Daily Podcast Summary\n### This workflow will summarize the content in the day's top podcasts for a certain genre, then send you the podcasts with summaries by email\n\n## Setup:\n 1. Create a free API key on Taddy here: https://taddy.org/signup/developers\n 2. Input your user number and API key into the `TaddyTopDaily` node in the header parameters X-USER-ID and X-API-KEY respectively.\n 3. Create access credentials for your Gmail as described here: https://developers.google.com/workspace/guides/create-credentials. Use the credentials from your *client_secret.json* in the `Gmail` node.\n 4. In the `Genre` node, set the genre of podcasts you want a summary for. Valid values are: TECHNOLOGY, NEWS, ARTS, COMEDY, SPORTS, FICTION, etc. Look at api.taddy.org for the full list (they will be displayed in the help docs as PODCASTSERIES_TECHNOLOGY, PODCASTSERIES_NEWS, etc.)\n 5. Enter your email address in the `Gmail` node.\n 6. Change the schedule time for sending email from `Schedule` to whichever time you want to receive the email.\n \n\n## Test:\n- Link a `Test Workflow` node in place of the `Schedule` node.\n- Hit Test Workflow.\n- Check your email for the results.",
+      "### Whisper transcribes and Open AI summarizes the podcast",
+      "### Get daily list of top podcasts (according to Apple charts) and download audio, then crop for OpenAI",
+      "### Finally, send the email!",
+      "### Crop the podcast down before analysis"
+    ],
+    "nodes": {
+      "node_b2ea939b87": {
+        "n8n": "Schedule",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_dc1b979cfb": {
+        "n8n": "Genre",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_5c7283dd30": {
+        "n8n": "TaddyTopDaily",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_9bb1090fd4": {
+        "n8n": "Split Out",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_c282f9eb4b": {
+        "n8n": "Download Podcast",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_9a3a262dd4": {
+        "n8n": "Download Podcast",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_74fcafdd40": {
+        "n8n": "Request Audio Crop",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_286280406b": {
+        "n8n": "Request Audio Crop",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_69c8d514f9": {
+        "n8n": "Request Audio Crop",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_2c4306ac4e": {
+        "n8n": "Get Download Link",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_c974950a7a": {
+        "n8n": "Get Download Link",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_9784d5af94": {
+        "n8n": "Get Download Link",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_b3a8b6e49b": {
+        "n8n": "Get Download Link",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_862a82c7a3": {
+        "n8n": "Get Download Link",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_ab3bb245e7": {
+        "n8n": "Get Download Link",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_9ef8414c7e": {
+        "n8n": "Get Download Link",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_854dc978b8": {
+        "n8n": "Get Download Link",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_0f1d8445aa": {
+        "n8n": "Get Download Link",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_e665a5fc7e": {
+        "n8n": "If Downloads Ready",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_3d6ff8f7ca": {
+        "n8n": "If Downloads Ready",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_9b5ec26a0b": {
+        "n8n": "Download Cut MP3",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_3ce9826bee": {
+        "n8n": "Download Cut MP3",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_4fafafdd56": {
+        "n8n": "Wait",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_55e1794644": {
+        "n8n": "Wait",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_f81580686d": {
+        "n8n": "Wait",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_2b5285bbcb": {
+        "n8n": "Wait",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_dba24be10d": {
+        "n8n": "Wait",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_fb7a9ad767": {
+        "n8n": "Whisper Transcribe Audio",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_97f5c34cb6": {
+        "n8n": "Whisper Transcribe Audio",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_d0b48705d4": {
+        "n8n": "Whisper Transcribe Audio",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_092a763793": {
+        "n8n": "Summarize Podcast",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_82ba73adcb": {
+        "n8n": "Summarize Podcast",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_c17eb77401": {
+        "n8n": "Final Data",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_33faf67fd9": {
+        "n8n": "Merge Results",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_b788dc3188": {
+        "n8n": "HTML",
+        "n8nType": "n8n-nodes-base.html"
+      },
+      "node_664429c61e": {
+        "n8n": "Gmail",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_b75f834370": {
+        "n8n": "Get Download Link",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_626da2e954": {
+        "n8n": "Get Download Link",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_37c8121075": {
+        "n8n": "Get Download Link",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_b07ea582ee": {
+        "n8n": "Get Download Link",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_09ad0b73c2": {
+        "n8n": "Get Download Link",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_1ed4aceb50": {
+        "n8n": "__end:Gmail",
+        "n8nType": "synthetic"
+      },
+      "node_f004d42620": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_cc56a364c1": {
+        "n8n": "Summarize Podcast",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

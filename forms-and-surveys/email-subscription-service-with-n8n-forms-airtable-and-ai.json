@@ -1,0 +1,1133 @@
+{
+  "name": "Email Subscription Service with n8n Forms, Airtable and AI",
+  "workflowSlug": "email-subscription-service-with-n8n-forms-airtable-and-ai",
+  "description": "Manages email subscriptions with n8n Forms, stores data in Airtable, and uses AI for processing.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_cc509d625a",
+      "actorId": "actor_cc509d625a",
+      "type": "NodeCron",
+      "label": "Schedule Trigger",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 9 * * *"
+      }
+    },
+    {
+      "nodeId": "node_4bd98b2ab8",
+      "actorId": "actor_4bd98b2ab8",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_e76836bd28",
+      "actorId": "actor_e76836bd28",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_LIST_RECORDS",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_LIST_RECORDS",
+        "params": {
+          "baseId": "{{airtableBaseId}}",
+          "tableIdOrName": "{{airtableTableId}}",
+          "filterByFormula": "AND(\n {Status} = 'active', \n {Interval} = 'surprise'\n)"
+        }
+      }
+    },
+    {
+      "nodeId": "node_5f6d8f3d2f",
+      "actorId": "actor_5f6d8f3d2f",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_LIST_RECORDS",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_LIST_RECORDS",
+        "params": {
+          "baseId": "{{airtableBaseId}}",
+          "tableIdOrName": "{{airtableTableId}}",
+          "filterByFormula": "AND({Status} = 'active', {Interval} = 'daily')"
+        }
+      }
+    },
+    {
+      "nodeId": "node_f6dd2f317f",
+      "actorId": "actor_f6dd2f317f",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_LIST_RECORDS",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_LIST_RECORDS",
+        "params": {
+          "baseId": "{{airtableBaseId}}",
+          "tableIdOrName": "{{airtableTableId}}",
+          "filterByFormula": "AND(\n {Status} = 'active', \n {Interval} = 'weekly', \n {Last Sent} <= DATEADD(TODAY(), -7, 'days')\n)"
+        }
+      }
+    },
+    {
+      "nodeId": "node_2613cf41f9",
+      "actorId": "actor_2613cf41f9",
+      "type": "NodeTransform",
+      "label": "Execution Data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// Execution metadata has no equivalent; pass data through.\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_bb0ce0c98d",
+      "actorId": "actor_bb0ce0c98d",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_UPDATE_RECORD",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 1140
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_UPDATE_RECORD",
+        "params": {
+          "baseId": "{{airtableBaseId}}",
+          "tableIdOrName": "{{airtableTableId}}",
+          "recordId": "{{ID}}",
+          "fields": {
+            "Status": "inactive"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_e41678a0f0",
+      "actorId": "actor_e41678a0f0",
+      "type": "NodeTransform",
+      "label": "Params: Create Subscriber",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 1400
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\nconst $json = __items[0] ?? source;\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(String.prototype, { toDateTime() { return __dt(String(this)); } });\n// Params for airtable/AIRTABLE_CREATE_RECORD (n8n node \"Create Subscriber\").\nreturn {\n  \"baseId\": \"{{airtableBaseId}}\",\n  \"tableIdOrName\": \"{{airtableTableId}}\",\n  \"fields\": { \"Email\": ($json.email), \"Topic\": ($json.topic), \"Status\": \"active\", \"Interval\": ($json.frequency), \"Start Day\": ($json.submittedAt.toDateTime().format('EEE')) },\n};"
+      }
+    },
+    {
+      "nodeId": "node_800dd5f97c",
+      "actorId": "actor_800dd5f97c",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_CREATE_RECORD",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_CREATE_RECORD"
+      }
+    },
+    {
+      "nodeId": "node_9ae085d89f",
+      "actorId": "actor_9ae085d89f",
+      "type": "NodeTransform",
+      "label": "Should Send?",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Should Send?\" (run once for each item).\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __results = __items.map((__item) => {\n  const $json = __item;\n  const item = { json: __item };\n  const $input = { item: { json: __item }, first: () => ({ json: __item }), all: () => [{ json: __item }] };\n  return (() => {\n  const luckyPick = Math.floor(Math.random() * 10) + 1;\n  $input.item.json.should_send = luckyPick == 8;\n  return $input.item;\n  })();\n});\nreturn __single(__results.map(__unwrap));"
+      }
+    },
+    {
+      "nodeId": "node_065f652ef3",
+      "actorId": "actor_065f652ef3",
+      "type": "NodeCdecliAgent",
+      "label": "Content Generation Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "llama-3.3-70b-versatile",
+        "sessionId": "{{sessionId}}",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_e577187bcc",
+      "actorId": "actor_e577187bcc",
+      "type": "NodeTransform",
+      "label": "Prompt: Content Generation Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Content Generation Agent.\nconst __promptValue = `Generate an new factoid on the following topic: \"${$json.topic.replace('\"','')}\"\nEnsure it is unique and not one generated previously.`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_ba958f84c9",
+      "actorId": "actor_ba958f84c9",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_SEND_EMAIL",
+        "params": {
+          "recipient_email": "{{email}}",
+          "subject": "Learn something every day confirmation",
+          "body": "This is to confirm your request to subscribe to \"Learn something every day!\" - a free service to send you facts about your favourite topics.\n\nTopic: {{topic}}\nSchedule: {{frequency}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_c7a4f1b3b2",
+      "actorId": "actor_c7a4f1b3b2",
+      "type": "NodeTransform",
+      "label": "Should Send = True",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn __items.filter(($json) => Boolean(((($json.should_send)) === true || (($json.should_send)) === 'true')));"
+      }
+    },
+    {
+      "nodeId": "node_f395cdc11f",
+      "actorId": "actor_f395cdc11f",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-generation/YANTRA_GEMINI_IMAGE_GENERATE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-generation",
+        "connectorLabel": "Image generation",
+        "action": "YANTRA_GEMINI_IMAGE_GENERATE",
+        "params": {
+          "prompt": "Generate a child-friendly illustration which compliments the following paragraph:\n{{last.text}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_67d8f7ce9b",
+      "actorId": "actor_67d8f7ce9b",
+      "type": "NodeTransform",
+      "label": "Create Event",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"email\"] = ($json.Email);\n  out[\"topic\"] = ($json.Topic);\n  out[\"interval\"] = ($json.Interval);\n  out[\"id\"] = ($json.id);\n  out[\"created_at\"] = ($json.Created);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_42f29ed8ba",
+      "actorId": "actor_42f29ed8ba",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-editing/YANTRA_IMAGE_EDIT_RESIZE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-editing",
+        "connectorLabel": "Image editing",
+        "action": "YANTRA_IMAGE_EDIT_RESIZE",
+        "params": {
+          "width": 480,
+          "height": 360
+        }
+      }
+    },
+    {
+      "nodeId": "node_a95aef9ed8",
+      "actorId": "actor_a95aef9ed8",
+      "type": "NodeTransform",
+      "label": "Execute Workflow",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst $workflow = { id: '', name: '', active: true }; const $execution = { id: '', mode: 'manual', resumeUrl: '' }; const $executionId = $execution.id;\nconst $runIndex = 0; const $itemIndex = 0; const $binary = {}; const $prevNode = { name: '', outputIndex: 0, runIndex: 0 }; const $parameter = {}; const $position = 0;\n// executeWorkflow: compose the subflow manually (original workflow: ={{ $workflow.id }}).\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_7126bb7a40",
+      "actorId": "actor_7126bb7a40",
+      "type": "NodeTransform",
+      "label": "Set Email Vars",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Execute Workflow Trigger\": {{ctx}}, \"Unsubscribe Form\": {{ctx}}, \"Subscribe Form\": {{ctx}}, \"Search surprise\": {{steps.AIRTABLE_LIST_RECORDS.result}}, \"Search daily\": {{steps.AIRTABLE_LIST_RECORDS.result}}, \"Search weekly\": {{steps.AIRTABLE_LIST_RECORDS.result}}, \"Execution Data\": {{steps.xf_2613cf41f9.result}}, \"Update Subscriber\": {{steps.AIRTABLE_UPDATE_RECORD.result}}, \"Create Subscriber\": {{steps.AIRTABLE_CREATE_RECORD.result}}, \"Should Send?\": {{steps.xf_9ae085d89f.result}}, \"confirmation email1\": {{steps.GOOGLESUPER_SEND_EMAIL.result}}, \"Should Send = True\": {{steps.xf_c7a4f1b3b2.result}}, \"Generate Image\": {{steps.YANTRA_GEMINI_IMAGE_GENERATE.result}}, \"Create Event\": {{steps.xf_67d8f7ce9b.result}}, \"Resize Image\": {{steps.YANTRA_IMAGE_EDIT_RESIZE.result}}, \"Execute Workflow\": {{steps.xf_a95aef9ed8.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"to\"] = `${$('Execute Workflow Trigger').first().json.email},{{contactEmail}}`;\n  out[\"subject\"] = `Your ${$('Execute Workflow Trigger').first().json.interval} factoid`;\n  out[\"message\"] = `<p>\n<strong>You asked about \"${$('Execution Data').first().json.topic.replace('\"','')}\"</strong>\n</p>\n<p>\n<i>${$('Content Generation Agent').first().json.output}</i>\n</p>`;\n  out[\"unsubscribe_link\"] = `https://<MY_HOST>/form/inspiration-unsubscribe?ID=${$('Execute Workflow Trigger').first().json.id}`;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_23c4110fb4",
+      "actorId": "actor_23c4110fb4",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_SEND_EMAIL",
+        "params": {
+          "recipient_email": "{{last.transformed.to}}",
+          "subject": "{{last.transformed.subject}}",
+          "body": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n <meta charset=\"UTF-8\">\n <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n <title>{{last.transformed.subject}}</title>\n</head>\n<body>\n {{last.transformed.message}}\n<p>\n<a href=\"{{last.transformed.unsubscribe_link}}\">Unsubscribe</a>\n</p>\n</body>\n</html>\n"
+        }
+      }
+    },
+    {
+      "nodeId": "node_10ac54a339",
+      "actorId": "actor_10ac54a339",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_UPDATE_RECORD",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_UPDATE_RECORD",
+        "params": {
+          "baseId": "{{airtableBaseId}}",
+          "tableIdOrName": "{{airtableTableId}}",
+          "recordId": "{{id}}",
+          "fields": {
+            "Last Sent": "2024-11-29T13:34:11"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_a725365047",
+      "actorId": "actor_a725365047",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 840,
+        "y": 880
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_560099db82",
+      "actorId": "actor_560099db82",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_4c4d0fcc38",
+      "actorId": "actor_4c4d0fcc38",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_2cfb10f99b",
+      "actorId": "actor_2cfb10f99b",
+      "type": "NodeEnd",
+      "label": "End 4",
+      "color": "#EF4444",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_350433c8c2",
+      "actorId": "actor_350433c8c2",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 1660
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "ID": "",
+          "Reason For Unsubscribe": "",
+          "topic": "",
+          "email": "",
+          "frequency": "",
+          "sessionId": "",
+          "airtableBaseId": "",
+          "airtableTableId": "",
+          "contactEmail": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_e41678a0f0",
+      "target": "node_800dd5f97c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_e41678a0f0",
+      "target": "node_800dd5f97c",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_e577187bcc",
+      "target": "node_065f652ef3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_cc509d625a",
+      "target": "node_e76836bd28",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_cc509d625a",
+      "target": "node_5f6d8f3d2f",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_cc509d625a",
+      "target": "node_f6dd2f317f",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_5f6d8f3d2f",
+      "target": "node_67d8f7ce9b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5f6d8f3d2f",
+      "target": "node_67d8f7ce9b",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f6dd2f317f",
+      "target": "node_67d8f7ce9b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f6dd2f317f",
+      "target": "node_67d8f7ce9b",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_67d8f7ce9b",
+      "target": "node_a95aef9ed8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_67d8f7ce9b",
+      "target": "node_a95aef9ed8",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4bd98b2ab8",
+      "target": "node_2613cf41f9",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4bd98b2ab8",
+      "target": "node_bb0ce0c98d",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_7126bb7a40",
+      "target": "node_23c4110fb4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_e76836bd28",
+      "target": "node_9ae085d89f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e76836bd28",
+      "target": "node_9ae085d89f",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c7a4f1b3b2",
+      "target": "node_67d8f7ce9b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c7a4f1b3b2",
+      "target": "node_67d8f7ce9b",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9ae085d89f",
+      "target": "node_c7a4f1b3b2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9ae085d89f",
+      "target": "node_c7a4f1b3b2",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_800dd5f97c",
+      "target": "node_ba958f84c9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_4bd98b2ab8",
+      "target": "node_e41678a0f0",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2613cf41f9",
+      "target": "node_e577187bcc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2613cf41f9",
+      "target": "node_e577187bcc",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_065f652ef3",
+      "target": "node_f395cdc11f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_f395cdc11f",
+      "target": "node_42f29ed8ba",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_42f29ed8ba",
+      "target": "node_7126bb7a40",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_42f29ed8ba",
+      "target": "node_7126bb7a40",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_23c4110fb4",
+      "target": "node_10ac54a339",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_bb0ce0c98d",
+      "target": "node_a725365047",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_ba958f84c9",
+      "target": "node_560099db82",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_a95aef9ed8",
+      "target": "node_4c4d0fcc38",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_10ac54a339",
+      "target": "node_2cfb10f99b",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "forms-and-surveys",
+    "categoryLabel": "Forms and Surveys",
+    "department": "Marketing/Communication",
+    "connectors": [
+      "airtable",
+      "googlesuper",
+      "yantra-image-editing",
+      "yantra-image-generation"
+    ],
+    "setupVars": [
+      {
+        "key": "airtableBaseId",
+        "label": "Airtable base id",
+        "type": "id",
+        "example": "appXXXX (from the base URL)",
+        "usedBy": [
+          "Create Subscriber",
+          "Log Last Sent",
+          "Search daily",
+          "Search surprise",
+          "Search weekly",
+          "Update Subscriber"
+        ]
+      },
+      {
+        "key": "airtableTableId",
+        "label": "Airtable table id",
+        "type": "id",
+        "example": "tblXXXX (from the table URL)",
+        "usedBy": [
+          "Create Subscriber",
+          "Log Last Sent",
+          "Search daily",
+          "Search surprise",
+          "Search weekly",
+          "Update Subscriber"
+        ]
+      },
+      {
+        "key": "contactEmail",
+        "label": "Email address",
+        "type": "email",
+        "example": "you@example.com",
+        "usedBy": [
+          "Set Email Vars"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate email-subscription-service-with-n8n-forms-airtable-and-ai",
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeCron",
+      "NodeEnd",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 24,
+      "yantraSteps": 21,
+      "foldedHelpers": [
+        "Groq Chat Model",
+        "Wikipedia",
+        "Window Buffer Memory"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Forms_and_Surveys/Email Subscription Service with n8n Forms, Airtable and AI.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Execute Workflow Trigger",
+        "detail": "n8n-nodes-base.executeWorkflowTrigger became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Subscribe Form",
+        "detail": "n8n-nodes-base.formTrigger became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Unsubscribe Form",
+        "detail": "n8n-nodes-base.formTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Execute Workflow Trigger\" (executeWorkflowTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Subscribe Form\" (formTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Unsubscribe Form\" (formTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value airtableBaseId: Airtable base id (for example appXXXX (from the base URL)). Write it into the Workflow Configs initialContext before import.",
+      "Setup value airtableTableId: Airtable table id (for example tblXXXX (from the table URL)). Write it into the Workflow Configs initialContext before import.",
+      "Setup value contactEmail: Email address (for example you@example.com). Write it into the Workflow Configs initialContext before import.",
+      "Connect the airtable connector (credential).",
+      "Connect the googlesuper connector (credential).",
+      "After import, start the schedule: cdecli cron activate email-subscription-service-with-n8n-forms-airtable-and-ai.",
+      "Provide run inputs: ID, Reason For Unsubscribe, topic, email, frequency, sessionId, id."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Execution Data",
+          "n8n": "executionData",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Create Subscriber",
+          "n8n": "record.upsert",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Execute Workflow",
+          "n8n": "executeWorkflow",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "Groq Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+          "into": "Content Generation Agent",
+          "model": "llama-3.3-70b-versatile"
+        },
+        {
+          "node": "Wikipedia",
+          "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+          "into": "Content Generation Agent",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Window Buffer Memory",
+          "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+          "into": "Content Generation Agent",
+          "as": "ai_memory"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Schedule Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        },
+        {
+          "node": "Execute Workflow Trigger",
+          "type": "n8n-nodes-base.executeWorkflowTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Unsubscribe Form",
+          "type": "n8n-nodes-base.formTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Subscribe Form",
+          "type": "n8n-nodes-base.formTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original was a sub-workflow called by another workflow; pass its inputs as run inputs.",
+        "The original started from a form submission; pass the form fields as run inputs.",
+        "\"Execution Data\" (executionData): Execution metadata has no Yantra equivalent; payload passes through.",
+        "\"Create Subscriber\" (record.upsert): Airtable upsert without id → CREATE_RECORD (no match-key upsert).",
+        "\"Content Generation Agent\" kept conversation memory (memoryBufferWindow); sessionId is set to the run-input sessionId.",
+        "\"Content Generation Agent\" used agent tools in the original: Wikipedia (toolWikipedia). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
+        "\"Execute Workflow\" (executeWorkflow): Sub-workflow calls are not imported automatically; compose the child graph by hand or paste its steps inline.",
+        "\"Execute Workflow\" called another n8n workflow (={{ $workflow.id }}); on Yantra, open that workflow as its own template (or rebuild it) and replace this passthrough with a call into it.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect airtable: `cdecli credential create -n \"airtable\" -p airtable --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "### 4. Using Subworkflows to run executions concurrently\nThis configuration is desired when sequential execution is slow and unnecessary. Also if one email fails, it doesn't fail the execution for everyone else.",
+      "### 1. Subscribe flow\nUse a form to allow users to subscribe to the service.",
+      "### 2. Unsubscribe flow\n* Uses Form's pre-fill field feature to identify user\n* Doesn't use \"email\" as identifier so you can't unsubscribe others",
+      "### 3. Scheduled Trigger\n* Runs every day at 9am\n* Handles all 3 frequency types\n* Send emails concurrently",
+      "### 5. Use Execution Data to Filter Logs\nIf you've registered for community+ or are on n8n cloud, best practice is to use execution node to allow filtering of execution logs.",
+      "### 6. Use AI to Generate Factoid and Image\nUse an AI agent to automate the generation of factoids as requested by the user. This is a simple example but we recommend a adding a unique touch to stand out from the crowd!",
+      "### 7. Send Email to User\nFinally, send a message to the user with both text and image.\nLog the event in the Airtable for later analysis if required.\n\n![Screenshot of email result](https://res.cloudinary.com/daglih2g8/image/upload/f_auto,q_auto/v1/n8n-workflows/dbpctdhohj3vlewy6oyc)",
+      "## Try It Out!\n\n### This n8n templates demonstrates how to build a simple subscriber service entirely in n8n using n8n forms as a frontend, n8n generally as the backend and Airtable as the storage layer.\n\nThis template in particular shows a fully automated service to send automated messages containing facts about a topic the user requested for.\n\n### How it works\n* An n8n form is setup up to allow users to subscribe with a desired topic and interval of which to recieve messages via n8n forms which is then added to the Airtable.\n* A scheduled trigger is executed every morning and searches for subscribers to send messages for based on their desired intervals.\n* Once found, Subscribers are sent to a subworkflow which performs the text content generation via an AI agent and also uses a vision model to generate an image.\n* Both are attached to an email which is sent to the subscriber. This email also includes an unsubscribe link.\n* The unsubscribe flow works similarly via n8n form interface which when submitted disables further scheduled emails to the user.\n\n## How to use\n* Make a copy of sample Airtable here: https://airtable.com/[id removed]/shrLukHafy5bwDRfD\n* Make sure the workflow is \"activated\" and the forms are available and reachable by your audience.\n\n\n### Need Help?\nJoin the [Discord](https://discord.com/invite/XPKeKXeB7d) or ask in the [Forum](https://community.n8n.io/)!\n\nHappy Hacking!"
+    ],
+    "nodes": {
+      "node_cc509d625a": {
+        "n8n": "Schedule Trigger",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_4bd98b2ab8": {
+        "n8n": "Execute Workflow Trigger",
+        "n8nType": "n8n-nodes-base.executeWorkflowTrigger",
+        "also": [
+          "Unsubscribe Form",
+          "Subscribe Form"
+        ]
+      },
+      "node_e76836bd28": {
+        "n8n": "Search surprise",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_5f6d8f3d2f": {
+        "n8n": "Search daily",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_f6dd2f317f": {
+        "n8n": "Search weekly",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_2613cf41f9": {
+        "n8n": "Execution Data",
+        "n8nType": "n8n-nodes-base.executionData"
+      },
+      "node_bb0ce0c98d": {
+        "n8n": "Update Subscriber",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_e41678a0f0": {
+        "n8n": "Create Subscriber",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_800dd5f97c": {
+        "n8n": "Create Subscriber",
+        "n8nType": "n8n-nodes-base.airtable",
+        "approximate": true
+      },
+      "node_9ae085d89f": {
+        "n8n": "Should Send?",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_065f652ef3": {
+        "n8n": "Content Generation Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_e577187bcc": {
+        "n8n": "Content Generation Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_ba958f84c9": {
+        "n8n": "confirmation email1",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_c7a4f1b3b2": {
+        "n8n": "Should Send = True",
+        "n8nType": "n8n-nodes-base.filter"
+      },
+      "node_f395cdc11f": {
+        "n8n": "Generate Image",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_67d8f7ce9b": {
+        "n8n": "Create Event",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_42f29ed8ba": {
+        "n8n": "Resize Image",
+        "n8nType": "n8n-nodes-base.editImage"
+      },
+      "node_a95aef9ed8": {
+        "n8n": "Execute Workflow",
+        "n8nType": "n8n-nodes-base.executeWorkflow"
+      },
+      "node_7126bb7a40": {
+        "n8n": "Set Email Vars",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_23c4110fb4": {
+        "n8n": "Send Message",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_10ac54a339": {
+        "n8n": "Log Last Sent",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_a725365047": {
+        "n8n": "__end:Update Subscriber",
+        "n8nType": "synthetic"
+      },
+      "node_560099db82": {
+        "n8n": "__end:confirmation email1",
+        "n8nType": "synthetic"
+      },
+      "node_4c4d0fcc38": {
+        "n8n": "__end:Execute Workflow",
+        "n8nType": "synthetic"
+      },
+      "node_2cfb10f99b": {
+        "n8n": "__end:Log Last Sent",
+        "n8nType": "synthetic"
+      },
+      "node_350433c8c2": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

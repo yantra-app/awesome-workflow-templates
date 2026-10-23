@@ -1,0 +1,346 @@
+{
+  "name": "Recover a completed video with Magic Hour",
+  "workflowSlug": "recover-a-completed-video-with-magic-hour",
+  "description": "Retrieve a completed video by project ID without starting another paid generation; stop if unfinished. Requires the Magic Hour community node.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_85949cab53",
+      "actorId": "actor_85949cab53",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_194177b998",
+      "actorId": "actor_194177b998",
+      "type": "NodeHttpRequest",
+      "label": "Magic Hour",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://api.magichour.ai/v1/video-projects/{{replaceWithExistingProjectId}}",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{magicHourApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_c5edd9fb31",
+      "actorId": "actor_c5edd9fb31",
+      "type": "NodeTransform",
+      "label": "Require complete: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.status) ?? '') === String(\"complete\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_d1840cd92d",
+      "actorId": "actor_d1840cd92d",
+      "type": "NodeBranch",
+      "label": "Require complete: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_32afcc7e20",
+      "actorId": "actor_32afcc7e20",
+      "type": "NodeHttpRequest",
+      "label": "Download result",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "{{last.body.downloads.0.url}}"
+      }
+    },
+    {
+      "nodeId": "node_35a4f0bca2",
+      "actorId": "actor_35a4f0bca2",
+      "type": "NodeEnd",
+      "label": "Stop: Stop incomplete job",
+      "color": "#EF4444",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_2827333596",
+      "actorId": "actor_2827333596",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_30109ae4d1",
+      "actorId": "actor_30109ae4d1",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "replaceWithExistingProjectId": "",
+          "magicHourApiKey": {
+            "$workflowSecret": "MAGIC_HOUR_API_KEY"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_c5edd9fb31",
+      "target": "node_d1840cd92d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_c5edd9fb31",
+      "target": "node_d1840cd92d",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_85949cab53",
+      "target": "node_194177b998",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_194177b998",
+      "target": "node_c5edd9fb31",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_194177b998",
+      "target": "node_c5edd9fb31",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d1840cd92d",
+      "target": "node_32afcc7e20",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_194177b998",
+      "target": "node_35a4f0bca2",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_32afcc7e20",
+      "target": "node_2827333596",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "other-integrations",
+    "categoryLabel": "Other Integrations and Use Cases",
+    "department": "Engineering/Ops",
+    "connectors": [],
+    "setupVars": [
+      {
+        "key": "replaceWithExistingProjectId",
+        "label": "Replace With Existing Project Id",
+        "type": "id",
+        "usedBy": [
+          "Magic Hour"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "MAGIC_HOUR_API_KEY",
+        "label": "Magic Hour API key",
+        "host": "api.magichour.ai",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "magicHourApiKey",
+        "usedBy": [
+          "Magic Hour"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 5,
+      "yantraSteps": 5,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Other_Integrations_and_Use_Cases/Recover a completed video with Magic Hour.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Recover a completed video with Magic Hour"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "hard-approximation",
+        "node": "Magic Hour",
+        "detail": "magicHour.video.get -> NodeTransform"
+      }
+    ],
+    "setup": [
+      "\"Magic Hour\" (magicHour.video.get) only approximates the original; review it before relying on the result.",
+      "Setup value replaceWithExistingProjectId: Replace With Existing Project Id. Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret MAGIC_HOUR_API_KEY: Magic Hour API key for api.magichour.ai (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Magic Hour",
+          "n8n": "magicHour.video.get",
+          "action": "NodeTransform"
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Run manually",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Magic Hour\" (magicHour.video.get): Magic Hour REST stand-in; the paths and body are a best guess at the current API, so confirm them before relying on it.",
+        "\"Magic Hour\": verify https://api.magichour.ai paths for video.get.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "## Recover without creating another paid job\nSelect your API credential and set an existing project ID.\nFor an image, change Resource to Image, select Get Image Details, and fill Image ID.\nRun after the project completes. If it is still pending, this flow stops safely.\nDownload result returns binary `data`; save it with Drive/S3 or download from n8n.\n\nUse a self-hosted n8n instance that allows community nodes. Cloud eligibility is unverified. Tested with n8n 2.37.10 and @gladiator1st/n8n-nodes-magichour 1.0.3. Magic Hour AI source: MIT; see docs/Magic Hour workflow license.txt."
+    ],
+    "nodes": {
+      "node_85949cab53": {
+        "n8n": "Run manually",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_194177b998": {
+        "n8n": "Magic Hour",
+        "n8nType": "@gladiator1st/n8n-nodes-magichour.magicHour",
+        "auth": "magicHourApi"
+      },
+      "node_c5edd9fb31": {
+        "n8n": "Require complete",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_d1840cd92d": {
+        "n8n": "Require complete",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_32afcc7e20": {
+        "n8n": "Download result",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_35a4f0bca2": {
+        "n8n": "Stop incomplete job",
+        "n8nType": "n8n-nodes-base.stopAndError"
+      },
+      "node_2827333596": {
+        "n8n": "__end:Download result",
+        "n8nType": "synthetic"
+      },
+      "node_30109ae4d1": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

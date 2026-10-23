@@ -1,0 +1,1506 @@
+{
+  "name": "AI-Powered Candidate Shortlisting Automation for ERPNext",
+  "workflowSlug": "ai-powered-candidate-shortlisting-automation-for-erpnext",
+  "description": "Candidate shortlisting automation.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_9f595e56a2",
+      "actorId": "actor_9f595e56a2",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_d0c819d7dd",
+      "actorId": "actor_d0c819d7dd",
+      "type": "NodeTransform",
+      "label": "Txt File to Text (Example)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// Read the file content as text.\nconst __file = typeof source === 'string' ? source : source?.data ?? source?.content ?? source?.body ?? source;\nconst __text = typeof __file === 'string' ? __file : JSON.stringify(__file ?? '');\nreturn { \"data\": __text };"
+      }
+    },
+    {
+      "nodeId": "node_2f14df27b3",
+      "actorId": "actor_2f14df27b3",
+      "type": "NodeTransform",
+      "label": "Code",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\nconst items = __items.map((json) => ({ json }));\n// Ported from n8n Code node \"Code\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Loop over input items and add a new field called 'myNewField' to the JSON of each one\n  for (const item of $input.all()) {\n   item.json.myNewField = 1;\n  }\n  \n  return $input.all();\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_368bb378cb",
+      "actorId": "actor_368bb378cb",
+      "type": "NodeTransform",
+      "label": "ApplicantData",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"body\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json.body));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_0bd88c16b1",
+      "actorId": "actor_0bd88c16b1",
+      "type": "NodeTransform",
+      "label": "Resume Link Provided: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.body.resume_link) ?? '').startsWith(String(\"http\" ?? ''))));"
+      }
+    },
+    {
+      "nodeId": "node_29edd32506",
+      "actorId": "actor_29edd32506",
+      "type": "NodeBranch",
+      "label": "Resume Link Provided: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_7dca8cd79f",
+      "actorId": "actor_7dca8cd79f",
+      "type": "NodeTransform",
+      "label": "Applied Against Job: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.body.Job_opening) ?? '') !== String(\"None\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_29f854bdb4",
+      "actorId": "actor_29f854bdb4",
+      "type": "NodeBranch",
+      "label": "Applied Against Job: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_3e04241c73",
+      "actorId": "actor_3e04241c73",
+      "type": "NodeCdeConnector",
+      "label": "erpnext/ERPNEXT_UPDATE_DOCUMENT",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "erpnext",
+        "connectorLabel": "ERPNext",
+        "action": "ERPNEXT_UPDATE_DOCUMENT",
+        "params": {
+          "doctype": "Job%20Applicant",
+          "name": "{{steps.xf_368bb378cb.result.body.name}}",
+          "fields": {
+            "customProperty": [
+              {
+                "field": "status",
+                "value": "Rejected"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_e0c8ffd64a",
+      "actorId": "actor_e0c8ffd64a",
+      "type": "NodeTransform",
+      "label": "Reume Attachment Link",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __set = (o, p, v) => { const ks = String(p).split('.'); let c = o; for (const k of ks.slice(0, -1)) { if (c[k] == null || typeof c[k] !== 'object') c[k] = {}; c = c[k]; } c[ks[ks.length - 1]] = v; return o; };\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  __set(out, \"body.resume_attachment\", ($json.body.resume_link));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_d55f578777",
+      "actorId": "actor_d55f578777",
+      "type": "NodeCdeConnector",
+      "label": "erpnext/ERPNEXT_UPDATE_DOCUMENT",
+      "color": "#6366F1",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "erpnext",
+        "connectorLabel": "ERPNext",
+        "action": "ERPNEXT_UPDATE_DOCUMENT",
+        "params": {
+          "doctype": "Job%20Applicant",
+          "name": "{{steps.xf_368bb378cb.result.body.name}}",
+          "fields": {
+            "customProperty": [
+              {
+                "field": "status",
+                "value": "Hold"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_3acc8e32db",
+      "actorId": "actor_3acc8e32db",
+      "type": "NodeTransform",
+      "label": "File Type: pdf",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.body.resume_attachment) ?? '').endsWith(String(\".pdf\" ?? ''))));"
+      }
+    },
+    {
+      "nodeId": "node_b360d38e4c",
+      "actorId": "actor_b360d38e4c",
+      "type": "NodeBranch",
+      "label": "File Type: pdf?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_7852a658a5",
+      "actorId": "actor_7852a658a5",
+      "type": "NodeTransform",
+      "label": "File Type: doc",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.body.resume_attachment) ?? '').includes(String(\".doc\" ?? ''))));"
+      }
+    },
+    {
+      "nodeId": "node_2cf5f9896b",
+      "actorId": "actor_2cf5f9896b",
+      "type": "NodeBranch",
+      "label": "File Type: doc?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_812641f131",
+      "actorId": "actor_812641f131",
+      "type": "NodeTransform",
+      "label": "File Type: .jpg",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.body.resume_attachment) ?? '').endsWith(String(\".jpg\" ?? ''))));"
+      }
+    },
+    {
+      "nodeId": "node_8d4c1e4f91",
+      "actorId": "actor_8d4c1e4f91",
+      "type": "NodeBranch",
+      "label": "File Type: .jpg?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_47a6a18fe1",
+      "actorId": "actor_47a6a18fe1",
+      "type": "NodeHttpRequest",
+      "label": "Download PDF Resume",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "{{last.transformed.body.resume_attachment}}"
+      }
+    },
+    {
+      "nodeId": "node_b4e1db90f5",
+      "actorId": "actor_b4e1db90f5",
+      "type": "NodeTransform",
+      "label": "Params: PDF to Text",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for googlesuper/GOOGLESUPER_PARSE_FILE (n8n node \"PDF to Text\").\nreturn {\n  \"file_id\": ($json.id ?? $json.file_id ?? $json.fileId),\n  \"mime_type\": \"application/pdf\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_6a53c8af03",
+      "actorId": "actor_6a53c8af03",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_PARSE_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive parse",
+        "action": "GOOGLESUPER_PARSE_FILE"
+      }
+    },
+    {
+      "nodeId": "node_afa04d3102",
+      "actorId": "actor_afa04d3102",
+      "type": "NodeSync",
+      "label": "Merge1",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5020,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_b520792f1d",
+      "actorId": "actor_b520792f1d",
+      "type": "NodeCdeConnector",
+      "label": "erpnext/ERPNEXT_GET_DOCUMENT",
+      "color": "#6366F1",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "erpnext",
+        "connectorLabel": "ERPNext",
+        "action": "ERPNEXT_GET_DOCUMENT",
+        "params": {
+          "doctype": "Job%20Opening",
+          "name": "{{steps.xf_368bb378cb.result.body.Job_opening}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_aeb811998f",
+      "actorId": "actor_aeb811998f",
+      "type": "NodeCdecliAgent",
+      "label": "Recruitment AI Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "models/gemini-2.0-flash-exp",
+        "sessionId": "",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_a62b361c71",
+      "actorId": "actor_a62b361c71",
+      "type": "NodeTransform",
+      "label": "Prompt: Recruitment AI Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Webhook\": {{ctx}}, \"Txt File to Text (Example)\": __namedCtx.steps?.[\"Txt File to Text (Example)\"]?.[\"transformed\"], \"Code\": __namedCtx.steps?.[\"Code\"]?.[\"transformed\"], \"ApplicantData\": __namedCtx.steps?.[\"ApplicantData\"]?.[\"transformed\"], \"ERPNext - Reject if Resume not Attached\": __namedCtx.steps?.[\"ERPNEXT_UPDATE_DOCUMENT\"]?.[\"result\"], \"Reume Attachment Link\": __namedCtx.steps?.[\"Reume Attachment Link\"]?.[\"transformed\"], \"ERPNext - Hold Applicant\": __namedCtx.steps?.[\"ERPNEXT_UPDATE_DOCUMENT\"]?.[\"result\"], \"Download PDF Resume\": __namedCtx.steps?.[\"Download PDF Resume\"]?.[\"body\"], \"PDF to Text\": __namedCtx.steps?.[\"GOOGLESUPER_PARSE_FILE\"]?.[\"result\"], \"Merge1\": __namedCtx.steps?.[\"Merge1\"]?.[\"data1\"], \"Get Job Opening\": __namedCtx.steps?.[\"ERPNEXT_GET_DOCUMENT\"]?.[\"result\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Recruitment AI Agent.\nconst __promptValue = `System Prompt : \nYou are a highly skilled AI agent trained to compare and analyze text from resumes against job descriptions. Your primary goal is to assess whether the candidate is a good fit for the role based on the given inputs. You will receive two inputs:\n\n1. **Job Description**: A detailed description of the responsibilities, qualifications, and skills required for a specific job role.\n2. **Resume Text**: A summary of a candidate's qualifications, skills, experience, and education.\n\nYour task is to:\n1. **Analyze Match**: Compare the candidate's resume text against the job description and assess the alignment of:\n - Required skills\n - Relevant experience\n - Educational background\n - Certifications\n - Keywords mentioned in both texts (e.g., specific tools, methodologies, or terminologies).\n\n2. **Assess Fit**: Determine if the candidate is a strong, moderate, or weak fit for the role. Assign a score from 0 to 100 based on relevance:\n - **Strong Fit**: 80-100 (Candidate meets or exceeds the majority of the job requirements).\n - **Moderate Fit**: 50-79 (Candidate meets some key requirements but lacks in others).\n - **Weak Fit**: Below 50 (Candidate does not align with the role requirements).\n\n3. **Provide Justification**: Include a brief explanation of why the candidate is or isn’t a good fit, highlighting strengths, gaps, or missing criteria.\n\nOutput Format:\n- **Fit Level**: [Strong Fit / Moderate Fit / Weak Fit]\n- **Score**: [0-100]\n- **Rating**: [0-5]\n- **Justification**: A concise summary of the reasoning behind the fit level.\n\nRemember to maintain a neutral and objective tone in your analysis and ensure that your assessment is solely based on the information provided in the inputs.\"\n\n\nProvide me the output in the following format:\n\nFitLevel\n<fitLevel>\n\nScore:\n<score>\n\nRating:\n<rating>\n\nJustification:\n<justification>\n\nBelow are the inputs \n\nJob Title : ${$json.job_title}\nJob Desription : ${$json.description}\n\n\nHere here Job Applican't text from Resume : \n${$('PDF to Text').item.json.text}\n`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_63e80fe259",
+      "actorId": "actor_63e80fe259",
+      "type": "NodeTransform",
+      "label": "Convert to Fields",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Ported from n8n Code node \"Convert to Fields\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Input text from the `output` field\n  const textOutput = $json || '';\n  \n  // Function to extract values from the text\n  function extractFields(text) {\n   const fields = {};\n  \n   // Regular expressions to extract each field\n   const fitLevelMatch = text.match(/FitLevel:\\s*(.+)\\n/);\n   const scoreMatch = text.match(/Score:\\s*(\\d+)\\n/);\n   const ratingMatch = text.match(/Rating:\\s*(\\d+)\\n/);\n   const justificationMatch = text.match(/Justification:\\s*([\\s\\S]+)/);\n  \n   // Assign extracted values to the fields\n   fields.fit_level = fitLevelMatch ? fitLevelMatch[1].trim() : null;\n   fields.score = scoreMatch ? scoreMatch[1].trim() : null;\n   fields.applicant_rating = ratingMatch ? ratingMatch[1].trim() : null;\n   fields.justification_by_ai = justificationMatch ? justificationMatch[1].trim() : null;\n  \n   return fields;\n  }\n  \n  // Extract fields from the output\n  const extractedFields = extractFields(textOutput);\n  \n  // Return the fields as JSON\n  return {\n   json: extractedFields\n  };\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_cb265bfa0a",
+      "actorId": "actor_cb265bfa0a",
+      "type": "NodeHttpRequest",
+      "label": "Update Applicant Data",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "PUT",
+        "url": "https://erpnext.syncbricks.com/api/resource/Job Applicant/{{steps.xf_368bb378cb.result.body.name}}",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "token {{erpnextApiKey}}"
+        },
+        "body": "{\n \"applicant_rating\": \"{{last.transformed.applicant_rating}}\",\n \"custom_justification_by_ai\": \"{{last.transformed.justification_by_ai}}\",\n \"custom_fit_level\": \"{{last.transformed.fit_level}}\",\n \"custom_score\":\"{{last.transformed.score}}\"\n}\n\n\n\n\n"
+      }
+    },
+    {
+      "nodeId": "node_32fe9712a2",
+      "actorId": "actor_32fe9712a2",
+      "type": "NodeTransform",
+      "label": "If score less than 80: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook\": {{ctx}}, \"Txt File to Text (Example)\": {{steps.xf_d0c819d7dd.result}}, \"Code\": {{steps.xf_2f14df27b3.result}}, \"ApplicantData\": {{steps.xf_368bb378cb.result}}, \"ERPNext - Reject if Resume not Attached\": {{steps.ERPNEXT_UPDATE_DOCUMENT.result}}, \"Reume Attachment Link\": {{steps.xf_e0c8ffd64a.result}}, \"ERPNext - Hold Applicant\": {{steps.ERPNEXT_UPDATE_DOCUMENT.result}}, \"Download PDF Resume\": {{steps.http_47a6a18fe1.result}}, \"PDF to Text\": {{steps.GOOGLESUPER_PARSE_FILE.result}}, \"Get Job Opening\": {{steps.ERPNEXT_GET_DOCUMENT.result}}, \"Convert to Fields\": {{steps.xf_63e80fe259.result}}, \"Update Applicant Data\": {{steps.http_cb265bfa0a.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((Number(($('Convert to Fields').item.json.score)) < Number(80)));"
+      }
+    },
+    {
+      "nodeId": "node_297554695d",
+      "actorId": "actor_297554695d",
+      "type": "NodeBranch",
+      "label": "If score less than 80: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 7680,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_f6300f547b",
+      "actorId": "actor_f6300f547b",
+      "type": "NodeHttpRequest",
+      "label": "Reject Applicant",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 8060,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "PUT",
+        "url": "https://erpnext.syncbricks.com/api/resource/Job Applicant/{{steps.xf_368bb378cb.result.body.name}}",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "token {{erpnextApiKey}}"
+        },
+        "body": "{\n \"status\": \"Rejected\"\n}"
+      }
+    },
+    {
+      "nodeId": "node_67bb4e3210",
+      "actorId": "actor_67bb4e3210",
+      "type": "NodeHttpRequest",
+      "label": "Accept Applicant",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 8060,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "PUT",
+        "url": "https://erpnext.syncbricks.com/api/resource/Job Applicant/{{steps.xf_368bb378cb.result.body.name}}",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "token {{erpnextApiKey}}"
+        },
+        "body": "{\n \"status\": \"Accepted\"\n}"
+      }
+    },
+    {
+      "nodeId": "node_5242a76cb4",
+      "actorId": "actor_5242a76cb4",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 8440,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (Outlook original)",
+        "action": "GOOGLESUPER_SEND_EMAIL",
+        "params": {
+          "body": "{{emailBody}}",
+          "recipient_email": "{{recipientEmail}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_188c0cfdb3",
+      "actorId": "actor_188c0cfdb3",
+      "type": "NodeCdeConnector",
+      "label": "whatsapp/WHATSAPP_SEND_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 8440,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "whatsapp",
+        "connectorLabel": "WhatsApp",
+        "action": "WHATSAPP_SEND_MESSAGE",
+        "params": {
+          "text": "{{whatsappMessage}}",
+          "to_number": "{{recipientPhone}}",
+          "phone_number_id": "{{whatsappPhoneNumberId}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_67c9909afc",
+      "actorId": "actor_67c9909afc",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_3fb7e0cc52",
+      "actorId": "actor_3fb7e0cc52",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_207c9e74d5",
+      "actorId": "actor_207c9e74d5",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 8820,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_7882f2cf28",
+      "actorId": "actor_7882f2cf28",
+      "type": "NodeEnd",
+      "label": "End 4",
+      "color": "#EF4444",
+      "position": {
+        "x": 8820,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_26024e4968",
+      "actorId": "actor_26024e4968",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {},
+          "emailBody": "",
+          "recipientEmail": "",
+          "whatsappMessage": "",
+          "recipientPhone": "",
+          "whatsappPhoneNumberId": "",
+          "erpnextApiKey": {
+            "$workflowSecret": "ERPNEXT_API_KEY"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_0bd88c16b1",
+      "target": "node_29edd32506",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_0bd88c16b1",
+      "target": "node_29edd32506",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_7dca8cd79f",
+      "target": "node_29f854bdb4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_7dca8cd79f",
+      "target": "node_29f854bdb4",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_3acc8e32db",
+      "target": "node_b360d38e4c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_3acc8e32db",
+      "target": "node_b360d38e4c",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_b360d38e4c",
+      "target": "node_7852a658a5",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7852a658a5",
+      "target": "node_2cf5f9896b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_7852a658a5",
+      "target": "node_2cf5f9896b",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_2cf5f9896b",
+      "target": "node_812641f131",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_812641f131",
+      "target": "node_8d4c1e4f91",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_812641f131",
+      "target": "node_8d4c1e4f91",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_b4e1db90f5",
+      "target": "node_6a53c8af03",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_b4e1db90f5",
+      "target": "node_6a53c8af03",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_a62b361c71",
+      "target": "node_aeb811998f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_32fe9712a2",
+      "target": "node_297554695d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_32fe9712a2",
+      "target": "node_297554695d",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_2f14df27b3",
+      "target": "node_368bb378cb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2f14df27b3",
+      "target": "node_368bb378cb",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_368bb378cb",
+      "target": "node_0bd88c16b1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_368bb378cb",
+      "target": "node_0bd88c16b1",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_29f854bdb4",
+      "target": "node_e0c8ffd64a",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_368bb378cb",
+      "target": "node_e0c8ffd64a",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_29f854bdb4",
+      "target": "node_d55f578777",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_b520792f1d",
+      "target": "node_a62b361c71",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b520792f1d",
+      "target": "node_a62b361c71",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_63e80fe259",
+      "target": "node_cb265bfa0a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_297554695d",
+      "target": "node_f6300f547b",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_297554695d",
+      "target": "node_67bb4e3210",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_f6300f547b",
+      "target": "node_5242a76cb4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_cb265bfa0a",
+      "target": "node_32fe9712a2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cb265bfa0a",
+      "target": "node_32fe9712a2",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e0c8ffd64a",
+      "target": "node_3acc8e32db",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e0c8ffd64a",
+      "target": "node_3acc8e32db",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e0c8ffd64a",
+      "target": "node_7852a658a5",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e0c8ffd64a",
+      "target": "node_812641f131",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_29edd32506",
+      "target": "node_7dca8cd79f",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_368bb378cb",
+      "target": "node_7dca8cd79f",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_29edd32506",
+      "target": "node_3e04241c73",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_67bb4e3210",
+      "target": "node_188c0cfdb3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_9f595e56a2",
+      "target": "node_2f14df27b3",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b360d38e4c",
+      "target": "node_47a6a18fe1",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_47a6a18fe1",
+      "target": "node_b4e1db90f5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_47a6a18fe1",
+      "target": "node_b4e1db90f5",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6a53c8af03",
+      "target": "node_afa04d3102",
+      "sourceOutput": "result",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_d0c819d7dd",
+      "target": "node_afa04d3102",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_afa04d3102",
+      "target": "node_b520792f1d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_aeb811998f",
+      "target": "node_63e80fe259",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_aeb811998f",
+      "target": "node_63e80fe259",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9f595e56a2",
+      "target": "node_d0c819d7dd",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3e04241c73",
+      "target": "node_67c9909afc",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_d55f578777",
+      "target": "node_3fb7e0cc52",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_5242a76cb4",
+      "target": "node_207c9e74d5",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_188c0cfdb3",
+      "target": "node_7882f2cf28",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "HR/AI/Recruitment",
+    "connectors": [
+      "erpnext",
+      "googlesuper",
+      "whatsapp"
+    ],
+    "setupVars": [
+      {
+        "key": "emailBody",
+        "label": "Email body (the original node left it blank)",
+        "type": "text",
+        "example": "Hello, ...",
+        "usedBy": [
+          "Microsoft Outlook"
+        ]
+      },
+      {
+        "key": "recipientEmail",
+        "label": "Recipient email address",
+        "type": "email",
+        "example": "you@example.com",
+        "usedBy": [
+          "Microsoft Outlook"
+        ]
+      },
+      {
+        "key": "whatsappMessage",
+        "label": "WhatsApp message text (the original node left it blank)",
+        "type": "text",
+        "example": "Thanks, we received your message.",
+        "usedBy": [
+          "WhatsApp Business Cloud"
+        ]
+      },
+      {
+        "key": "recipientPhone",
+        "label": "Recipient phone number (E.164)",
+        "type": "text",
+        "example": "+15551234567",
+        "usedBy": [
+          "WhatsApp Business Cloud"
+        ]
+      },
+      {
+        "key": "whatsappPhoneNumberId",
+        "label": "WhatsApp Business phone number id",
+        "type": "id",
+        "example": "123456789012345",
+        "usedBy": [
+          "WhatsApp Business Cloud"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "ERPNEXT_API_KEY",
+        "label": "erpnext.syncbricks.com ERPNext API key and secret (\"<api key>:<api secret>\")",
+        "host": "erpnext.syncbricks.com",
+        "headerFormat": "Authorization: token <secret>",
+        "contextKey": "erpnextApiKey",
+        "usedBy": [
+          "Accept Applicant",
+          "Reject Applicant",
+          "Update Applicant Data"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 23,
+      "yantraSteps": 32,
+      "foldedHelpers": [
+        "Google Gemini Chat Model"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/AI-Powered Candidate Shortlisting Automation for ERPNext.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Webhook",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Webhook\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value emailBody: Email body (the original node left it blank) (for example Hello, ...). Write it into the Workflow Configs initialContext before import.",
+      "Setup value recipientEmail: Recipient email address (for example you@example.com). Write it into the Workflow Configs initialContext before import.",
+      "Setup value whatsappMessage: WhatsApp message text (the original node left it blank) (for example Thanks, we received your message.). Write it into the Workflow Configs initialContext before import.",
+      "Setup value recipientPhone: Recipient phone number (E.164) (for example +15551234567). Write it into the Workflow Configs initialContext before import.",
+      "Setup value whatsappPhoneNumberId: WhatsApp Business phone number id (for example 123456789012345). Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret ERPNEXT_API_KEY: erpnext.syncbricks.com ERPNext API key and secret (\"<api key>:<api secret>\") for erpnext.syncbricks.com (Authorization: token <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the erpnext connector (credential).",
+      "Connect the googlesuper connector (credential).",
+      "Connect the whatsapp connector (credential).",
+      "Provide run inputs: body, query, headers."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Txt File to Text (Example)",
+          "n8n": "extractFromFile.text",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "PDF to Text",
+          "n8n": "extractFromFile.pdf",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "Google Gemini Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+          "into": "Recruitment AI Agent",
+          "model": "models/gemini-2.0-flash-exp"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Webhook",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /syncbricks-com-tutorial-candidate-shortlist). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "\"Txt File to Text (Example)\" (extractFromFile.text): Files flow as text or base64 fields on Yantra, not binary attachments; check the previous step hands over the file content.",
+        "\"PDF to Text\" (extractFromFile.pdf): Parsed via googlesuper/GOOGLESUPER_PARSE_FILE; the file must live on Google Drive (upload first if the previous step only has bytes/base64).",
+        "\"PDF to Text\": GOOGLESUPER_PARSE_FILE needs a Drive file_id (and googlesuper credential). If the upstream step only has file bytes, upload with GOOGLESUPER_CREATE_FILE_FROM_TEXT / Drive upload first, then parse.",
+        "\"Merge1\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was append).",
+        "\"Update Applicant Data\" authenticated with erpNextApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Reject Applicant\" authenticated with erpNextApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Accept Applicant\" authenticated with erpNextApi in the original; add the matching Authorization header (or use the service's connector).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect erpnext: `cdecli credential create -n \"erpnext\" -p erpnext --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect whatsapp: `cdecli credential create -n \"whatsapp\" -p whatsapp --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "### Get Apprropraite Data\nThese Nodes are to extract only the Required Data from the Webhook Node",
+      "### N8N has the Node to convert PDF to Text, but PDF should be converted from Text. Scanned Image PDF will not be converted. \n\nYou can use ohter nodes here to convert word file to text or JPG to Text, possiblities are limitless.",
+      "### Download the File.\nIf you are using S3 to Upload attachments you can use S3 node here to download the attachment",
+      "### Applicant Applied for Job in ERPNext\n\nYou need to go to Webhooks in ERPNext and Create a Webhook on Job Applicant Doc Type and trigger should be on insert.\n\nFirst do the Test Wehbook and Pin the Webhook.\n\nFollow the Tutorial",
+      "### Get Job Opening Data\nFrom ERPNext\n\nAs Job is applied against a specific Job, you can now get the Job Opening Data which must be having the Job Description.",
+      "### AI Agent to do its Job\nOpenAI\n\nSee full prompt which tells this AI Agent that you are a recruitment sepcialist and all the roles are defined in this node.\n\nIt will shortlist the candidate and will give the descriptive output with candidate fitlevel, score, rating and justification.",
+      "### Update data in ERPNext\nHere First node will do the formatting of the data and will convert output from AI Agent to Appropriate Fields which are defined in ERPNext and then will Send to Next Node\n\n### ERPNext (HTTP Node)\nThis node will take the Data from Previouis Node and will update the Applicant Data in ERPNext",
+      "### Selected or Rejected\n\nThe criteia for score is that if Score is 80 or above Candidate will be selected Else Rejected.",
+      "## Resume Available?\nFirst Node : If Resume is not attached or Then Job Applicant will be Rejected\nSecond Node : If job is not applied against opening then the Applicant will be kept on hold.",
+      "## Developed by Amjid Ali\n\nThank you for using this workflow template. It has taken me countless hours of hard work, research, and dedication to develop, and I sincerely hope it adds value to your work.\n\nIf you find this template helpful, I kindly ask you to consider supporting my efforts. Your support will help me continue improving and creating more valuable resources.\n\nYou can contribute via PayPal here:\n\nhttp://paypal.me/pmptraining\n\nFor Full Course about ERPNext or Automation using AI follow below link\n\nhttp://lms.syncbricks.com\n\nAdditionally, when sharing this template, I would greatly appreciate it if you include my original information to ensure proper credit is given.\n\nThank you for your generosity and support!\nEmail : [email removed]\nhttps://linkedin.com/in/amjidali\nhttps://syncbricks.com\nhttps://youtube.com/@syncbricks",
+      "### Get file of Resume Detail from ERPNext Applicant\nExtract the Resume Download Link and Decide which Attachment type it is as every attachment will be treated differently.\nCurrently I provided only for PDF Version but you can add seperate flow for other versions",
+      "### Validate if the Resume is Available and It is against a specific Job\nThese Nodes are to extract only the Required Data from the Webhook Node",
+      "### Create Fields\n\nThis Java Script will convert the extracted fieldws from AI Agent and will create fields which are already created in ERPNext.\n\nEnsure to create below fields in ERPNext : \n\njustification_by_ai\nfit_level\nscore\n\napplicant_rating field is already there, which will be updated with 1 to 5 star",
+      "### Update data in ERPNext\nAPI Call\nCandidate Rejected",
+      "### Update data in ERPNext\nAPI Call\nCandidate Rejected",
+      "### Notifiy Applicant either by Email or Whatsapp or SMS, Options are Limitless"
+    ],
+    "nodes": {
+      "node_9f595e56a2": {
+        "n8n": "Webhook",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_d0c819d7dd": {
+        "n8n": "Txt File to Text (Example)",
+        "n8nType": "n8n-nodes-base.extractFromFile"
+      },
+      "node_2f14df27b3": {
+        "n8n": "Code",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_368bb378cb": {
+        "n8n": "ApplicantData",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_0bd88c16b1": {
+        "n8n": "Resume Link Provided",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_29edd32506": {
+        "n8n": "Resume Link Provided",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_7dca8cd79f": {
+        "n8n": "Applied Against Job",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_29f854bdb4": {
+        "n8n": "Applied Against Job",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_3e04241c73": {
+        "n8n": "ERPNext - Reject if Resume not Attached",
+        "n8nType": "n8n-nodes-base.erpNext"
+      },
+      "node_e0c8ffd64a": {
+        "n8n": "Reume Attachment Link",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_d55f578777": {
+        "n8n": "ERPNext - Hold Applicant",
+        "n8nType": "n8n-nodes-base.erpNext"
+      },
+      "node_3acc8e32db": {
+        "n8n": "File Type",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_b360d38e4c": {
+        "n8n": "File Type",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_7852a658a5": {
+        "n8n": "File Type",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_2cf5f9896b": {
+        "n8n": "File Type",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_812641f131": {
+        "n8n": "File Type",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_8d4c1e4f91": {
+        "n8n": "File Type",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_47a6a18fe1": {
+        "n8n": "Download PDF Resume",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_b4e1db90f5": {
+        "n8n": "PDF to Text",
+        "n8nType": "n8n-nodes-base.extractFromFile"
+      },
+      "node_6a53c8af03": {
+        "n8n": "PDF to Text",
+        "n8nType": "n8n-nodes-base.extractFromFile"
+      },
+      "node_afa04d3102": {
+        "n8n": "Merge1",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_b520792f1d": {
+        "n8n": "Get Job Opening",
+        "n8nType": "n8n-nodes-base.erpNext"
+      },
+      "node_aeb811998f": {
+        "n8n": "Recruitment AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_a62b361c71": {
+        "n8n": "Recruitment AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_63e80fe259": {
+        "n8n": "Convert to Fields",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_cb265bfa0a": {
+        "n8n": "Update Applicant Data",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "erpNextApi"
+      },
+      "node_32fe9712a2": {
+        "n8n": "If score less than 80",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_297554695d": {
+        "n8n": "If score less than 80",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_f6300f547b": {
+        "n8n": "Reject Applicant",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "erpNextApi"
+      },
+      "node_67bb4e3210": {
+        "n8n": "Accept Applicant",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "erpNextApi"
+      },
+      "node_5242a76cb4": {
+        "n8n": "Microsoft Outlook",
+        "n8nType": "n8n-nodes-base.microsoftOutlook"
+      },
+      "node_188c0cfdb3": {
+        "n8n": "WhatsApp Business Cloud",
+        "n8nType": "n8n-nodes-base.whatsApp"
+      },
+      "node_67c9909afc": {
+        "n8n": "__end:ERPNext - Reject if Resume not Attached",
+        "n8nType": "synthetic"
+      },
+      "node_3fb7e0cc52": {
+        "n8n": "__end:ERPNext - Hold Applicant",
+        "n8nType": "synthetic"
+      },
+      "node_207c9e74d5": {
+        "n8n": "__end:Microsoft Outlook",
+        "n8nType": "synthetic"
+      },
+      "node_7882f2cf28": {
+        "n8n": "__end:WhatsApp Business Cloud",
+        "n8nType": "synthetic"
+      },
+      "node_26024e4968": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

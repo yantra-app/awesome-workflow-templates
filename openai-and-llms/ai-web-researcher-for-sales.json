@@ -1,0 +1,714 @@
+{
+  "name": "AI web researcher for sales",
+  "workflowSlug": "ai-web-researcher-for-sales",
+  "description": "Converted from the n8n template \"AI web researcher for sales\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_94300bd496",
+      "actorId": "actor_94300bd496",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_6a747f2395",
+      "actorId": "actor_6a747f2395",
+      "type": "NodeCron",
+      "label": "Schedule Trigger",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 */2 * * *"
+      }
+    },
+    {
+      "nodeId": "node_00c10fce31",
+      "actorId": "actor_00c10fce31",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_BATCH_GET",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_BATCH_GET",
+        "params": {
+          "spreadsheet_id": "{{spreadsheetId}}",
+          "ranges": [
+            "Sheet1"
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_5913adee8c",
+      "actorId": "actor_5913adee8c",
+      "type": "NodeTransform",
+      "label": "Input",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"company_input\"] = ($json.input);\n  out[\"row_number\"] = Number(($json.row_number));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_7f5968e4cb",
+      "actorId": "actor_7f5968e4cb",
+      "type": "NodeTransform",
+      "label": "Items: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_fb8ab5513e",
+      "actorId": "actor_fb8ab5513e",
+      "type": "NodeLoop",
+      "label": "Loop Over Items",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_9e4aef49de",
+      "actorId": "actor_9e4aef49de",
+      "type": "NodeTransform",
+      "label": "Item: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_d9ed402f05",
+      "actorId": "actor_d9ed402f05",
+      "type": "NodeTransform",
+      "label": "Results: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_309ca29680",
+      "actorId": "actor_309ca29680",
+      "type": "NodeCdecliAgent",
+      "label": "AI company researcher",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "gpt-4o",
+        "sessionId": "",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_a5e1be40a4",
+      "actorId": "actor_a5e1be40a4",
+      "type": "NodeTransform",
+      "label": "Prompt: AI company researcher",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: AI company researcher.\nconst __promptValue = `This is the company I want you to research info about:\n${$json.company_input}\n\nReturn me:\n- the linkedin URL of the company\n- the domain of the company. in this format ([domain].[tld])\n- market: if they are B2B or B2C. Only reply by \"B2B\" or \"B2B\"\n- the lowest paid plan the company is offering. If you are not sure, reply null.\n- the latest case study URL published on the website (find case study hub using google, and return the first case study link)\n- tell me if the company offer an API\n- tell me if the company has an enterprise plan\n- tell me if the company has a free trial mentionned in their homepage. reply false if you don't find strong evidence.\n- return an array with up to 5 tools the company is integrated with`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_d8ff79f1f3",
+      "actorId": "actor_d8ff79f1f3",
+      "type": "NodeTransform",
+      "label": "AI Researcher Output Data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"domain\"] = ($json.domain);\n  out[\"linkedinUrl\"] = ($json.linkedinUrl);\n  out[\"market\"] = ($json.market);\n  out[\"cheapest_plan\"] = Number(($json.cheapest_plan));\n  out[\"has_enterprise_plan\"] = ((v) => v === true || v === 'true')(($json.has_enterprise_plan));\n  out[\"has_API\"] = ((v) => v === true || v === 'true')(($json.has_API));\n  out[\"has_free_trial\"] = ((v) => v === true || v === 'true')(($json.has_free_trial));\n  out[\"integrations\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json.integrations));\n  out[\"case_study_link\"] = ($json.case_study_link);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_f310d44f2d",
+      "actorId": "actor_f310d44f2d",
+      "type": "NodeTransform",
+      "label": "Merge data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "const ctx = {{ctx}};\nconst inputs = [ctx.steps?.[\"Item: Loop Over Items\"]?.[\"transformed\"], source];\nconst lists = inputs.map((value) => Array.isArray(value) ? value : value == null ? [] : [value]);\nconst merged = Array.from({ length: Math.min(...lists.map((values) => values.length)) }, (_, i) => Object.assign({}, ...lists.map((values) => values[i])));\nreturn merged.length === 1 ? merged[0] : merged;"
+      }
+    },
+    {
+      "nodeId": "node_bbd5417c57",
+      "actorId": "actor_bbd5417c57",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_BATCH_UPDATE",
+      "color": "#6366F1",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_BATCH_UPDATE",
+        "params": {
+          "spreadsheet_id": "{{spreadsheetId}}",
+          "sheet_name": "Sheet1",
+          "values": [
+            [
+              "{{last.transformed.domain}}",
+              "{{last.transformed.market}}",
+              "{{last.transformed.row_number}}",
+              "{{last.transformed.linkedinUrl}}",
+              "{{last.transformed.integrations}}",
+              "{{last.transformed.cheapest_plan}}",
+              "{{last.transformed.has_free_trial}}",
+              "done",
+              "{{last.transformed.has_enterprise_plan}}",
+              "{{last.transformed.case_study_link}}"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_73417fb076",
+      "actorId": "actor_73417fb076",
+      "type": "NodeTransform",
+      "label": "Return: Google Sheets - Update Row with data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_18530b5afe",
+      "actorId": "actor_18530b5afe",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_d7be336648",
+      "actorId": "actor_d7be336648",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "spreadsheetId": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_7f5968e4cb",
+      "target": "node_fb8ab5513e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_7f5968e4cb",
+      "target": "node_fb8ab5513e",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_fb8ab5513e",
+      "target": "node_9e4aef49de",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fb8ab5513e",
+      "target": "node_9e4aef49de",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fb8ab5513e",
+      "target": "node_d9ed402f05",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fb8ab5513e",
+      "target": "node_d9ed402f05",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a5e1be40a4",
+      "target": "node_309ca29680",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_94300bd496",
+      "target": "node_00c10fce31",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_5913adee8c",
+      "target": "node_7f5968e4cb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5913adee8c",
+      "target": "node_7f5968e4cb",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9e4aef49de",
+      "target": "node_a5e1be40a4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9e4aef49de",
+      "target": "node_a5e1be40a4",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d8ff79f1f3",
+      "target": "node_f310d44f2d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d8ff79f1f3",
+      "target": "node_f310d44f2d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f310d44f2d",
+      "target": "node_bbd5417c57",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_00c10fce31",
+      "target": "node_5913adee8c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_00c10fce31",
+      "target": "node_5913adee8c",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6a747f2395",
+      "target": "node_00c10fce31",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_309ca29680",
+      "target": "node_d8ff79f1f3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_309ca29680",
+      "target": "node_d8ff79f1f3",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bbd5417c57",
+      "target": "node_73417fb076",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bbd5417c57",
+      "target": "node_73417fb076",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_73417fb076",
+      "target": "node_fb8ab5513e",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_73417fb076",
+      "target": "node_fb8ab5513e",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_d9ed402f05",
+      "target": "node_18530b5afe",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "",
+    "connectors": [
+      "googlesuper"
+    ],
+    "setupVars": [
+      {
+        "key": "spreadsheetId",
+        "label": "Spreadsheet id",
+        "type": "id",
+        "example": "1AbC...xyz",
+        "usedBy": [
+          "Get rows to enrich",
+          "Google Sheets - Update Row with data"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate ai-web-researcher-for-sales",
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeCron",
+      "NodeEnd",
+      "NodeLoop",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 14,
+      "yantraSteps": 14,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "Get website content",
+        "SerpAPI - Search Google",
+        "Structured Output Parser"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/AI web researcher for sales.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Setup value spreadsheetId: Spreadsheet id (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "After import, start the schedule: cdecli cron activate ai-web-researcher-for-sales."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "AI company researcher",
+          "model": "gpt-4o"
+        },
+        {
+          "node": "Get website content",
+          "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+          "into": "AI company researcher",
+          "as": "ai_tool"
+        },
+        {
+          "node": "SerpAPI - Search Google",
+          "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+          "into": "AI company researcher",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Structured Output Parser",
+          "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+          "into": "AI company researcher",
+          "as": "ai_outputParser"
+        }
+      ],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "When clicking \"Test workflow\"",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Schedule Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "\"Loop Over Items\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "\"AI company researcher\" used agent tools in the original: Get website content (toolWorkflow), SerpAPI - Search Google (toolSerpApi). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Read Me\n\nThis workflow allows you to do account research with the web using AI.\n\nThe advanced AI module has 2 capabilities: \n- Research Google using SerpAPI\n- Visit and get website content using a sub-workflow\n\n\nFrom an unstructured input like a domain or a company name. \n\nIt will return the following properties: \n- domain\n- company Linkedin Url\n- cheapest plan\n- has free trial\n- has entreprise plan\n- has API\n- market (B2B or B2C)\n\n\nThe strength of n8n here is that you can adapt this workflow to research whatever information you need.\n\nYou just have to precise it in the prompt and to precise the output format in the \"Strutured Output Parser\" module.\n\n[Click here to find more detailed instructions with video guide.](https://lempire.notion.site/AI-Web-research-with-n8n-a25aae3258d0423481a08bd102f16906)",
+      "### Process rows 1 by 1\nThis module will allow us to process rows 1 by 1",
+      "Precise here the format in which you need the data to be",
+      "### Ask AI what are the information you are looking for about the company",
+      "Get your free API key here https://serpapi.com/",
+      "Run the workflow manually or activate it to run it every 2 hours",
+      "Instead of SERP API module, you can also use this custom module for ScrapingBee. It is more cost-efficient.\n\nGet your free API key here https://www.scrapingbee.com/",
+      "In this workflow, I use Google Sheets to store the results. \n\nYou can use my template to get started faster:\n\n1. [Click on this link to get the template](https://docs.google.com/spreadsheets/d/[id removed]/edit?usp=sharing)\n2. Make a copy of the Sheets\n3. Add the URL to this node and the node **\"Google Sheets - Update Row with data\"**"
+    ],
+    "nodes": {
+      "node_94300bd496": {
+        "n8n": "When clicking \"Test workflow\"",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_6a747f2395": {
+        "n8n": "Schedule Trigger",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_00c10fce31": {
+        "n8n": "Get rows to enrich",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_5913adee8c": {
+        "n8n": "Input",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_7f5968e4cb": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_fb8ab5513e": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_9e4aef49de": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_d9ed402f05": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_309ca29680": {
+        "n8n": "AI company researcher",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_a5e1be40a4": {
+        "n8n": "AI company researcher",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_d8ff79f1f3": {
+        "n8n": "AI Researcher Output Data",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_f310d44f2d": {
+        "n8n": "Merge data",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_bbd5417c57": {
+        "n8n": "Google Sheets - Update Row with data",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_73417fb076": {
+        "n8n": "Google Sheets - Update Row with data",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_18530b5afe": {
+        "n8n": "__end:Loop Over Items",
+        "n8nType": "synthetic"
+      },
+      "node_d7be336648": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

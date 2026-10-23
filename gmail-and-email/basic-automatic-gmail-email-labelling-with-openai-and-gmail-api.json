@@ -1,0 +1,322 @@
+{
+  "name": "Basic Automatic Gmail Email Labelling with OpenAI and Gmail API",
+  "workflowSlug": "basic-automatic-gmail-email-labelling-with-openai-and-gmail-api",
+  "description": "Uses OpenAI and Gmail API to trigger on new emails, analyze content, and assign or create labels automatically. Helps categorize emails efficiently using AI.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_7c68d84e40",
+      "actorId": "actor_7c68d84e40",
+      "type": "NodeCdeWebhookTrigger",
+      "label": "Webhook: googlesuper/GOOGLESUPER_NEW_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "connector": "googlesuper",
+        "webhookEndpointId": "",
+        "triggerSlug": "GOOGLESUPER_NEW_MESSAGE",
+        "connectedAccountId": "",
+        "config": {},
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "nodeId": "node_d8cc054452",
+      "actorId": "actor_d8cc054452",
+      "type": "NodeTransform",
+      "label": "Wait",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The original waited here (1 seconds).\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_56483a8b65",
+      "actorId": "actor_56483a8b65",
+      "type": "NodeCdecliAgent",
+      "label": "Gmail labelling agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "sessionId": "{{sessionId}}",
+        "system": "Objective:\nAutomatically categorize incoming emails based on existing Gmail labels or create a new label if none match.\n\nTools:\n- Get message\n- Read all labels\n- Create label\n- Assign label to message\n\nInstructions:\n\nLabel Matching:\n\nAnalyze the email's subject, sender, recipient, keywords, and content.\nCompare with existing Gmail labels to find the most relevant match.\nLabel Assignment:\n\nAssign the email to the most appropriate existing label.`\nRemove the inbox label if the email is of less importance (like ads, promotions, aka \"Reclame\"), keep normal and important emails in the inbox.\nIf no suitable label exists, create a new label based on the existing labels. Try reusing existing labels as much as possible. Always create a label as a sublabel, if no label applies, if the main label already exists, create the new label under the existing label, if no main label exists, create the label AI and create the new label under this label.\nLabel Creation:\n\nEnsure new labels align with the structure of existing ones, including capitalization, delimiters, and prefixes.\nExamples:\n\nIf the email subject is \"Project Alpha Update,\" assign to [Project Alpha] if it exists.\nFor \"New Vendor Inquiry,\" create \"Vendor Inquiry\" if no relevant label exists.\nOutcome:\nEmails are consistently categorized under the appropriate or newly created labels, maintaining Gmail's organizational structure.",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_50d0a41110",
+      "actorId": "actor_50d0a41110",
+      "type": "NodeTransform",
+      "label": "Prompt: Gmail labelling agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Gmail labelling agent.\nconst __promptValue = `Label the email based on the details below:\n${JSON.stringify($json)}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_d38c9e4aa7",
+      "actorId": "actor_d38c9e4aa7",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_4973fe7e11",
+      "actorId": "actor_4973fe7e11",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "sessionId": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_50d0a41110",
+      "target": "node_56483a8b65",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_7c68d84e40",
+      "target": "node_d8cc054452",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7c68d84e40",
+      "target": "node_d8cc054452",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d8cc054452",
+      "target": "node_50d0a41110",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d8cc054452",
+      "target": "node_50d0a41110",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_56483a8b65",
+      "target": "node_d38c9e4aa7",
+      "sourceOutput": "text",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "gmail-and-email",
+    "categoryLabel": "Gmail and Email Automation",
+    "department": "Ops",
+    "connectors": [
+      "googlesuper"
+    ],
+    "nodeTypes": [
+      "NodeCdeWebhookTrigger",
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 9,
+      "yantraSteps": 4,
+      "foldedHelpers": [
+        "OpenAI Chat Model1",
+        "Gmail - get message",
+        "Gmail - read labels",
+        "Gmail - create label",
+        "Gmail - add label to message",
+        "Window Buffer Memory"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Gmail_and_Email_Automation/Basic Automatic Gmail Email Labelling with OpenAI and Gmail API.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "webhook-registration",
+        "node": "Gmail Trigger",
+        "detail": "webhook trigger googlesuper/GOOGLESUPER_NEW_MESSAGE needs webhookEndpointId, connectedAccountId"
+      }
+    ],
+    "setup": [
+      "\"Gmail Trigger\": after import, register the googlesuper webhook (`cdecli webhook endpoint create -c googlesuper`, then `cdecli trigger instance upsert --slug GOOGLESUPER_NEW_MESSAGE`) and set webhookEndpointId, connectedAccountId on the trigger node.",
+      "Connect the googlesuper connector (credential).",
+      "Provide run inputs: sessionId."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Wait",
+          "n8n": "wait",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model1",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Gmail labelling agent"
+        },
+        {
+          "node": "Gmail - get message",
+          "type": "n8n-nodes-base.gmailTool",
+          "into": "Gmail labelling agent",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Gmail - read labels",
+          "type": "n8n-nodes-base.gmailTool",
+          "into": "Gmail labelling agent",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Gmail - create label",
+          "type": "n8n-nodes-base.gmailTool",
+          "into": "Gmail labelling agent",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Gmail - add label to message",
+          "type": "n8n-nodes-base.gmailTool",
+          "into": "Gmail labelling agent",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Window Buffer Memory",
+          "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+          "into": "Gmail labelling agent",
+          "as": "ai_memory"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Gmail Trigger",
+          "type": "n8n-nodes-base.gmailTrigger",
+          "as": "NodeCdeWebhookTrigger"
+        }
+      ],
+      "hints": [
+        "\"Gmail Trigger\" is a provider webhook (googlesuper/GOOGLESUPER_NEW_MESSAGE). Create the endpoint and trigger instance, then paste the we_… id and connected account into this node before the first run: `cdecli webhook endpoint create -c googlesuper --client-id <id>`, `cdecli webhook endpoint set-data <we_id> --signing-secret <secret>`, `cdecli trigger instance upsert --slug GOOGLESUPER_NEW_MESSAGE --account <connectedAccountId>`.",
+        "\"Wait\" paused the original (1 seconds); Yantra has no delay node, so this step passes data straight through.",
+        "\"Wait\" (wait): Wait/delay is a soft passthrough; add a schedule or external delay if timing matters.",
+        "\"Gmail labelling agent\" kept conversation memory (memoryBufferWindow); sessionId is set to the run-input sessionId.",
+        "\"Gmail labelling agent\" used agent tools in the original: Gmail - get message (gmailTool), Gmail - read labels (gmailTool), Gmail - create label (gmailTool), Gmail - add label to message (gmailTool). The cdecli agent calls connectors directly; connect credentials for the services those tools reached. Prefer connectors: googlesuper.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Gmail trigger\nPoll Gmail every x minutes, trigger when a new email is received.\n\n- Gmail API",
+      "## Gmail labelling agent\n- Read the message\n- Read existing labels\n- Create a new label if needed\n- Assign label to message\n\n----\n\nObjective:\nAutomatically categorize incoming emails based on existing Gmail labels or create a new label if none match.\n\nTools:\n- Get message\n- Read all labels\n- Create label\n- Assign label to message\n\nInstructions:\n\nLabel Matching:\n\nAnalyze the email's subject, sender, recipient, keywords, and content.\nCompare with existing Gmail labels to find the most relevant match.\nLabel Assignment:\n\nAssign the email to the most appropriate existing label.`\nRemove the inbox label if the email is of less importance (like ads, promotions, aka \"Reclame\"), keep normal and important emails in the inbox.\nIf no suitable label exists, create a new label based on the existing labels. Try reusing existing labels as much as possible. Always create a label as a sublabel, if no label applies, if the main label already exists, create the new label under the existing label, if no main label exists, create the label AI and create the new label under this label.\nLabel Creation:\n\nEnsure new labels align with the structure of existing ones, including capitalization, delimiters, and prefixes.\nExamples:\n\nIf the email subject is \"Project Alpha Update,\" assign to [Project Alpha] if it exists.\nFor \"New Vendor Inquiry,\" create \"Vendor Inquiry\" if no relevant label exists.\nOutcome:\nEmails are consistently categorized under the appropriate or newly created labels, maintaining Gmail's organizational structure.",
+      "## Gmail API\n- Add credentials",
+      "## OpenAI\n- Add credentials"
+    ],
+    "nodes": {
+      "node_7c68d84e40": {
+        "n8n": "Gmail Trigger",
+        "n8nType": "n8n-nodes-base.gmailTrigger"
+      },
+      "node_d8cc054452": {
+        "n8n": "Wait",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_56483a8b65": {
+        "n8n": "Gmail labelling agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_50d0a41110": {
+        "n8n": "Gmail labelling agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_d38c9e4aa7": {
+        "n8n": "__end:Gmail labelling agent",
+        "n8nType": "synthetic"
+      },
+      "node_4973fe7e11": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

@@ -1,0 +1,64 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install (ajv for schema validation)
+        run: npm ci
+
+      - name: Unit tests (expressions, quality gate, converter)
+        run: |
+          node scripts/expressions.test.mjs
+          node scripts/quality.test.mjs
+          node scripts/convert-fixtures.test.mjs
+
+      - name: Connector catalog is current and covers every template action
+        run: node scripts/connector-catalog.mjs --check
+
+      - name: Pinned upstream key
+        id: upstream
+        run: echo "commit=$(node -p "require('./sources.json').upstream.commit")" >> "$GITHUB_OUTPUT"
+      - name: Cache the upstream n8n checkout
+        uses: actions/cache@v4
+        with:
+          path: .cache/upstream
+          key: upstream-${{ steps.upstream.outputs.commit }}
+      - name: Fetch the pinned upstream (cache miss)
+        run: |
+          if [ ! -d .cache/upstream/.git ]; then
+            repo=$(node -p "require('./sources.json').upstream.repo")
+            git clone --quiet "$repo.git" .cache/upstream
+          fi
+          git -C .cache/upstream -c advice.detachedHead=false checkout --quiet "${{ steps.upstream.outputs.commit }}"
+
+      - name: Converted templates match the converter (convert drift)
+        run: |
+          node scripts/convert-n8n.mjs --upstream .cache/upstream
+          if [ -n "$(git status --porcelain -- . ':!templates.json' ':!README.md')" ]; then
+            git status --short -- . ':!templates.json' ':!README.md'
+            echo "Templates are out of date with scripts/: run 'npm run convert' (upstream at the pinned commit) and commit"; exit 1
+          fi
+
+      - name: Index and README match the templates (index drift)
+        run: |
+          node scripts/build-index.mjs
+          git diff --exit-code -- templates.json README.md || {
+            echo "templates.json / README.md are out of date; run 'npm run index' and commit"; exit 1; }
+
+      - name: Validate templates (schema, sockets, actions, quality verdict)
+        run: node scripts/validate.mjs
+
+      - name: Quality ratchet (lower the limits when the numbers improve)
+        # Native item/retry loops and response adapters; unsupported cycles remain blocked.
+        run: node scripts/report-quality.mjs --max-hard 41 --max-experimental 74 --max-shim-bytes 1594275 --max-shim-bytes-per-transform 6529

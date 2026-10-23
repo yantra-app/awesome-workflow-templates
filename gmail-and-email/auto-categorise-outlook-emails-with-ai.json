@@ -1,0 +1,2355 @@
+{
+  "name": "Auto Categorise Outlook Emails with AI",
+  "workflowSlug": "auto-categorise-outlook-emails-with-ai",
+  "description": "Automatically categorizes Outlook emails using AI models. Moves messages to folders and assigns categories based on content, reducing manual sorting.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_4c5fef5af3",
+      "actorId": "actor_4c5fef5af3",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f3ded2791a",
+      "actorId": "actor_f3ded2791a",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_FETCH_EMAILS",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (Outlook original)",
+        "action": "GOOGLESUPER_FETCH_EMAILS",
+        "params": {
+          "query": "in:inbox",
+          "max_results": 1
+        }
+      }
+    },
+    {
+      "nodeId": "node_5c7edf9d48",
+      "actorId": "actor_5c7edf9d48",
+      "type": "NodeTransform",
+      "label": "Filter1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn __items.filter(($json) => Boolean((((v) => v == null || v === '' || (Array.isArray(v) && v.length === 0) || (typeof v === 'object' && Object.keys(v).length === 0))(($json.categories)))));"
+      }
+    },
+    {
+      "nodeId": "node_1d5cfeb805",
+      "actorId": "actor_1d5cfeb805",
+      "type": "NodeTransform",
+      "label": "Items: Loop Over Items1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_024b3ce28e",
+      "actorId": "actor_024b3ce28e",
+      "type": "NodeLoop",
+      "label": "Loop Over Items1",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_380adf9de3",
+      "actorId": "actor_380adf9de3",
+      "type": "NodeTransform",
+      "label": "Item: Loop Over Items1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_12a2408f94",
+      "actorId": "actor_12a2408f94",
+      "type": "NodeTransform",
+      "label": "Results: Loop Over Items1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_afb4f8e171",
+      "actorId": "actor_afb4f8e171",
+      "type": "NodeTransform",
+      "label": "Markdown1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst __md = String(null ?? '');\nconst __html = __md.replace(/^### (.*)$/gm, '<h3>$1</h3>').replace(/^## (.*)$/gm, '<h2>$1</h2>').replace(/^# (.*)$/gm, '<h1>$1</h1>').replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>').replace(/\\*(.+?)\\*/g, '<em>$1</em>').replace(/\\[(.+?)\\]\\((.+?)\\)/g, '<a href=\"$2\">$1</a>').replace(/\\n{2,}/g, '</p><p>');\nreturn { ...$json, \"data\": '<p>' + __html + '</p>' };"
+      }
+    },
+    {
+      "nodeId": "node_06d3f56c5d",
+      "actorId": "actor_06d3f56c5d",
+      "type": "NodeTransform",
+      "label": "varEmal1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"subject\"] = ($json.subject);\n  out[\"importance\"] = ($json.importance);\n  out[\"sender\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json.sender.emailAddress));\n  out[\"from\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json.from.emailAddress));\n  out[\"body\"] = `${\"«$json.data\\n .replace(/<[^>]*>/g, '') // Remove HTML tags\\n .replace(/\\\\[(.*?)\\\\]\\\\((.*?)\\\\)/g, '') // Remove Markdown links l»\"\n}\n`;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_70a3eae774",
+      "actorId": "actor_70a3eae774",
+      "type": "NodeTransform",
+      "label": "varID & Category1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Microsoft Outlook23\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"id\"] = ($('Microsoft Outlook23').item.json.id);\n  out[\"category\"] = \"\\\"action\\\", \\\"junk\\\", \\\"receipt\\\", \\\"SaaS\\\", \\\"community\\\", \\\"business\\\" or \\\"other\\\"\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_277d6e1438",
+      "actorId": "actor_277d6e1438",
+      "type": "NodeCdecliAgent",
+      "label": "AI Agent1",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "qwen2.5:14b",
+        "sessionId": "",
+        "system": "{{llm_system_71c8ec5104}}",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_71c8ec5104",
+      "actorId": "actor_71c8ec5104",
+      "type": "NodeTransform",
+      "label": "System: AI Agent1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: AI Agent1.\nconst __promptValue = `You're an AI assistant for a freelance developer, categorizing emails as ${$json.category}. Email info is in <email> tags.\n\nCategorization priority:\n\nAction: Needs response or action (includes some SaaS emails), avoid sales email but include enquires.\nJunk: Ads, sales, newsletters, promotions, daily digests, (emojis often indicate junk), phishing, scams, discounts etc.\nReceipt: Any purchase confirmation.\nSaaS: Account/security updates, unless action required, generic SaaS information, usually from a non-personal email address.\nCommunity: Updates, events, forums, everything related to \"community\".\nBusiness: Any communication related to freelance work, usually from a humans email address\nOther: Doesn't fit into any other category.\n\nKey points:\n\nSaaS emails needing action are \"SaaS\" and subcategory \"action\".\nAnalyze the subject, body, email addresses and other data.\nLook for specific keywords and phrases for each category.\nEmail can have 2 categories, primary and sub, for example, \"action\" and \"SaaS\" or \"action\" and \"business\".\nEmails from business development executives are often junk.\n\n\nOutput in valid JSON format:\n{\n\"subject\": \"SUBJECT_LINE\",\n\"category\": \"PRIMARY CATEGORY\",\n\"subCategory\": \"SUBCATEGORY\", //use sparingly\n\"analysis\": \"Brief 1-2 sentence explanation of category choice\"\n}\nNo additional text or tokens outside the JSON.\n\nYou may only use the following categories and subcategories, do not create any more categories or subcategories: ${$json.category}`;\nreturn { \"llm_system_71c8ec5104\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_df42383292",
+      "actorId": "actor_df42383292",
+      "type": "NodeUpdateContext",
+      "label": "Save System: AI Agent1",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_491d83cdb3",
+      "actorId": "actor_491d83cdb3",
+      "type": "NodeTransform",
+      "label": "Prompt: AI Agent1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"varEmal1\": __namedCtx.steps?.[\"varEmal1\"]?.[\"transformed\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Array.prototype, { toJsonString() { return JSON.stringify(this); } });\n__def(Object.prototype, { toJsonString() { return JSON.stringify(this); } });\n// Prompt: AI Agent1.\nconst __promptValue = `Categorise the following email\n<email>\n${$('varEmal1').first().json.toJsonString()}\n</email>\n\nEnsure your final output is valid JSON with no additional text or token in the following format:\n\n{\n \"subject\": \"SUBJECT_LINE\",1\n \"category\": \"CATEGORY\",\n \"subCategory\": \"SUBCATEGORY\", //use sparingly\n \"analysis\": \"ANALYSIS_REASONING\"\n}\n\nRemember you can only use ONE of the following categories ${$json.category}. No other categories can be used. Use the subcategory for additional context, for example, if a SaaS email requires action, or if a business email requires action. Do not create any additional subcategories, you can only use ONE of the following ${$json.category}.`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_8692da74f7",
+      "actorId": "actor_8692da74f7",
+      "type": "NodeTransform",
+      "label": "varJSON1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"output\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json.replace(/^.*?({.*}).*$/s, '$1')));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_533c683375",
+      "actorId": "actor_533c683375",
+      "type": "NodeTransform",
+      "label": "Switch1: junk",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.output.category) ?? '') === String(\"junk\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_a4edf39ce5",
+      "actorId": "actor_a4edf39ce5",
+      "type": "NodeBranch",
+      "label": "Switch1: junk?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_3fa9795977",
+      "actorId": "actor_3fa9795977",
+      "type": "NodeTransform",
+      "label": "Switch1: receipt",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.output.category) ?? '') === String(\"receipt\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_af93bba350",
+      "actorId": "actor_af93bba350",
+      "type": "NodeBranch",
+      "label": "Switch1: receipt?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_54b7332e6b",
+      "actorId": "actor_54b7332e6b",
+      "type": "NodeTransform",
+      "label": "Switch1: SaaS",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.output.category) ?? '') === String(\"SaaS\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_67d65ab5a2",
+      "actorId": "actor_67d65ab5a2",
+      "type": "NodeBranch",
+      "label": "Switch1: SaaS?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_f6a37ce51d",
+      "actorId": "actor_f6a37ce51d",
+      "type": "NodeTransform",
+      "label": "Switch1: community",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7680,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.output.category) ?? '') === String(\"community\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_fa2b4a9c1b",
+      "actorId": "actor_fa2b4a9c1b",
+      "type": "NodeBranch",
+      "label": "Switch1: community?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 8060,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_25d2c48829",
+      "actorId": "actor_25d2c48829",
+      "type": "NodeTransform",
+      "label": "Switch1: action",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8440,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.output.category) ?? '') === String(\"action\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_ff223da5a5",
+      "actorId": "actor_ff223da5a5",
+      "type": "NodeBranch",
+      "label": "Switch1: action?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 8820,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_9179f4b042",
+      "actorId": "actor_9179f4b042",
+      "type": "NodeTransform",
+      "label": "Switch1: business",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9200,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.output.category) ?? '') === String(\"business\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_2463c0bc3d",
+      "actorId": "actor_2463c0bc3d",
+      "type": "NodeBranch",
+      "label": "Switch1: business?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 9580,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_8f7acdea74",
+      "actorId": "actor_8f7acdea74",
+      "type": "NodeTransform",
+      "label": "Catch Errors1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"error\"] = ($json);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_ec6726f04c",
+      "actorId": "actor_ec6726f04c",
+      "type": "NodeTransform",
+      "label": "Params: Microsoft Outlook12",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"varID & Category1\": {\"category\":\"\\\"action\\\", \\\"junk\\\", \\\"receipt\\\", \\\"SaaS\\\", \\\"community\\\", \\\"business\\\" or \\\"other\\\"\"}, \"varJSON1\": {{steps.xf_8692da74f7.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL (n8n node \"Microsoft Outlook12\").\nreturn {\n  \"message_id\": ($('varID & Category1').item.json.id),\n  \"add_label_ids\": ([$('varJSON1').first().json.output.category, $('varJSON1').first().json.output.subCategory]\n .filter(item => item && item.trim() !== \"\")\n .map(item => item.charAt(0).toUpperCase() + item.slice(1))),\n};"
+      }
+    },
+    {
+      "nodeId": "node_7a9360ac3e",
+      "actorId": "actor_7a9360ac3e",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 6540,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (Outlook original)",
+        "action": "GOOGLESUPER_ADD_LABEL_TO_EMAIL"
+      }
+    },
+    {
+      "nodeId": "node_ea47ed1b8e",
+      "actorId": "actor_ea47ed1b8e",
+      "type": "NodeTransform",
+      "label": "Params: Microsoft Outlook13",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6920,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"varID & Category1\": {\"category\":\"\\\"action\\\", \\\"junk\\\", \\\"receipt\\\", \\\"SaaS\\\", \\\"community\\\", \\\"business\\\" or \\\"other\\\"\"}, \"varJSON1\": {{steps.xf_8692da74f7.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL (n8n node \"Microsoft Outlook13\").\nreturn {\n  \"message_id\": ($('varID & Category1').item.json.id),\n  \"add_label_ids\": ([$('varJSON1').first().json.output.category, $('varJSON1').first().json.output.subCategory]\n .filter(item => item && item.trim() !== \"\")\n .map(item => item.charAt(0).toUpperCase() + item.slice(1))),\n};"
+      }
+    },
+    {
+      "nodeId": "node_1a5d3a1450",
+      "actorId": "actor_1a5d3a1450",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 7300,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (Outlook original)",
+        "action": "GOOGLESUPER_ADD_LABEL_TO_EMAIL"
+      }
+    },
+    {
+      "nodeId": "node_28cc199a19",
+      "actorId": "actor_28cc199a19",
+      "type": "NodeTransform",
+      "label": "Params: Microsoft Outlook18",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7680,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"varID & Category1\": {\"category\":\"\\\"action\\\", \\\"junk\\\", \\\"receipt\\\", \\\"SaaS\\\", \\\"community\\\", \\\"business\\\" or \\\"other\\\"\"}, \"varJSON1\": {{steps.xf_8692da74f7.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL (n8n node \"Microsoft Outlook18\").\nreturn {\n  \"message_id\": ($('varID & Category1').item.json.id),\n  \"add_label_ids\": ([$('varJSON1').first().json.output.category, $('varJSON1').first().json.output.subCategory]\n .filter(item => item && item.trim() !== \"\")\n .map(item => item.charAt(0).toUpperCase() + item.slice(1))),\n};"
+      }
+    },
+    {
+      "nodeId": "node_540d536c41",
+      "actorId": "actor_540d536c41",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 8060,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (Outlook original)",
+        "action": "GOOGLESUPER_ADD_LABEL_TO_EMAIL"
+      }
+    },
+    {
+      "nodeId": "node_1f1f32ab37",
+      "actorId": "actor_1f1f32ab37",
+      "type": "NodeTransform",
+      "label": "Params: Microsoft Outlook16",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8440,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"varID & Category1\": {\"category\":\"\\\"action\\\", \\\"junk\\\", \\\"receipt\\\", \\\"SaaS\\\", \\\"community\\\", \\\"business\\\" or \\\"other\\\"\"}, \"varJSON1\": {{steps.xf_8692da74f7.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL (n8n node \"Microsoft Outlook16\").\nreturn {\n  \"message_id\": ($('varID & Category1').item.json.id),\n  \"add_label_ids\": ([$('varJSON1').first().json.output.category, $('varJSON1').first().json.output.subCategory]\n .filter(item => item && item.trim() !== \"\")\n .map(item => item.charAt(0).toUpperCase() + item.slice(1))),\n};"
+      }
+    },
+    {
+      "nodeId": "node_c15c3088fc",
+      "actorId": "actor_c15c3088fc",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 8820,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (Outlook original)",
+        "action": "GOOGLESUPER_ADD_LABEL_TO_EMAIL"
+      }
+    },
+    {
+      "nodeId": "node_cbee64936f",
+      "actorId": "actor_cbee64936f",
+      "type": "NodeTransform",
+      "label": "Params: Microsoft Outlook20",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9200,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"varID & Category1\": {\"category\":\"\\\"action\\\", \\\"junk\\\", \\\"receipt\\\", \\\"SaaS\\\", \\\"community\\\", \\\"business\\\" or \\\"other\\\"\"}, \"varJSON1\": {{steps.xf_8692da74f7.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL (n8n node \"Microsoft Outlook20\").\nreturn {\n  \"message_id\": ($('varID & Category1').item.json.id),\n  \"add_label_ids\": ([$('varJSON1').first().json.output.category, $('varJSON1').first().json.output.subCategory]\n .filter(item => item && item.trim() !== \"\")\n .map(item => item.charAt(0).toUpperCase() + item.slice(1))),\n};"
+      }
+    },
+    {
+      "nodeId": "node_b6a1104399",
+      "actorId": "actor_b6a1104399",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 9580,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (Outlook original)",
+        "action": "GOOGLESUPER_ADD_LABEL_TO_EMAIL"
+      }
+    },
+    {
+      "nodeId": "node_85cfb79091",
+      "actorId": "actor_85cfb79091",
+      "type": "NodeTransform",
+      "label": "Params: Microsoft Outlook22",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9960,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"varID & Category1\": {\"category\":\"\\\"action\\\", \\\"junk\\\", \\\"receipt\\\", \\\"SaaS\\\", \\\"community\\\", \\\"business\\\" or \\\"other\\\"\"}, \"varJSON1\": {{steps.xf_8692da74f7.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL (n8n node \"Microsoft Outlook22\").\nreturn {\n  \"message_id\": ($('varID & Category1').item.json.id),\n  \"add_label_ids\": ([$('varJSON1').first().json.output.category, $('varJSON1').first().json.output.subCategory]\n .filter(item => item && item.trim() !== \"\")\n .map(item => item.charAt(0).toUpperCase() + item.slice(1))),\n};"
+      }
+    },
+    {
+      "nodeId": "node_a479bfcba1",
+      "actorId": "actor_a479bfcba1",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 10340,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (Outlook original)",
+        "action": "GOOGLESUPER_ADD_LABEL_TO_EMAIL"
+      }
+    },
+    {
+      "nodeId": "node_9451d9ee0c",
+      "actorId": "actor_9451d9ee0c",
+      "type": "NodeTransform",
+      "label": "Params: Microsoft Outlook21",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9960,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"varID & Category1\": {\"category\":\"\\\"action\\\", \\\"junk\\\", \\\"receipt\\\", \\\"SaaS\\\", \\\"community\\\", \\\"business\\\" or \\\"other\\\"\"}, \"varJSON1\": {{steps.xf_8692da74f7.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL (n8n node \"Microsoft Outlook21\").\nreturn {\n  \"message_id\": ($('varID & Category1').item.json.id),\n  \"add_label_ids\": ([$('varJSON1').first().json.output.category, $('varJSON1').first().json.output.subCategory]\n .filter(item => item && item.trim() !== \"\")\n .map(item => item.charAt(0).toUpperCase() + item.slice(1))),\n};"
+      }
+    },
+    {
+      "nodeId": "node_fe9c0af489",
+      "actorId": "actor_fe9c0af489",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 10340,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (Outlook original)",
+        "action": "GOOGLESUPER_ADD_LABEL_TO_EMAIL"
+      }
+    },
+    {
+      "nodeId": "node_83ea8d0664",
+      "actorId": "actor_83ea8d0664",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 6920,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (Outlook original)",
+        "action": "GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+        "params": {
+          "message_id": "{{steps.xf_70a3eae774.result.id}}",
+          "add_label_ids": [
+            "AQMkAGE3ZTU5MGMzLTFkNGItNGQ5Zi04MDQ1LThmNGFlMTVhYjMwYgAuAAAD8UhruVwm402lgPBG2Tj-aQEAnz-IOcWBGE2lrVuQgAF6zAAAAgFJAAAA"
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_7a08fdaa38",
+      "actorId": "actor_7a08fdaa38",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 7680,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (Outlook original)",
+        "action": "GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+        "params": {
+          "message_id": "{{steps.xf_70a3eae774.result.id}}",
+          "add_label_ids": [
+            "AQMkAGE3ZTU5MGMzLTFkNGItNGQ5Zi04MDQ1LThmNGFlMTVhYjMwYgAuAAAD8UhruVwm402lgPBG2Tj-aQEAnz-IOcWBGE2lrVuQgAF6zAADLJmrBwAAAA=="
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_940bb88d10",
+      "actorId": "actor_940bb88d10",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 8440,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (Outlook original)",
+        "action": "GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+        "params": {
+          "message_id": "{{steps.xf_70a3eae774.result.id}}",
+          "add_label_ids": [
+            "AQMkAGE3ZTU5MGMzLTFkNGItNGQ5Zi04MDQ1LThmNGFlMTVhYjMwYgAuAAAD8UhruVwm402lgPBG2Tj-aQEAnz-IOcWBGE2lrVuQgAF6zAADLJmrCQAAAA=="
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_1c920cb7f2",
+      "actorId": "actor_1c920cb7f2",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 9200,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (Outlook original)",
+        "action": "GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+        "params": {
+          "message_id": "{{steps.xf_70a3eae774.result.id}}",
+          "add_label_ids": [
+            "AQMkAGE3ZTU5MGMzLTFkNGItNGQ5Zi04MDQ1LThmNGFlMTVhYjMwYgAuAAAD8UhruVwm402lgPBG2Tj-aQEAnz-IOcWBGE2lrVuQgAF6zAADLJmrCAAAAA=="
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_7a6e6be3ed",
+      "actorId": "actor_7a6e6be3ed",
+      "type": "NodeTransform",
+      "label": "If1: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 10720,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.isRead)) === true || (($json.isRead)) === 'true'));"
+      }
+    },
+    {
+      "nodeId": "node_d321ec7781",
+      "actorId": "actor_d321ec7781",
+      "type": "NodeBranch",
+      "label": "If1: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 11100,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_cefcbd4bb3",
+      "actorId": "actor_cefcbd4bb3",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 11480,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (Outlook original)",
+        "action": "GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+        "params": {
+          "message_id": "{{steps.xf_70a3eae774.result.id}}",
+          "add_label_ids": [
+            "AQMkAGE3ZTU5MGMzLTFkNGItNGQ5Zi04MDQ1LThmNGFlMTVhYjMwYgAuAAAD8UhruVwm402lgPBG2Tj-aQEAnz-IOcWBGE2lrVuQgAF6zAADLJmrCwAAAA=="
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_08f318324a",
+      "actorId": "actor_08f318324a",
+      "type": "NodeTransform",
+      "label": "Merge1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11860,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_be6e427e52",
+      "actorId": "actor_be6e427e52",
+      "type": "NodeTransform",
+      "label": "Return: Catch Errors1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_d071abcf60",
+      "actorId": "actor_d071abcf60",
+      "type": "NodeTransform",
+      "label": "Return: Merge1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 12240,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_cb025c6fa9",
+      "actorId": "actor_cb025c6fa9",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_cfb8c16708",
+      "actorId": "actor_cfb8c16708",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": ""
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_1d5cfeb805",
+      "target": "node_024b3ce28e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_1d5cfeb805",
+      "target": "node_024b3ce28e",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_024b3ce28e",
+      "target": "node_380adf9de3",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_024b3ce28e",
+      "target": "node_380adf9de3",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_024b3ce28e",
+      "target": "node_12a2408f94",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_024b3ce28e",
+      "target": "node_12a2408f94",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_71c8ec5104",
+      "target": "node_df42383292",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_71c8ec5104",
+      "target": "node_df42383292",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_df42383292",
+      "target": "node_491d83cdb3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_491d83cdb3",
+      "target": "node_277d6e1438",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_533c683375",
+      "target": "node_a4edf39ce5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_533c683375",
+      "target": "node_a4edf39ce5",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_a4edf39ce5",
+      "target": "node_3fa9795977",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3fa9795977",
+      "target": "node_af93bba350",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_3fa9795977",
+      "target": "node_af93bba350",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_af93bba350",
+      "target": "node_54b7332e6b",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_54b7332e6b",
+      "target": "node_67d65ab5a2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_54b7332e6b",
+      "target": "node_67d65ab5a2",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_67d65ab5a2",
+      "target": "node_f6a37ce51d",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f6a37ce51d",
+      "target": "node_fa2b4a9c1b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_f6a37ce51d",
+      "target": "node_fa2b4a9c1b",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_fa2b4a9c1b",
+      "target": "node_25d2c48829",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_25d2c48829",
+      "target": "node_ff223da5a5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_25d2c48829",
+      "target": "node_ff223da5a5",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_ff223da5a5",
+      "target": "node_9179f4b042",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9179f4b042",
+      "target": "node_2463c0bc3d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_9179f4b042",
+      "target": "node_2463c0bc3d",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_ec6726f04c",
+      "target": "node_7a9360ac3e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ec6726f04c",
+      "target": "node_7a9360ac3e",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ea47ed1b8e",
+      "target": "node_1a5d3a1450",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ea47ed1b8e",
+      "target": "node_1a5d3a1450",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_28cc199a19",
+      "target": "node_540d536c41",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_28cc199a19",
+      "target": "node_540d536c41",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_1f1f32ab37",
+      "target": "node_c15c3088fc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_1f1f32ab37",
+      "target": "node_c15c3088fc",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_cbee64936f",
+      "target": "node_b6a1104399",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_cbee64936f",
+      "target": "node_b6a1104399",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_85cfb79091",
+      "target": "node_a479bfcba1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_85cfb79091",
+      "target": "node_a479bfcba1",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_9451d9ee0c",
+      "target": "node_fe9c0af489",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_9451d9ee0c",
+      "target": "node_fe9c0af489",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_7a6e6be3ed",
+      "target": "node_d321ec7781",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_7a6e6be3ed",
+      "target": "node_d321ec7781",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_4c5fef5af3",
+      "target": "node_f3ded2791a",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_83ea8d0664",
+      "target": "node_08f318324a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_83ea8d0664",
+      "target": "node_08f318324a",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7a9360ac3e",
+      "target": "node_83ea8d0664",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_380adf9de3",
+      "target": "node_afb4f8e171",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_380adf9de3",
+      "target": "node_afb4f8e171",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1a5d3a1450",
+      "target": "node_7a08fdaa38",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_7a08fdaa38",
+      "target": "node_08f318324a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7a08fdaa38",
+      "target": "node_08f318324a",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c15c3088fc",
+      "target": "node_1c920cb7f2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_1c920cb7f2",
+      "target": "node_08f318324a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1c920cb7f2",
+      "target": "node_08f318324a",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_540d536c41",
+      "target": "node_940bb88d10",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_940bb88d10",
+      "target": "node_08f318324a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_940bb88d10",
+      "target": "node_08f318324a",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_afb4f8e171",
+      "target": "node_06d3f56c5d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_afb4f8e171",
+      "target": "node_06d3f56c5d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_06d3f56c5d",
+      "target": "node_70a3eae774",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_06d3f56c5d",
+      "target": "node_70a3eae774",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b6a1104399",
+      "target": "node_7a6e6be3ed",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b6a1104399",
+      "target": "node_7a6e6be3ed",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fe9c0af489",
+      "target": "node_08f318324a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fe9c0af489",
+      "target": "node_08f318324a",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5c7edf9d48",
+      "target": "node_1d5cfeb805",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5c7edf9d48",
+      "target": "node_1d5cfeb805",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d321ec7781",
+      "target": "node_cefcbd4bb3",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d321ec7781",
+      "target": "node_08f318324a",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b6a1104399",
+      "target": "node_08f318324a",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a479bfcba1",
+      "target": "node_7a6e6be3ed",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a479bfcba1",
+      "target": "node_7a6e6be3ed",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8692da74f7",
+      "target": "node_533c683375",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8692da74f7",
+      "target": "node_533c683375",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8692da74f7",
+      "target": "node_3fa9795977",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8692da74f7",
+      "target": "node_54b7332e6b",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8692da74f7",
+      "target": "node_f6a37ce51d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8692da74f7",
+      "target": "node_25d2c48829",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8692da74f7",
+      "target": "node_9179f4b042",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8692da74f7",
+      "target": "node_8f7acdea74",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8692da74f7",
+      "target": "node_8f7acdea74",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f3ded2791a",
+      "target": "node_5c7edf9d48",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f3ded2791a",
+      "target": "node_5c7edf9d48",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_70a3eae774",
+      "target": "node_71c8ec5104",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_70a3eae774",
+      "target": "node_71c8ec5104",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_70a3eae774",
+      "target": "node_491d83cdb3",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cefcbd4bb3",
+      "target": "node_08f318324a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cefcbd4bb3",
+      "target": "node_08f318324a",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_277d6e1438",
+      "target": "node_8692da74f7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_277d6e1438",
+      "target": "node_8692da74f7",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a4edf39ce5",
+      "target": "node_ec6726f04c",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8692da74f7",
+      "target": "node_ec6726f04c",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_af93bba350",
+      "target": "node_ea47ed1b8e",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8692da74f7",
+      "target": "node_ea47ed1b8e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_67d65ab5a2",
+      "target": "node_28cc199a19",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8692da74f7",
+      "target": "node_28cc199a19",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fa2b4a9c1b",
+      "target": "node_1f1f32ab37",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8692da74f7",
+      "target": "node_1f1f32ab37",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ff223da5a5",
+      "target": "node_cbee64936f",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8692da74f7",
+      "target": "node_cbee64936f",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2463c0bc3d",
+      "target": "node_85cfb79091",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8692da74f7",
+      "target": "node_85cfb79091",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2463c0bc3d",
+      "target": "node_9451d9ee0c",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8692da74f7",
+      "target": "node_9451d9ee0c",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8f7acdea74",
+      "target": "node_be6e427e52",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8f7acdea74",
+      "target": "node_be6e427e52",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_be6e427e52",
+      "target": "node_024b3ce28e",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_be6e427e52",
+      "target": "node_024b3ce28e",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_08f318324a",
+      "target": "node_d071abcf60",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_08f318324a",
+      "target": "node_d071abcf60",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d071abcf60",
+      "target": "node_024b3ce28e",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_d071abcf60",
+      "target": "node_024b3ce28e",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_12a2408f94",
+      "target": "node_cb025c6fa9",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "gmail-and-email",
+    "categoryLabel": "Gmail and Email Automation",
+    "department": "Ops",
+    "connectors": [
+      "googlesuper"
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeLoop",
+      "NodeStart",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 26,
+      "yantraSteps": 52,
+      "foldedHelpers": [
+        "Ollama Chat Model1"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Gmail_and_Email_Automation/Auto Categorise Outlook Emails with AI.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Connect the googlesuper connector (credential).",
+      "Provide run inputs: llm_system_71c8ec5104."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Markdown1",
+          "n8n": "markdown.markdownToHtml",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Microsoft Outlook12",
+          "n8n": "message.update",
+          "action": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+          "soft": true
+        },
+        {
+          "node": "Microsoft Outlook13",
+          "n8n": "message.update",
+          "action": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+          "soft": true
+        },
+        {
+          "node": "Microsoft Outlook18",
+          "n8n": "message.update",
+          "action": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+          "soft": true
+        },
+        {
+          "node": "Microsoft Outlook16",
+          "n8n": "message.update",
+          "action": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+          "soft": true
+        },
+        {
+          "node": "Microsoft Outlook20",
+          "n8n": "message.update",
+          "action": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+          "soft": true
+        },
+        {
+          "node": "Microsoft Outlook22",
+          "n8n": "message.update",
+          "action": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+          "soft": true
+        },
+        {
+          "node": "Microsoft Outlook21",
+          "n8n": "message.update",
+          "action": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+          "soft": true
+        },
+        {
+          "node": "Microsoft Outlook10",
+          "n8n": "message.move",
+          "action": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+          "soft": true
+        },
+        {
+          "node": "Microsoft Outlook15",
+          "n8n": "message.move",
+          "action": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+          "soft": true
+        },
+        {
+          "node": "Microsoft Outlook19",
+          "n8n": "message.move",
+          "action": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+          "soft": true
+        },
+        {
+          "node": "Microsoft Outlook17",
+          "n8n": "message.move",
+          "action": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+          "soft": true
+        },
+        {
+          "node": "Microsoft Outlook Move Message1",
+          "n8n": "message.move",
+          "action": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "Ollama Chat Model1",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+          "into": "AI Agent1",
+          "model": "qwen2.5:14b"
+        }
+      ],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Loop Over Items1\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "\"Markdown1\" (markdown.markdownToHtml): Markdown to HTML is a minimal converter on Yantra.",
+        "\"Markdown1\": Markdown to HTML is a minimal converter on Yantra; swap in a connector if you need full fidelity.",
+        "\"Microsoft Outlook12\": the original used Email (Outlook original); check the mapped googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL params before running.",
+        "\"Microsoft Outlook13\": the original used Email (Outlook original); check the mapped googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL params before running.",
+        "\"Microsoft Outlook18\": the original used Email (Outlook original); check the mapped googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL params before running.",
+        "\"Microsoft Outlook16\": the original used Email (Outlook original); check the mapped googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL params before running.",
+        "\"Microsoft Outlook20\": the original used Email (Outlook original); check the mapped googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL params before running.",
+        "\"Microsoft Outlook22\": the original used Email (Outlook original); check the mapped googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL params before running.",
+        "\"Microsoft Outlook21\": the original used Email (Outlook original); check the mapped googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL params before running.",
+        "\"Microsoft Outlook10\": the original used Email (Outlook original); check the mapped googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL params before running.",
+        "\"Microsoft Outlook15\": the original used Email (Outlook original); check the mapped googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL params before running.",
+        "\"Microsoft Outlook19\": the original used Email (Outlook original); check the mapped googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL params before running.",
+        "\"Microsoft Outlook17\": the original used Email (Outlook original); check the mapped googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL params before running.",
+        "\"Microsoft Outlook Move Message1\": the original used Email (Outlook original); check the mapped googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL params before running.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "# Auto Categorise Outlook Emails with AI\nBuilt by [Wayne Simpson](https://www.linkedin.com/in/simpsonwayne/) at [nocodecreative.io](https://nocodecreative.io)",
+      "### Watch Set Up Video 👇\n[![Auto Categorise Outlook Emails with AI](https://vdyfnvnstovfxpabhdjc.supabase.co/storage/v1/object/public/images/Thumbnails/auto-categories-emails.png?t=2024-10-11T09%3A56%3A37.961Z#full-width)](https://www.youtube.com/watch?v=EhRBkkjv_3c)",
+      "## Outlook Business with filters\nFilters:\n```\nflag/flagStatus eq 'notFlagged' and not categories/any()\n```\n\nThese filters ensure we do not process flagged emails or email that already have a category set.",
+      "## Sanitise Email \nRemoves HTML and useless information in preparation for the AI Agent",
+      "## Modify Categories \nEdit this to customise category selection",
+      "## Convert to JSON\n* Ensures the Agent output to converted to JSON\n* Catches any errors and continues processing",
+      "## Switch Categories\nEnsure your categories match the **varID & Category** Edit Fields node",
+      "## Set Categories",
+      "## Move to Folders",
+      "## Check if email has been read"
+    ],
+    "nodes": {
+      "node_4c5fef5af3": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_f3ded2791a": {
+        "n8n": "Microsoft Outlook23",
+        "n8nType": "n8n-nodes-base.microsoftOutlook"
+      },
+      "node_5c7edf9d48": {
+        "n8n": "Filter1",
+        "n8nType": "n8n-nodes-base.filter"
+      },
+      "node_1d5cfeb805": {
+        "n8n": "Loop Over Items1",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_024b3ce28e": {
+        "n8n": "Loop Over Items1",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_380adf9de3": {
+        "n8n": "Loop Over Items1",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_12a2408f94": {
+        "n8n": "Loop Over Items1",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_afb4f8e171": {
+        "n8n": "Markdown1",
+        "n8nType": "n8n-nodes-base.markdown"
+      },
+      "node_06d3f56c5d": {
+        "n8n": "varEmal1",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_70a3eae774": {
+        "n8n": "varID & Category1",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_277d6e1438": {
+        "n8n": "AI Agent1",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_71c8ec5104": {
+        "n8n": "AI Agent1",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_df42383292": {
+        "n8n": "AI Agent1",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_491d83cdb3": {
+        "n8n": "AI Agent1",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_8692da74f7": {
+        "n8n": "varJSON1",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_533c683375": {
+        "n8n": "Switch1",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_a4edf39ce5": {
+        "n8n": "Switch1",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_3fa9795977": {
+        "n8n": "Switch1",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_af93bba350": {
+        "n8n": "Switch1",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_54b7332e6b": {
+        "n8n": "Switch1",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_67d65ab5a2": {
+        "n8n": "Switch1",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_f6a37ce51d": {
+        "n8n": "Switch1",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_fa2b4a9c1b": {
+        "n8n": "Switch1",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_25d2c48829": {
+        "n8n": "Switch1",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_ff223da5a5": {
+        "n8n": "Switch1",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_9179f4b042": {
+        "n8n": "Switch1",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_2463c0bc3d": {
+        "n8n": "Switch1",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_8f7acdea74": {
+        "n8n": "Catch Errors1",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_ec6726f04c": {
+        "n8n": "Microsoft Outlook12",
+        "n8nType": "n8n-nodes-base.microsoftOutlook"
+      },
+      "node_7a9360ac3e": {
+        "n8n": "Microsoft Outlook12",
+        "n8nType": "n8n-nodes-base.microsoftOutlook",
+        "approximate": true
+      },
+      "node_ea47ed1b8e": {
+        "n8n": "Microsoft Outlook13",
+        "n8nType": "n8n-nodes-base.microsoftOutlook"
+      },
+      "node_1a5d3a1450": {
+        "n8n": "Microsoft Outlook13",
+        "n8nType": "n8n-nodes-base.microsoftOutlook",
+        "approximate": true
+      },
+      "node_28cc199a19": {
+        "n8n": "Microsoft Outlook18",
+        "n8nType": "n8n-nodes-base.microsoftOutlook"
+      },
+      "node_540d536c41": {
+        "n8n": "Microsoft Outlook18",
+        "n8nType": "n8n-nodes-base.microsoftOutlook",
+        "approximate": true
+      },
+      "node_1f1f32ab37": {
+        "n8n": "Microsoft Outlook16",
+        "n8nType": "n8n-nodes-base.microsoftOutlook"
+      },
+      "node_c15c3088fc": {
+        "n8n": "Microsoft Outlook16",
+        "n8nType": "n8n-nodes-base.microsoftOutlook",
+        "approximate": true
+      },
+      "node_cbee64936f": {
+        "n8n": "Microsoft Outlook20",
+        "n8nType": "n8n-nodes-base.microsoftOutlook"
+      },
+      "node_b6a1104399": {
+        "n8n": "Microsoft Outlook20",
+        "n8nType": "n8n-nodes-base.microsoftOutlook",
+        "approximate": true
+      },
+      "node_85cfb79091": {
+        "n8n": "Microsoft Outlook22",
+        "n8nType": "n8n-nodes-base.microsoftOutlook"
+      },
+      "node_a479bfcba1": {
+        "n8n": "Microsoft Outlook22",
+        "n8nType": "n8n-nodes-base.microsoftOutlook",
+        "approximate": true
+      },
+      "node_9451d9ee0c": {
+        "n8n": "Microsoft Outlook21",
+        "n8nType": "n8n-nodes-base.microsoftOutlook"
+      },
+      "node_fe9c0af489": {
+        "n8n": "Microsoft Outlook21",
+        "n8nType": "n8n-nodes-base.microsoftOutlook",
+        "approximate": true
+      },
+      "node_83ea8d0664": {
+        "n8n": "Microsoft Outlook10",
+        "n8nType": "n8n-nodes-base.microsoftOutlook",
+        "approximate": true
+      },
+      "node_7a08fdaa38": {
+        "n8n": "Microsoft Outlook15",
+        "n8nType": "n8n-nodes-base.microsoftOutlook",
+        "approximate": true
+      },
+      "node_940bb88d10": {
+        "n8n": "Microsoft Outlook19",
+        "n8nType": "n8n-nodes-base.microsoftOutlook",
+        "approximate": true
+      },
+      "node_1c920cb7f2": {
+        "n8n": "Microsoft Outlook17",
+        "n8nType": "n8n-nodes-base.microsoftOutlook",
+        "approximate": true
+      },
+      "node_7a6e6be3ed": {
+        "n8n": "If1",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_d321ec7781": {
+        "n8n": "If1",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_cefcbd4bb3": {
+        "n8n": "Microsoft Outlook Move Message1",
+        "n8nType": "n8n-nodes-base.microsoftOutlook",
+        "approximate": true
+      },
+      "node_08f318324a": {
+        "n8n": "Merge1",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_be6e427e52": {
+        "n8n": "Catch Errors1",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_d071abcf60": {
+        "n8n": "Merge1",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_cb025c6fa9": {
+        "n8n": "__end:Loop Over Items1",
+        "n8nType": "synthetic"
+      },
+      "node_cfb8c16708": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

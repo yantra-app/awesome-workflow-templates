@@ -1,0 +1,371 @@
+{
+  "name": "Telegram chat with PDF",
+  "workflowSlug": "telegram-chat-with-pdf",
+  "description": "Send a PDF and then ask questions about it: the agent reads the document in its sandbox, answers from its contents and replies in the Telegram chat.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_c9e1a3b5d7",
+      "actorId": "actor_c9e1a3b5d7",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_d0f2b4c6e8",
+      "actorId": "actor_d0f2b4c6e8",
+      "type": "NodeCdecliAgent",
+      "label": "Answer from the PDF",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "message": "{{text}}",
+        "system": "You are a Telegram assistant that answers questions about PDF documents the user sends.\n\nDocument for this message (empty when the user only sent text): {{document_url}}\n\nWhen a document URL is given: download it into ./docs/ in your sandbox, extract its text (Python pypdf, or pdftotext when available), keep the file for the rest of this session, and reply with one line confirming the document name and page count.\n\nWhen only a question is given: answer it from the documents saved in this session. Quote the passage you relied on and give the page number. If nothing in the documents answers the question, say so instead of guessing.\n\nKeep replies short and plain: Telegram renders them as text.",
+        "sessionId": "{{chat_id}}",
+        "sandbox": true,
+        "permissionMode": "bypass"
+      }
+    },
+    {
+      "nodeId": "node_e1a3c5d7f9",
+      "actorId": "actor_e1a3c5d7f9",
+      "type": "NodeTransform",
+      "label": "Params: Telegram reply",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// Params for telegram/TELEGRAM_SEND_MESSAGE: reply in the chat the message came from.\nconst __ctx = {{ctx}};\nreturn {\n  chat_id: __ctx.chat_id,\n  text: String(source ?? '').slice(0, 4000),\n};"
+      }
+    },
+    {
+      "nodeId": "node_f2b4d6e8a0",
+      "actorId": "actor_f2b4d6e8a0",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_SEND_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_SEND_MESSAGE"
+      }
+    },
+    {
+      "nodeId": "node_a3c5e7f9b1",
+      "actorId": "actor_a3c5e7f9b1",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_b4d6f8a0c2",
+      "actorId": "actor_b4d6f8a0c2",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "chat_id": "",
+          "text": "",
+          "document_url": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_c9e1a3b5d7",
+      "target": "node_d0f2b4c6e8",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_d0f2b4c6e8",
+      "target": "node_e1a3c5d7f9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d0f2b4c6e8",
+      "target": "node_e1a3c5d7f9",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e1a3c5d7f9",
+      "target": "node_f2b4d6e8a0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_e1a3c5d7f9",
+      "target": "node_f2b4d6e8a0",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_f2b4d6e8a0",
+      "target": "node_a3c5e7f9b1",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "telegram",
+    "categoryLabel": "Telegram",
+    "department": "Ops",
+    "connectors": [
+      "telegram"
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 18,
+      "yantraSteps": 4,
+      "foldedHelpers": [
+        "Embeddings OpenAI",
+        "Embeddings",
+        "Default Data Loader",
+        "Recursive Character Text Splitter",
+        "Vector Store Retriever",
+        "Pinecone Vector Store",
+        "Pinecone Vector Store1",
+        "Groq Chat Model",
+        "Question and Answer Chain",
+        "Check If is a document",
+        "Change to application/pdf",
+        "Telegram get File",
+        "Limit to 1",
+        "Telegram Response about Database"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Telegram/Telegram chat with PDF.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Telegram chat with PDF"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Connect the telegram connector (credential).",
+      "Provide run inputs: chat_id, text, document_url."
+    ],
+    "conversion": {
+      "tool": "hand",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [
+        {
+          "node": "Telegram Trigger",
+          "type": "n8n-nodes-base.telegramTrigger",
+          "into": "Start",
+          "reason": "no Telegram trigger slug on Yantra yet; the message fields are run inputs"
+        },
+        {
+          "node": "Check If is a document",
+          "type": "n8n-nodes-base.if",
+          "into": "Answer from the PDF",
+          "reason": "the agent branches on whether document_url is set"
+        },
+        {
+          "node": "Telegram get File",
+          "type": "n8n-nodes-base.telegram",
+          "into": "Answer from the PDF",
+          "reason": "the agent downloads the file"
+        },
+        {
+          "node": "Change to application/pdf",
+          "type": "n8n-nodes-base.code",
+          "into": "Answer from the PDF",
+          "reason": "no binary plumbing needed"
+        },
+        {
+          "node": "Default Data Loader",
+          "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+          "into": "Answer from the PDF",
+          "reason": "the agent extracts the PDF text itself"
+        },
+        {
+          "node": "Recursive Character Text Splitter",
+          "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+          "into": "Answer from the PDF",
+          "reason": "no chunking pipeline"
+        },
+        {
+          "node": "Embeddings OpenAI",
+          "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+          "into": "Answer from the PDF",
+          "reason": "no vector store"
+        },
+        {
+          "node": "Embeddings",
+          "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+          "into": "Answer from the PDF",
+          "reason": "no vector store"
+        },
+        {
+          "node": "Pinecone Vector Store",
+          "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+          "into": "Answer from the PDF",
+          "reason": "documents stay in the sandbox for the session"
+        },
+        {
+          "node": "Pinecone Vector Store1",
+          "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+          "into": "Answer from the PDF",
+          "reason": "documents stay in the sandbox for the session"
+        },
+        {
+          "node": "Vector Store Retriever",
+          "type": "@n8n/n8n-nodes-langchain.retrieverVectorStore",
+          "into": "Answer from the PDF",
+          "reason": "the agent searches the extracted text"
+        },
+        {
+          "node": "Question and Answer Chain",
+          "type": "@n8n/n8n-nodes-langchain.chainRetrievalQa",
+          "into": "Answer from the PDF",
+          "reason": "the agent answers directly"
+        },
+        {
+          "node": "Groq Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+          "into": "Answer from the PDF",
+          "reason": "the cdecli agent brings its own model"
+        },
+        {
+          "node": "Limit to 1",
+          "type": "n8n-nodes-base.limit",
+          "into": "Answer from the PDF",
+          "reason": "one reply per message"
+        },
+        {
+          "node": "Telegram Response about Database",
+          "type": "n8n-nodes-base.telegram",
+          "into": "telegram/TELEGRAM_SEND_MESSAGE",
+          "reason": "one reply node covers both cases"
+        },
+        {
+          "node": "Stop and Error",
+          "type": "n8n-nodes-base.stopAndError",
+          "into": "End",
+          "reason": ""
+        },
+        {
+          "node": "Stop and Error1",
+          "type": "n8n-nodes-base.stopAndError",
+          "into": "End",
+          "reason": ""
+        }
+      ],
+      "removedEdges": [],
+      "hints": [
+        "Run inputs: `chat_id` (the Telegram chat to reply to), `text` (the user's message) and `document_url` (a direct link to the PDF when the message carried one, otherwise empty). Yantra has no Telegram trigger slug yet, so call the workflow API from your bot webhook or poll `telegram/TELEGRAM_GET_UPDATES` on a NodeCron and pass the message through.",
+        "Connect telegram: `cdecli credential create -n \"telegram\" -p telegram --template <formId> --secret <key>=<value>` (see `cdecli credential templates`), then `cdecli workflow update-from-json telegram-chat-with-pdf -f <file>` so the credential id is resolved into the send node.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`).",
+        "The agent runs its shell and file tools inside the cloud sandbox with permissionMode \"bypass\": a workflow has nobody to answer tool-approval prompts, and the sandbox keeps the effects isolated."
+      ],
+      "triggers": []
+    },
+    "notes": [
+      "The n8n original needs eighteen nodes and a Pinecone index: an If on the message type, a Telegram file download, a Code node fixing the MIME type, a data loader, a text splitter, two embeddings nodes, two vector store nodes, a retriever, a retrieval QA chain with a Groq model, a Limit, two Telegram replies and two Stop and Error ends. On Yantra the agent reads the PDF in its sandbox and remembers it for the session, so the workflow is Start -> agent -> reply params -> Telegram send -> End.",
+      "From the original author's notes: load the PDF into the database, then receive each chat message, retrieve the relevant chunks and pass them to the model so it formulates a precise response. Here the retrieval step is the agent reading the saved text."
+    ],
+    "nodes": {
+      "node_c9e1a3b5d7": {
+        "n8n": "Telegram Trigger",
+        "n8nType": "n8n-nodes-base.telegramTrigger"
+      },
+      "node_d0f2b4c6e8": {
+        "n8n": "Question and Answer Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainRetrievalQa"
+      },
+      "node_e1a3c5d7f9": {
+        "n8n": "Telegram Response",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_f2b4d6e8a0": {
+        "n8n": "Telegram Response",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_a3c5e7f9b1": {
+        "n8n": "__end",
+        "n8nType": "synthetic"
+      },
+      "node_b4d6f8a0c2": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

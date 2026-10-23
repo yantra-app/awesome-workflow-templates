@@ -1,0 +1,1414 @@
+{
+  "name": "Handling Appointment Leads with Twilio, Cal.com and AI",
+  "workflowSlug": "handling-appointment-leads-with-twilio-cal-com-and-ai",
+  "description": "Manages appointment scheduling and follow-ups using Twilio and Cal.com.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_a5a742f037",
+      "actorId": "actor_a5a742f037",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_be89ab1582",
+      "actorId": "actor_be89ab1582",
+      "type": "NodeCron",
+      "label": "Every 24hrs",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 0 * * *"
+      }
+    },
+    {
+      "nodeId": "node_cd66054ac3",
+      "actorId": "actor_cd66054ac3",
+      "type": "NodeTransform",
+      "label": "Check For Command Words: STOP",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.Body) ?? '').includes(String(\"STOP\" ?? ''))));"
+      }
+    },
+    {
+      "nodeId": "node_f5a75d3fcd",
+      "actorId": "actor_f5a75d3fcd",
+      "type": "NodeBranch",
+      "label": "Check For Command Words: STOP?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_958def4b16",
+      "actorId": "actor_958def4b16",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_LIST_RECORDS",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_LIST_RECORDS",
+        "params": {
+          "baseId": "{{airtableBaseId}}",
+          "tableIdOrName": "{{airtableTableId}}",
+          "filterByFormula": "AND(\n {appointment_id} = '',\n {status} != 'STOP',\n {followup_count} < 3,\n DATETIME_DIFF(TODAY(), {last_followup_at}, 'days') >= 3\n)"
+        }
+      }
+    },
+    {
+      "nodeId": "node_45446aa819",
+      "actorId": "actor_45446aa819",
+      "type": "NodeTransform",
+      "label": "User Request STOP: match",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Twilio Trigger\": {{ctx}}, \"Find Follow-Up Candidates\": {{steps.AIRTABLE_LIST_RECORDS.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// n8n updated the Airtable records whose session_id equal the new values; build that filter and the fields from the input.\nconst __q = (v) => \"'\" + String(v ?? '').replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\") + \"'\";\nconst __fields = { \"status\": \"STOP\", \"session_id\": ($('Twilio Trigger').item.json.From) };\nconst __match = [\"session_id\"];\nreturn { baseId: \"{{airtableBaseId}}\", tableIdOrName: \"{{airtableTableId}}\", fields: __fields, filterByFormula: 'AND(' + __match.map((k) => '{' + k + '}=' + __q(__fields[k])).join(',') + ')' };"
+      }
+    },
+    {
+      "nodeId": "node_c80e170618",
+      "actorId": "actor_c80e170618",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_LIST_RECORDS",
+      "color": "#6366F1",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_LIST_RECORDS",
+        "params": {
+          "baseId": "{{last.transformed.baseId}}",
+          "tableIdOrName": "{{last.transformed.tableIdOrName}}",
+          "filterByFormula": "{{last.transformed.filterByFormula}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_c417acee0e",
+      "actorId": "actor_c417acee0e",
+      "type": "NodeTransform",
+      "label": "Params: User Request STOP",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// Params for airtable/AIRTABLE_UPDATE_MULTIPLE_RECORDS (n8n node \"User Request STOP\").\nreturn (() => { const __prep = {{steps.xf_45446aa819.result}}; const __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' ? source.data : source; const __recs = (__r?.records ?? []).slice(0, 10); if (!__recs.length) throw new Error('No Airtable record matches ' + __prep.filterByFormula + '; the original updated nothing in that case.'); return { \"baseId\": __prep.baseId, \"tableIdOrName\": __prep.tableIdOrName, \"records\": __recs.map((r) => ({ id: r.id, fields: __prep.fields })) }; })();"
+      }
+    },
+    {
+      "nodeId": "node_d7672f58af",
+      "actorId": "actor_d7672f58af",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_UPDATE_MULTIPLE_RECORDS",
+      "color": "#6366F1",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_UPDATE_MULTIPLE_RECORDS"
+      }
+    },
+    {
+      "nodeId": "node_6108905c94",
+      "actorId": "actor_6108905c94",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_LIST_RECORDS",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_LIST_RECORDS",
+        "params": {
+          "baseId": "{{airtableBaseId}}",
+          "tableIdOrName": "{{airtableTableId}}",
+          "filterByFormula": "{session_id}=\"{{From}}\"",
+          "maxRecords": 1
+        }
+      }
+    },
+    {
+      "nodeId": "node_f87b6b094c",
+      "actorId": "actor_f87b6b094c",
+      "type": "NodeLlmChain",
+      "label": "Generate Follow Up Message",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 620
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{last.transformed}}",
+        "prompt": "Follow the system instructions.",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_f41538f95e",
+      "actorId": "actor_f41538f95e",
+      "type": "NodeTransform",
+      "label": "System: Generate Follow Up Message",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: Generate Follow Up Message.\nconst __promptValue = `You are an appointment scheduling assistant for PC and Laptop Repairs for a company called \"PC Parts Ltd\". You shall refer to yourself as the \"service team\". You had a conversation with a customer on ${$json.last_message_at} but the enquiry did not end with an appointment being scheduled.\n${$json.last_followup_at ? `You last sent a follow-up message on ${$json.last_followup_at}` : ''}.\n\nYou task is to ask if the prospective customer would like to continue with the enquiry using the following information gather to construct a relevant follow-up message. Try to entice the user to continue the conversation and ultimately schedule an appointment.\n\n## About the customer\nname: ${$json.customer_name ?? '[\"unknown\"]'}\nenquiry summary: ${$json.customer_summary ?? '[\"uknown\"]'}\n\n# Existing conversation\nHere are the chat logs of the existing conversation:\n${$json.chat_messages}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_4103a7cedf",
+      "actorId": "actor_4103a7cedf",
+      "type": "NodeCdeConnector",
+      "label": "twilio/TWILIO_SEND_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "twilio",
+        "connectorLabel": "Twilio",
+        "action": "TWILIO_SEND_MESSAGE",
+        "params": {
+          "to": "{{From}}",
+          "from": "{{To}}",
+          "body": "Thank you. You won't receive any more messages from us!"
+        }
+      }
+    },
+    {
+      "nodeId": "node_601414d9ad",
+      "actorId": "actor_601414d9ad",
+      "type": "NodeCdecliAgent",
+      "label": "Appointment Scheduling Agent1",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "gpt-4o-mini",
+        "sessionId": "",
+        "system": "{{llm_system_62fbb4bbe9}}",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_62fbb4bbe9",
+      "actorId": "actor_62fbb4bbe9",
+      "type": "NodeTransform",
+      "label": "System: Appointment Scheduling Agent1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Twilio Trigger\": {{ctx}}, \"Every 24hrs\": __namedCtx.steps?.[\"Every 24hrs\"]?.[\"payload\"], \"Find Follow-Up Candidates\": __namedCtx.steps?.[\"AIRTABLE_LIST_RECORDS\"]?.[\"result\"], \"User Request STOP\": __namedCtx.steps?.[\"AIRTABLE_UPDATE_MULTIPLE_RECORDS\"]?.[\"result\"], \"Get Existing Chat Session\": __namedCtx.steps?.[\"AIRTABLE_LIST_RECORDS\"]?.[\"result\"], \"Generate Follow Up Message\": ((text) => ({ text, output: text, content: text, response: { text, output_text: text }, message: { content: text }, choices: [{ message: { content: text }, text }] }))(__namedCtx.steps?.[\"Generate Follow Up Message\"]?.[\"text\"]), \"Send Confirmation\": __namedCtx.steps?.[\"TWILIO_SEND_MESSAGE\"]?.[\"result\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// System: Appointment Scheduling Agent1.\nconst __promptValue = `You are an appointment scheduling helper for a company called \"PC Parts Ltd\". Customers will message you enquirying for PC or laptop repairs and your job is to schedule a repair session for the user.This role is strictly to help schedule appointments so:\n* you may answer questions relating to the company, \"PC Parts Ltd\".\n* you may not answer questions relating to competitors of \"PC Parts Ltd\".\n* you may answer questions relating to general PC or laptop repair from a non-technical perspective.\n* you may not help to customer diagnose or assist in troubleshoot or debugging thei r PC or laptop issues. If the customer does ask, defer them to book an appointment where a suitable professional from PC Parts Ltd can help.\n* If an appointment is scheduled for the user then the conversation is completed and you should not continue to ask the user to schedule an appointment.\n* If an appointment is scheduled for the user, the user may ask for the following actions: ask about details of the existing appointment, reschedule the existing appointment or cancel an existing appointment.\n* If an appointment is scheduled for the user, the user cannot schedule another appointment until the existing appointment is cancelled.\n\n## About the company\nPC Parts Ltd is based in London, UK. They offer to repair low-end to high-end PC and Laptop consumer and small business machines. They also offer custom built machines such as for gaming. There is currently a summer sale going on for 20% selected machines for repairs. The company does not repair other electronic devices such as phones, tablets or monitors.\n\n## About the appointments\nAlways start your conversation by politely asking if the user wants to book a new appointment or enquire about an existing one. The date and time now is ${$now.toISO()}. All dates should be given in the ISO format. Each appointment should have a start and end date and time relative to today's date in the future and should be scheduled for 30 minutes.\n\n## To book an appointment\n* Before booking an appointment, ask if the user has an existing appointment.\n* Ensure you have the user's email address, full name and proposed date, preferred start time before booking an appointment.\n* Always check the calendar availability of the user's proposed date and time. If there is no availability, suggest the next available appointment slot.\n* If the appointment booking is successful, notify the user that an email confirmation will be sent to their provided email address.\n* If the appointment booking is unsuccessful, notify the user that you are unable to complete their request at the moment and to try again later.\n\n## To find an existing appointment\n* Ask the user for their email address and the date of the existing booking\n* Use the user's email and date to search for the existing booking.\n* If the user's email and date do not match the results or no results are returned, then the existing booking is not found.\n* If the existing booking is not found, notify the user and suggest a new booking should be made.\n* When the existing booking is found, ensure you tell them the booking's UID field.\n\n# To reschedule or cancel an existing appointment\n* First find the existing appointment so that you may obtain the existing appointment's booking UID.\n* Display this booking UID to the user.\n* Use this booking UID to reschedule or cancel an existing appointment.\n* If an existing appointment ID is not found or given, then notify the user that it is not possible to complete their request at this time and they should contact via email.\n* when user wants to cancel an appointment, ask for a reason for the cancellation and suggest rescheduling as an alternative. Confirm with user before cancelling an appointment.\n\n## About the user\n* The customer's session_id is \"${$('Twilio Trigger').item.json.From}\"\n${$json.chat_messages \n ? '* This is a returning prospective customer.' \n : '* This is a new customer. Ask for the details of their enquiry.'}\n${$json.appointment_id \n ? `* The customer has already scheduled an appointment at ${$json.scheduled_at} and their appointment_id is ${$json.appointment_id}`\n : '* This customer has not scheduled an appointment yet.'}\n\n## Existing Conversation\n${$json.chat_messages\n ? 'Here are the existing chat logs and should be used as context to continue the conversation:\\n```\\n' + JSON.parse($json.chat_messages).map(item => `${item.role}: ${item.message.replaceAll('\\n', ' ')}`).join('\\n') + '\\n```'\n : '* There is no existing conversation so far.'}\n`;\nreturn { \"llm_system_62fbb4bbe9\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_f94ca1e767",
+      "actorId": "actor_f94ca1e767",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Appointment Scheduling Agent1",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_70cc9fbc08",
+      "actorId": "actor_70cc9fbc08",
+      "type": "NodeTransform",
+      "label": "Prompt: Appointment Scheduling Agent1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Appointment Scheduling Agent1.\nconst __promptValue = ($json.chatInput);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_7c7c791a8a",
+      "actorId": "actor_7c7c791a8a",
+      "type": "NodeTransform",
+      "label": "Update Follow-Up Count and Date: match",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Twilio Trigger\": {{ctx}}, \"Find Follow-Up Candidates\": {{steps.AIRTABLE_LIST_RECORDS.result}}, \"User Request STOP\": {{steps.AIRTABLE_UPDATE_MULTIPLE_RECORDS.result}}, \"Get Existing Chat Session\": {{steps.AIRTABLE_LIST_RECORDS.result}}, \"Send Confirmation\": {{steps.TWILIO_SEND_MESSAGE.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// n8n updated the Airtable records whose session_id equal the new values; build that filter and the fields from the input.\nconst __q = (v) => \"'\" + String(v ?? '').replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\") + \"'\";\nconst __fields = { \"session_id\": ($('Find Follow-Up Candidates').item.json.session_id), \"followup_count\": (($('Find Follow-Up Candidates').item.json.followup_count ?? 0) + 1), \"last_followup_at\": ($now.toISO()) };\nconst __match = [\"session_id\"];\nreturn { baseId: \"{{airtableBaseId}}\", tableIdOrName: \"{{airtableTableId}}\", fields: __fields, filterByFormula: 'AND(' + __match.map((k) => '{' + k + '}=' + __q(__fields[k])).join(',') + ')' };"
+      }
+    },
+    {
+      "nodeId": "node_032cfea46f",
+      "actorId": "actor_032cfea46f",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_LIST_RECORDS",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_LIST_RECORDS",
+        "params": {
+          "baseId": "{{last.transformed.baseId}}",
+          "tableIdOrName": "{{last.transformed.tableIdOrName}}",
+          "filterByFormula": "{{last.transformed.filterByFormula}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_eafe3868a2",
+      "actorId": "actor_eafe3868a2",
+      "type": "NodeTransform",
+      "label": "Params: Update Follow-Up Count and Date",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// Params for airtable/AIRTABLE_UPDATE_MULTIPLE_RECORDS (n8n node \"Update Follow-Up Count and Date\").\nreturn (() => { const __prep = {{steps.xf_7c7c791a8a.result}}; const __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' ? source.data : source; const __recs = (__r?.records ?? []).slice(0, 10); if (!__recs.length) throw new Error('No Airtable record matches ' + __prep.filterByFormula + '; the original updated nothing in that case.'); return { \"baseId\": __prep.baseId, \"tableIdOrName\": __prep.tableIdOrName, \"records\": __recs.map((r) => ({ id: r.id, fields: __prep.fields })) }; })();"
+      }
+    },
+    {
+      "nodeId": "node_dfb7033f61",
+      "actorId": "actor_dfb7033f61",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_UPDATE_MULTIPLE_RECORDS",
+      "color": "#6366F1",
+      "position": {
+        "x": 2740,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_UPDATE_MULTIPLE_RECORDS"
+      }
+    },
+    {
+      "nodeId": "node_da57bc2393",
+      "actorId": "actor_da57bc2393",
+      "type": "NodeTransform",
+      "label": "Create/Update Session: match",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Twilio Trigger\": {{ctx}}, \"Find Follow-Up Candidates\": {{steps.AIRTABLE_LIST_RECORDS.result}}, \"User Request STOP\": {{steps.AIRTABLE_UPDATE_MULTIPLE_RECORDS.result}}, \"Get Existing Chat Session\": {{steps.AIRTABLE_LIST_RECORDS.result}}, \"Send Confirmation\": {{steps.TWILIO_SEND_MESSAGE.result}}, \"Update Follow-Up Count and Date\": {{steps.AIRTABLE_UPDATE_MULTIPLE_RECORDS.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(String.prototype, { isNotEmpty() { return this.trim().length > 0; } });\n__def(Array.prototype, { isNotEmpty() { return this.length > 0; } });\n__def(Object.prototype, { isNotEmpty() { return Object.keys(this).length > 0; } });\n// n8n updated the Airtable records whose session_id equal the new values; build that filter and the fields from the input.\nconst __q = (v) => \"'\" + String(v ?? '').replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\") + \"'\";\nconst __fields = { \"session_id\": ($('Twilio Trigger').item.json.From), \"scheduled_at\": ($('Appointment Scheduling Agent').item.json.output.has_appointment_scheduled\n ? $('Appointment Scheduling Agent').item.json.output.appointment.scheduled_at\n : (\n $('Get Existing Chat Session').item.json.isNotEmpty()\n ? $('Get Existing Chat Session').item.json.scheduled_at\n : $now.toISO()\n )), \"chat_messages\": (JSON.stringify(\n ($('Get Existing Chat Session').item.json.chat_messages ? JSON.parse($('Get Existing Chat Session').item.json.chat_messages) : [])\n .concat(\n { \"role\": \"human\", \"message\": $('Twilio Trigger').item.json.Body },\n { \"role\": \"assistant\", \"message\": $('Appointment Scheduling Agent').item.json.output.reply }\n )\n)), \"customer_name\": (!$('Get Existing Chat Session').item.json.customer_name &&\n $('Appointment Scheduling Agent').item.json.output.customer_name\n ? $('Appointment Scheduling Agent').item.json.output.customer_name\n : ($('Get Existing Chat Session').item.json.customer_name ?? '')), \"appointment_id\": ($('Appointment Scheduling Agent').item.json.output.has_appointment_scheduled\n ? $('Appointment Scheduling Agent').item.json.output.appointment.appointment_id\n : (\n $('Get Existing Chat Session').item.json.isNotEmpty()\n ? $('Get Existing Chat Session').item.json.appointment_id\n : ''\n )), \"followup_count\": (!$('Get Existing Chat Session').item.json.followup_count\n ? 0\n : $('Get Existing Chat Session').item.json.followup_count), \"last_message_at\": ($now.toISO()), \"customer_summary\": (!$('Get Existing Chat Session').item.json.appointment_id\n && $('Appointment Scheduling Agent').item.json.output.has_appointment_scheduled\n ? $json.enquiry_summary\n : $('Get Existing Chat Session').item.json.customer_summary), \"last_followup_at\": (!$('Get Existing Chat Session').item.json.last_followup_at\n ? $now.toISO()\n : $('Get Existing Chat Session').item.json.last_followup_at), \"twilio_service_number\": ($('Twilio Trigger').item.json.To) };\nconst __match = [\"session_id\"];\nreturn { baseId: \"{{airtableBaseId}}\", tableIdOrName: \"{{airtableTableId}}\", fields: __fields, filterByFormula: 'AND(' + __match.map((k) => '{' + k + '}=' + __q(__fields[k])).join(',') + ')' };"
+      }
+    },
+    {
+      "nodeId": "node_62a3a507aa",
+      "actorId": "actor_62a3a507aa",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_LIST_RECORDS",
+      "color": "#6366F1",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_LIST_RECORDS",
+        "params": {
+          "baseId": "{{last.transformed.baseId}}",
+          "tableIdOrName": "{{last.transformed.tableIdOrName}}",
+          "filterByFormula": "{{last.transformed.filterByFormula}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_41fe4974ad",
+      "actorId": "actor_41fe4974ad",
+      "type": "NodeTransform",
+      "label": "Params: Create/Update Session",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// Params for airtable/AIRTABLE_UPDATE_MULTIPLE_RECORDS (n8n node \"Create/Update Session\").\nreturn (() => { const __prep = {{steps.xf_da57bc2393.result}}; const __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' ? source.data : source; const __recs = (__r?.records ?? []).slice(0, 10); if (!__recs.length) throw new Error('No Airtable record matches ' + __prep.filterByFormula + '; the original updated nothing in that case.'); return { \"baseId\": __prep.baseId, \"tableIdOrName\": __prep.tableIdOrName, \"records\": __recs.map((r) => ({ id: r.id, fields: __prep.fields })) }; })();"
+      }
+    },
+    {
+      "nodeId": "node_0af745f584",
+      "actorId": "actor_0af745f584",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_UPDATE_MULTIPLE_RECORDS",
+      "color": "#6366F1",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_UPDATE_MULTIPLE_RECORDS"
+      }
+    },
+    {
+      "nodeId": "node_b0efa3035d",
+      "actorId": "actor_b0efa3035d",
+      "type": "NodeTransform",
+      "label": "Params: Send Follow Up Message",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Twilio Trigger\": {{ctx}}, \"Find Follow-Up Candidates\": {{steps.AIRTABLE_LIST_RECORDS.result}}, \"User Request STOP\": {{steps.AIRTABLE_UPDATE_MULTIPLE_RECORDS.result}}, \"Get Existing Chat Session\": {{steps.AIRTABLE_LIST_RECORDS.result}}, \"Send Confirmation\": {{steps.TWILIO_SEND_MESSAGE.result}}, \"Update Follow-Up Count and Date\": {{steps.AIRTABLE_UPDATE_MULTIPLE_RECORDS.result}}, \"Create/Update Session\": {{steps.AIRTABLE_UPDATE_MULTIPLE_RECORDS.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for twilio/TWILIO_SEND_MESSAGE (n8n node \"Send Follow Up Message\").\nreturn {\n  \"to\": ($('Find Follow-Up Candidates').item.json.session_id),\n  \"from\": ($('Find Follow-Up Candidates').item.json.twilio_service_number),\n  \"body\": `${$('Generate Follow Up Message').item.json.text}\nReply STOP to stop recieving these messages.`,\n};"
+      }
+    },
+    {
+      "nodeId": "node_fd1bdef8cb",
+      "actorId": "actor_fd1bdef8cb",
+      "type": "NodeCdeConnector",
+      "label": "twilio/TWILIO_SEND_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "twilio",
+        "connectorLabel": "Twilio",
+        "action": "TWILIO_SEND_MESSAGE"
+      }
+    },
+    {
+      "nodeId": "node_fedf96ab72",
+      "actorId": "actor_fedf96ab72",
+      "type": "NodeTransform",
+      "label": "Params: Send Reply",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Twilio Trigger\": {{ctx}}, \"Find Follow-Up Candidates\": {{steps.AIRTABLE_LIST_RECORDS.result}}, \"User Request STOP\": {{steps.AIRTABLE_UPDATE_MULTIPLE_RECORDS.result}}, \"Get Existing Chat Session\": {{steps.AIRTABLE_LIST_RECORDS.result}}, \"Send Confirmation\": {{steps.TWILIO_SEND_MESSAGE.result}}, \"Update Follow-Up Count and Date\": {{steps.AIRTABLE_UPDATE_MULTIPLE_RECORDS.result}}, \"Create/Update Session\": {{steps.AIRTABLE_UPDATE_MULTIPLE_RECORDS.result}}, \"Send Follow Up Message\": {{steps.TWILIO_SEND_MESSAGE.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for twilio/TWILIO_SEND_MESSAGE (n8n node \"Send Reply\").\nreturn {\n  \"to\": ($('Twilio Trigger').item.json.From),\n  \"from\": ($('Twilio Trigger').item.json.To),\n  \"body\": ($('Appointment Scheduling Agent').item.json.output.reply),\n};"
+      }
+    },
+    {
+      "nodeId": "node_98749f230b",
+      "actorId": "actor_98749f230b",
+      "type": "NodeCdeConnector",
+      "label": "twilio/TWILIO_SEND_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "twilio",
+        "connectorLabel": "Twilio",
+        "action": "TWILIO_SEND_MESSAGE"
+      }
+    },
+    {
+      "nodeId": "node_2f0cda9490",
+      "actorId": "actor_2f0cda9490",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3120,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_536c1f2870",
+      "actorId": "actor_536c1f2870",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 3880,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_53df1c23fc",
+      "actorId": "actor_53df1c23fc",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_2d4f1c6cb8",
+      "actorId": "actor_2d4f1c6cb8",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "event": {},
+          "airtableBaseId": "",
+          "airtableTableId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_b168e74e68",
+      "actorId": "actor_b168e74e68",
+      "type": "NodeChatModel",
+      "label": "Generate Follow Up Message: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 940
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_cd66054ac3",
+      "target": "node_f5a75d3fcd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_cd66054ac3",
+      "target": "node_f5a75d3fcd",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_c417acee0e",
+      "target": "node_d7672f58af",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_c417acee0e",
+      "target": "node_d7672f58af",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_45446aa819",
+      "target": "node_c80e170618",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_c80e170618",
+      "target": "node_c417acee0e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c80e170618",
+      "target": "node_c417acee0e",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f41538f95e",
+      "target": "node_f87b6b094c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_62fbb4bbe9",
+      "target": "node_f94ca1e767",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_62fbb4bbe9",
+      "target": "node_f94ca1e767",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_f94ca1e767",
+      "target": "node_70cc9fbc08",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_70cc9fbc08",
+      "target": "node_601414d9ad",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_eafe3868a2",
+      "target": "node_dfb7033f61",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_eafe3868a2",
+      "target": "node_dfb7033f61",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_7c7c791a8a",
+      "target": "node_032cfea46f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_032cfea46f",
+      "target": "node_eafe3868a2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_032cfea46f",
+      "target": "node_eafe3868a2",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_41fe4974ad",
+      "target": "node_0af745f584",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_41fe4974ad",
+      "target": "node_0af745f584",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_da57bc2393",
+      "target": "node_62a3a507aa",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_62a3a507aa",
+      "target": "node_41fe4974ad",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_62a3a507aa",
+      "target": "node_41fe4974ad",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b0efa3035d",
+      "target": "node_fd1bdef8cb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_b0efa3035d",
+      "target": "node_fd1bdef8cb",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_fedf96ab72",
+      "target": "node_98749f230b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_fedf96ab72",
+      "target": "node_98749f230b",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_a5a742f037",
+      "target": "node_cd66054ac3",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_958def4b16",
+      "target": "node_f41538f95e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_958def4b16",
+      "target": "node_f41538f95e",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dfb7033f61",
+      "target": "node_b0efa3035d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dfb7033f61",
+      "target": "node_b0efa3035d",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0af745f584",
+      "target": "node_fedf96ab72",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0af745f584",
+      "target": "node_fedf96ab72",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6108905c94",
+      "target": "node_62fbb4bbe9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6108905c94",
+      "target": "node_62fbb4bbe9",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6108905c94",
+      "target": "node_70cc9fbc08",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_be89ab1582",
+      "target": "node_958def4b16",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d7672f58af",
+      "target": "node_4103a7cedf",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_f5a75d3fcd",
+      "target": "node_45446aa819",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f5a75d3fcd",
+      "target": "node_6108905c94",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_f87b6b094c",
+      "target": "node_7c7c791a8a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f87b6b094c",
+      "target": "node_7c7c791a8a",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_601414d9ad",
+      "target": "node_da57bc2393",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_601414d9ad",
+      "target": "node_da57bc2393",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4103a7cedf",
+      "target": "node_2f0cda9490",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_fd1bdef8cb",
+      "target": "node_536c1f2870",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_98749f230b",
+      "target": "node_53df1c23fc",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_b168e74e68",
+      "target": "node_f87b6b094c",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "other-integrations",
+    "categoryLabel": "Other Integrations and Use Cases",
+    "department": "Sales/Support",
+    "connectors": [
+      "airtable",
+      "openai",
+      "twilio"
+    ],
+    "setupVars": [
+      {
+        "key": "airtableBaseId",
+        "label": "Airtable base id",
+        "type": "id",
+        "example": "appXXXX (from the base URL)",
+        "usedBy": [
+          "Create/Update Session",
+          "Find Follow-Up Candidates",
+          "Get Existing Chat Session",
+          "Update Follow-Up Count and Date",
+          "User Request STOP"
+        ]
+      },
+      {
+        "key": "airtableTableId",
+        "label": "Airtable table id",
+        "type": "id",
+        "example": "tblXXXX (from the table URL)",
+        "usedBy": [
+          "Create/Update Session",
+          "Find Follow-Up Candidates",
+          "Get Existing Chat Session",
+          "Update Follow-Up Count and Date",
+          "User Request STOP"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate handling-appointment-leads-with-twilio-cal-com-and-ai",
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 24,
+      "yantraSteps": 30,
+      "foldedHelpers": [
+        "OpenAI Chat Model1",
+        "OpenAI Chat Model3",
+        "Cancel Booking",
+        "Create a Booking",
+        "Get Availability",
+        "Reschedule Booking",
+        "Get Existing Booking",
+        "Find Existing Booking",
+        "Auto-fixing Output Parser"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Other_Integrations_and_Use_Cases/Handling Appointment Leads and Follow-up With Twilio, Cal.com and AI.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Twilio Trigger",
+        "detail": "n8n-nodes-base.twilioTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Twilio Trigger\" (twilioTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value airtableBaseId: Airtable base id (for example appXXXX (from the base URL)). Write it into the Workflow Configs initialContext before import.",
+      "Setup value airtableTableId: Airtable table id (for example tblXXXX (from the table URL)). Write it into the Workflow Configs initialContext before import.",
+      "Connect the airtable connector (credential).",
+      "Connect the openai connector (credential).",
+      "Connect the twilio connector (credential).",
+      "After import, start the schedule: cdecli cron activate handling-appointment-leads-with-twilio-cal-com-and-ai.",
+      "Provide run inputs: event, From, To, llm_system_62fbb4bbe9."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "User Request STOP",
+          "n8n": "record.update.matchColumns",
+          "action": "airtable/AIRTABLE_UPDATE_MULTIPLE_RECORDS",
+          "soft": true
+        },
+        {
+          "node": "Update Follow-Up Count and Date",
+          "n8n": "record.update.matchColumns",
+          "action": "airtable/AIRTABLE_UPDATE_MULTIPLE_RECORDS",
+          "soft": true
+        },
+        {
+          "node": "Create/Update Session",
+          "n8n": "record.update.matchColumns",
+          "action": "airtable/AIRTABLE_UPDATE_MULTIPLE_RECORDS",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model1",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Generate Follow Up Message"
+        },
+        {
+          "node": "OpenAI Chat Model3",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Appointment Scheduling Agent1",
+          "model": "gpt-4o-mini"
+        },
+        {
+          "node": "Cancel Booking",
+          "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+          "into": "Appointment Scheduling Agent1",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Create a Booking",
+          "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+          "into": "Appointment Scheduling Agent1",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Get Availability",
+          "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+          "into": "Appointment Scheduling Agent1",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Reschedule Booking",
+          "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+          "into": "Appointment Scheduling Agent1",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Get Existing Booking",
+          "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+          "into": "Appointment Scheduling Agent1",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Find Existing Booking",
+          "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+          "into": "Appointment Scheduling Agent1",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Auto-fixing Output Parser",
+          "type": "@n8n/n8n-nodes-langchain.outputParserAutofixing",
+          "into": "Appointment Scheduling Agent1",
+          "as": "ai_outputParser"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Twilio Trigger",
+          "type": "n8n-nodes-base.twilioTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Every 24hrs",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "The original started from twilioTrigger; Yantra has no webhook slug for it, so run on demand, on a schedule (add a NodeCron), or via the workflow API with the event under the run input `event`.",
+        "\"User Request STOP\" updates the Airtable records whose session_id match (LIST_RECORDS with filterByFormula, then UPDATE_MULTIPLE_RECORDS, 10 records per run); when none match, the step stops the run.",
+        "\"Appointment Scheduling Agent1\" used agent tools in the original: Cancel Booking (toolHttpRequest), Create a Booking (toolHttpRequest), Get Availability (toolHttpRequest), Reschedule Booking (toolHttpRequest), Get Existing Booking (toolHttpRequest), Find Existing Booking (toolHttpRequest). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
+        "\"Update Follow-Up Count and Date\" updates the Airtable records whose session_id match (LIST_RECORDS with filterByFormula, then UPDATE_MULTIPLE_RECORDS, 10 records per run); when none match, the step stops the run.",
+        "\"Create/Update Session\" updates the Airtable records whose session_id match (LIST_RECORDS with filterByFormula, then UPDATE_MULTIPLE_RECORDS, 10 records per run); when none match, the step stops the run.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect airtable: `cdecli credential create -n \"airtable\" -p airtable --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect twilio: `cdecli credential create -n \"twilio\" -p twilio --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "\"Generate Follow Up Message\": added a user prompt to execute the existing system-only instructions because LLMChain requires a non-empty prompt."
+      ]
+    },
+    "notes": [
+      "## Step 6. Filter Open Enquiries from Airtable\n\n### 💡Criteria For Follow Up Candidates\n* No Scheduled Appointment\n* No Request to STOP\n* No Previous Follow-up in Past 3 days\n* Follow-up is less than 3 times",
+      "## Step 3. Appointment Scheduling With AI\n[Learn about using AI Agents](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.agent)\n\nUsing an AI Agent is a powerful way to simplify and enhance workflows using the latest in AI technology. Our appointment scheduling agent is equipped to converse with the customer and all the necessary tools to schedule, re-schedule and cancel appointments.\n\nUsing the **HTTP Tool** node, it's easy to connect to third party API services to perform actions. In this workflow, we're calling the Cal.com API to handle scheduling events.",
+      "## Step 2. Check for Existing Chat History\n[Read more about using Airtable](https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.airtable)\n\nWe're using Airtable for customer session management and to capture chat history. Airtable is an ideal choice because it acts as a persistent database with a flexible API which could prove essential for further extension.\n\nWe'll pull any previous chat history and pass this to our agent to continue the conversation.",
+      "## Step 1. Wait For Customer SMS\n[Read more about Twilio trigger](https://docs.n8n.io/integrations/builtin/trigger-nodes/n8n-nodes-base.twiliotrigger)\n\nFor this workflow, we'll use the twilio SMS trigger to receive enquiries from customers looking to book a PC or laptop repair.\n\nSince we'll be working with SMS, we'll have a check to see if the customer wishes to STOP any further follow-up messages. This is an optional step that we'll get to later.",
+      "## Step 9. Cancelling Follow-Up Messages \n\nIf the customer messages the bot with the word STOP, we'll update our customer record in Airtable which will prevent further follow-ups from being trigger. A confirmation message is sent after to the customer.",
+      "## Step 4. Updating Airtable and Responding to the Customer \n[Read more about using Twilio](https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.twilio)\n\nOnce the agent formulates a response, we can update our appointment table accordingly ensuring the conversation at any stage is captured.\n\nIf no appointment is scheduled, we can move onto the second half of this workflow which covers following up with prospective customers and their enquiries.",
+      "## Step 5. Following Up With Open Enquiries\n[Read more about using scheduled trigger](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.scheduletrigger)\n\nThe second half of this workflow deals with identifying customers who have engaged our chatbot but have not yet confirmed an appointment. We intend to send a follow-up message asking if the enquiry is still valid and encourage an appointment to be made with the customer.",
+      "## Step 7. Generating a Follow-Up Message\n[Read more about Basic LLM Chain](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.chainllm)\n\nWith our session and chat history retrieved from Airtable, we can simple ask our AI to generate a nicely worded follow-up message to re-engage the customer.\n\nWhere the logic is linear, the Basic LLM chain is suitable for many workflows. An agent is not always required!",
+      "## Step 8. Update Follow-Up Properties and Send Message\n[Read more about using Twilio](https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.twilio/)\n\nFinally, we'll update our follow-up activity as part of the customer record in Airtable. Keeping track of the number of times we follow-up helps prevent spamming the customer unnecessarily.\n\nThe follow-up message is sent via Twilio and includes instruction to disable further follow-up messages using the keyword STOP.",
+      "## Try It Out!\n\n### This workflow implements an appointment scheduling chatbot which is powered by an AI tools agent.\n* Workflow is triggered by Customer enquires sent via SMS\n* Customer session management and chat history are captured in Airtable to enable the SMS conversation.\n* An AI Agent is equipped to answer any questions as well as schedule, re-schedule and cancel appointments on behalf of the customer.\n* The agent's reply is sent back to the customer via SMS.\n* Additional a follow-up system is implemented to re-engage customers who haven't scheduled an appointment.\n\n \n### Need Help?\nJoin the [Discord](https://discord.com/invite/XPKeKXeB7d) or ask in the [Forum](https://community.n8n.io/)!\n\nHappy Hacking!",
+      "![alt](https://upload.wikimedia.org/wikipedia/commons/a/a5/Cal.com%2C_Inc._Logo.svg#100x80)\nYou'll need to set a custom Header Auth Credential for Cal.com API v2. See the following doc for more info: https://cal.com/docs/api-reference/v2/introduction",
+      "### 🚨 Change EventTypeID Here!\n* EventTypeID must be a number.\n* Your event type dictates the allowed duration of the booking.\n* If Event Type set to 30mins and the agent attempts to book 60mins, this will fail so make sure the agent knows how long to set the booking for!"
+    ],
+    "nodes": {
+      "node_a5a742f037": {
+        "n8n": "Twilio Trigger",
+        "n8nType": "n8n-nodes-base.twilioTrigger"
+      },
+      "node_be89ab1582": {
+        "n8n": "Every 24hrs",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_cd66054ac3": {
+        "n8n": "Check For Command Words",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_f5a75d3fcd": {
+        "n8n": "Check For Command Words",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_958def4b16": {
+        "n8n": "Find Follow-Up Candidates",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_45446aa819": {
+        "n8n": "User Request STOP",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_c80e170618": {
+        "n8n": "User Request STOP",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_c417acee0e": {
+        "n8n": "User Request STOP",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_d7672f58af": {
+        "n8n": "User Request STOP",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_6108905c94": {
+        "n8n": "Get Existing Chat Session",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_f87b6b094c": {
+        "n8n": "Generate Follow Up Message",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_f41538f95e": {
+        "n8n": "Generate Follow Up Message",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_4103a7cedf": {
+        "n8n": "Send Confirmation",
+        "n8nType": "n8n-nodes-base.twilio"
+      },
+      "node_601414d9ad": {
+        "n8n": "Appointment Scheduling Agent1",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_62fbb4bbe9": {
+        "n8n": "Appointment Scheduling Agent1",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_f94ca1e767": {
+        "n8n": "Appointment Scheduling Agent1",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_70cc9fbc08": {
+        "n8n": "Appointment Scheduling Agent1",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_7c7c791a8a": {
+        "n8n": "Update Follow-Up Count and Date",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_032cfea46f": {
+        "n8n": "Update Follow-Up Count and Date",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_eafe3868a2": {
+        "n8n": "Update Follow-Up Count and Date",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_dfb7033f61": {
+        "n8n": "Update Follow-Up Count and Date",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_da57bc2393": {
+        "n8n": "Create/Update Session",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_62a3a507aa": {
+        "n8n": "Create/Update Session",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_41fe4974ad": {
+        "n8n": "Create/Update Session",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_0af745f584": {
+        "n8n": "Create/Update Session",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_b0efa3035d": {
+        "n8n": "Send Follow Up Message",
+        "n8nType": "n8n-nodes-base.twilio"
+      },
+      "node_fd1bdef8cb": {
+        "n8n": "Send Follow Up Message",
+        "n8nType": "n8n-nodes-base.twilio"
+      },
+      "node_fedf96ab72": {
+        "n8n": "Send Reply",
+        "n8nType": "n8n-nodes-base.twilio"
+      },
+      "node_98749f230b": {
+        "n8n": "Send Reply",
+        "n8nType": "n8n-nodes-base.twilio"
+      },
+      "node_2f0cda9490": {
+        "n8n": "__end:Send Confirmation",
+        "n8nType": "synthetic"
+      },
+      "node_536c1f2870": {
+        "n8n": "__end:Send Follow Up Message",
+        "n8nType": "synthetic"
+      },
+      "node_53df1c23fc": {
+        "n8n": "__end:Send Reply",
+        "n8nType": "synthetic"
+      },
+      "node_2d4f1c6cb8": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_b168e74e68": {
+        "n8n": "Generate Follow Up Message",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

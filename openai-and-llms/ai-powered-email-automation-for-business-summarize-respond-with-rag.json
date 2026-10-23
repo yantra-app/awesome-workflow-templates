@@ -1,0 +1,1219 @@
+{
+  "name": "AI-Powered Email Automation for Business: Summarize & Respond with RAG",
+  "workflowSlug": "ai-powered-email-automation-for-business-summarize-respond-with-rag",
+  "description": "Email automation with summarization and response.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_ae25a0a40e",
+      "actorId": "actor_ae25a0a40e",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_FETCH_EMAILS",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Mailbox (IMAP original)",
+        "action": "GOOGLESUPER_FETCH_EMAILS",
+        "params": {
+          "query": "is:unread",
+          "max_results": 20
+        }
+      }
+    },
+    {
+      "nodeId": "node_540e7c2f5f",
+      "actorId": "actor_540e7c2f5f",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f4b21dc00d",
+      "actorId": "actor_f4b21dc00d",
+      "type": "NodeTransform",
+      "label": "Markdown",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst __md = String(null ?? '');\nconst __html = __md.replace(/^### (.*)$/gm, '<h3>$1</h3>').replace(/^## (.*)$/gm, '<h2>$1</h2>').replace(/^# (.*)$/gm, '<h1>$1</h1>').replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>').replace(/\\*(.+?)\\*/g, '<em>$1</em>').replace(/\\[(.+?)\\]\\((.+?)\\)/g, '<a href=\"$2\">$1</a>').replace(/\\n{2,}/g, '</p><p>');\nreturn { ...$json, \"data\": '<p>' + __html + '</p>' };"
+      }
+    },
+    {
+      "nodeId": "node_0b16f61f3d",
+      "actorId": "actor_0b16f61f3d",
+      "type": "NodeHttpRequest",
+      "label": "Create collection",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://QDRANTURL/collections/{{collection}}",
+        "headers": {
+          "Content-Type": "application/json",
+          "api-key": "{{qdrantApiKey}}"
+        },
+        "body": "{\n \"filter\": {}\n}"
+      }
+    },
+    {
+      "nodeId": "node_7f35f58ad9",
+      "actorId": "actor_7f35f58ad9",
+      "type": "NodeHttpRequest",
+      "label": "Refresh collection",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://QDRANTURL/collections/{{collection}}/points/delete",
+        "headers": {
+          "Content-Type": "application/json",
+          "api-key": "{{qdrantApiKey}}"
+        },
+        "body": "{\n \"filter\": {}\n}"
+      }
+    },
+    {
+      "nodeId": "node_a004867932",
+      "actorId": "actor_a004867932",
+      "type": "NodeLlmChain",
+      "label": "Email Summarization Chain",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{llm_system_a3bac6795e}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_a3bac6795e",
+      "actorId": "actor_a3bac6795e",
+      "type": "NodeTransform",
+      "label": "System: Email Summarization Chain",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: Email Summarization Chain.\nconst __promptValue = `Write a concise summary of the following in max 100 words:\n\n\"${$json.data}\"\n\nDo not enter the total number of words used.`;\nreturn { \"llm_system_a3bac6795e\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_ba822415f4",
+      "actorId": "actor_ba822415f4",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Email Summarization Chain",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_14df34b9b6",
+      "actorId": "actor_14df34b9b6",
+      "type": "NodeTransform",
+      "label": "Prompt: Email Summarization Chain",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Email Summarization Chain.\nconst __promptValue = ($json);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_5f28d6601c",
+      "actorId": "actor_5f28d6601c",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_FIND_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive",
+        "action": "GOOGLESUPER_FIND_FILE",
+        "params": {
+          "q": "'test-whatsapp' in parents and trashed = false"
+        }
+      }
+    },
+    {
+      "nodeId": "node_4ac3d62fb7",
+      "actorId": "actor_4ac3d62fb7",
+      "type": "NodeLlmChain",
+      "label": "Email Classifier",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string",
+              "enum": [
+                "Company info request",
+                "other"
+              ],
+              "description": "One of: Company info request, other"
+            }
+          },
+          "required": [
+            "category"
+          ],
+          "additionalProperties": false
+        },
+        "system": "Classify the input into exactly one category.\n- Company info request: Company info request\nPlease classify the text provided by the user into one of the following categories: {categories}, and use the provided formatting instructions below. Don't explain, and only output the json.\n",
+        "prompt": "You must classify the following email::\n\n{{last.text}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_233e2caaec",
+      "actorId": "actor_233e2caaec",
+      "type": "NodeTransform",
+      "label": "Email Classifier: category = Company info request",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.category ?? '') === \"Company info request\";"
+      }
+    },
+    {
+      "nodeId": "node_d512c38ef6",
+      "actorId": "actor_d512c38ef6",
+      "type": "NodeBranch",
+      "label": "Email Classifier: category = Company info request?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_2c03c80a44",
+      "actorId": "actor_2c03c80a44",
+      "type": "NodeTransform",
+      "label": "Email Classifier: category = other",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.category ?? '') === \"other\";"
+      }
+    },
+    {
+      "nodeId": "node_90a208053f",
+      "actorId": "actor_90a208053f",
+      "type": "NodeBranch",
+      "label": "Email Classifier: category = other?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_9b928c40f8",
+      "actorId": "actor_9b928c40f8",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_DOWNLOAD_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive",
+        "action": "GOOGLESUPER_DOWNLOAD_FILE",
+        "params": {
+          "file_id": "{{last.result.id}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_1699efd19a",
+      "actorId": "actor_1699efd19a",
+      "type": "NodeCdecliAgent",
+      "label": "Write email",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "gpt-4o-mini",
+        "sessionId": "",
+        "system": "You are an expert at answering emails. You need to answer them professionally based on the information you have. This is a business email. Be concise and never exceed 100 words.",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_4a1b80206a",
+      "actorId": "actor_4a1b80206a",
+      "type": "NodeTransform",
+      "label": "Prompt: Write email",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Write email.\nconst __promptValue = `Write the text to reply to the following email:\n\n${$json}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_e1091e7163",
+      "actorId": "actor_e1091e7163",
+      "type": "NodeTransform",
+      "label": "Params: Qdrant Vector Store1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Params for pinecone/PINECONE_UPSERT_RECORDS_NAMESPACE (n8n node \"Qdrant Vector Store1\").\nreturn {\n  \"index_host\": \"{{pineconeIndexHost}}\",\n  \"namespace\": \"{{pineconeNamespace}}\",\n  \"records\": (() => {\n  const __docs = __items.flatMap((d) => (Array.isArray(d) ? d : [d]));\n  return __docs.map((d) => {\n    const text = typeof d === 'string' ? d : d?.pageContent ?? d?.text ?? d?.content ?? d?.chunk ?? JSON.stringify(d);\n    const meta = d && typeof d === 'object' ? (d.metadata && typeof d.metadata === 'object' ? d.metadata : d) : {};\n    const flat = {};\n    for (const [k, v] of Object.entries(meta)) if (!['pageContent', 'text', '_id'].includes(k) && ['string', 'number', 'boolean'].includes(typeof v)) flat[k] = v;\n    return { ...flat, _id: String(d?.id ?? meta.id ?? crypto.randomUUID()), text: String(text) };\n  });\n})(),\n};"
+      }
+    },
+    {
+      "nodeId": "node_9e34f55512",
+      "actorId": "actor_9e34f55512",
+      "type": "NodeCdeConnector",
+      "label": "pinecone/PINECONE_UPSERT_RECORDS_NAMESPACE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "pinecone",
+        "connectorLabel": "Pinecone",
+        "action": "PINECONE_UPSERT_RECORDS_NAMESPACE"
+      }
+    },
+    {
+      "nodeId": "node_01b72ffbe9",
+      "actorId": "actor_01b72ffbe9",
+      "type": "NodeLlmChain",
+      "label": "Review email",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "If you are an expert in reviewing emails before sending them. You need to review and structure them in such a way that you can send them. It must be in HTML format and you can insert (if you think it is appropriate) only HTML characters such as <br>, <b>, <i>, <p> where necessary.\n\nNon superare le 100 parole.",
+        "prompt": "Review at the following email:\n\n{{last.text}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_922f557daa",
+      "actorId": "actor_922f557daa",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (SMTP original)",
+        "action": "GOOGLESUPER_SEND_EMAIL",
+        "params": {
+          "recipient_email": "{{steps.GOOGLESUPER_FETCH_EMAILS.result.from}}",
+          "subject": "Re: {{steps.GOOGLESUPER_FETCH_EMAILS.result.subject}}",
+          "body": "{{last.text}}",
+          "is_html": true
+        }
+      }
+    },
+    {
+      "nodeId": "node_ff2b8b2fd9",
+      "actorId": "actor_ff2b8b2fd9",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 840,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_369e379d72",
+      "actorId": "actor_369e379d72",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_be52fd4f97",
+      "actorId": "actor_be52fd4f97",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_1b378a8ae1",
+      "actorId": "actor_1b378a8ae1",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "pineconeNamespace": "",
+          "pineconeIndexHost": "",
+          "collection": "",
+          "qdrantApiKey": {
+            "$workflowSecret": "QDRANT_API_KEY"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_d594e56773",
+      "actorId": "actor_d594e56773",
+      "type": "NodeChatModel",
+      "label": "Email Summarization Chain: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2360,
+        "y": 720
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openrouter",
+        "model": "deepseek/deepseek-r1:free"
+      }
+    },
+    {
+      "nodeId": "node_372225eb86",
+      "actorId": "actor_372225eb86",
+      "type": "NodeChatModel",
+      "label": "Email Classifier: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3120,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    },
+    {
+      "nodeId": "node_ce19a997e0",
+      "actorId": "actor_ce19a997e0",
+      "type": "NodeChatModel",
+      "label": "Review email: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 5400,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openrouter",
+        "model": "deepseek/deepseek-r1:free"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_a3bac6795e",
+      "target": "node_ba822415f4",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_a3bac6795e",
+      "target": "node_ba822415f4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_ba822415f4",
+      "target": "node_14df34b9b6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_14df34b9b6",
+      "target": "node_a004867932",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_4ac3d62fb7",
+      "target": "node_233e2caaec",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4ac3d62fb7",
+      "target": "node_233e2caaec",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_233e2caaec",
+      "target": "node_d512c38ef6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_233e2caaec",
+      "target": "node_d512c38ef6",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_4ac3d62fb7",
+      "target": "node_2c03c80a44",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d512c38ef6",
+      "target": "node_2c03c80a44",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2c03c80a44",
+      "target": "node_90a208053f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_2c03c80a44",
+      "target": "node_90a208053f",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_4a1b80206a",
+      "target": "node_1699efd19a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_e1091e7163",
+      "target": "node_9e34f55512",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_e1091e7163",
+      "target": "node_9e34f55512",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ae25a0a40e",
+      "target": "node_f4b21dc00d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ae25a0a40e",
+      "target": "node_f4b21dc00d",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f4b21dc00d",
+      "target": "node_a3bac6795e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f4b21dc00d",
+      "target": "node_a3bac6795e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f4b21dc00d",
+      "target": "node_14df34b9b6",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d512c38ef6",
+      "target": "node_4a1b80206a",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a004867932",
+      "target": "node_4a1b80206a",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_01b72ffbe9",
+      "target": "node_922f557daa",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_540e7c2f5f",
+      "target": "node_0b16f61f3d",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_540e7c2f5f",
+      "target": "node_7f35f58ad9",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_7f35f58ad9",
+      "target": "node_5f28d6601c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_5f28d6601c",
+      "target": "node_9b928c40f8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_9b928c40f8",
+      "target": "node_e1091e7163",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9b928c40f8",
+      "target": "node_e1091e7163",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_540e7c2f5f",
+      "target": "node_ae25a0a40e",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_0b16f61f3d",
+      "target": "node_ff2b8b2fd9",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_9e34f55512",
+      "target": "node_369e379d72",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_922f557daa",
+      "target": "node_be52fd4f97",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_d594e56773",
+      "target": "node_a004867932",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_372225eb86",
+      "target": "node_4ac3d62fb7",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_ce19a997e0",
+      "target": "node_01b72ffbe9",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_a004867932",
+      "target": "node_4ac3d62fb7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_1699efd19a",
+      "target": "node_01b72ffbe9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "Business Automation/AI/Communication",
+    "connectors": [
+      "googlesuper",
+      "openai",
+      "openrouter",
+      "pinecone"
+    ],
+    "setupVars": [
+      {
+        "key": "pineconeNamespace",
+        "label": "Pinecone namespace for this collection",
+        "type": "text",
+        "example": "documents",
+        "usedBy": [
+          "Qdrant Vector Store1"
+        ]
+      },
+      {
+        "key": "pineconeIndexHost",
+        "label": "Pinecone index host (create the index with integrated embedding and field map text=text)",
+        "type": "url",
+        "example": "my-index-abc123.svc.aped-4627-b74a.pinecone.io",
+        "usedBy": [
+          "Qdrant Vector Store1"
+        ]
+      },
+      {
+        "key": "collection",
+        "label": "Collection",
+        "type": "text",
+        "usedBy": [
+          "Create collection",
+          "Refresh collection"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "QDRANT_API_KEY",
+        "label": "Qdrant API key",
+        "host": "qdranturl",
+        "headerFormat": "api-key: <secret>",
+        "contextKey": "qdrantApiKey",
+        "usedBy": [
+          "Create collection",
+          "Refresh collection"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 23,
+      "yantraSteps": 25,
+      "foldedHelpers": [
+        "DeepSeek R1",
+        "OpenAI 4-o-mini",
+        "OpenAI",
+        "Qdrant Vector Store",
+        "Embeddings OpenAI1",
+        "Default Data Loader",
+        "DeepSeek"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/AI-Powered Email Automation for Business_ Summarize & Respond with RAG.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Email AI Auto-responder. Summerize and send email"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Setup value pineconeNamespace: Pinecone namespace for this collection (for example documents). Write it into the Workflow Configs initialContext before import.",
+      "Setup value pineconeIndexHost: Pinecone index host (create the index with integrated embedding and field map text=text) (for example my-index-abc123.svc.aped-4627-b74a.pinecone.io). Write it into the Workflow Configs initialContext before import.",
+      "Setup value collection: Collection. Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret QDRANT_API_KEY: Qdrant API key for qdranturl (api-key: <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "Connect the openrouter connector (credential).",
+      "Connect the pinecone connector (credential).",
+      "Provide run inputs: llm_system_a3bac6795e."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Email Trigger (IMAP)",
+          "n8n": "email.read",
+          "action": "googlesuper/GOOGLESUPER_FETCH_EMAILS",
+          "soft": true
+        },
+        {
+          "node": "Markdown",
+          "n8n": "markdown.markdownToHtml",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Qdrant Vector Store1",
+          "n8n": "vectorStoreQdrant.insert",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "DeepSeek R1",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Email Summarization Chain",
+          "model": "deepseek/deepseek-r1:free"
+        },
+        {
+          "node": "OpenAI 4-o-mini",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Email Classifier",
+          "model": "gpt-4o-mini"
+        },
+        {
+          "node": "OpenAI",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Write email",
+          "model": "gpt-4o-mini"
+        },
+        {
+          "node": "Qdrant Vector Store",
+          "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+          "into": "Write email",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Embeddings OpenAI1",
+          "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+          "into": "Qdrant Vector Store1",
+          "as": "ai_embedding"
+        },
+        {
+          "node": "Default Data Loader",
+          "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+          "into": "Qdrant Vector Store1",
+          "as": "ai_document"
+        },
+        {
+          "node": "DeepSeek",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Review email",
+          "model": "deepseek/deepseek-r1:free"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Email Trigger (IMAP)\": the original used Mailbox (IMAP original); check the mapped googlesuper/GOOGLESUPER_FETCH_EMAILS params before running.",
+        "\"Markdown\" (markdown.markdownToHtml): Markdown to HTML is a minimal converter on Yantra.",
+        "\"Markdown\": Markdown to HTML is a minimal converter on Yantra; swap in a connector if you need full fidelity.",
+        "\"Create collection\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Refresh collection\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Write email\" used agent tools in the original: Qdrant Vector Store (vectorStoreQdrant). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
+        "\"Qdrant Vector Store1\" folded a document (documentDefaultDataLoader); retrieved text is expected on the upstream payload as context/documents.",
+        "\"Qdrant Vector Store1\" (vectorStoreQdrant.insert): The original used a Qdrant collection; here the default vector store is a Pinecone index with integrated embedding (upsert records), so Pinecone embeds the text itself.",
+        "\"Qdrant Vector Store1\": create a Pinecone index with integrated embedding (for example llama-text-embed-v2, field map text=text) and set pineconeIndexHost; the Qdrant collection became the namespace \"{{pineconeNamespace}}\".",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect pinecone: `cdecli credential create -n \"pinecone\" -p pinecone --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "# STEP 1\n\n## Create Qdrant Collection\nChange:\n- QDRANTURL\n- COLLECTION",
+      "# STEP 2\n\n\n\n\n\n\n\n\n\n\n\n\n## Documents vectorization with Qdrant and Google Drive\nChange:\n- QDRANTURL\n- COLLECTION",
+      "# STEP 3 - MAIN FLOW\n\n- Transform the email into Markdown format for optimal reading by the LLM model\n- Email Summarization through DeepSeek R1 (any model can be used)\n- I classify the email in such a way as to continue only with emails regarding general information about the company. In this way I can respond independently through the information obtained from the vector database\n- I create a chain where I entrust the review of the email to a high-performance model designed for this purpose\n- I send the response email"
+    ],
+    "nodes": {
+      "node_ae25a0a40e": {
+        "n8n": "Email Trigger (IMAP)",
+        "n8nType": "n8n-nodes-base.emailReadImap",
+        "approximate": true
+      },
+      "node_540e7c2f5f": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_f4b21dc00d": {
+        "n8n": "Markdown",
+        "n8nType": "n8n-nodes-base.markdown"
+      },
+      "node_0b16f61f3d": {
+        "n8n": "Create collection",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_7f35f58ad9": {
+        "n8n": "Refresh collection",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_a004867932": {
+        "n8n": "Email Summarization Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainSummarization"
+      },
+      "node_a3bac6795e": {
+        "n8n": "Email Summarization Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainSummarization"
+      },
+      "node_ba822415f4": {
+        "n8n": "Email Summarization Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainSummarization"
+      },
+      "node_14df34b9b6": {
+        "n8n": "Email Summarization Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainSummarization"
+      },
+      "node_5f28d6601c": {
+        "n8n": "Get folder",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_4ac3d62fb7": {
+        "n8n": "Email Classifier",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_233e2caaec": {
+        "n8n": "Email Classifier",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_d512c38ef6": {
+        "n8n": "Email Classifier",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_2c03c80a44": {
+        "n8n": "Email Classifier",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_90a208053f": {
+        "n8n": "Email Classifier",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_9b928c40f8": {
+        "n8n": "Download Files",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_1699efd19a": {
+        "n8n": "Write email",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_4a1b80206a": {
+        "n8n": "Write email",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_e1091e7163": {
+        "n8n": "Qdrant Vector Store1",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreQdrant"
+      },
+      "node_9e34f55512": {
+        "n8n": "Qdrant Vector Store1",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreQdrant"
+      },
+      "node_01b72ffbe9": {
+        "n8n": "Review email",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_922f557daa": {
+        "n8n": "Send Email",
+        "n8nType": "n8n-nodes-base.emailSend"
+      },
+      "node_ff2b8b2fd9": {
+        "n8n": "__end:Create collection",
+        "n8nType": "synthetic"
+      },
+      "node_369e379d72": {
+        "n8n": "__end:Qdrant Vector Store1",
+        "n8nType": "synthetic"
+      },
+      "node_be52fd4f97": {
+        "n8n": "__end:Send Email",
+        "n8nType": "synthetic"
+      },
+      "node_1b378a8ae1": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_d594e56773": {
+        "n8n": "Email Summarization Chain",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_372225eb86": {
+        "n8n": "Email Classifier",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_ce19a997e0": {
+        "n8n": "Review email",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

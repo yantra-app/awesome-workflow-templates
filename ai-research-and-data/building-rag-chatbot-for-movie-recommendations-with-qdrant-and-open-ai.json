@@ -1,0 +1,982 @@
+{
+  "name": "Building RAG Chatbot for Movie Recommendations with Qdrant and Open AI",
+  "workflowSlug": "building-rag-chatbot-for-movie-recommendations-with-qdrant-and-open-ai",
+  "description": "Constructs a RAG-based chatbot for movie recommendations, leveraging Qdrant for retrieval and OpenAI for generation.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_75a68e518b",
+      "actorId": "actor_75a68e518b",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_fd8bd4dcb6",
+      "actorId": "actor_fd8bd4dcb6",
+      "type": "NodeCdeConnector",
+      "label": "github/GITHUB_GET_REPOSITORY_CONTENT",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "github",
+        "connectorLabel": "GitHub",
+        "action": "GITHUB_GET_REPOSITORY_CONTENT",
+        "params": {
+          "owner": "mrscoopers",
+          "repo": "n8n_demo",
+          "path": "Top_1000_IMDB_movies.csv"
+        }
+      }
+    },
+    {
+      "nodeId": "node_6271c85a08",
+      "actorId": "actor_6271c85a08",
+      "type": "NodeCdecliAgent",
+      "label": "AI Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "gpt-4o-mini",
+        "sessionId": "{{sessionId}}",
+        "system": "You are a Movie Recommender Tool using a Vector Database under the hood. Provide top-3 movie recommendations returned by the database, ordered by their recommendation score, but not showing the score to the user.",
+        "message": "{{chatInput}}"
+      }
+    },
+    {
+      "nodeId": "node_7f7370857b",
+      "actorId": "actor_7f7370857b",
+      "type": "NodeHttpRequest",
+      "label": "Embedding Recommendation Request with Open AI",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/embeddings",
+        "headers": {
+          "Authorization": "Bearer {{openaiApiKey}}"
+        },
+        "body": {
+          "input": "{{query.positive_example}}",
+          "model": "text-embedding-3-small"
+        }
+      }
+    },
+    {
+      "nodeId": "node_ccf7bee20f",
+      "actorId": "actor_ccf7bee20f",
+      "type": "NodeHttpRequest",
+      "label": "Embedding Anti-Recommendation Request with Open AI",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/embeddings",
+        "headers": {
+          "Authorization": "Bearer {{openaiApiKey}}"
+        },
+        "body": {
+          "input": "{{query.negative_example}}",
+          "model": "text-embedding-3-small"
+        }
+      }
+    },
+    {
+      "nodeId": "node_3930af70cc",
+      "actorId": "actor_3930af70cc",
+      "type": "NodeTransform",
+      "label": "Extract from File",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// Parse CSV rows into objects keyed by the header row.\nconst __file = typeof source === 'string' ? source : source?.data ?? source?.content ?? source?.body ?? source;\nconst __text = typeof __file === 'string' ? __file : JSON.stringify(__file ?? '');\nconst __sep = \",\";\nconst __rows = [];\nlet __row = [], __cell = '', __q = false;\nfor (let i = 0; i < __text.length; i++) {\n  const c = __text[i];\n  if (__q) { if (c === '\"' && __text[i + 1] === '\"') { __cell += '\"'; i++; } else if (c === '\"') __q = false; else __cell += c; continue; }\n  if (c === '\"') __q = true;\n  else if (c === __sep) { __row.push(__cell); __cell = ''; }\n  else if (c === '\\n' || c === '\\r') { if (c === '\\r' && __text[i + 1] === '\\n') i++; __row.push(__cell); __rows.push(__row); __row = []; __cell = ''; }\n  else __cell += c;\n}\nif (__cell !== '' || __row.length) { __row.push(__cell); __rows.push(__row); }\nconst [__head = [], ...__body] = __rows;\nreturn __body.filter((r) => r.some((v) => v !== '')).map((r) => Object.fromEntries(__head.map((h, i) => [h, r[i] ?? ''])));"
+      }
+    },
+    {
+      "nodeId": "node_156e5bb350",
+      "actorId": "actor_156e5bb350",
+      "type": "NodeTransform",
+      "label": "Extracting Embedding",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"positive_example\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json.data[0].embedding));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_f6e0ed6259",
+      "actorId": "actor_f6e0ed6259",
+      "type": "NodeTransform",
+      "label": "Extracting Embedding1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"negative_example\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json.data[0].embedding));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_c93ab2dd6d",
+      "actorId": "actor_c93ab2dd6d",
+      "type": "NodeTransform",
+      "label": "Params: Qdrant Vector Store",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Params for pinecone/PINECONE_UPSERT_RECORDS_NAMESPACE (n8n node \"Qdrant Vector Store\").\nreturn {\n  \"index_host\": \"{{pineconeIndexHost}}\",\n  \"namespace\": \"imdb\",\n  \"records\": (() => {\n  const __docs = __items.flatMap((d) => (Array.isArray(d) ? d : [d]));\n  return __docs.map((d) => {\n    const text = typeof d === 'string' ? d : d?.pageContent ?? d?.text ?? d?.content ?? d?.chunk ?? JSON.stringify(d);\n    const meta = d && typeof d === 'object' ? (d.metadata && typeof d.metadata === 'object' ? d.metadata : d) : {};\n    const flat = {};\n    for (const [k, v] of Object.entries(meta)) if (!['pageContent', 'text', '_id'].includes(k) && ['string', 'number', 'boolean'].includes(typeof v)) flat[k] = v;\n    return { ...flat, _id: String(d?.id ?? meta.id ?? crypto.randomUUID()), text: String(text) };\n  });\n})(),\n};"
+      }
+    },
+    {
+      "nodeId": "node_5a16735359",
+      "actorId": "actor_5a16735359",
+      "type": "NodeCdeConnector",
+      "label": "pinecone/PINECONE_UPSERT_RECORDS_NAMESPACE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "pinecone",
+        "connectorLabel": "Pinecone",
+        "action": "PINECONE_UPSERT_RECORDS_NAMESPACE"
+      }
+    },
+    {
+      "nodeId": "node_7e0926278c",
+      "actorId": "actor_7e0926278c",
+      "type": "NodeSync",
+      "label": "Merge",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_ef07f954ff",
+      "actorId": "actor_ef07f954ff",
+      "type": "NodeHttpRequest",
+      "label": "Calling Qdrant Recommendation API",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://edcc6735-2ffb-484f-b735-3467043828fe.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/imdb_1000_open_ai/points/query",
+        "headers": {
+          "Content-Type": "application/json",
+          "api-key": "{{qdrantApiKey}}"
+        },
+        "body": "{\n \"query\": {\n \"recommend\": {\n \"positive\": [[{{last.data1.positive_example}}]],\n \"negative\": [[{{last.data1.negative_example}}]],\n \"strategy\": \"average_vector\"\n }\n },\n \"limit\":3\n}"
+      }
+    },
+    {
+      "nodeId": "node_09eef24fb5",
+      "actorId": "actor_09eef24fb5",
+      "type": "NodeHttpRequest",
+      "label": "Retrieving Recommended Movies Meta Data",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://edcc6735-2ffb-484f-b735-3467043828fe.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/imdb_1000_open_ai/points",
+        "headers": {
+          "Content-Type": "application/json",
+          "api-key": "{{qdrantApiKey}}"
+        },
+        "body": "{\n \"ids\": [\"{{last.body.result.points.0.id}}\", \"{{last.body.result.points.1.id}}\", \"{{last.body.result.points.2.id}}\"],\n \"with_payload\":true\n}"
+      }
+    },
+    {
+      "nodeId": "node_cc5fdb2c85",
+      "actorId": "actor_cc5fdb2c85",
+      "type": "NodeTransform",
+      "label": "Split Out1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"result.points\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"result.points\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"result.points\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_2e591f7348",
+      "actorId": "actor_2e591f7348",
+      "type": "NodeTransform",
+      "label": "Split Out",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"result\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"result\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"result\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_fdb74b5689",
+      "actorId": "actor_fdb74b5689",
+      "type": "NodeSync",
+      "label": "Merge1",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_541e650d9c",
+      "actorId": "actor_541e650d9c",
+      "type": "NodeTransform",
+      "label": "Selecting Fields Relevant for Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"movie_recommendation_score\"] = Number(($json.score));\n  out[\"movie_description\"] = ($json.payload.content);\n  out[\"movie_name\"] = ($json.payload.metadata.movie_name);\n  out[\"movie_release_year\"] = ($json.payload.metadata.release_year);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_12338d807f",
+      "actorId": "actor_12338d807f",
+      "type": "NodeTransform",
+      "label": "Aggregate",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nreturn { \"response\": __items };"
+      }
+    },
+    {
+      "nodeId": "node_810b9e326b",
+      "actorId": "actor_810b9e326b",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 840,
+        "y": 880
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f9af438af7",
+      "actorId": "actor_f9af438af7",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 1980,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_b80fc14a85",
+      "actorId": "actor_b80fc14a85",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_58dd8c4215",
+      "actorId": "actor_58dd8c4215",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 1140
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "chatInput": "",
+          "sessionId": "",
+          "pineconeIndexHost": "",
+          "openaiApiKey": {
+            "$workflowSecret": "OPENAI_API_KEY"
+          },
+          "qdrantApiKey": {
+            "$workflowSecret": "QDRANT_API_KEY"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_c93ab2dd6d",
+      "target": "node_5a16735359",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_c93ab2dd6d",
+      "target": "node_5a16735359",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_75a68e518b",
+      "target": "node_fd8bd4dcb6",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_fd8bd4dcb6",
+      "target": "node_3930af70cc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fd8bd4dcb6",
+      "target": "node_3930af70cc",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3930af70cc",
+      "target": "node_c93ab2dd6d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3930af70cc",
+      "target": "node_c93ab2dd6d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_75a68e518b",
+      "target": "node_6271c85a08",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_75a68e518b",
+      "target": "node_7f7370857b",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_75a68e518b",
+      "target": "node_ccf7bee20f",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_7e0926278c",
+      "target": "node_ef07f954ff",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_2e591f7348",
+      "target": "node_fdb74b5689",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_cc5fdb2c85",
+      "target": "node_fdb74b5689",
+      "sourceOutput": "transformed",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_fdb74b5689",
+      "target": "node_541e650d9c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fdb74b5689",
+      "target": "node_541e650d9c",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7f7370857b",
+      "target": "node_156e5bb350",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7f7370857b",
+      "target": "node_156e5bb350",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ccf7bee20f",
+      "target": "node_f6e0ed6259",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ccf7bee20f",
+      "target": "node_f6e0ed6259",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_156e5bb350",
+      "target": "node_7e0926278c",
+      "sourceOutput": "transformed",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_f6e0ed6259",
+      "target": "node_7e0926278c",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_ef07f954ff",
+      "target": "node_09eef24fb5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_ef07f954ff",
+      "target": "node_cc5fdb2c85",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ef07f954ff",
+      "target": "node_cc5fdb2c85",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_09eef24fb5",
+      "target": "node_2e591f7348",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_09eef24fb5",
+      "target": "node_2e591f7348",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_541e650d9c",
+      "target": "node_12338d807f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_541e650d9c",
+      "target": "node_12338d807f",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6271c85a08",
+      "target": "node_810b9e326b",
+      "sourceOutput": "text",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_5a16735359",
+      "target": "node_f9af438af7",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_12338d807f",
+      "target": "node_b80fc14a85",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "ai-research-and-data",
+    "categoryLabel": "AI Research, RAG and Data Analysis",
+    "department": "AI Research, Entertainment",
+    "connectors": [
+      "github",
+      "pinecone"
+    ],
+    "setupVars": [
+      {
+        "key": "pineconeIndexHost",
+        "label": "Pinecone index host (create the index with integrated embedding and field map text=text)",
+        "type": "url",
+        "example": "my-index-abc123.svc.aped-4627-b74a.pinecone.io",
+        "usedBy": [
+          "Qdrant Vector Store"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "OPENAI_API_KEY",
+        "label": "OpenAI API key",
+        "host": "api.openai.com",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "openaiApiKey",
+        "usedBy": [
+          "Embedding Anti-Recommendation Request with Open AI",
+          "Embedding Recommendation Request with Open AI"
+        ]
+      },
+      {
+        "key": "QDRANT_API_KEY",
+        "label": "Qdrant API key",
+        "host": "edcc6735-2ffb-484f-b735-3467043828fe.europe-west3-0.gcp.cloud.qdrant.io",
+        "headerFormat": "api-key: <secret>",
+        "contextKey": "qdrantApiKey",
+        "usedBy": [
+          "Calling Qdrant Recommendation API",
+          "Retrieving Recommended Movies Meta Data"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 25,
+      "yantraSteps": 18,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "Window Buffer Memory",
+        "Call n8n Workflow Tool",
+        "Embeddings OpenAI",
+        "Default Data Loader"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "AI_Research_RAG_and_Data_Analysis/Building RAG Chatbot for Movie Recommendations with Qdrant and Open AI.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Building RAG Chatbot for Movie Recommendations with Qdrant and Open AI"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Execute Workflow Trigger",
+        "detail": "n8n-nodes-base.executeWorkflowTrigger became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "When chat message received",
+        "detail": "@n8n/n8n-nodes-langchain.chatTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Execute Workflow Trigger\" (executeWorkflowTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"When chat message received\" (chatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value pineconeIndexHost: Pinecone index host (create the index with integrated embedding and field map text=text) (for example my-index-abc123.svc.aped-4627-b74a.pinecone.io). Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret OPENAI_API_KEY: OpenAI API key for api.openai.com (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Workflow secret QDRANT_API_KEY: Qdrant API key for edcc6735-2ffb-484f-b735-3467043828fe.europe-west3-0.gcp.cloud.qdrant.io (api-key: <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the github connector (credential).",
+      "Connect the pinecone connector (credential).",
+      "Provide run inputs: chatInput, sessionId, query."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Extract from File",
+          "n8n": "extractFromFile.csv",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Qdrant Vector Store",
+          "n8n": "vectorStoreQdrant.insert",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "AI Agent",
+          "model": "gpt-4o-mini"
+        },
+        {
+          "node": "Window Buffer Memory",
+          "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+          "into": "AI Agent",
+          "as": "ai_memory"
+        },
+        {
+          "node": "Call n8n Workflow Tool",
+          "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+          "into": "AI Agent",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Embeddings OpenAI",
+          "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+          "into": "Qdrant Vector Store",
+          "as": "ai_embedding"
+        },
+        {
+          "node": "Default Data Loader",
+          "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+          "into": "Qdrant Vector Store",
+          "as": "ai_document"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "When chat message received",
+          "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Execute Workflow Trigger",
+          "type": "n8n-nodes-base.executeWorkflowTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
+        "The original was a sub-workflow called by another workflow; pass its inputs as run inputs.",
+        "\"AI Agent\" kept conversation memory (memoryBufferWindow); sessionId is set to the run-input sessionId.",
+        "\"AI Agent\" used agent tools in the original: Call n8n Workflow Tool (toolWorkflow). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
+        "\"Embedding Recommendation Request with Open AI\" authenticated with openAiApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Embedding Anti-Recommendation Request with Open AI\" authenticated with openAiApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Extract from File\" (extractFromFile.csv): Files flow as text or base64 fields on Yantra, not binary attachments; check the previous step hands over the file content.",
+        "\"Qdrant Vector Store\" folded a document (documentDefaultDataLoader); retrieved text is expected on the upstream payload as context/documents.",
+        "\"Qdrant Vector Store\" (vectorStoreQdrant.insert): The original used a Qdrant collection; here the default vector store is a Pinecone index with integrated embedding (upsert records), so Pinecone embeds the text itself.",
+        "\"Qdrant Vector Store\": create a Pinecone index with integrated embedding (for example llama-text-embed-v2, field map text=text) and set pineconeIndexHost; the Qdrant collection became the namespace \"imdb\".",
+        "\"Merge\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "\"Calling Qdrant Recommendation API\" authenticated with qdrantApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Retrieving Recommended Movies Meta Data\" authenticated with qdrantApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Merge1\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect github: `cdecli credential create -n \"github\" -p github --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect pinecone: `cdecli credential create -n \"pinecone\" -p pinecone --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "Tool, calling Qdrant's recommendation API based on user's request, transformed by AI agent",
+      "Uploading data (movies and their descriptions) to Qdrant Vector Store"
+    ],
+    "nodes": {
+      "node_75a68e518b": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger",
+        "also": [
+          "When chat message received",
+          "Execute Workflow Trigger"
+        ]
+      },
+      "node_fd8bd4dcb6": {
+        "n8n": "GitHub",
+        "n8nType": "n8n-nodes-base.github"
+      },
+      "node_6271c85a08": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_7f7370857b": {
+        "n8n": "Embedding Recommendation Request with Open AI",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "openAiApi"
+      },
+      "node_ccf7bee20f": {
+        "n8n": "Embedding Anti-Recommendation Request with Open AI",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "openAiApi"
+      },
+      "node_3930af70cc": {
+        "n8n": "Extract from File",
+        "n8nType": "n8n-nodes-base.extractFromFile"
+      },
+      "node_156e5bb350": {
+        "n8n": "Extracting Embedding",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_f6e0ed6259": {
+        "n8n": "Extracting Embedding1",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_c93ab2dd6d": {
+        "n8n": "Qdrant Vector Store",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreQdrant"
+      },
+      "node_5a16735359": {
+        "n8n": "Qdrant Vector Store",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreQdrant"
+      },
+      "node_7e0926278c": {
+        "n8n": "Merge",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_ef07f954ff": {
+        "n8n": "Calling Qdrant Recommendation API",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "qdrantApi"
+      },
+      "node_09eef24fb5": {
+        "n8n": "Retrieving Recommended Movies Meta Data",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "qdrantApi"
+      },
+      "node_cc5fdb2c85": {
+        "n8n": "Split Out1",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_2e591f7348": {
+        "n8n": "Split Out",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_fdb74b5689": {
+        "n8n": "Merge1",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_541e650d9c": {
+        "n8n": "Selecting Fields Relevant for Agent",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_12338d807f": {
+        "n8n": "Aggregate",
+        "n8nType": "n8n-nodes-base.aggregate"
+      },
+      "node_810b9e326b": {
+        "n8n": "__end:AI Agent",
+        "n8nType": "synthetic"
+      },
+      "node_f9af438af7": {
+        "n8n": "__end:Qdrant Vector Store",
+        "n8nType": "synthetic"
+      },
+      "node_b80fc14a85": {
+        "n8n": "__end:Aggregate",
+        "n8nType": "synthetic"
+      },
+      "node_58dd8c4215": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

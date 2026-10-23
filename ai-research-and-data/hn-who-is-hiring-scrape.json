@@ -1,0 +1,822 @@
+{
+  "name": "HN Who is Hiring Scrape",
+  "workflowSlug": "hn-who-is-hiring-scrape",
+  "description": "Scrapes and parses job listings from Hacker News for job seekers or recruiters.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_2accbb6b02",
+      "actorId": "actor_2accbb6b02",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f269e8957d",
+      "actorId": "actor_f269e8957d",
+      "type": "NodeHttpRequest",
+      "label": "Search for Who is hiring posts",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://uj5wyc0l7x-dsn.algolia.net/1/indexes/Item_dev_sort_date/query?x-algolia-agent=Algolia+for+JavaScript+%284.13.1%29%3B+Browser+%28lite%29&x-algolia-application-id=UJ5WYC0L7X",
+        "headers": {
+          "Accept": "*/*",
+          "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
+          "Connection": "keep-alive",
+          "DNT": "1",
+          "Origin": "https://hn.algolia.com",
+          "Referer": "https://hn.algolia.com/",
+          "Sec-Fetch-Dest": "empty",
+          "Sec-Fetch-Mode": "cors",
+          "Sec-Fetch-Site": "cross-site",
+          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+          "sec-ch-ua": "\"Chromium\";v=\"133\", \"Not(A:Brand\";v=\"99\"",
+          "sec-ch-ua-mobile": "?0",
+          "sec-ch-ua-platform": "\"macOS\"",
+          "Content-Type": "application/json",
+          "Authorization": "{{algoliaApiKey}}"
+        },
+        "body": "{\n \"query\": \"\\\"Ask HN: Who is hiring\\\"\",\n \"analyticsTags\": [\n \"web\"\n ],\n \"page\": 0,\n \"hitsPerPage\": 30,\n \"minWordSizefor1Typo\": 4,\n \"minWordSizefor2Typos\": 8,\n \"advancedSyntax\": true,\n \"ignorePlurals\": false,\n \"clickAnalytics\": true,\n \"minProximity\": 7,\n \"numericFilters\": [],\n \"tagFilters\": [\n [\n \"story\"\n ],\n []\n ],\n \"typoTolerance\": \"min\",\n \"queryType\": \"prefixNone\",\n \"restrictSearchableAttributes\": [\n \"title\",\n \"comment_text\",\n \"url\",\n \"story_text\",\n \"author\"\n ],\n \"getRankingInfo\": true\n}"
+      }
+    },
+    {
+      "nodeId": "node_cbe71451c6",
+      "actorId": "actor_cbe71451c6",
+      "type": "NodeTransform",
+      "label": "Split Out",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"hits\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"hits\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"hits\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_34bf3b1ef8",
+      "actorId": "actor_34bf3b1ef8",
+      "type": "NodeTransform",
+      "label": "Get relevant data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"title\"] = ($json.title);\n  out[\"createdAt\"] = ($json.created_at);\n  out[\"updatedAt\"] = ($json.updated_at);\n  out[\"storyId\"] = ($json.story_id);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_3232c71d76",
+      "actorId": "actor_3232c71d76",
+      "type": "NodeTransform",
+      "label": "Get latest post",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\nreturn __items.filter(($json) => Boolean((new Date(($json.createdAt)) > new Date(`${$now.minus({days: 30})} `))));"
+      }
+    },
+    {
+      "nodeId": "node_68a59f8543",
+      "actorId": "actor_68a59f8543",
+      "type": "NodeHttpRequest",
+      "label": "HN API: Get Main Post",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://hacker-news.firebaseio.com/v0/item/{{last.transformed.storyId}}.json?print=pretty"
+      }
+    },
+    {
+      "nodeId": "node_9c7e6a6219",
+      "actorId": "actor_9c7e6a6219",
+      "type": "NodeTransform",
+      "label": "Split out children (jobs)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"kids\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"kids\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"kids\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_4a440a71bf",
+      "actorId": "actor_4a440a71bf",
+      "type": "NodeHttpRequest",
+      "label": "HI API: Get the individual job post",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://hacker-news.firebaseio.com/v0/item/{{last.transformed.kids}}.json?print=pretty"
+      }
+    },
+    {
+      "nodeId": "node_3accaeb6dc",
+      "actorId": "actor_3accaeb6dc",
+      "type": "NodeTransform",
+      "label": "Extract text",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"text\"] = ($json.text);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_b241b3075b",
+      "actorId": "actor_b241b3075b",
+      "type": "NodeTransform",
+      "label": "Clean text",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Clean text\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // In a Function node in n8n\n  const inputData = $input.all();\n  \n  function cleanAllPosts(data) {\n   return data.map(item => {\n   try {\n   // Check if item exists and has the expected structure\n   if (!item || typeof item !== 'object') {\n   return { cleaned_text: '', error: 'Invalid item structure' };\n   }\n  \n   // Get the text, with multiple fallbacks\n   let text = '';\n   if (typeof item === 'string') {\n   text = item;\n   } else if (item.json && item.json.text) {\n   text = item.json.text;\n   } else if (typeof item.json === 'string') {\n   text = item.json;\n   } else {\n   text = JSON.stringify(item);\n   }\n  \n   // Make sure text is a string\n   text = String(text);\n   \n   // Perform the cleaning operations\n   try {\n   text = text.replace(/&#x2F;/g, '/');\n   text = text.replace(/&#x27;/g, \"'\");\n   text = text.replace(/&\\w+;/g, ' ');\n   text = text.replace(/<[^>]*>/g, '');\n   text = text.replace(/\\|\\s*/g, '| ');\n   text = text.replace(/\\s+/g, ' ');\n   text = text.replace(/\\s*(https?:\\/\\/[^\\s]+)\\s*/g, '\\n$1\\n');\n   text = text.replace(/\\n{3,}/g, '\\n\\n');\n   text = text.trim();\n   } catch (cleaningError) {\n   console.log('Error during text cleaning:', cleaningError);\n   // Return original text if cleaning fails\n   return { cleaned_text: text, warning: 'Partial cleaning applied' };\n   }\n  \n   return { cleaned_text: text };\n   \n   } catch (error) {\n   console.log('Error processing item:', error);\n   return { \n   cleaned_text: '', \n   error: `Processing error: ${error.message}`,\n   original: item\n   };\n   }\n   }).filter(result => result.cleaned_text || result.error); \n  }\n  \n  try {\n   return cleanAllPosts(inputData);\n  } catch (error) {\n   console.log('Fatal error:', error);\n   return [{ \n   cleaned_text: '', \n   error: `Fatal error: ${error.message}`,\n   input: inputData \n   }];\n  }\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_3f0310c9eb",
+      "actorId": "actor_3f0310c9eb",
+      "type": "NodeTransform",
+      "label": "Limit for testing (optional)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nreturn __items.slice(0, 5);"
+      }
+    },
+    {
+      "nodeId": "node_c10727db31",
+      "actorId": "actor_c10727db31",
+      "type": "NodeLlmChain",
+      "label": "Trun into structured data",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "company": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Name of the hiring company"
+            },
+            "title": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Job title/role being advertised"
+            },
+            "location": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Work location including remote/hybrid status"
+            },
+            "type": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "FULL_TIME",
+                "PART_TIME",
+                "CONTRACT",
+                "INTERNSHIP",
+                "FREELANCE",
+                null
+              ],
+              "description": "Employment type (Full-time, Contract, etc)"
+            },
+            "work_location": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "REMOTE",
+                "HYBRID",
+                "ON_SITE",
+                null
+              ],
+              "description": "Work arrangement type"
+            },
+            "salary": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Compensation details if provided"
+            },
+            "description": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Main job description text including requirements and team info"
+            },
+            "apply_url": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Direct application/job posting URL"
+            },
+            "company_url": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Company website or careers page"
+            }
+          }
+        },
+        "system": "Extract the JSON data",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_a55a7b267f",
+      "actorId": "actor_a55a7b267f",
+      "type": "NodeTransform",
+      "label": "Prompt: Trun into structured data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Trun into structured data.\nconst __promptValue = ($json.cleaned_text);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_99e931cff4",
+      "actorId": "actor_99e931cff4",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_CREATE_RECORD",
+      "color": "#6366F1",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_CREATE_RECORD",
+        "params": {
+          "baseId": "{{airtableBaseId}}",
+          "tableIdOrName": "{{airtableTableId}}",
+          "fields": {
+            "type": "{{last.object.type}}",
+            "title": "{{last.object.title}}",
+            "salary": "{{last.object.salary}}",
+            "company": "{{last.object.company}}",
+            "location": "{{last.object.location}}",
+            "apply_url": "{{last.object.apply_url}}",
+            "company_url": "{{last.object.company_url}}",
+            "description": "{{last.object.description}}"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_4141894df5",
+      "actorId": "actor_4141894df5",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_e2d6eeacfc",
+      "actorId": "actor_e2d6eeacfc",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "airtableBaseId": "",
+          "airtableTableId": "",
+          "algoliaApiKey": {
+            "$workflowSecret": "ALGOLIA_API_KEY"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_2be631042c",
+      "actorId": "actor_2be631042c",
+      "type": "NodeChatModel",
+      "label": "Trun into structured data: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4640,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_a55a7b267f",
+      "target": "node_c10727db31",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_2accbb6b02",
+      "target": "node_f269e8957d",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_cbe71451c6",
+      "target": "node_34bf3b1ef8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cbe71451c6",
+      "target": "node_34bf3b1ef8",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f269e8957d",
+      "target": "node_cbe71451c6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f269e8957d",
+      "target": "node_cbe71451c6",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_34bf3b1ef8",
+      "target": "node_3232c71d76",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_34bf3b1ef8",
+      "target": "node_3232c71d76",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3232c71d76",
+      "target": "node_68a59f8543",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_9c7e6a6219",
+      "target": "node_4a440a71bf",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_c10727db31",
+      "target": "node_99e931cff4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_3accaeb6dc",
+      "target": "node_b241b3075b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3accaeb6dc",
+      "target": "node_b241b3075b",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b241b3075b",
+      "target": "node_3f0310c9eb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b241b3075b",
+      "target": "node_3f0310c9eb",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3f0310c9eb",
+      "target": "node_a55a7b267f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3f0310c9eb",
+      "target": "node_a55a7b267f",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4a440a71bf",
+      "target": "node_3accaeb6dc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4a440a71bf",
+      "target": "node_3accaeb6dc",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_68a59f8543",
+      "target": "node_9c7e6a6219",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_68a59f8543",
+      "target": "node_9c7e6a6219",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_99e931cff4",
+      "target": "node_4141894df5",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_2be631042c",
+      "target": "node_c10727db31",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "ai-research-and-data",
+    "categoryLabel": "AI Research, RAG and Data Analysis",
+    "department": "Data Collection, HR",
+    "connectors": [
+      "airtable",
+      "openai"
+    ],
+    "setupVars": [
+      {
+        "key": "airtableBaseId",
+        "label": "Airtable base id",
+        "type": "id",
+        "example": "appXXXX (from the base URL)",
+        "usedBy": [
+          "Write results to airtable"
+        ]
+      },
+      {
+        "key": "airtableTableId",
+        "label": "Airtable table id",
+        "type": "id",
+        "example": "tblXXXX (from the table URL)",
+        "usedBy": [
+          "Write results to airtable"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "ALGOLIA_API_KEY",
+        "label": "uj5wyc0l7x-dsn.algolia.net API credential header value (for example \"Bearer <key>\"; rename the header if the API expects another one)",
+        "host": "uj5wyc0l7x-dsn.algolia.net",
+        "headerFormat": "Authorization: <secret>",
+        "contextKey": "algoliaApiKey",
+        "usedBy": [
+          "Search for Who is hiring posts"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 15,
+      "yantraSteps": 15,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "Structured Output Parser"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "AI_Research_RAG_and_Data_Analysis/Hacker News Job Listing Scraper and Parser.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "HN Who is Hiring Scrape"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Setup value airtableBaseId: Airtable base id (for example appXXXX (from the base URL)). Write it into the Workflow Configs initialContext before import.",
+      "Setup value airtableTableId: Airtable table id (for example tblXXXX (from the table URL)). Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret ALGOLIA_API_KEY: uj5wyc0l7x-dsn.algolia.net API credential header value (for example \"Bearer <key>\"; rename the header if the API expects another one) for uj5wyc0l7x-dsn.algolia.net (Authorization: <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the airtable connector (credential).",
+      "Connect the openai connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Trun into structured data",
+          "model": "gpt-4o-mini"
+        },
+        {
+          "node": "Structured Output Parser",
+          "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+          "into": "Trun into structured data",
+          "as": "ai_outputParser"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Search for Who is hiring posts\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect airtable: `cdecli credential create -n \"airtable\" -p airtable --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "\"Trun into structured data\": normalized the legacy output schema for LLMChain's strict parser (shorthand/examples become JSON Schema; email/date formats use syntax patterns). Review the schema before running."
+      ]
+    },
+    "notes": [
+      "## Go to https://hn.algolia.com\n- filter by \"Ask HN: Who is hiring?\" (important with quotes for full match)\n- sort by date\n- Chrome Network Tab > find API call > click \"Copy as cURL\"\n- n8n HTTP node -> import cURL and paste \n- I've set the API key as Header Auth so you will have to do the above yourself to make this work",
+      "## Go to HN API \nhttps://github.com/HackerNews/API\n\nWe'll need following endpoints: \n- For example, a story: https://hacker-news.firebaseio.com/v0/item/8863.json?print=pretty\n- comment: https://hacker-news.firebaseio.com/v0/item/2921983.json?print=pretty",
+      "## Data Structure\n\nWe use Openai GPT-4o-mini to transform the raw data in a unified data structure. Feel free to change this.\n\n```json\n{\n \"company\": \"Name of the hiring company\",\n \"title\": \"Job title/role being advertised\",\n \"location\": \"Work location including remote/hybrid status\",\n \"type\": \"Employment type (Full-time, Contract, etc)\",\n \"salary\": \"Compensation details if provided\",\n \"description\": \"Main job description text including requirements and team info\",\n \"apply_url\": \"Direct application/job posting URL\",\n \"company_url\": \"Company website or careers page\"\n}\n```",
+      "## Clean the result \n\n```json\n{\n\"title\": \"Ask HN: Who is hiring? (February 2025)\",\n\"createdAt\": \"2025-02-03T16:00:43Z\",\n\"updatedAt\": \"2025-02-17T08:35:44Z\",\n\"storyId\": \"42919502\"\n},\n{\n\"title\": \"Ask HN: Who is hiring? (January 2025)\",\n\"createdAt\": \"2025-01-02T16:00:09Z\",\n\"updatedAt\": \"2025-02-13T00:03:24Z\",\n\"storyId\": \"42575537\"\n},\n```",
+      "## Hacker News - Who is Hiring Scrape\n\nIn this template we setup a scraper for the monthly HN Who is Hiring post. This way we can scrape the data and transform it to a common data strcutre.\n\nFirst we use the [Algolia Search](https://hn.algolia.com/) provided by hackernews to drill down the results.\n\nWe can use the official [Hacker News API](https://github.com/HackerNews/API\n) to get the post data and also all the replies!\n\nThis will obviously work for any kind of post on hacker news! Get creative 😃\n\nAll you need is an Openai Account to structure the text data and an Airtable Account (or similar) to write the results to a list.\n\nCopy my base https://airtable.com/[id removed]/shrAuo78cJt5C2laR"
+    ],
+    "nodes": {
+      "node_2accbb6b02": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_f269e8957d": {
+        "n8n": "Search for Who is hiring posts",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_cbe71451c6": {
+        "n8n": "Split Out",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_34bf3b1ef8": {
+        "n8n": "Get relevant data",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_3232c71d76": {
+        "n8n": "Get latest post",
+        "n8nType": "n8n-nodes-base.filter"
+      },
+      "node_68a59f8543": {
+        "n8n": "HN API: Get Main Post",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_9c7e6a6219": {
+        "n8n": "Split out children (jobs)",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_4a440a71bf": {
+        "n8n": "HI API: Get the individual job post",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_3accaeb6dc": {
+        "n8n": "Extract text",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_b241b3075b": {
+        "n8n": "Clean text",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_3f0310c9eb": {
+        "n8n": "Limit for testing (optional)",
+        "n8nType": "n8n-nodes-base.limit"
+      },
+      "node_c10727db31": {
+        "n8n": "Trun into structured data",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_a55a7b267f": {
+        "n8n": "Trun into structured data",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_99e931cff4": {
+        "n8n": "Write results to airtable",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_4141894df5": {
+        "n8n": "__end:Write results to airtable",
+        "n8nType": "synthetic"
+      },
+      "node_e2d6eeacfc": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_2be631042c": {
+        "n8n": "Trun into structured data",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

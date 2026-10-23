@@ -1,0 +1,446 @@
+{
+  "name": "IT Ops AI SlackBot Workflow - Chat with your knowledge base",
+  "workflowSlug": "it-ops-ai-slackbot-workflow-chat-with-your-knowledge-base",
+  "description": "Creates an AI Slackbot for IT Operations, enabling users to chat with a knowledge base to retrieve information and get answers directly within Slack.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_275b0d5759",
+      "actorId": "actor_275b0d5759",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f93eac2e7d",
+      "actorId": "actor_f93eac2e7d",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_8fca9d01e1",
+      "actorId": "actor_8fca9d01e1",
+      "type": "NodeTransform",
+      "label": "Check if Bot: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.body.event.user)) == null));"
+      }
+    },
+    {
+      "nodeId": "node_a639446ad9",
+      "actorId": "actor_a639446ad9",
+      "type": "NodeBranch",
+      "label": "Check if Bot: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_faf7eea035",
+      "actorId": "actor_faf7eea035",
+      "type": "NodeCdeConnector",
+      "label": "slack/SLACK_CHAT_POST_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "slack",
+        "connectorLabel": "Slack",
+        "action": "SLACK_CHAT_POST_MESSAGE",
+        "params": {
+          "channel": "{{body.event.channel}}",
+          "text": "On it! Let me check Confluence to see if there are any relevant links to answer your question. "
+        }
+      }
+    },
+    {
+      "nodeId": "node_2f07a2a836",
+      "actorId": "actor_2f07a2a836",
+      "type": "NodeCdecliAgent",
+      "label": "AI Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "gpt-4o",
+        "sessionId": "{{sessionId}}",
+        "system": "You are Knowledge Ninja, a specialized IT support tool developed to streamline interactions between employees and the IT department and the company knowledge base. \n\nDesigned with efficiency in mind, Knowledge Ninja is equipped to handle a variety of IT-related queries, from sales competition analysis to troubleshooting to more complex technical guidance.\n\nAs a dynamic knowledge tool, Knowledge Ninja utilizes a comprehensive internal knowledge base that can be tailored to your organization's specific IT infrastructure and policies. \n\nThis allows it to deliver precise and contextually relevant information swiftly, enhancing the support process.\n\nKnowledge Ninja is continuously updated to reflect the latest IT standards and practices, ensuring that the guidance it provides is both accurate and up-to-date. \n\nIts capabilities include understanding detailed queries, providing step-by-step troubleshooting instructions, and clarifying IT policies.\n\nPlease format all links you send in this format: <url|name of url> \nAdditionally, here are other formatting layouts to use: \n_italic_ will produce italicized text\n*bold* will produce bold text\n~strike~ will produce strikethrough text",
+        "message": "{{body.event.text}}"
+      }
+    },
+    {
+      "nodeId": "node_91cc4ec3ff",
+      "actorId": "actor_91cc4ec3ff",
+      "type": "NodeCdeConnector",
+      "label": "slack/SLACK_DELETES_A_MESSAGE_FROM_A_CHAT",
+      "color": "#6366F1",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "slack",
+        "connectorLabel": "Slack",
+        "action": "SLACK_DELETES_A_MESSAGE_FROM_A_CHAT",
+        "params": {
+          "channel": "{{body.event.channel}}",
+          "ts": "{{steps.SLACK_CHAT_POST_MESSAGE.result.message_timestamp}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_3ffef06340",
+      "actorId": "actor_3ffef06340",
+      "type": "NodeTransform",
+      "label": "Params: Send Message",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Receive DMs\": {{ctx}}, \"Send Initial Message\": {{steps.SLACK_CHAT_POST_MESSAGE.result}}, \"AI Agent\": {{steps.llm_2f07a2a836.result}}, \"Delete Initial Message\": {{steps.SLACK_DELETES_A_MESSAGE_FROM_A_CHAT.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for slack/SLACK_CHAT_POST_MESSAGE (n8n node \"Send Message\").\nreturn {\n  \"channel\": ($('Receive DMs').item.json[\"body\"][\"event\"][\"channel\"]),\n  \"text\": ($('AI Agent').item.json.output.replace(/\\[(.+?)\\]\\((.+?)\\)/g, '[\"$2|$1\"]').replace(/\\*\\*(.+?)\\*\\*/g, '*$1*')),\n};"
+      }
+    },
+    {
+      "nodeId": "node_50f6b376c6",
+      "actorId": "actor_50f6b376c6",
+      "type": "NodeCdeConnector",
+      "label": "slack/SLACK_CHAT_POST_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "slack",
+        "connectorLabel": "Slack",
+        "action": "SLACK_CHAT_POST_MESSAGE"
+      }
+    },
+    {
+      "nodeId": "node_98fe766278",
+      "actorId": "actor_98fe766278",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_a8109bf3ae",
+      "actorId": "actor_a8109bf3ae",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {},
+          "sessionId": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_8fca9d01e1",
+      "target": "node_a639446ad9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_8fca9d01e1",
+      "target": "node_a639446ad9",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_3ffef06340",
+      "target": "node_50f6b376c6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_3ffef06340",
+      "target": "node_50f6b376c6",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_a639446ad9",
+      "target": "node_faf7eea035",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_faf7eea035",
+      "target": "node_2f07a2a836",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_91cc4ec3ff",
+      "target": "node_3ffef06340",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_91cc4ec3ff",
+      "target": "node_3ffef06340",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2f07a2a836",
+      "target": "node_91cc4ec3ff",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_50f6b376c6",
+      "target": "node_98fe766278",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "slack",
+    "categoryLabel": "Slack",
+    "department": "IT",
+    "connectors": [
+      "slack"
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 11,
+      "yantraSteps": 8,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "Window Buffer Memory",
+        "Call Confluence Workflow Tool"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Slack/IT Ops AI SlackBot Workflow - Chat with your knowledge base.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Receive DMs",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Receive DMs\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Connect the slack connector (credential).",
+      "Provide run inputs: body, query, headers, sessionId."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "AI Agent",
+          "model": "gpt-4o"
+        },
+        {
+          "node": "Window Buffer Memory",
+          "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+          "into": "AI Agent",
+          "as": "ai_memory"
+        },
+        {
+          "node": "Call Confluence Workflow Tool",
+          "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+          "into": "AI Agent",
+          "as": "ai_tool"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Receive DMs",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /44c26a10-d54a-46ce-a522-5d83e8a854be). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "\"AI Agent\" kept conversation memory (memoryBufferWindow); sessionId is set to the run-input sessionId.",
+        "\"AI Agent\" used agent tools in the original: Call Confluence Workflow Tool (toolWorkflow). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect slack: `cdecli credential create -n \"slack\" -p slack --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "![Imgur](https://i.imgur.com/iKyMV0N.png)\n## Webhook Trigger\nThe first node receives all messages from Slack API via Subscription Events API. You can find more information about setting up the subscription events API by [clicking here](https://api.slack.com/apis/connections/events-api). The second node responds to the periodic security challenges that Slack sends to ensure the N8n webhook is still active.",
+      "![n8n](https://i.imgur.com/lKnBNnH.png)\n## Check for Bot Responses\nIf the message received is from a Bot instead of a real user, it will ignore the message.",
+      "![Slack](https://i.imgur.com/iKyMV0N.png)\n## Delete Receipt and Send Response \nOnce the AI response is generated in response to the slack message, n8n delete's it's original *Message Received* message to avoid cluttering up the user's DMs, and then sends the final Slack message back to the user.",
+      "![OpenAI](https://i.imgur.com/o89G0If.png)\n## Parse Response with AI Model \nThis workflow currently uses OpenAI to power it's responses, but you can open the AI Agent node below and set your own AI LLM using the n8n options offered.",
+      "![Slack](https://i.imgur.com/iKyMV0N.png)\n## Response Received\nOnce N8n sees that the messaged received is from a user, it will respond right away to acknowledge a message was received. You can edit the message by opening the node below.",
+      "![n8n](https://i.imgur.com/FWJX4km.png)\n## Build n8n workflow to query Knowledge Base\nBuilding your own tools for an AI Agent to use is simple and straightforward, but requires that you build a second workflow and then connect it to this one by inputting the workflow ID from the workflow URL in the *Custom n8n KB Tool* sub node. \n\nThis gives you the freedom to work with any tool, whether n8n has support for it or not. In this sample build, we have connected the AI agent to Confluence, which does not have a native built in n8n node. For this we use the HTTP request node and pointed it to Confluence's search api. It then returns a response that the AI agent uses to generate a final slack message response to the user.",
+      "![n8n](https://i.imgur.com/lKnBNnH.png)\n\n## Remembers the last 5 messages that a user sent\nBecause we are passing the channel ID of the user to the memory module, n8n is storing the last 5 slack messages sent to it per slack channel. This means that it will remember all your users conversations separately from one another and not get confused by different requests from different users. You can increase the memory storage by using a different storage medium and increase the number of prompts and responses it should remember.",
+      "![OpenAI](https://i.imgur.com/o89G0If.png)\n\n## Change the AI Agents LLM\nTo change the model used, simply delete the ChatGPT model and replace with a different supported model by hitting the plus sign under model in the AI Agent.",
+      "![n8n](https://i.imgur.com/lKnBNnH.png)\n# Streamline IT Inquiries with n8n & AI!\n\n## Introducing the IT Ops AI SlackBot Workflow---a sophisticated solution designed to automate and optimize the management of IT-related inquiries via Slack.\n\nWhen an employee messages the IT department slack app, the workflow kicks off with the \"Receive DMs\" node, which captures incoming messages and ensures a secure and active communication line by responding to Slack's webhook challenges.\n\n**How It Works:**\n\n- Verify Webhook: Responds to slacks challenge and respond requests to ensure is still active.\n- Check if bot: Checks whether the message sender is a bot to prevent unnecessary processing.\n- Send Initial Message: Sends a quick confirmation, like \"On it!\", to let the user know their query is being handled.\n- AI-Driven Responses: Employs the \"AI Agent\" node with OpenAI to craft relevant replies based on the conversation history maintained by the \"Window Buffer Memory\" node.\n- Knowledge Integration tool: Uses a custom Knowledge Base tool to fetch pertinent information from confluence, enhancing the quality of responses.\n- Cleanup and Reply: Deletes the initial acknowledgment to tidy up before sending the final detailed response back to the user.\n\n\n**Get Started:**\n- Ensure your [Slack](https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.slack/?utm_source=n8n_app&utm_medium=node_settings_modal-credential_link&utm_campaign=n8n-nodes-base.slack) and [OpenAI](https://docs.n8n.io/integrations/builtin/cluster-nodes/sub-nodes/n8n-nodes-langchain.lmchatopenai/?utm_source=n8n_app&utm_medium=node_settings_modal-credential_link&utm_campaign=@n8n/n8n-nodes-langchain.lmChatOpenAi) integrations are properly set up.\n- Customize the workflow to align with your IT department's protocols.\n\n\n**Need Help?**\n- Join the discussion on our Forum or check out resources on Discord!\n\n\nDeploy this workflow to improve response times and enhance the efficiency of your IT support services."
+    ],
+    "nodes": {
+      "node_275b0d5759": {
+        "n8n": "Receive DMs",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_f93eac2e7d": {
+        "n8n": "Verify Webhook",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_8fca9d01e1": {
+        "n8n": "Check if Bot",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_a639446ad9": {
+        "n8n": "Check if Bot",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_faf7eea035": {
+        "n8n": "Send Initial Message",
+        "n8nType": "n8n-nodes-base.slack"
+      },
+      "node_2f07a2a836": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_91cc4ec3ff": {
+        "n8n": "Delete Initial Message",
+        "n8nType": "n8n-nodes-base.slack"
+      },
+      "node_3ffef06340": {
+        "n8n": "Send Message",
+        "n8nType": "n8n-nodes-base.slack"
+      },
+      "node_50f6b376c6": {
+        "n8n": "Send Message",
+        "n8nType": "n8n-nodes-base.slack"
+      },
+      "node_98fe766278": {
+        "n8n": "__end:Send Message",
+        "n8nType": "synthetic"
+      },
+      "node_a8109bf3ae": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

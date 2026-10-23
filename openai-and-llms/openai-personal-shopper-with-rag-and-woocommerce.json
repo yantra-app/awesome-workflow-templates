@@ -1,0 +1,712 @@
+{
+  "name": "OpenAI Personal Shopper with RAG and WooCommerce",
+  "workflowSlug": "openai-personal-shopper-with-rag-and-woocommerce",
+  "description": "Converted from the n8n template \"OpenAI Personal Shopper with RAG and WooCommerce\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_a21e40733f",
+      "actorId": "actor_a21e40733f",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_ae8dfd78eb",
+      "actorId": "actor_ae8dfd78eb",
+      "type": "NodeTransform",
+      "label": "Edit Fields",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"sessionId\"] = ($json.sessionId);\n  out[\"chatInput\"] = ($json.chatInput);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_2df42eb85f",
+      "actorId": "actor_2df42eb85f",
+      "type": "NodeHttpRequest",
+      "label": "HTTP Request",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://QDRANTURL/collections/NAME/points/delete",
+        "headers": {
+          "Content-Type": "application/json",
+          "api-key": "{{qdrantApiKey}}"
+        },
+        "body": "{\n \"filter\": {}\n}"
+      }
+    },
+    {
+      "nodeId": "node_708b18117a",
+      "actorId": "actor_708b18117a",
+      "type": "NodeLlmChain",
+      "label": "Information Extractor",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "search_intent": {
+              "type": "boolean"
+            },
+            "search_params": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "system": "You are an intelligent assistant for a shoe and accessories store (mainly bags). Your task is to analyze the input text coming from a chat and determine if the user is looking for a product. If the user is looking for a product, you need to extract the following information:\n1. The keyword (keyword) useful for the search.\n2. Any minimum or maximum prices specified.\n3. An SKU (product code) if mentioned.\n4. The name of the category to search in, if specified.\n\nInstructions:\n1. Identify the intent: Determine if the user is looking for a specific product.\n2. Extract the information:\n- If the user is looking for a product, identify:\n- Set the type \"search\" to true. Otherwise, set it to false\n- The keywords.\n- Any minimum or maximum prices (e.g. \"less than 50 euros\", \"between 30 and 60 euros\").\n- An SKU (e.g. \"ABC123 code\").\n- The category name (e.g. \"t-shirts\", \"jeans\", \"women\", \"men\").\n3. Output format: Return a JSON object with the given structure",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_9648af21c2",
+      "actorId": "actor_9648af21c2",
+      "type": "NodeTransform",
+      "label": "Prompt: Information Extractor",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Information Extractor.\nconst __promptValue = ($json.chatInput);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_aa0780a5f0",
+      "actorId": "actor_aa0780a5f0",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_FIND_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive",
+        "action": "GOOGLESUPER_FIND_FILE",
+        "params": {
+          "q": "'1lmnqpLFKS-gXmXT92C5VG0P1XlcoeFOb' in parents and trashed = false"
+        }
+      }
+    },
+    {
+      "nodeId": "node_0c0e109a74",
+      "actorId": "actor_0c0e109a74",
+      "type": "NodeCdecliAgent",
+      "label": "AI Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "sessionId": "{{sessionId}}",
+        "message": "{{chatInput}}",
+        "system": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_b7865be857",
+      "actorId": "actor_b7865be857",
+      "type": "NodeTransform",
+      "label": "System: AI Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: AI Agent.\nconst __promptValue = `You are an intelligent assistant for a clothing store. Your task is to analyze the input text from a chat and determine if the user is looking for a product.\n\nBehavior:\n- If the user is looking for a product the \"search\" field of the following JSON is set to true and you must pass the following JSON as input to the \"personal_shopper\" tool to extract:\n\n\\`\\`\\`json\n${JSON.stringify($json)}\n\\`\\`\\`\n\n- If the user asks questions related to the store such as address or opening hours, you must use the \"RAG\" tool`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_14da99f383",
+      "actorId": "actor_14da99f383",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_DOWNLOAD_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive",
+        "action": "GOOGLESUPER_DOWNLOAD_FILE",
+        "params": {
+          "file_id": "{{last.result.id}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_c9a9329da5",
+      "actorId": "actor_c9a9329da5",
+      "type": "NodeTransform",
+      "label": "Params: Qdrant Vector Store1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Params for pinecone/PINECONE_UPSERT_RECORDS_NAMESPACE (n8n node \"Qdrant Vector Store1\").\nreturn {\n  \"index_host\": \"{{pineconeIndexHost}}\",\n  \"namespace\": \"scarperia\",\n  \"records\": (() => {\n  const __docs = __items.flatMap((d) => (Array.isArray(d) ? d : [d]));\n  return __docs.map((d) => {\n    const text = typeof d === 'string' ? d : d?.pageContent ?? d?.text ?? d?.content ?? d?.chunk ?? JSON.stringify(d);\n    const meta = d && typeof d === 'object' ? (d.metadata && typeof d.metadata === 'object' ? d.metadata : d) : {};\n    const flat = {};\n    for (const [k, v] of Object.entries(meta)) if (!['pageContent', 'text', '_id'].includes(k) && ['string', 'number', 'boolean'].includes(typeof v)) flat[k] = v;\n    return { ...flat, _id: String(d?.id ?? meta.id ?? crypto.randomUUID()), text: String(text) };\n  });\n})(),\n};"
+      }
+    },
+    {
+      "nodeId": "node_d85ce93b81",
+      "actorId": "actor_d85ce93b81",
+      "type": "NodeCdeConnector",
+      "label": "pinecone/PINECONE_UPSERT_RECORDS_NAMESPACE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "pinecone",
+        "connectorLabel": "Pinecone",
+        "action": "PINECONE_UPSERT_RECORDS_NAMESPACE"
+      }
+    },
+    {
+      "nodeId": "node_d0e1c88f56",
+      "actorId": "actor_d0e1c88f56",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_7486846210",
+      "actorId": "actor_7486846210",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_5bf18b96d8",
+      "actorId": "actor_5bf18b96d8",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "chatInput": "",
+          "sessionId": "",
+          "pineconeIndexHost": "",
+          "qdrantApiKey": {
+            "$workflowSecret": "QDRANT_API_KEY"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_3741943887",
+      "actorId": "actor_3741943887",
+      "type": "NodeChatModel",
+      "label": "Information Extractor: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 720
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_9648af21c2",
+      "target": "node_708b18117a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_b7865be857",
+      "target": "node_0c0e109a74",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_c9a9329da5",
+      "target": "node_d85ce93b81",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_c9a9329da5",
+      "target": "node_d85ce93b81",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_a21e40733f",
+      "target": "node_ae8dfd78eb",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ae8dfd78eb",
+      "target": "node_9648af21c2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ae8dfd78eb",
+      "target": "node_9648af21c2",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_708b18117a",
+      "target": "node_b7865be857",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_708b18117a",
+      "target": "node_b7865be857",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_aa0780a5f0",
+      "target": "node_14da99f383",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_14da99f383",
+      "target": "node_c9a9329da5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_14da99f383",
+      "target": "node_c9a9329da5",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a21e40733f",
+      "target": "node_2df42eb85f",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_2df42eb85f",
+      "target": "node_aa0780a5f0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_0c0e109a74",
+      "target": "node_d0e1c88f56",
+      "sourceOutput": "text",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_d85ce93b81",
+      "target": "node_7486846210",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_3741943887",
+      "target": "node_708b18117a",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "",
+    "connectors": [
+      "googlesuper",
+      "openai",
+      "pinecone",
+      "shopify"
+    ],
+    "setupVars": [
+      {
+        "key": "pineconeIndexHost",
+        "label": "Pinecone index host (create the index with integrated embedding and field map text=text)",
+        "type": "url",
+        "example": "my-index-abc123.svc.aped-4627-b74a.pinecone.io",
+        "usedBy": [
+          "Qdrant Vector Store1"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "QDRANT_API_KEY",
+        "label": "Qdrant API key",
+        "host": "qdranturl",
+        "headerFormat": "api-key: <secret>",
+        "contextKey": "qdrantApiKey",
+        "usedBy": [
+          "HTTP Request"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 21,
+      "yantraSteps": 12,
+      "foldedHelpers": [
+        "OpenAI Chat Model2",
+        "OpenAI Chat Model",
+        "RAG",
+        "Calculator",
+        "personal_shopper",
+        "Window Buffer Memory",
+        "Embeddings OpenAI3",
+        "Default Data Loader2"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/Personal Shopper Chatbot for WooCommerce with RAG using Google Drive and openAI.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "OpenAI Personal Shopper with RAG and WooCommerce"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "When chat message received",
+        "detail": "@n8n/n8n-nodes-langchain.chatTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"When chat message received\" (chatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value pineconeIndexHost: Pinecone index host (create the index with integrated embedding and field map text=text) (for example my-index-abc123.svc.aped-4627-b74a.pinecone.io). Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret QDRANT_API_KEY: Qdrant API key for qdranturl (api-key: <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "Connect the pinecone connector (credential).",
+      "Connect the shopify connector (credential).",
+      "Provide run inputs: chatInput, sessionId."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Qdrant Vector Store1",
+          "n8n": "vectorStoreQdrant.insert",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model2",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Information Extractor"
+        },
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "AI Agent"
+        },
+        {
+          "node": "RAG",
+          "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+          "into": "AI Agent",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Calculator",
+          "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+          "into": "AI Agent",
+          "as": "ai_tool"
+        },
+        {
+          "node": "personal_shopper",
+          "type": "n8n-nodes-base.wooCommerceTool",
+          "into": "AI Agent",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Window Buffer Memory",
+          "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+          "into": "AI Agent",
+          "as": "ai_memory"
+        },
+        {
+          "node": "Embeddings OpenAI3",
+          "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+          "into": "Qdrant Vector Store1",
+          "as": "ai_embedding"
+        },
+        {
+          "node": "Default Data Loader2",
+          "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+          "into": "Qdrant Vector Store1",
+          "as": "ai_document"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When chat message received",
+          "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
+        "\"HTTP Request\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"AI Agent\" kept conversation memory (memoryBufferWindow); sessionId is set to the run-input sessionId.",
+        "\"AI Agent\" used agent tools in the original: RAG (toolVectorStore), Calculator (toolCalculator), personal_shopper (wooCommerceTool). The cdecli agent calls connectors directly; connect credentials for the services those tools reached. Prefer connectors: shopify.",
+        "\"Qdrant Vector Store1\" folded a document (documentDefaultDataLoader); retrieved text is expected on the upstream payload as context/documents.",
+        "\"Qdrant Vector Store1\" (vectorStoreQdrant.insert): The original used a Qdrant collection; here the default vector store is a Pinecone index with integrated embedding (upsert records), so Pinecone embeds the text itself.",
+        "\"Qdrant Vector Store1\": create a Pinecone index with integrated embedding (for example llama-text-embed-v2, field map text=text) and set pineconeIndexHost; the Qdrant collection became the namespace \"scarperia\".",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect pinecone: `cdecli credential create -n \"pinecone\" -p pinecone --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect shopify: `cdecli credential create -n \"shopify\" -p shopify --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "\"Information Extractor\": normalized the legacy output schema for LLMChain's strict parser (shorthand/examples become JSON Schema; email/date formats use syntax patterns). Review the schema before running."
+      ]
+    },
+    "notes": [
+      "Replace the URL and Collection name with your own",
+      "## Step 1 \nCreate a collectiopn on your Qdrant instance. Then create a basic RAG system with documents uploaded to Google Drive and embedded in the Qdrant vector database",
+      "## Step 1 \nCreate a basic RAG system with documents uploaded to Google Drive and embedded in the Qdrant vector database",
+      "## Step 2 \nThe Information Extractor tries to understand if the request is related to products and if so, it extracts the useful information to filter the products available on WooCommerce by calling the \"personal_shopper\". If it is a general question, the RAG system is called"
+    ],
+    "nodes": {
+      "node_a21e40733f": {
+        "n8n": "When chat message received",
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger",
+        "also": [
+          "When clicking ‘Test workflow’"
+        ]
+      },
+      "node_ae8dfd78eb": {
+        "n8n": "Edit Fields",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_2df42eb85f": {
+        "n8n": "HTTP Request",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_708b18117a": {
+        "n8n": "Information Extractor",
+        "n8nType": "@n8n/n8n-nodes-langchain.informationExtractor"
+      },
+      "node_9648af21c2": {
+        "n8n": "Information Extractor",
+        "n8nType": "@n8n/n8n-nodes-langchain.informationExtractor"
+      },
+      "node_aa0780a5f0": {
+        "n8n": "Google Drive2",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_0c0e109a74": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_b7865be857": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_14da99f383": {
+        "n8n": "Google Drive1",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_c9a9329da5": {
+        "n8n": "Qdrant Vector Store1",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreQdrant"
+      },
+      "node_d85ce93b81": {
+        "n8n": "Qdrant Vector Store1",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreQdrant"
+      },
+      "node_d0e1c88f56": {
+        "n8n": "__end:AI Agent",
+        "n8nType": "synthetic"
+      },
+      "node_7486846210": {
+        "n8n": "__end:Qdrant Vector Store1",
+        "n8nType": "synthetic"
+      },
+      "node_5bf18b96d8": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_3741943887": {
+        "n8n": "Information Extractor",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

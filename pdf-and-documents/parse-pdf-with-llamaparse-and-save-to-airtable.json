@@ -1,0 +1,825 @@
+{
+  "name": "Parse PDF with LlamaParse and save to Airtable",
+  "workflowSlug": "parse-pdf-with-llamaparse-and-save-to-airtable",
+  "description": "Converted from the n8n template \"Parse PDF with LlamaParse and save to Airtable\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_ab312d53e1",
+      "actorId": "actor_ab312d53e1",
+      "type": "NodeCdeWebhookTrigger",
+      "label": "Webhook: googlesuper/GOOGLESUPER_FILE_CREATED_TRIGGER",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "connector": "googlesuper",
+        "webhookEndpointId": "",
+        "triggerSlug": "GOOGLESUPER_FILE_CREATED_TRIGGER",
+        "connectedAccountId": "",
+        "config": {},
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "nodeId": "node_a4d6d31c0a",
+      "actorId": "actor_a4d6d31c0a",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_b74f7d5335",
+      "actorId": "actor_b74f7d5335",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_DOWNLOAD_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive",
+        "action": "GOOGLESUPER_DOWNLOAD_FILE",
+        "params": {
+          "file_id": "{{last.payload.id}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_e9c501dc18",
+      "actorId": "actor_e9c501dc18",
+      "type": "NodeTransform",
+      "label": "Set Fields",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst items = __items.map((json) => ({ json }));\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"prompt\"] = \"Please, process parsed data and return only needed.\";\n  out[\"schema\"] = `{\n \"name\": \"generate_schema\",\n \"description\": \"Generate schema for an array of objects representing items with their descriptions, quantities, unit prices, and amounts.\",\n \"strict\": true,\n \"schema\": {\n \"type\": \"object\",\n \"required\": [\n \"items\"\n ],\n \"properties\": {\n \"items\": {\n \"type\": \"array\",\n \"description\": \"Array of item objects\",\n \"items\": {\n \"type\": \"object\",\n \"required\": [\n \"description\",\n \"qty\",\n \"unit_price\",\n \"amount\"\n ],\n \"properties\": {\n \"description\": {\n \"type\": \"string\",\n \"description\": \"Description of the item\"\n },\n \"qty\": {\n \"type\": \"string\",\n \"description\": \"Quantity of the item\"\n },\n \"unit_price\": {\n \"type\": \"string\",\n \"description\": \"Unit price of the item formatted as a string\"\n },\n \"amount\": {\n \"type\": \"string\",\n \"description\": \"Total amount for the item formatted as a string\"\n }\n },\n \"additionalProperties\": false\n }\n }\n },\n \"additionalProperties\": false\n }\n}`;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_7cf151cff2",
+      "actorId": "actor_7cf151cff2",
+      "type": "NodeTransform",
+      "label": "Params: Upload File",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The upstream file as { contentBase64 | fileUrl, filename, mimeType }: n8n binary data travels as base64 bytes or a file URL on Yantra.\nconst __b64 = (t) => { const b = new TextEncoder().encode(String(t)); let s = ''; for (let i = 0; i < b.length; i += 1) s += String.fromCharCode(b[i]); return btoa(s); };\nconst __fileRef = (v, prop) => {\n  const s = (x) => (typeof x === 'string' && x !== '' ? x : undefined);\n  let r = Array.isArray(v) ? v[0] : v;\n  const bin = r && typeof r === 'object' && r.binary && typeof r.binary === 'object' ? r.binary[prop] ?? Object.values(r.binary)[0] : undefined;\n  if (bin && s(bin.data)) return { contentBase64: bin.data, filename: s(r.filename) ?? s(bin.fileName) ?? 'file', mimeType: s(bin.mimeType) };\n  if (r && typeof r === 'object' && r.data && typeof r.data === 'object' && !Array.isArray(r.data)) r = { ...r, ...r.data };\n  const dl = r?.downloaded_file_content ?? r?.file;\n  const filename = s(r?.filename) ?? s(r?.fileName) ?? s(dl?.name) ?? s(r?.name) ?? 'file';\n  const mimeType = s(r?.mimeType) ?? s(r?.contentType) ?? s(dl?.mimetype) ?? s(r?.mimetype);\n  if (s(r?.bodyBase64)) return { contentBase64: r.bodyBase64, filename, mimeType };\n  const url = s(dl?.s3url) ?? s(r?.s3url) ?? s(r?.fileUrl) ?? s(r?.imageUrl) ?? s(r?.imageUrls?.[0]) ?? s(r?.audioUrl) ?? s(r?.videoUrl) ?? s(r?.secure_url);\n  if (url) return { fileUrl: url, filename, mimeType };\n  if (s(r?.data)) return { contentBase64: r.encoding !== 'base64' && /^(?:text\\/|application\\/(?:json|xml|javascript|x-tex))|\\+(?:xml|json)$/.test(mimeType ?? '') ? __b64(r.data) : r.data, filename, mimeType };\n  throw new Error('No file on the upstream step: expected file bytes (base64) or a file URL.');\n};\n// Params for yantra-storage/YANTRA_STORAGE_HTTP_SEND (n8n node \"Upload File\").\nreturn { \"url\": \"https://api.cloud.llamaindex.ai/api/parsing/upload\", \"method\": \"POST\", \"headers\": { \"accept\": \"application/json\", \"Authorization\": \"Bearer {{llamaCloudApiKey}}\", \"parsing_instruction\": \"Please extract invoice line items: Name, Quantity, Unit Price, Amount \" }, \"bodyType\": \"multipart\", \"fields\": { \"webhook_url\": \"https://n8n.lowcoding.dev/webhook/0f7f5ebb-8b66-453b-a818-20cc3647c783\", \"disable_ocr\": \"true\", \"disable_image_extraction\": \"True\" }, \"files\": [{ \"field\": \"file\", ...__fileRef(source, \"data\") }], \"responseType\": \"auto\" };"
+      }
+    },
+    {
+      "nodeId": "node_bba85cce6c",
+      "actorId": "actor_bba85cce6c",
+      "type": "NodeCdeConnector",
+      "label": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-storage",
+        "connectorLabel": "Yantra storage",
+        "action": "YANTRA_STORAGE_HTTP_SEND"
+      }
+    },
+    {
+      "nodeId": "node_b299ffef4e",
+      "actorId": "actor_b299ffef4e",
+      "type": "NodeTransform",
+      "label": "Upload File: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The response the way the n8n HTTP node handed it on: the parsed body; a file body is { bodyBase64, filename, mimeType }.\nconst __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' && 'status' in source.data ? source.data : source;\nconst __body = __r?.bodyBase64 !== undefined ? { bodyBase64: __r.bodyBase64, filename: __r.filename, mimeType: __r.contentType, bytes: __r.bytes } : __r?.bodyJson !== undefined ? __r.bodyJson : __r?.bodyText;\nreturn __body;"
+      }
+    },
+    {
+      "nodeId": "node_3f86c70ab5",
+      "actorId": "actor_3f86c70ab5",
+      "type": "NodeLlmChain",
+      "label": "OpenAI - Extract Line Items",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{llm_system_734385fe52}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_734385fe52",
+      "actorId": "actor_734385fe52",
+      "type": "NodeTransform",
+      "label": "System: OpenAI - Extract Line Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Google Drive Trigger\": __namedCtx.steps?.[\"Webhook: googlesuper/GOOGLESUPER_FILE_CREATED_TRIGGER\"]?.[\"payload\"], \"Webhook\": {{ctx}}, \"Google Drive\": __namedCtx.steps?.[\"GOOGLESUPER_DOWNLOAD_FILE\"]?.[\"result\"], \"Set Fields\": {\"prompt\":\"Please, process parsed data and return only needed.\",\"schema\":\"{\\n \\\"name\\\": \\\"generate_schema\\\",\\n \\\"description\\\": \\\"Generate schema for an array of objects representing items with their descriptions, quantities, unit prices, and amounts.\\\",\\n \\\"strict\\\": true,\\n \\\"schema\\\": {\\n \\\"type\\\": \\\"object\\\",\\n \\\"required\\\": [\\n \\\"items\\\"\\n ],\\n \\\"properties\\\": {\\n \\\"items\\\": {\\n \\\"type\\\": \\\"array\\\",\\n \\\"description\\\": \\\"Array of item objects\\\",\\n \\\"items\\\": {\\n \\\"type\\\": \\\"object\\\",\\n \\\"required\\\": [\\n \\\"description\\\",\\n \\\"qty\\\",\\n \\\"unit_price\\\",\\n \\\"amount\\\"\\n ],\\n \\\"properties\\\": {\\n \\\"description\\\": {\\n \\\"type\\\": \\\"string\\\",\\n \\\"description\\\": \\\"Description of the item\\\"\\n },\\n \\\"qty\\\": {\\n \\\"type\\\": \\\"string\\\",\\n \\\"description\\\": \\\"Quantity of the item\\\"\\n },\\n \\\"unit_price\\\": {\\n \\\"type\\\": \\\"string\\\",\\n \\\"description\\\": \\\"Unit price of the item formatted as a string\\\"\\n },\\n \\\"amount\\\": {\\n \\\"type\\\": \\\"string\\\",\\n \\\"description\\\": \\\"Total amount for the item formatted as a string\\\"\\n }\\n },\\n \\\"additionalProperties\\\": false\\n }\\n }\\n },\\n \\\"additionalProperties\\\": false\\n }\\n}\"}, \"Upload File\": __namedCtx.steps?.[\"Upload File: response\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// System: OpenAI - Extract Line Items.\nconst __promptValue = (() => { const __b = (() => { const __v = `{\n \"model\": \"gpt-4o-mini\",\n \"messages\": [\n {\n \"role\": \"system\",\n \"content\": ${JSON.stringify($('Set Fields').item.json.prompt)}\n },\n {\n \"role\": \"user\",\n \"content\": ${JSON.stringify( JSON.stringify($('Webhook').item.json.body.json[0].items) )}\n }\n ],\n \"response_format\":{ \"type\": \"json_schema\", \"json_schema\": ${$('Set Fields').item.json.schema}\n\n }\n }`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn (__b.messages || []).filter((m) => m?.role === 'system' || m?.role === 'developer').map((m) => __t(m.content)).join('\\n\\n'); })();\nreturn { \"llm_system_734385fe52\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_857449a510",
+      "actorId": "actor_857449a510",
+      "type": "NodeUpdateContext",
+      "label": "Save System: OpenAI - Extract Line Items",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_ce5072a86a",
+      "actorId": "actor_ce5072a86a",
+      "type": "NodeTransform",
+      "label": "Prompt: OpenAI - Extract Line Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Google Drive Trigger\": __namedCtx.steps?.[\"Webhook: googlesuper/GOOGLESUPER_FILE_CREATED_TRIGGER\"]?.[\"payload\"], \"Webhook\": {{ctx}}, \"Google Drive\": __namedCtx.steps?.[\"GOOGLESUPER_DOWNLOAD_FILE\"]?.[\"result\"], \"Set Fields\": {\"prompt\":\"Please, process parsed data and return only needed.\",\"schema\":\"{\\n \\\"name\\\": \\\"generate_schema\\\",\\n \\\"description\\\": \\\"Generate schema for an array of objects representing items with their descriptions, quantities, unit prices, and amounts.\\\",\\n \\\"strict\\\": true,\\n \\\"schema\\\": {\\n \\\"type\\\": \\\"object\\\",\\n \\\"required\\\": [\\n \\\"items\\\"\\n ],\\n \\\"properties\\\": {\\n \\\"items\\\": {\\n \\\"type\\\": \\\"array\\\",\\n \\\"description\\\": \\\"Array of item objects\\\",\\n \\\"items\\\": {\\n \\\"type\\\": \\\"object\\\",\\n \\\"required\\\": [\\n \\\"description\\\",\\n \\\"qty\\\",\\n \\\"unit_price\\\",\\n \\\"amount\\\"\\n ],\\n \\\"properties\\\": {\\n \\\"description\\\": {\\n \\\"type\\\": \\\"string\\\",\\n \\\"description\\\": \\\"Description of the item\\\"\\n },\\n \\\"qty\\\": {\\n \\\"type\\\": \\\"string\\\",\\n \\\"description\\\": \\\"Quantity of the item\\\"\\n },\\n \\\"unit_price\\\": {\\n \\\"type\\\": \\\"string\\\",\\n \\\"description\\\": \\\"Unit price of the item formatted as a string\\\"\\n },\\n \\\"amount\\\": {\\n \\\"type\\\": \\\"string\\\",\\n \\\"description\\\": \\\"Total amount for the item formatted as a string\\\"\\n }\\n },\\n \\\"additionalProperties\\\": false\\n }\\n }\\n },\\n \\\"additionalProperties\\\": false\\n }\\n}\"}, \"Upload File\": __namedCtx.steps?.[\"Upload File: response\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: OpenAI - Extract Line Items.\nconst __promptValue = (() => { const __b = (() => { const __v = `{\n \"model\": \"gpt-4o-mini\",\n \"messages\": [\n {\n \"role\": \"system\",\n \"content\": ${JSON.stringify($('Set Fields').item.json.prompt)}\n },\n {\n \"role\": \"user\",\n \"content\": ${JSON.stringify( JSON.stringify($('Webhook').item.json.body.json[0].items) )}\n }\n ],\n \"response_format\":{ \"type\": \"json_schema\", \"json_schema\": ${$('Set Fields').item.json.schema}\n\n }\n }`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn (() => { const u = (__b.messages || []).filter((m) => m && m.role !== 'system' && m.role !== 'developer'); return __b.__raw ?? (u.length === 1 ? __t(u[0].content) : u.map((m) => m.role + ': ' + __t(m.content)).join('\\n\\n')); })(); })();\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_1cc36cd8f8",
+      "actorId": "actor_1cc36cd8f8",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_CREATE_RECORD",
+      "color": "#6366F1",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_CREATE_RECORD",
+        "params": {
+          "baseId": "{{airtableBaseId}}",
+          "tableIdOrName": "{{airtableTableId}}",
+          "fields": {}
+        }
+      }
+    },
+    {
+      "nodeId": "node_e40b265983",
+      "actorId": "actor_e40b265983",
+      "type": "NodeTransform",
+      "label": "Process Line Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook\": {{ctx}}, \"Google Drive\": {{steps.GOOGLESUPER_DOWNLOAD_FILE.result}}, \"Set Fields\": {\"prompt\":\"Please, process parsed data and return only needed.\",\"schema\":\"{\\n \\\"name\\\": \\\"generate_schema\\\",\\n \\\"description\\\": \\\"Generate schema for an array of objects representing items with their descriptions, quantities, unit prices, and amounts.\\\",\\n \\\"strict\\\": true,\\n \\\"schema\\\": {\\n \\\"type\\\": \\\"object\\\",\\n \\\"required\\\": [\\n \\\"items\\\"\\n ],\\n \\\"properties\\\": {\\n \\\"items\\\": {\\n \\\"type\\\": \\\"array\\\",\\n \\\"description\\\": \\\"Array of item objects\\\",\\n \\\"items\\\": {\\n \\\"type\\\": \\\"object\\\",\\n \\\"required\\\": [\\n \\\"description\\\",\\n \\\"qty\\\",\\n \\\"unit_price\\\",\\n \\\"amount\\\"\\n ],\\n \\\"properties\\\": {\\n \\\"description\\\": {\\n \\\"type\\\": \\\"string\\\",\\n \\\"description\\\": \\\"Description of the item\\\"\\n },\\n \\\"qty\\\": {\\n \\\"type\\\": \\\"string\\\",\\n \\\"description\\\": \\\"Quantity of the item\\\"\\n },\\n \\\"unit_price\\\": {\\n \\\"type\\\": \\\"string\\\",\\n \\\"description\\\": \\\"Unit price of the item formatted as a string\\\"\\n },\\n \\\"amount\\\": {\\n \\\"type\\\": \\\"string\\\",\\n \\\"description\\\": \\\"Total amount for the item formatted as a string\\\"\\n }\\n },\\n \\\"additionalProperties\\\": false\\n }\\n }\\n },\\n \\\"additionalProperties\\\": false\\n }\\n}\"}, \"Upload File\": {{steps.xf_b299ffef4e.result}}, \"Create Invoice\": {{steps.AIRTABLE_CREATE_RECORD.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst items = __items.map((json) => ({ json }));\n// Ported from n8n Code node \"Process Line Items\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Get the input from the \"OpenAI - Extract Line Items\" node\n  const input = $(\"OpenAI - Extract Line Items\").first().json;\n  \n  // Initialize an array for the output\n  const outputItems = [];\n  \n  // Navigate to the 'content' field in the choices array\n  const content = input.choices[0]?.message?.content;\n  \n  if (content) {\n   try {\n   // Parse the stringified JSON in the 'content' field\n   const parsedContent = JSON.parse(content);\n  \n   // Extract 'items' and add them to the output array\n   if (Array.isArray(parsedContent.items)) {\n   outputItems.push(...parsedContent.items.map(i => ({ json: i })));\n   }\n   } catch (error) {\n   // Handle any parsing errors\n   console.error('Error parsing content:', error);\n   }\n  }\n  \n  // Return the extracted items\n  return outputItems;\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_55fc1607c1",
+      "actorId": "actor_55fc1607c1",
+      "type": "NodeTransform",
+      "label": "Params: Create Line Item",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook\": {{ctx}}, \"Google Drive\": {{steps.GOOGLESUPER_DOWNLOAD_FILE.result}}, \"Set Fields\": {\"prompt\":\"Please, process parsed data and return only needed.\",\"schema\":\"{\\n \\\"name\\\": \\\"generate_schema\\\",\\n \\\"description\\\": \\\"Generate schema for an array of objects representing items with their descriptions, quantities, unit prices, and amounts.\\\",\\n \\\"strict\\\": true,\\n \\\"schema\\\": {\\n \\\"type\\\": \\\"object\\\",\\n \\\"required\\\": [\\n \\\"items\\\"\\n ],\\n \\\"properties\\\": {\\n \\\"items\\\": {\\n \\\"type\\\": \\\"array\\\",\\n \\\"description\\\": \\\"Array of item objects\\\",\\n \\\"items\\\": {\\n \\\"type\\\": \\\"object\\\",\\n \\\"required\\\": [\\n \\\"description\\\",\\n \\\"qty\\\",\\n \\\"unit_price\\\",\\n \\\"amount\\\"\\n ],\\n \\\"properties\\\": {\\n \\\"description\\\": {\\n \\\"type\\\": \\\"string\\\",\\n \\\"description\\\": \\\"Description of the item\\\"\\n },\\n \\\"qty\\\": {\\n \\\"type\\\": \\\"string\\\",\\n \\\"description\\\": \\\"Quantity of the item\\\"\\n },\\n \\\"unit_price\\\": {\\n \\\"type\\\": \\\"string\\\",\\n \\\"description\\\": \\\"Unit price of the item formatted as a string\\\"\\n },\\n \\\"amount\\\": {\\n \\\"type\\\": \\\"string\\\",\\n \\\"description\\\": \\\"Total amount for the item formatted as a string\\\"\\n }\\n },\\n \\\"additionalProperties\\\": false\\n }\\n }\\n },\\n \\\"additionalProperties\\\": false\\n }\\n}\"}, \"Upload File\": {{steps.xf_b299ffef4e.result}}, \"Create Invoice\": {{steps.AIRTABLE_CREATE_RECORD.result}}, \"Process Line Items\": {{steps.xf_e40b265983.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for airtable/AIRTABLE_CREATE_RECORD (n8n node \"Create Line Item\").\nreturn {\n  \"baseId\": \"{{airtableBaseId}}\",\n  \"tableIdOrName\": \"{{airtableTableId2}}\",\n  \"fields\": { \"Qty\": ($json.qty), \"Amount\": (parseFloat($json.amount.replace('$', '').trim())), \"Invoices\": `[\"${$('Create Invoice').item.json.id}\"]`, \"Unit price\": (parseFloat($json.unit_price.replace('$', '').trim())), \"Description\": ($json.description) },\n};"
+      }
+    },
+    {
+      "nodeId": "node_b3d9e44929",
+      "actorId": "actor_b3d9e44929",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_CREATE_RECORD",
+      "color": "#6366F1",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_CREATE_RECORD"
+      }
+    },
+    {
+      "nodeId": "node_f940a69d71",
+      "actorId": "actor_f940a69d71",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_1384f2d12e",
+      "actorId": "actor_1384f2d12e",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_56fce73934",
+      "actorId": "actor_56fce73934",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {},
+          "airtableBaseId": "",
+          "airtableTableId": "",
+          "airtableTableId2": "",
+          "llamaCloudApiKey": {
+            "$workflowSecret": "LLAMA_CLOUD_API_KEY"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_2b5e960b1a",
+      "actorId": "actor_2b5e960b1a",
+      "type": "NodeChatModel",
+      "label": "OpenAI - Extract Line Items: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 720
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_7cf151cff2",
+      "target": "node_bba85cce6c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_7cf151cff2",
+      "target": "node_bba85cce6c",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_bba85cce6c",
+      "target": "node_b299ffef4e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bba85cce6c",
+      "target": "node_b299ffef4e",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_734385fe52",
+      "target": "node_857449a510",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_734385fe52",
+      "target": "node_857449a510",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_857449a510",
+      "target": "node_ce5072a86a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ce5072a86a",
+      "target": "node_3f86c70ab5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_55fc1607c1",
+      "target": "node_b3d9e44929",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_55fc1607c1",
+      "target": "node_b3d9e44929",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_b74f7d5335",
+      "target": "node_7cf151cff2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b74f7d5335",
+      "target": "node_7cf151cff2",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ab312d53e1",
+      "target": "node_b74f7d5335",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_1cc36cd8f8",
+      "target": "node_e40b265983",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1cc36cd8f8",
+      "target": "node_e40b265983",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3f86c70ab5",
+      "target": "node_1cc36cd8f8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_e9c501dc18",
+      "target": "node_734385fe52",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e9c501dc18",
+      "target": "node_734385fe52",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e9c501dc18",
+      "target": "node_ce5072a86a",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e40b265983",
+      "target": "node_55fc1607c1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e40b265983",
+      "target": "node_55fc1607c1",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a4d6d31c0a",
+      "target": "node_e9c501dc18",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b299ffef4e",
+      "target": "node_f940a69d71",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_b3d9e44929",
+      "target": "node_1384f2d12e",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_2b5e960b1a",
+      "target": "node_3f86c70ab5",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "pdf-and-documents",
+    "categoryLabel": "PDF and Document Processing",
+    "department": "",
+    "connectors": [
+      "airtable",
+      "googlesuper",
+      "openai",
+      "yantra-storage"
+    ],
+    "setupVars": [
+      {
+        "key": "airtableBaseId",
+        "label": "Airtable base id",
+        "type": "id",
+        "example": "appXXXX (from the base URL)",
+        "usedBy": [
+          "Create Invoice",
+          "Create Line Item"
+        ]
+      },
+      {
+        "key": "airtableTableId",
+        "label": "Airtable table id",
+        "type": "id",
+        "example": "tblXXXX (from the table URL)",
+        "usedBy": [
+          "Create Invoice"
+        ]
+      },
+      {
+        "key": "airtableTableId2",
+        "label": "Airtable table id",
+        "type": "id",
+        "example": "tblXXXX (from the table URL)",
+        "usedBy": [
+          "Create Line Item"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "LLAMA_CLOUD_API_KEY",
+        "label": "LlamaCloud API key",
+        "host": "api.cloud.llamaindex.ai",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "llamaCloudApiKey",
+        "usedBy": [
+          "Upload File"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeCdeWebhookTrigger",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 9,
+      "yantraSteps": 16,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "PDF_and_Document_Processing/Parse PDF with LlamaParse and save to Airtable.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "webhook-registration",
+        "node": "Google Drive Trigger",
+        "detail": "webhook trigger googlesuper/GOOGLESUPER_FILE_CREATED_TRIGGER needs webhookEndpointId, connectedAccountId"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Webhook",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      },
+      {
+        "code": "action-pending-publish",
+        "node": "Upload File",
+        "detail": "yantra-storage/YANTRA_STORAGE_HTTP_SEND waits for the yantra-storage HTTP send and signatures patch (1.4.1) to be published"
+      }
+    ],
+    "setup": [
+      "\"Google Drive Trigger\": after import, register the googlesuper webhook (`cdecli webhook endpoint create -c googlesuper`, then `cdecli trigger instance upsert --slug GOOGLESUPER_FILE_CREATED_TRIGGER`) and set webhookEndpointId, connectedAccountId on the trigger node.",
+      "\"Webhook\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Upload File\": yantra-storage/YANTRA_STORAGE_HTTP_SEND comes from the yantra-storage HTTP send and signatures patch (1.4.1), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
+      "Setup value airtableBaseId: Airtable base id (for example appXXXX (from the base URL)). Write it into the Workflow Configs initialContext before import.",
+      "Setup value airtableTableId: Airtable table id (for example tblXXXX (from the table URL)). Write it into the Workflow Configs initialContext before import.",
+      "Setup value airtableTableId2: Airtable table id (for example tblXXXX (from the table URL)). Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret LLAMA_CLOUD_API_KEY: LlamaCloud API key for api.cloud.llamaindex.ai (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the airtable connector (credential).",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "Provide run inputs: body, query, headers, llm_system_734385fe52."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Upload File",
+          "n8n": "httpRequest.multipart-form-data",
+          "action": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+          "soft": true
+        },
+        {
+          "node": "OpenAI - Extract Line Items",
+          "n8n": "httpRequest.openai.chat",
+          "action": "NodeLlmChain",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Google Drive Trigger",
+          "type": "n8n-nodes-base.googleDriveTrigger",
+          "as": "NodeCdeWebhookTrigger"
+        },
+        {
+          "node": "Webhook",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Google Drive Trigger\" is a provider webhook (googlesuper/GOOGLESUPER_FILE_CREATED_TRIGGER). Create the endpoint and trigger instance, then paste the we_… id and connected account into this node before the first run: `cdecli webhook endpoint create -c googlesuper --client-id <id>`, `cdecli webhook endpoint set-data <we_id> --signing-secret <secret>`, `cdecli trigger instance upsert --slug GOOGLESUPER_FILE_CREATED_TRIGGER --account <connectedAccountId>`.",
+        "The original started from an inbound webhook (POST /0f7f5ebb-8b66-453b-a818-20cc3647c783). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "\"Upload File\" sends its multipart-form-data body with yantra-storage HTTP_SEND (public https hosts only, 25 MB, 120 s); the file comes from \"Google Drive\".",
+        "\"OpenAI - Extract Line Items\" authenticated with openAiApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"OpenAI - Extract Line Items\": the original asked OpenAI for JSON output; the platform model gets the same prompt, so check the answer parses as JSON.",
+        "\"OpenAI - Extract Line Items\" called the OpenAI API (gpt-4o-mini) over HTTP; it now runs on LLMChain with a Chat Model and provider connector credential, and later steps read the answer text instead of the provider's JSON.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect airtable: `cdecli credential create -n \"airtable\" -p airtable --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Scenario 1",
+      "## Scenario 2",
+      "### Replace Google Drive connection",
+      "### Replace API key in header",
+      "### Replace OpenAI connection",
+      "### Replace Airtable connection",
+      "### ... or watch set up video [7 min]\n[![Youtube Thumbnail](https://cflobdhpqwnoisuctsoc.supabase.co/storage/v1/object/public/my_storage/Video%2010%20-%20Parser%20invoices%20Blur.png)](https://youtu.be/E4I0nru-fa8)",
+      "![5min Logo](https://cflobdhpqwnoisuctsoc.supabase.co/storage/v1/object/public/my_storage/banner.png)\n## AI Agent for realtime insights on meetings\n**Made by [Mark Shcherbakov](https://www.linkedin.com/in/marklowcoding/) from community [5minAI](https://www.skool.com/5minai)**\n\nTranscribing meetings manually can be tedious and prone to error. This workflow automates the transcription process in real-time, ensuring that key discussions and decisions are accurately captured and easily accessible for later review, thus enhancing productivity and clarity in communications.\n\nThe workflow leverages n8n and LlamaParse to automatically detect new invoices in a designated Google Drive folder, parse essential billing details, and store the extracted data in a structured format. The key functionalities include:\n- Real-time detection of new invoices via Google Drive triggers.\n- Automated HTTP requests to initiate parsing through Lama Cloud.\n- Structured storage of invoice details and line items in a database for future reference.\n\n1. **Google Drive Integration**: Monitors a specific folder in Google Drive for new invoice uploads.\n2. **Parsing with LlamaParse**: Automatically sends invoices for parsing and processes results through webhooks.\n3. **Data Storage in Airtable**: Creates records for invoices and their associated line items, allowing for detailed tracking.",
+      "### Set up steps\n\n1. **Google Drive Trigger**: \n - Set up a trigger to detect new files in a specified folder dedicated to invoices.\n\n2. **File Upload to LlamaParse**: \n - Create an HTTP request that sends the invoice file to LlamaParse for parsing, including relevant header settings and webhook URL.\n\n3. **Webhook Processing**: \n - Establish a webhook node to handle parsed results from LlamaParse, extracting needed invoice details effectively.\n\n4. **Invoice Record Creation**: \n - Create initial records for invoices in your database using the parsed details received from the webhook.\n\n5. **Line Item Processing**: \n - Transform string data into structured line item arrays and create individual records for each item linked to the main invoice."
+    ],
+    "nodes": {
+      "node_ab312d53e1": {
+        "n8n": "Google Drive Trigger",
+        "n8nType": "n8n-nodes-base.googleDriveTrigger"
+      },
+      "node_a4d6d31c0a": {
+        "n8n": "Webhook",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_b74f7d5335": {
+        "n8n": "Google Drive",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_e9c501dc18": {
+        "n8n": "Set Fields",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_7cf151cff2": {
+        "n8n": "Upload File",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_bba85cce6c": {
+        "n8n": "Upload File",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_b299ffef4e": {
+        "n8n": "Upload File",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_3f86c70ab5": {
+        "n8n": "OpenAI - Extract Line Items",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "llmProvider": "openai"
+      },
+      "node_734385fe52": {
+        "n8n": "OpenAI - Extract Line Items",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_857449a510": {
+        "n8n": "OpenAI - Extract Line Items",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_ce5072a86a": {
+        "n8n": "OpenAI - Extract Line Items",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_1cc36cd8f8": {
+        "n8n": "Create Invoice",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_e40b265983": {
+        "n8n": "Process Line Items",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_55fc1607c1": {
+        "n8n": "Create Line Item",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_b3d9e44929": {
+        "n8n": "Create Line Item",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_f940a69d71": {
+        "n8n": "__end:Upload File",
+        "n8nType": "synthetic"
+      },
+      "node_1384f2d12e": {
+        "n8n": "__end:Create Line Item",
+        "n8nType": "synthetic"
+      },
+      "node_56fce73934": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_2b5e960b1a": {
+        "n8n": "OpenAI - Extract Line Items",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

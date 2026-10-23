@@ -1,0 +1,524 @@
+{
+  "name": "🤖🧠 AI Agent Chatbot + LONG TERM Memory + Note Storage + Telegram",
+  "workflowSlug": "ai-agent-chatbot-long-term-memory-note-storage-telegram",
+  "description": "Converted from the n8n template \"🤖🧠 AI Agent Chatbot + LONG TERM Memory + Note Storage + Telegram\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_98472a085e",
+      "actorId": "actor_98472a085e",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_ae40fa9141",
+      "actorId": "actor_ae40fa9141",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_GET_DOCUMENT_BY_ID",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Docs",
+        "action": "GOOGLESUPER_GET_DOCUMENT_BY_ID",
+        "params": {
+          "id": "[Google Doc ID]"
+        }
+      }
+    },
+    {
+      "nodeId": "node_02efe00fb2",
+      "actorId": "actor_02efe00fb2",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_GET_DOCUMENT_BY_ID",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Docs",
+        "action": "GOOGLESUPER_GET_DOCUMENT_BY_ID",
+        "params": {
+          "id": "[Google Doc ID]"
+        }
+      }
+    },
+    {
+      "nodeId": "node_c2b64bda00",
+      "actorId": "actor_c2b64bda00",
+      "type": "NodeSync",
+      "label": "Merge",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_513aef1d62",
+      "actorId": "actor_513aef1d62",
+      "type": "NodeTransform",
+      "label": "Aggregate",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nreturn { \"data\": __items };"
+      }
+    },
+    {
+      "nodeId": "node_b22fe94d03",
+      "actorId": "actor_b22fe94d03",
+      "type": "NodeCdecliAgent",
+      "label": "AI Tools Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "sessionId": "{{sessionId}}",
+        "message": "{{chatInput}}",
+        "system": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_5af12e3013",
+      "actorId": "actor_5af12e3013",
+      "type": "NodeTransform",
+      "label": "System: AI Tools Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: AI Tools Agent.\nconst __promptValue = `## ROLE \nYou are a friendly, attentive, and helpful AI assistant. Your primary goal is to assist the user while maintaining a personalized and engaging interaction. \n\n---\n\n## RULES \n\n1. **Memory Management**: \n - When the user sends a new message, evaluate whether it contains noteworthy or personal information (e.g., preferences, habits, goals, or important events). \n - If such information is identified, use the **Save Memory** tool to store this data in memory. \n - Always send a meaningful response back to the user, even if your primary action was saving information. This response should not reveal that information was stored but should acknowledge or engage with the user’s input naturally. \n\n2. **Note Management**: \n - If the user provides information that is intended to be stored as a note (e.g., specific instructions, reminders, or standalone pieces of information), use the **Save Note** tool. \n - Notes should not be stored in memory using the **Save Memory** tool. \n - Ensure that notes are clear, concise, and accurately reflect the user’s input. \n\n3. **Context Awareness**: \n - Use stored memories and notes to provide contextually relevant and personalized responses. \n - Always consider the **date and time** when a memory or note was collected to ensure your responses are up-to-date and accurate.\n\n4. **User-Centric Responses**: \n - Tailor your responses based on the user's preferences and past interactions. \n - Be proactive in recalling relevant details from memory or notes when appropriate but avoid overwhelming the user with unnecessary information.\n\n5. **Privacy and Sensitivity**: \n - Handle all user data with care and sensitivity. Avoid making assumptions or sharing stored information unless it directly enhances the conversation or task at hand.\n - Never store passwords or usernames.\n\n6. **Fallback Responses**: \n - **IMPORTANT** If no specific task or question arises from the user’s message (e.g., when only saving information), respond in a way that keeps the conversation flowing naturally. For example: \n - Acknowledge their input: “Thanks for sharing that!” \n - Provide a friendly follow-up: “Is there anything else I can help you with today?” \n - DO NOT tell jokes as a fallback response.\n\n---\n\n## TOOLS \n\n### Save Memory \n- Use this tool to store summarized, concise, and meaningful information about the user. \n- Extract key details from user messages that could enhance future interactions (e.g., likes/dislikes, important dates, hobbies). \n- Ensure that the summary is clear and devoid of unnecessary details.\n\n### Save Note \n- Use this tool to store specific instructions, reminders, or standalone pieces of information provided by the user. \n- Notes should not include general personal preferences or habits meant for long-term memory storage. \n- Ensure that notes are concise and accurately reflect what the user wants to store.\n\n---\n\n## MEMORIES \n\n### Recent Noteworthy Memories \nHere are the most recent memories collected from the user, including their date and time of collection: \n\n**${$json.data[0].content}**\n\n### Guidelines for Using Memories: \n- Prioritize recent memories but do not disregard older ones if they remain relevant. \n- Cross-reference memories to maintain consistency in your responses. For example, if a user shares conflicting preferences over time, clarify or adapt accordingly.\n\n---\n\n## NOTES \n\n### Recent Notes Collected from User: \nHere are the most recent notes collected from the user: \n\n**${$json.data[1].content}**\n\n### Guidelines for Using Notes: \n- Use notes for tasks requiring specific instructions or reminders.\n- Do not mix note content with general memory content; keep them distinct.\n\n---\n\n## ADDITIONAL INSTRUCTIONS \n\n- Think critically before responding to ensure your answers are thoughtful and accurate. \n- Strive to build trust with the user by being consistent, reliable, and personable in your interactions. \n- Avoid robotic or overly formal language; aim for a conversational tone that aligns with being \"friendly and helpful.\" \n`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_7af7c2b388",
+      "actorId": "actor_7af7c2b388",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_SEND_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_SEND_MESSAGE",
+        "params": {
+          "chat_id": "{{telegramChatId}}",
+          "text": "{{last.text}}",
+          "parse_mode": "HTML"
+        }
+      }
+    },
+    {
+      "nodeId": "node_515158ac04",
+      "actorId": "actor_515158ac04",
+      "type": "NodeTransform",
+      "label": "Chat Response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"output\"] = ($json);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_d37320891f",
+      "actorId": "actor_d37320891f",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_9758b1bfe9",
+      "actorId": "actor_9758b1bfe9",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_773b1a8642",
+      "actorId": "actor_773b1a8642",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "chatInput": "",
+          "sessionId": "",
+          "telegramChatId": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_5af12e3013",
+      "target": "node_b22fe94d03",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_98472a085e",
+      "target": "node_ae40fa9141",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_98472a085e",
+      "target": "node_02efe00fb2",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ae40fa9141",
+      "target": "node_c2b64bda00",
+      "sourceOutput": "result",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_b22fe94d03",
+      "target": "node_7af7c2b388",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_b22fe94d03",
+      "target": "node_515158ac04",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b22fe94d03",
+      "target": "node_515158ac04",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_02efe00fb2",
+      "target": "node_c2b64bda00",
+      "sourceOutput": "result",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_513aef1d62",
+      "target": "node_5af12e3013",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_513aef1d62",
+      "target": "node_5af12e3013",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c2b64bda00",
+      "target": "node_513aef1d62",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c2b64bda00",
+      "target": "node_513aef1d62",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7af7c2b388",
+      "target": "node_d37320891f",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_515158ac04",
+      "target": "node_9758b1bfe9",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "telegram",
+    "categoryLabel": "Telegram",
+    "department": "",
+    "connectors": [
+      "googlesuper",
+      "telegram"
+    ],
+    "setupVars": [
+      {
+        "key": "telegramChatId",
+        "label": "Telegram chat id",
+        "type": "id",
+        "example": "123456789",
+        "usedBy": [
+          "Telegram Response"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeStart",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 13,
+      "yantraSteps": 9,
+      "foldedHelpers": [
+        "gpt-4o-mini",
+        "Save Notes",
+        "Save Long Term Memories",
+        "Window Buffer Memory"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Telegram/🤖🧠 AI Agent Chatbot + LONG TERM Memory + Note Storage + Telegram.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "🤖🧠 AI Agent Chatbot + LONG TERM Memory + Note Storage + Telegram"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "When chat message received",
+        "detail": "@n8n/n8n-nodes-langchain.chatTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"When chat message received\" (chatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value telegramChatId: Telegram chat id (for example 123456789). Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the telegram connector (credential).",
+      "Provide run inputs: chatInput, sessionId."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [
+        {
+          "node": "gpt-4o-mini",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "AI Tools Agent"
+        },
+        {
+          "node": "Save Notes",
+          "type": "n8n-nodes-base.googleDocsTool",
+          "into": "AI Tools Agent",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Save Long Term Memories",
+          "type": "n8n-nodes-base.googleDocsTool",
+          "into": "AI Tools Agent",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Window Buffer Memory",
+          "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+          "into": "AI Tools Agent",
+          "as": "ai_memory"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When chat message received",
+          "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
+        "\"Merge\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was append).",
+        "\"AI Tools Agent\" kept conversation memory (memoryBufferWindow); sessionId is set to the run-input sessionId.",
+        "\"AI Tools Agent\" used agent tools in the original: Save Notes (googleDocsTool), Save Long Term Memories (googleDocsTool). The cdecli agent calls connectors directly; connect credentials for the services those tools reached. Prefer connectors: googlesuper.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect telegram: `cdecli credential create -n \"telegram\" -p telegram --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Retrieve Long Term Memories\nGoogle Docs",
+      "## Save To Current Chat Memory (Optional)",
+      "## Save Long Term Memories\nGoogle Docs",
+      "## LLM",
+      "## Telegram \n(Optional)",
+      "## AI AGENT with Long Term Memory & Note Storage",
+      "## Save Notes\nGoogle Docs",
+      "## Retrieve Notes\nGoogle Docs"
+    ],
+    "nodes": {
+      "node_98472a085e": {
+        "n8n": "When chat message received",
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
+      },
+      "node_ae40fa9141": {
+        "n8n": "Retrieve Long Term Memories",
+        "n8nType": "n8n-nodes-base.googleDocs"
+      },
+      "node_02efe00fb2": {
+        "n8n": "Retrieve Notes",
+        "n8nType": "n8n-nodes-base.googleDocs"
+      },
+      "node_c2b64bda00": {
+        "n8n": "Merge",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_513aef1d62": {
+        "n8n": "Aggregate",
+        "n8nType": "n8n-nodes-base.aggregate"
+      },
+      "node_b22fe94d03": {
+        "n8n": "AI Tools Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_5af12e3013": {
+        "n8n": "AI Tools Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_7af7c2b388": {
+        "n8n": "Telegram Response",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_515158ac04": {
+        "n8n": "Chat Response",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_d37320891f": {
+        "n8n": "__end:Telegram Response",
+        "n8nType": "synthetic"
+      },
+      "node_9758b1bfe9": {
+        "n8n": "__end:Chat Response",
+        "n8nType": "synthetic"
+      },
+      "node_773b1a8642": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

@@ -1,0 +1,1525 @@
+{
+  "name": "Google analytics template",
+  "workflowSlug": "google-analytics-template",
+  "description": "Sends Google Analytics data to AI for analysis and saves the results in Baserow.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_d67549c862",
+      "actorId": "actor_d67549c862",
+      "type": "NodeCron",
+      "label": "Schedule Trigger",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 0 * * 1"
+      }
+    },
+    {
+      "nodeId": "node_954add7df2",
+      "actorId": "actor_954add7df2",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_5e05cc9618",
+      "actorId": "actor_5e05cc9618",
+      "type": "NodeCdeConnector",
+      "label": "google-analytics/GOOGLE_ANALYTICS_RUN_REPORT",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "google-analytics",
+        "connectorLabel": "Google Analytics",
+        "action": "GOOGLE_ANALYTICS_RUN_REPORT",
+        "params": {
+          "property": "{{gaPropertyId}}",
+          "dateRanges": [
+            {
+              "startDate": "7daysAgo",
+              "endDate": "today"
+            }
+          ],
+          "metrics": [
+            {
+              "name": "screenPageViews"
+            },
+            {
+              "name": "activeUsers"
+            },
+            {
+              "name": "screenPageViewsPerUser"
+            },
+            {
+              "name": "eventCount"
+            }
+          ],
+          "dimensions": [
+            {
+              "name": "unifiedScreenName"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_7acc04f4f2",
+      "actorId": "actor_7acc04f4f2",
+      "type": "NodeTransform",
+      "label": "Parse data from Google Analytics",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\nconst item = { json: __items[0] ?? source, binary: {} };\n// Ported from n8n Code node \"Parse data from Google Analytics\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  function transformToUrlString(items) {\n   // Debug logging\n   console.log('Input items:', JSON.stringify(items, null, 2));\n   \n   // Check if items is an array and has content\n   if (!Array.isArray(items) || items.length === 0) {\n   console.log('Items is not an array or is empty');\n   throw new Error('Invalid data structure');\n   }\n  \n   // Check if first item exists and has json property\n   if (!items[0] || !items[0].json) {\n   console.log('First item is missing or has no json property');\n   throw new Error('Invalid data structure');\n   }\n  \n   // Get the analytics data\n   const analyticsData = items[0].json;\n   \n   // Check if analyticsData has rows\n   if (!analyticsData || !Array.isArray(analyticsData.rows)) {\n   console.log('Analytics data is missing or has no rows array');\n   throw new Error('Invalid data structure');\n   }\n   \n   // Map each row to a simplified object\n   const simplified = analyticsData.rows.map(row => {\n   if (!row.dimensionValues?.[0]?.value || !row.metricValues?.length) {\n   console.log('Invalid row structure:', row);\n   throw new Error('Invalid row structure');\n   }\n   \n   return {\n   page: row.dimensionValues[0].value,\n   pageViews: parseInt(row.metricValues[0].value) || 0,\n   activeUsers: parseInt(row.metricValues[1].value) || 0,\n   viewsPerUser: parseFloat(row.metricValues[2].value) || 0,\n   eventCount: parseInt(row.metricValues[3].value) || 0\n   };\n   });\n   \n   // Convert to JSON string and encode for URL\n   return encodeURIComponent(JSON.stringify(simplified));\n  }\n  \n  // Get input data and transform it\n  const urlString = transformToUrlString($input.all());\n  \n  // Return the result\n  return { json: { urlString } };\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_03fb560563",
+      "actorId": "actor_03fb560563",
+      "type": "NodeTransform",
+      "label": "Params: Get Page Engagement Stats for prior week",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Params for google-analytics/GOOGLE_ANALYTICS_RUN_REPORT (n8n node \"Get Page Engagement Stats for prior week\").\nreturn {\n  \"property\": \"{{gaPropertyId}}\",\n  \"dateRanges\": [{ \"startDate\": ($today.minus({days: 14})), \"endDate\": \"2024-10-23\" }],\n  \"metrics\": [{ \"name\": \"screenPageViews\" }, { \"name\": \"activeUsers\" }, { \"name\": \"screenPageViewsPerUser\" }, { \"name\": \"eventCount\" }],\n  \"dimensions\": [{ \"name\": \"unifiedScreenName\" }],\n};"
+      }
+    },
+    {
+      "nodeId": "node_b09e8a20d7",
+      "actorId": "actor_b09e8a20d7",
+      "type": "NodeCdeConnector",
+      "label": "google-analytics/GOOGLE_ANALYTICS_RUN_REPORT",
+      "color": "#6366F1",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "google-analytics",
+        "connectorLabel": "Google Analytics",
+        "action": "GOOGLE_ANALYTICS_RUN_REPORT"
+      }
+    },
+    {
+      "nodeId": "node_19d895316a",
+      "actorId": "actor_19d895316a",
+      "type": "NodeTransform",
+      "label": "Parse GA data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\nconst item = { json: __items[0] ?? source, binary: {} };\n// Ported from n8n Code node \"Parse GA data\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  function transformToUrlString(items) {\n   // Debug logging\n   console.log('Input items:', JSON.stringify(items, null, 2));\n   \n   // Check if items is an array and has content\n   if (!Array.isArray(items) || items.length === 0) {\n   console.log('Items is not an array or is empty');\n   throw new Error('Invalid data structure');\n   }\n  \n   // Check if first item exists and has json property\n   if (!items[0] || !items[0].json) {\n   console.log('First item is missing or has no json property');\n   throw new Error('Invalid data structure');\n   }\n  \n   // Get the analytics data\n   const analyticsData = items[0].json;\n   \n   // Check if analyticsData has rows\n   if (!analyticsData || !Array.isArray(analyticsData.rows)) {\n   console.log('Analytics data is missing or has no rows array');\n   throw new Error('Invalid data structure');\n   }\n   \n   // Map each row to a simplified object\n   const simplified = analyticsData.rows.map(row => {\n   if (!row.dimensionValues?.[0]?.value || !row.metricValues?.length) {\n   console.log('Invalid row structure:', row);\n   throw new Error('Invalid row structure');\n   }\n   \n   return {\n   page: row.dimensionValues[0].value,\n   pageViews: parseInt(row.metricValues[0].value) || 0,\n   activeUsers: parseInt(row.metricValues[1].value) || 0,\n   viewsPerUser: parseFloat(row.metricValues[2].value) || 0,\n   eventCount: parseInt(row.metricValues[3].value) || 0\n   };\n   });\n   \n   // Convert to JSON string and encode for URL\n   return encodeURIComponent(JSON.stringify(simplified));\n  }\n  \n  // Get input data and transform it\n  const urlString = transformToUrlString($input.all());\n  \n  // Return the result\n  return { json: { urlString } };\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_0ce9b60bba",
+      "actorId": "actor_0ce9b60bba",
+      "type": "NodeCdeConnector",
+      "label": "google-analytics/GOOGLE_ANALYTICS_RUN_REPORT",
+      "color": "#6366F1",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "google-analytics",
+        "connectorLabel": "Google Analytics",
+        "action": "GOOGLE_ANALYTICS_RUN_REPORT",
+        "params": {
+          "property": "{{gaPropertyId}}",
+          "dateRanges": [
+            {
+              "startDate": "7daysAgo",
+              "endDate": "today"
+            }
+          ],
+          "metrics": [
+            {
+              "name": "activeUsers"
+            },
+            {
+              "name": "engagedSessions"
+            },
+            {
+              "name": "engagementRate"
+            },
+            {
+              "name": "eventCount"
+            },
+            {
+              "name": "organicGoogleSearchAveragePosition"
+            },
+            {
+              "name": "organicGoogleSearchClickThroughRate"
+            },
+            {
+              "name": "organicGoogleSearchClicks"
+            },
+            {
+              "name": "organicGoogleSearchImpressions"
+            }
+          ],
+          "dimensions": [
+            {
+              "name": "landingPagePlusQueryString"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_7c8977c8fe",
+      "actorId": "actor_7c8977c8fe",
+      "type": "NodeTransform",
+      "label": "Parse Google Analytics Data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Parse Google Analytics Data\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  function transformToUrlString(items) {\n   // In n8n, we need to check if items is an array and get the json property\n   const data = items[0].json;\n   \n   if (!data || !data.rows) {\n   console.log('No valid data found');\n   return encodeURIComponent(JSON.stringify([]));\n   }\n   \n   try {\n   // Process each row\n   const simplified = data.rows.map(row => ({\n   page: row.dimensionValues[0].value,\n   activeUsers: parseInt(row.metricValues[0].value) || 0,\n   engagedSessions: parseInt(row.metricValues[1].value) || 0,\n   engagementRate: parseFloat(row.metricValues[2].value) || 0,\n   eventCount: parseInt(row.metricValues[3].value) || 0,\n   avgPosition: parseFloat(row.metricValues[4].value) || 0,\n   ctr: parseFloat(row.metricValues[5].value) || 0,\n   clicks: parseInt(row.metricValues[6].value) || 0,\n   impressions: parseInt(row.metricValues[7].value) || 0\n   }));\n   \n   return encodeURIComponent(JSON.stringify(simplified));\n   } catch (error) {\n   console.log('Error processing data:', error);\n   throw new Error('Invalid data structure');\n   }\n  }\n  \n  // Get the input data\n  const items = $input.all();\n  \n  // Process the data\n  const result = transformToUrlString(items);\n  \n  // Return the result\n  return { json: { urlString: result } };\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_931b755007",
+      "actorId": "actor_931b755007",
+      "type": "NodeTransform",
+      "label": "Params: Get Google Search Results for last week",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Params for google-analytics/GOOGLE_ANALYTICS_RUN_REPORT (n8n node \"Get Google Search Results for last week\").\nreturn {\n  \"property\": \"{{gaPropertyId}}\",\n  \"dateRanges\": [{ \"startDate\": ($today.minus({days: 14})), \"endDate\": ($today.minus({days: 7})) }],\n  \"metrics\": [{ \"name\": \"activeUsers\" }, { \"name\": \"engagedSessions\" }, { \"name\": \"engagementRate\" }, { \"name\": \"eventCount\" }, { \"name\": \"organicGoogleSearchAveragePosition\" }, { \"name\": \"organicGoogleSearchClickThroughRate\" }, { \"name\": \"organicGoogleSearchClicks\" }, { \"name\": \"organicGoogleSearchImpressions\" }],\n  \"dimensions\": [{ \"name\": \"landingPagePlusQueryString\" }],\n};"
+      }
+    },
+    {
+      "nodeId": "node_199bbb9ede",
+      "actorId": "actor_199bbb9ede",
+      "type": "NodeCdeConnector",
+      "label": "google-analytics/GOOGLE_ANALYTICS_RUN_REPORT",
+      "color": "#6366F1",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "google-analytics",
+        "connectorLabel": "Google Analytics",
+        "action": "GOOGLE_ANALYTICS_RUN_REPORT"
+      }
+    },
+    {
+      "nodeId": "node_33fb0a87d1",
+      "actorId": "actor_33fb0a87d1",
+      "type": "NodeTransform",
+      "label": "Parse Google Analytics Data1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Parse Google Analytics Data1\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  function transformToUrlString(items) {\n   // In n8n, we need to check if items is an array and get the json property\n   const data = items[0].json;\n   \n   if (!data || !data.rows) {\n   console.log('No valid data found');\n   return encodeURIComponent(JSON.stringify([]));\n   }\n   \n   try {\n   // Process each row\n   const simplified = data.rows.map(row => ({\n   page: row.dimensionValues[0].value,\n   activeUsers: parseInt(row.metricValues[0].value) || 0,\n   engagedSessions: parseInt(row.metricValues[1].value) || 0,\n   engagementRate: parseFloat(row.metricValues[2].value) || 0,\n   eventCount: parseInt(row.metricValues[3].value) || 0,\n   avgPosition: parseFloat(row.metricValues[4].value) || 0,\n   ctr: parseFloat(row.metricValues[5].value) || 0,\n   clicks: parseInt(row.metricValues[6].value) || 0,\n   impressions: parseInt(row.metricValues[7].value) || 0\n   }));\n   \n   return encodeURIComponent(JSON.stringify(simplified));\n   } catch (error) {\n   console.log('Error processing data:', error);\n   throw new Error('Invalid data structure');\n   }\n  }\n  \n  // Get the input data\n  const items = $input.all();\n  \n  // Process the data\n  const result = transformToUrlString(items);\n  \n  // Return the result\n  return { json: { urlString: result } };\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_e048fa7497",
+      "actorId": "actor_e048fa7497",
+      "type": "NodeCdeConnector",
+      "label": "google-analytics/GOOGLE_ANALYTICS_RUN_REPORT",
+      "color": "#6366F1",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "google-analytics",
+        "connectorLabel": "Google Analytics",
+        "action": "GOOGLE_ANALYTICS_RUN_REPORT",
+        "params": {
+          "property": "{{gaPropertyId}}",
+          "dateRanges": [
+            {
+              "startDate": "7daysAgo",
+              "endDate": "today"
+            }
+          ],
+          "metrics": [
+            {
+              "name": "activeUsers"
+            },
+            {
+              "name": "newUsers"
+            },
+            {
+              "name": "engagementRate"
+            },
+            {
+              "name": "engagedSessions"
+            },
+            {
+              "name": "eventCount"
+            },
+            {
+              "name": "totalUsers"
+            },
+            {
+              "name": "sessions"
+            }
+          ],
+          "dimensions": [
+            {
+              "name": "country"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_045c1d68c3",
+      "actorId": "actor_045c1d68c3",
+      "type": "NodeTransform",
+      "label": "Parse Google analytics data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Parse Google analytics data\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  function transformToUrlString(items) {\n   // In n8n, we need to check if items is an array and get the json property\n   const data = items[0].json;\n   \n   if (!data || !data.rows) {\n   console.log('No valid data found');\n   return encodeURIComponent(JSON.stringify([]));\n   }\n   \n   try {\n   // Process each row\n   const simplified = data.rows.map(row => ({\n   country: row.dimensionValues[0].value,\n   activeUsers: parseInt(row.metricValues[0].value) || 0,\n   newUsers: parseInt(row.metricValues[1].value) || 0,\n   engagementRate: parseFloat(row.metricValues[2].value) || 0,\n   engagedSessions: parseInt(row.metricValues[3].value) || 0,\n   eventCount: parseInt(row.metricValues[4].value) || 0,\n   totalUsers: parseInt(row.metricValues[5].value) || 0,\n   sessions: parseInt(row.metricValues[6].value) || 0\n   }));\n   \n   return encodeURIComponent(JSON.stringify(simplified));\n   } catch (error) {\n   console.log('Error processing data:', error);\n   throw new Error('Invalid data structure');\n   }\n  }\n  \n  // Get the input data\n  const items = $input.all();\n  \n  // Process the data\n  const result = transformToUrlString(items);\n  \n  // Return the result\n  return { json: { urlString: result } };\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_ff5c8ba52d",
+      "actorId": "actor_ff5c8ba52d",
+      "type": "NodeTransform",
+      "label": "Params: Get Country views data for last week",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Params for google-analytics/GOOGLE_ANALYTICS_RUN_REPORT (n8n node \"Get Country views data for last week\").\nreturn {\n  \"property\": \"{{gaPropertyId}}\",\n  \"dateRanges\": [{ \"startDate\": ($today.minus({days: 14})), \"endDate\": ($today.minus({days: 7})) }],\n  \"metrics\": [{ \"name\": \"activeUsers\" }, { \"name\": \"newUsers\" }, { \"name\": \"engagementRate\" }, { \"name\": \"engagedSessions\" }, { \"name\": \"eventCount\" }, { \"name\": \"totalUsers\" }, { \"name\": \"sessions\" }],\n  \"dimensions\": [{ \"name\": \"country\" }],\n};"
+      }
+    },
+    {
+      "nodeId": "node_139dec3d10",
+      "actorId": "actor_139dec3d10",
+      "type": "NodeCdeConnector",
+      "label": "google-analytics/GOOGLE_ANALYTICS_RUN_REPORT",
+      "color": "#6366F1",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "google-analytics",
+        "connectorLabel": "Google Analytics",
+        "action": "GOOGLE_ANALYTICS_RUN_REPORT"
+      }
+    },
+    {
+      "nodeId": "node_9f1af4a1e8",
+      "actorId": "actor_9f1af4a1e8",
+      "type": "NodeTransform",
+      "label": "Parse Google analytics data1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Parse Google analytics data1\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  function transformToUrlString(items) {\n   // In n8n, we need to check if items is an array and get the json property\n   const data = items[0].json;\n   \n   if (!data || !data.rows) {\n   console.log('No valid data found');\n   return encodeURIComponent(JSON.stringify([]));\n   }\n   \n   try {\n   // Process each row\n   const simplified = data.rows.map(row => ({\n   country: row.dimensionValues[0].value,\n   activeUsers: parseInt(row.metricValues[0].value) || 0,\n   newUsers: parseInt(row.metricValues[1].value) || 0,\n   engagementRate: parseFloat(row.metricValues[2].value) || 0,\n   engagedSessions: parseInt(row.metricValues[3].value) || 0,\n   eventCount: parseInt(row.metricValues[4].value) || 0,\n   totalUsers: parseInt(row.metricValues[5].value) || 0,\n   sessions: parseInt(row.metricValues[6].value) || 0\n   }));\n   \n   return encodeURIComponent(JSON.stringify(simplified));\n   } catch (error) {\n   console.log('Error processing data:', error);\n   throw new Error('Invalid data structure');\n   }\n  }\n  \n  // Get the input data\n  const items = $input.all();\n  \n  // Process the data\n  const result = transformToUrlString(items);\n  \n  // Return the result\n  return { json: { urlString: result } };\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_472340321e",
+      "actorId": "actor_472340321e",
+      "type": "NodeLlmChain",
+      "label": "Send page data to A.I.",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{llm_system_c83ba01117}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_c83ba01117",
+      "actorId": "actor_c83ba01117",
+      "type": "NodeTransform",
+      "label": "System: Send page data to A.I.",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Schedule Trigger\": __namedCtx.steps?.[\"Schedule Trigger\"]?.[\"payload\"], \"When clicking ‘Test workflow’\": {{ctx}}, \"Get Page Engagement Stats for this week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse data from Google Analytics\": __namedCtx.steps?.[\"Parse data from Google Analytics\"]?.[\"transformed\"], \"Get Page Engagement Stats for prior week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse GA data\": __namedCtx.steps?.[\"Parse GA data\"]?.[\"transformed\"], \"Get Google Search Results for this week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google Analytics Data\": __namedCtx.steps?.[\"Parse Google Analytics Data\"]?.[\"transformed\"], \"Get Google Search Results for last week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google Analytics Data1\": __namedCtx.steps?.[\"Parse Google Analytics Data1\"]?.[\"transformed\"], \"Get Country views data for this week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google analytics data\": __namedCtx.steps?.[\"Parse Google analytics data\"]?.[\"transformed\"], \"Get Country views data for last week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google analytics data1\": __namedCtx.steps?.[\"Parse Google analytics data1\"]?.[\"transformed\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// System: Send page data to A.I..\nconst __promptValue = (() => { const __b = (() => { const __v = `{\n \"model\": \"meta-llama/llama-3.1-70b-instruct:free\",\n \"messages\": [\n {\n \"role\": \"user\",\n \"content\": \"You are an SEO expert. Compare the data from past 2 weeks, give me a table in markdown. Then give me 5 suggestions to improve my SEO. Output the data so that it works with markdown editors. Data from 2 weeks ago:${$json.urlString} Data from last week: ${$('Parse data from Google Analytics').item.json.urlString}\"\n }\n ]\n}`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn (__b.messages || []).filter((m) => m?.role === 'system' || m?.role === 'developer').map((m) => __t(m.content)).join('\\n\\n'); })();\nreturn { \"llm_system_c83ba01117\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_4bf15add53",
+      "actorId": "actor_4bf15add53",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Send page data to A.I.",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_457cc339ec",
+      "actorId": "actor_457cc339ec",
+      "type": "NodeTransform",
+      "label": "Prompt: Send page data to A.I.",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Schedule Trigger\": __namedCtx.steps?.[\"Schedule Trigger\"]?.[\"payload\"], \"When clicking ‘Test workflow’\": {{ctx}}, \"Get Page Engagement Stats for this week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse data from Google Analytics\": __namedCtx.steps?.[\"Parse data from Google Analytics\"]?.[\"transformed\"], \"Get Page Engagement Stats for prior week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse GA data\": __namedCtx.steps?.[\"Parse GA data\"]?.[\"transformed\"], \"Get Google Search Results for this week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google Analytics Data\": __namedCtx.steps?.[\"Parse Google Analytics Data\"]?.[\"transformed\"], \"Get Google Search Results for last week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google Analytics Data1\": __namedCtx.steps?.[\"Parse Google Analytics Data1\"]?.[\"transformed\"], \"Get Country views data for this week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google analytics data\": __namedCtx.steps?.[\"Parse Google analytics data\"]?.[\"transformed\"], \"Get Country views data for last week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google analytics data1\": __namedCtx.steps?.[\"Parse Google analytics data1\"]?.[\"transformed\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Send page data to A.I..\nconst __promptValue = (() => { const __b = (() => { const __v = `{\n \"model\": \"meta-llama/llama-3.1-70b-instruct:free\",\n \"messages\": [\n {\n \"role\": \"user\",\n \"content\": \"You are an SEO expert. Compare the data from past 2 weeks, give me a table in markdown. Then give me 5 suggestions to improve my SEO. Output the data so that it works with markdown editors. Data from 2 weeks ago:${$json.urlString} Data from last week: ${$('Parse data from Google Analytics').item.json.urlString}\"\n }\n ]\n}`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn (() => { const u = (__b.messages || []).filter((m) => m && m.role !== 'system' && m.role !== 'developer'); return __b.__raw ?? (u.length === 1 ? __t(u[0].content) : u.map((m) => m.role + ': ' + __t(m.content)).join('\\n\\n')); })(); })();\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_7b9fd9d5bd",
+      "actorId": "actor_7b9fd9d5bd",
+      "type": "NodeLlmChain",
+      "label": "Send page Search data to A.I.",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 8820,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{llm_system_cde0d5399e}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_cde0d5399e",
+      "actorId": "actor_cde0d5399e",
+      "type": "NodeTransform",
+      "label": "System: Send page Search data to A.I.",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7680,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Schedule Trigger\": __namedCtx.steps?.[\"Schedule Trigger\"]?.[\"payload\"], \"When clicking ‘Test workflow’\": {{ctx}}, \"Get Page Engagement Stats for this week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse data from Google Analytics\": __namedCtx.steps?.[\"Parse data from Google Analytics\"]?.[\"transformed\"], \"Get Page Engagement Stats for prior week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse GA data\": __namedCtx.steps?.[\"Parse GA data\"]?.[\"transformed\"], \"Get Google Search Results for this week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google Analytics Data\": __namedCtx.steps?.[\"Parse Google Analytics Data\"]?.[\"transformed\"], \"Get Google Search Results for last week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google Analytics Data1\": __namedCtx.steps?.[\"Parse Google Analytics Data1\"]?.[\"transformed\"], \"Get Country views data for this week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google analytics data\": __namedCtx.steps?.[\"Parse Google analytics data\"]?.[\"transformed\"], \"Get Country views data for last week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google analytics data1\": __namedCtx.steps?.[\"Parse Google analytics data1\"]?.[\"transformed\"], \"Send page data to A.I.\": ((text) => ({ text, output: text, content: text, response: { text, output_text: text }, message: { content: text }, choices: [{ message: { content: text }, text }] }))(__namedCtx.steps?.[\"Send page data to A.I.\"]?.[\"text\"]) };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// System: Send page Search data to A.I..\nconst __promptValue = (() => { const __b = (() => { const __v = `{\n \"model\": \"meta-llama/llama-3.1-70b-instruct:free\",\n \"messages\": [\n {\n \"role\": \"user\",\n \"content\": \"You are an SEO expert. Compare the data from past 2 weeks, give me a table in markdown. Then give me 5 suggestions to improve my SEO. Output the data so that it works with markdown editors. Data from 2 weeks ago:${$('Parse Google Analytics Data1').item.json.urlString} Data from last week:${$('Parse Google Analytics Data').item.json.urlString}\"\n }\n ]\n}`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn (__b.messages || []).filter((m) => m?.role === 'system' || m?.role === 'developer').map((m) => __t(m.content)).join('\\n\\n'); })();\nreturn { \"llm_system_cde0d5399e\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_2f9136652c",
+      "actorId": "actor_2f9136652c",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Send page Search data to A.I.",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 8060,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_e0948fe6a7",
+      "actorId": "actor_e0948fe6a7",
+      "type": "NodeTransform",
+      "label": "Prompt: Send page Search data to A.I.",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8440,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Schedule Trigger\": __namedCtx.steps?.[\"Schedule Trigger\"]?.[\"payload\"], \"When clicking ‘Test workflow’\": {{ctx}}, \"Get Page Engagement Stats for this week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse data from Google Analytics\": __namedCtx.steps?.[\"Parse data from Google Analytics\"]?.[\"transformed\"], \"Get Page Engagement Stats for prior week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse GA data\": __namedCtx.steps?.[\"Parse GA data\"]?.[\"transformed\"], \"Get Google Search Results for this week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google Analytics Data\": __namedCtx.steps?.[\"Parse Google Analytics Data\"]?.[\"transformed\"], \"Get Google Search Results for last week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google Analytics Data1\": __namedCtx.steps?.[\"Parse Google Analytics Data1\"]?.[\"transformed\"], \"Get Country views data for this week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google analytics data\": __namedCtx.steps?.[\"Parse Google analytics data\"]?.[\"transformed\"], \"Get Country views data for last week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google analytics data1\": __namedCtx.steps?.[\"Parse Google analytics data1\"]?.[\"transformed\"], \"Send page data to A.I.\": ((text) => ({ text, output: text, content: text, response: { text, output_text: text }, message: { content: text }, choices: [{ message: { content: text }, text }] }))(__namedCtx.steps?.[\"Send page data to A.I.\"]?.[\"text\"]) };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Send page Search data to A.I..\nconst __promptValue = (() => { const __b = (() => { const __v = `{\n \"model\": \"meta-llama/llama-3.1-70b-instruct:free\",\n \"messages\": [\n {\n \"role\": \"user\",\n \"content\": \"You are an SEO expert. Compare the data from past 2 weeks, give me a table in markdown. Then give me 5 suggestions to improve my SEO. Output the data so that it works with markdown editors. Data from 2 weeks ago:${$('Parse Google Analytics Data1').item.json.urlString} Data from last week:${$('Parse Google Analytics Data').item.json.urlString}\"\n }\n ]\n}`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn (() => { const u = (__b.messages || []).filter((m) => m && m.role !== 'system' && m.role !== 'developer'); return __b.__raw ?? (u.length === 1 ? __t(u[0].content) : u.map((m) => m.role + ': ' + __t(m.content)).join('\\n\\n')); })(); })();\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_c7cf815a36",
+      "actorId": "actor_c7cf815a36",
+      "type": "NodeLlmChain",
+      "label": "Send country view data to A.I.",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 10340,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{llm_system_294a38532f}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_294a38532f",
+      "actorId": "actor_294a38532f",
+      "type": "NodeTransform",
+      "label": "System: Send country view data to A.I.",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9200,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Schedule Trigger\": __namedCtx.steps?.[\"Schedule Trigger\"]?.[\"payload\"], \"When clicking ‘Test workflow’\": {{ctx}}, \"Get Page Engagement Stats for this week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse data from Google Analytics\": __namedCtx.steps?.[\"Parse data from Google Analytics\"]?.[\"transformed\"], \"Get Page Engagement Stats for prior week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse GA data\": __namedCtx.steps?.[\"Parse GA data\"]?.[\"transformed\"], \"Get Google Search Results for this week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google Analytics Data\": __namedCtx.steps?.[\"Parse Google Analytics Data\"]?.[\"transformed\"], \"Get Google Search Results for last week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google Analytics Data1\": __namedCtx.steps?.[\"Parse Google Analytics Data1\"]?.[\"transformed\"], \"Get Country views data for this week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google analytics data\": __namedCtx.steps?.[\"Parse Google analytics data\"]?.[\"transformed\"], \"Get Country views data for last week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google analytics data1\": __namedCtx.steps?.[\"Parse Google analytics data1\"]?.[\"transformed\"], \"Send page data to A.I.\": ((text) => ({ text, output: text, content: text, response: { text, output_text: text }, message: { content: text }, choices: [{ message: { content: text }, text }] }))(__namedCtx.steps?.[\"Send page data to A.I.\"]?.[\"text\"]), \"Send page Search data to A.I.\": ((text) => ({ text, output: text, content: text, response: { text, output_text: text }, message: { content: text }, choices: [{ message: { content: text }, text }] }))(__namedCtx.steps?.[\"Send page Search data to A.I.\"]?.[\"text\"]) };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// System: Send country view data to A.I..\nconst __promptValue = (() => { const __b = (() => { const __v = `{\n \"model\": \"meta-llama/llama-3.1-70b-instruct:free\",\n \"messages\": [\n {\n \"role\": \"user\",\n \"content\": \"You are an SEO expert. Compare the data from past 2 weeks, give me a table in markdown. Then give me 5 suggestions to improve my SEO. Output the data so that it works with markdown editors. Data from 2 weeks ago:${$('Parse Google analytics data1').item.json.urlString} Data from last week:${$('Parse Google analytics data').item.json.urlString}\"\n }\n ]\n}`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn (__b.messages || []).filter((m) => m?.role === 'system' || m?.role === 'developer').map((m) => __t(m.content)).join('\\n\\n'); })();\nreturn { \"llm_system_294a38532f\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_096afc2c0b",
+      "actorId": "actor_096afc2c0b",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Send country view data to A.I.",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 9580,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_6d8a067718",
+      "actorId": "actor_6d8a067718",
+      "type": "NodeTransform",
+      "label": "Prompt: Send country view data to A.I.",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9960,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Schedule Trigger\": __namedCtx.steps?.[\"Schedule Trigger\"]?.[\"payload\"], \"When clicking ‘Test workflow’\": {{ctx}}, \"Get Page Engagement Stats for this week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse data from Google Analytics\": __namedCtx.steps?.[\"Parse data from Google Analytics\"]?.[\"transformed\"], \"Get Page Engagement Stats for prior week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse GA data\": __namedCtx.steps?.[\"Parse GA data\"]?.[\"transformed\"], \"Get Google Search Results for this week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google Analytics Data\": __namedCtx.steps?.[\"Parse Google Analytics Data\"]?.[\"transformed\"], \"Get Google Search Results for last week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google Analytics Data1\": __namedCtx.steps?.[\"Parse Google Analytics Data1\"]?.[\"transformed\"], \"Get Country views data for this week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google analytics data\": __namedCtx.steps?.[\"Parse Google analytics data\"]?.[\"transformed\"], \"Get Country views data for last week\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Parse Google analytics data1\": __namedCtx.steps?.[\"Parse Google analytics data1\"]?.[\"transformed\"], \"Send page data to A.I.\": ((text) => ({ text, output: text, content: text, response: { text, output_text: text }, message: { content: text }, choices: [{ message: { content: text }, text }] }))(__namedCtx.steps?.[\"Send page data to A.I.\"]?.[\"text\"]), \"Send page Search data to A.I.\": ((text) => ({ text, output: text, content: text, response: { text, output_text: text }, message: { content: text }, choices: [{ message: { content: text }, text }] }))(__namedCtx.steps?.[\"Send page Search data to A.I.\"]?.[\"text\"]) };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Send country view data to A.I..\nconst __promptValue = (() => { const __b = (() => { const __v = `{\n \"model\": \"meta-llama/llama-3.1-70b-instruct:free\",\n \"messages\": [\n {\n \"role\": \"user\",\n \"content\": \"You are an SEO expert. Compare the data from past 2 weeks, give me a table in markdown. Then give me 5 suggestions to improve my SEO. Output the data so that it works with markdown editors. Data from 2 weeks ago:${$('Parse Google analytics data1').item.json.urlString} Data from last week:${$('Parse Google analytics data').item.json.urlString}\"\n }\n ]\n}`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn (() => { const u = (__b.messages || []).filter((m) => m && m.role !== 'system' && m.role !== 'developer'); return __b.__raw ?? (u.length === 1 ? __t(u[0].content) : u.map((m) => m.role + ': ' + __t(m.content)).join('\\n\\n')); })(); })();\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_da5e058a46",
+      "actorId": "actor_da5e058a46",
+      "type": "NodeTransform",
+      "label": "Params: Save A.I. output to Baserow",
+      "color": "#F59E0B",
+      "position": {
+        "x": 10720,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When clicking ‘Test workflow’\": {{ctx}}, \"Get Page Engagement Stats for this week\": {{steps.GOOGLE_ANALYTICS_RUN_REPORT.result}}, \"Parse data from Google Analytics\": {{steps.xf_7acc04f4f2.result}}, \"Get Page Engagement Stats for prior week\": {{steps.GOOGLE_ANALYTICS_RUN_REPORT.result}}, \"Parse GA data\": {{steps.xf_19d895316a.result}}, \"Get Google Search Results for this week\": {{steps.GOOGLE_ANALYTICS_RUN_REPORT.result}}, \"Parse Google Analytics Data\": {{steps.xf_7c8977c8fe.result}}, \"Get Google Search Results for last week\": {{steps.GOOGLE_ANALYTICS_RUN_REPORT.result}}, \"Parse Google Analytics Data1\": {{steps.xf_33fb0a87d1.result}}, \"Get Country views data for this week\": {{steps.GOOGLE_ANALYTICS_RUN_REPORT.result}}, \"Parse Google analytics data\": {{steps.xf_045c1d68c3.result}}, \"Get Country views data for last week\": {{steps.GOOGLE_ANALYTICS_RUN_REPORT.result}}, \"Parse Google analytics data1\": {{steps.xf_9f1af4a1e8.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Params for baserow/BASEROW_CREATE_ROW (n8n node \"Save A.I. output to Baserow\").\nreturn {\n  \"5829\": (DateTime.now()),\n  \"5830\": ($('Send page Search data to A.I.').item.json.choices[0].message.content),\n  \"5831\": ($('Send page data to A.I.').item.json.choices[0].message.content),\n  \"5832\": ($json),\n  \"5833\": \"Name of your blog\",\n  \"table_id\": 601,\n};"
+      }
+    },
+    {
+      "nodeId": "node_49694d0716",
+      "actorId": "actor_49694d0716",
+      "type": "NodeCdeConnector",
+      "label": "baserow/BASEROW_CREATE_ROW",
+      "color": "#6366F1",
+      "position": {
+        "x": 11100,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "baserow",
+        "connectorLabel": "Baserow",
+        "action": "BASEROW_CREATE_ROW"
+      }
+    },
+    {
+      "nodeId": "node_cdf4946b81",
+      "actorId": "actor_cdf4946b81",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 11480,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f58150a478",
+      "actorId": "actor_f58150a478",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "gaPropertyId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_a11b16a507",
+      "actorId": "actor_a11b16a507",
+      "type": "NodeChatModel",
+      "label": "Send page data to A.I.: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 7300,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openrouter",
+        "model": "meta-llama/llama-3.1-70b-instruct:free"
+      }
+    },
+    {
+      "nodeId": "node_128c07411f",
+      "actorId": "actor_128c07411f",
+      "type": "NodeChatModel",
+      "label": "Send page Search data to A.I.: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 8820,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openrouter",
+        "model": "meta-llama/llama-3.1-70b-instruct:free"
+      }
+    },
+    {
+      "nodeId": "node_0e3dc292ea",
+      "actorId": "actor_0e3dc292ea",
+      "type": "NodeChatModel",
+      "label": "Send country view data to A.I.: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 10340,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openrouter",
+        "model": "meta-llama/llama-3.1-70b-instruct:free"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_03fb560563",
+      "target": "node_b09e8a20d7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_03fb560563",
+      "target": "node_b09e8a20d7",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_931b755007",
+      "target": "node_199bbb9ede",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_931b755007",
+      "target": "node_199bbb9ede",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ff5c8ba52d",
+      "target": "node_139dec3d10",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ff5c8ba52d",
+      "target": "node_139dec3d10",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_c83ba01117",
+      "target": "node_4bf15add53",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_c83ba01117",
+      "target": "node_4bf15add53",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_4bf15add53",
+      "target": "node_457cc339ec",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_457cc339ec",
+      "target": "node_472340321e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_cde0d5399e",
+      "target": "node_2f9136652c",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_cde0d5399e",
+      "target": "node_2f9136652c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_2f9136652c",
+      "target": "node_e0948fe6a7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e0948fe6a7",
+      "target": "node_7b9fd9d5bd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_294a38532f",
+      "target": "node_096afc2c0b",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_294a38532f",
+      "target": "node_096afc2c0b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_096afc2c0b",
+      "target": "node_6d8a067718",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6d8a067718",
+      "target": "node_c7cf815a36",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_da5e058a46",
+      "target": "node_49694d0716",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_da5e058a46",
+      "target": "node_49694d0716",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d67549c862",
+      "target": "node_5e05cc9618",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_954add7df2",
+      "target": "node_5e05cc9618",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_5e05cc9618",
+      "target": "node_7acc04f4f2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5e05cc9618",
+      "target": "node_7acc04f4f2",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b09e8a20d7",
+      "target": "node_19d895316a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b09e8a20d7",
+      "target": "node_19d895316a",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7acc04f4f2",
+      "target": "node_03fb560563",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7acc04f4f2",
+      "target": "node_03fb560563",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_19d895316a",
+      "target": "node_0ce9b60bba",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_0ce9b60bba",
+      "target": "node_7c8977c8fe",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0ce9b60bba",
+      "target": "node_7c8977c8fe",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_199bbb9ede",
+      "target": "node_33fb0a87d1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_199bbb9ede",
+      "target": "node_33fb0a87d1",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7c8977c8fe",
+      "target": "node_931b755007",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7c8977c8fe",
+      "target": "node_931b755007",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_33fb0a87d1",
+      "target": "node_e048fa7497",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_e048fa7497",
+      "target": "node_045c1d68c3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e048fa7497",
+      "target": "node_045c1d68c3",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_139dec3d10",
+      "target": "node_9f1af4a1e8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_139dec3d10",
+      "target": "node_9f1af4a1e8",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_045c1d68c3",
+      "target": "node_ff5c8ba52d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_045c1d68c3",
+      "target": "node_ff5c8ba52d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9f1af4a1e8",
+      "target": "node_c83ba01117",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9f1af4a1e8",
+      "target": "node_c83ba01117",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9f1af4a1e8",
+      "target": "node_457cc339ec",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_472340321e",
+      "target": "node_cde0d5399e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_472340321e",
+      "target": "node_cde0d5399e",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_472340321e",
+      "target": "node_e0948fe6a7",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7b9fd9d5bd",
+      "target": "node_294a38532f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7b9fd9d5bd",
+      "target": "node_294a38532f",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7b9fd9d5bd",
+      "target": "node_6d8a067718",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c7cf815a36",
+      "target": "node_da5e058a46",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c7cf815a36",
+      "target": "node_da5e058a46",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_49694d0716",
+      "target": "node_cdf4946b81",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_a11b16a507",
+      "target": "node_472340321e",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_128c07411f",
+      "target": "node_7b9fd9d5bd",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_0e3dc292ea",
+      "target": "node_c7cf815a36",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "ai-research-and-data",
+    "categoryLabel": "AI Research, RAG and Data Analysis",
+    "department": "Data Analysis, Marketing",
+    "connectors": [
+      "baserow",
+      "google-analytics",
+      "openrouter"
+    ],
+    "setupVars": [
+      {
+        "key": "gaPropertyId",
+        "label": "Google Analytics 4 property id",
+        "type": "id",
+        "example": "properties/123456789",
+        "usedBy": [
+          "Get Country views data for last week",
+          "Get Country views data for this week",
+          "Get Google Search Results for last week",
+          "Get Google Search Results for this week",
+          "Get Page Engagement Stats for prior week",
+          "Get Page Engagement Stats for this week"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate google-analytics-template",
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 18,
+      "yantraSteps": 34,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "AI_Research_RAG_and_Data_Analysis/Send Google analytics data to A.I. to analyze then save results in Baserow.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Google analytics template"
+    },
+    "aliases": [
+      {
+        "path": "ai-research-and-data/google-analytics-template-2.json",
+        "source": {
+          "path": "AI_Research_RAG_and_Data_Analysis/Send Google analytics data to A.I. to analyze then save results in BaserowSend Google analytics data to A.I. to analyze then save results in Baserow.json",
+          "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+        }
+      }
+    ],
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Setup value gaPropertyId: Google Analytics 4 property id (for example properties/123456789). Write it into the Workflow Configs initialContext before import.",
+      "Connect the baserow connector (credential).",
+      "Connect the google-analytics connector (credential).",
+      "Connect the openrouter connector (credential).",
+      "After import, start the schedule: cdecli cron activate google-analytics-template.",
+      "Provide run inputs: llm_system_294a38532f, llm_system_c83ba01117, llm_system_cde0d5399e."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Send page data to A.I.",
+          "n8n": "httpRequest.openai.chat",
+          "action": "NodeLlmChain",
+          "soft": true
+        },
+        {
+          "node": "Send page Search data to A.I.",
+          "n8n": "httpRequest.openai.chat",
+          "action": "NodeLlmChain",
+          "soft": true
+        },
+        {
+          "node": "Send country view data to A.I.",
+          "n8n": "httpRequest.openai.chat",
+          "action": "NodeLlmChain",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Schedule Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        },
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Send page data to A.I.\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Send page data to A.I.\" called the OpenRouter API (meta-llama/llama-3.1-70b-instruct:free) over HTTP; it now runs on LLMChain with a Chat Model and provider connector credential, and later steps read the answer text instead of the provider's JSON.",
+        "\"Send page Search data to A.I.\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Send page Search data to A.I.\" called the OpenRouter API (meta-llama/llama-3.1-70b-instruct:free) over HTTP; it now runs on LLMChain with a Chat Model and provider connector credential, and later steps read the answer text instead of the provider's JSON.",
+        "\"Send country view data to A.I.\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Send country view data to A.I.\" called the OpenRouter API (meta-llama/llama-3.1-70b-instruct:free) over HTTP; it now runs on LLMChain with a Chat Model and provider connector credential, and later steps read the answer text instead of the provider's JSON.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect baserow: `cdecli credential create -n \"baserow\" -p baserow --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect google-analytics: `cdecli credential create -n \"google-analytics\" -p google-analytics --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Send Google analytics to A.I. and save results to baserow\n\nThis workflow will check for country views, page engagement and google search console results. It will take this week's data and compare it to last week's data.\n\n[You can read more about this workflow here](https://rumjahn.com/how-i-used-a-i-to-be-an-seo-expert-and-analyzed-my-google-analytics-data-in-n8n-and-make-com/)",
+      "## Property ID\n\n1. Create your [Google Analytics Credentials](https://docs.n8n.io/integrations/builtin/credentials/google/oauth-single-service/?utm_source=n8n_app&utm_medium=credential_settings&utm_campaign=create_new_credentials_modal)\n2. Enter your [property ID](https://developers.google.com/analytics/devguides/reporting/data/v1/property-id).",
+      "## Send data to A.I.\n\nFill in your Openrouter A.I. credentials. Use Header Auth.\n- Username: Authorization\n- Password: Bearer {insert your API key}\n\nRemember to add a space after bearer. Also, feel free to modify the prompt to A.1.",
+      "## Send data to Baserow\n\nCreate a table first with the following columns:\n- Name\n- Country Views\n- Page Views\n- Search Report\n- Blog \n\nEnter the name of your website under \"Blog\" field."
+    ],
+    "nodes": {
+      "node_d67549c862": {
+        "n8n": "Schedule Trigger",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_954add7df2": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_5e05cc9618": {
+        "n8n": "Get Page Engagement Stats for this week",
+        "n8nType": "n8n-nodes-base.googleAnalytics"
+      },
+      "node_7acc04f4f2": {
+        "n8n": "Parse data from Google Analytics",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_03fb560563": {
+        "n8n": "Get Page Engagement Stats for prior week",
+        "n8nType": "n8n-nodes-base.googleAnalytics"
+      },
+      "node_b09e8a20d7": {
+        "n8n": "Get Page Engagement Stats for prior week",
+        "n8nType": "n8n-nodes-base.googleAnalytics"
+      },
+      "node_19d895316a": {
+        "n8n": "Parse GA data",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_0ce9b60bba": {
+        "n8n": "Get Google Search Results for this week",
+        "n8nType": "n8n-nodes-base.googleAnalytics"
+      },
+      "node_7c8977c8fe": {
+        "n8n": "Parse Google Analytics Data",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_931b755007": {
+        "n8n": "Get Google Search Results for last week",
+        "n8nType": "n8n-nodes-base.googleAnalytics"
+      },
+      "node_199bbb9ede": {
+        "n8n": "Get Google Search Results for last week",
+        "n8nType": "n8n-nodes-base.googleAnalytics"
+      },
+      "node_33fb0a87d1": {
+        "n8n": "Parse Google Analytics Data1",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_e048fa7497": {
+        "n8n": "Get Country views data for this week",
+        "n8nType": "n8n-nodes-base.googleAnalytics"
+      },
+      "node_045c1d68c3": {
+        "n8n": "Parse Google analytics data",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_ff5c8ba52d": {
+        "n8n": "Get Country views data for last week",
+        "n8nType": "n8n-nodes-base.googleAnalytics"
+      },
+      "node_139dec3d10": {
+        "n8n": "Get Country views data for last week",
+        "n8nType": "n8n-nodes-base.googleAnalytics"
+      },
+      "node_9f1af4a1e8": {
+        "n8n": "Parse Google analytics data1",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_472340321e": {
+        "n8n": "Send page data to A.I.",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "llmProvider": "openrouter"
+      },
+      "node_c83ba01117": {
+        "n8n": "Send page data to A.I.",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_4bf15add53": {
+        "n8n": "Send page data to A.I.",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_457cc339ec": {
+        "n8n": "Send page data to A.I.",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_7b9fd9d5bd": {
+        "n8n": "Send page Search data to A.I.",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "llmProvider": "openrouter"
+      },
+      "node_cde0d5399e": {
+        "n8n": "Send page Search data to A.I.",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_2f9136652c": {
+        "n8n": "Send page Search data to A.I.",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_e0948fe6a7": {
+        "n8n": "Send page Search data to A.I.",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_c7cf815a36": {
+        "n8n": "Send country view data to A.I.",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "llmProvider": "openrouter"
+      },
+      "node_294a38532f": {
+        "n8n": "Send country view data to A.I.",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_096afc2c0b": {
+        "n8n": "Send country view data to A.I.",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_6d8a067718": {
+        "n8n": "Send country view data to A.I.",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_da5e058a46": {
+        "n8n": "Save A.I. output to Baserow",
+        "n8nType": "n8n-nodes-base.baserow"
+      },
+      "node_49694d0716": {
+        "n8n": "Save A.I. output to Baserow",
+        "n8nType": "n8n-nodes-base.baserow"
+      },
+      "node_cdf4946b81": {
+        "n8n": "__end:Save A.I. output to Baserow",
+        "n8nType": "synthetic"
+      },
+      "node_f58150a478": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_a11b16a507": {
+        "n8n": "Send page data to A.I.",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_128c07411f": {
+        "n8n": "Send page Search data to A.I.",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_0e3dc292ea": {
+        "n8n": "Send country view data to A.I.",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

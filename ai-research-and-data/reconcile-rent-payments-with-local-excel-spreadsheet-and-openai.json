@@ -1,0 +1,239 @@
+{
+  "name": "Reconcile rent payments against a tenants spreadsheet",
+  "workflowSlug": "reconcile-rent-payments-with-local-excel-spreadsheet-and-openai",
+  "description": "Checks a bank statement against a tenants and properties spreadsheet, flags missing or wrong rent payments while respecting contract notes, and returns an alerts sheet plus a written summary.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_e5a7c9d1f3",
+      "actorId": "actor_e5a7c9d1f3",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f6b8d0e2a4",
+      "actorId": "actor_f6b8d0e2a4",
+      "type": "NodeCdecliAgent",
+      "label": "Reconcile rental payments",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "message": "Reconcile this bank statement against the tenants spreadsheet.\n\nBank statement (CSV, columns date, reference, money in, money out):\n{{bank_statement_csv}}",
+        "system": "Your task is to reconcile rent payments with the tenants and properties spreadsheet and flag anything a property manager must act on.\n\nSpreadsheet: {{spreadsheet_url}}\nDownload it into your sandbox and read the sheets `tenants` (tenant, property, agreed rent, due day, payment reference, notes) and `properties` (property, address, owner) with Python (openpyxl or pandas). Column names may differ slightly; map them sensibly and say so.\n\nRules:\n1. Match each incoming payment to a tenant by payment reference first, then by amount and date.\n2. Flag: no payment received, payment lower or higher than the agreed rent, payment more than 5 days after the due day, duplicate payments, and payments you cannot match to any tenant.\n3. Read the tenant notes before flagging: agreed exceptions (a payment holiday, a changed amount, a split payment) are not issues.\n4. Never modify the source spreadsheet. Write the alerts to a new file ./alerts.xlsx with the columns tenant, property, issue, amount expected, amount received, date, recommended action.\n\nReply with a short summary for the property manager, the list of alerts as a Markdown table, and the path of the alerts file you wrote.",
+        "sessionId": "",
+        "sandbox": true,
+        "permissionMode": "bypass"
+      }
+    },
+    {
+      "nodeId": "node_a7c9e1f3b5",
+      "actorId": "actor_a7c9e1f3b5",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_b8d0f2a4c6",
+      "actorId": "actor_b8d0f2a4c6",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "bank_statement_csv": "date,reference,money in,money out\n",
+          "spreadsheet_url": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_e5a7c9d1f3",
+      "target": "node_f6b8d0e2a4",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_f6b8d0e2a4",
+      "target": "node_a7c9e1f3b5",
+      "sourceOutput": "text",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "ai-research-and-data",
+    "categoryLabel": "AI Research, RAG and Data Analysis",
+    "department": "Finance/Ops",
+    "connectors": [],
+    "nodeTypes": [
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeStart",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 11,
+      "yantraSteps": 2,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "Structured Output Parser",
+        "Get Tenant Details",
+        "Get Property Details",
+        "Get Bank Statement File",
+        "Get CSV Data",
+        "Set Variables",
+        "Alert Actions To List",
+        "Append To Spreadsheet"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "AI_Research_RAG_and_Data_Analysis/Reconcile Rent Payments with Local Excel Spreadsheet and OpenAI.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Reconcile Rent Payments with Local Excel Spreadsheet and OpenAI"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Provide run inputs: bank_statement_csv, spreadsheet_url."
+    ],
+    "conversion": {
+      "tool": "hand",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [
+        {
+          "node": "Watch For Bank Statements",
+          "type": "n8n-nodes-base.localFileTrigger",
+          "into": "Start",
+          "reason": "the statement arrives as a run input; add a NodeCron or call the workflow API when a file lands"
+        },
+        {
+          "node": "Get Bank Statement File",
+          "type": "n8n-nodes-base.readWriteFile",
+          "into": "Start",
+          "reason": "run input bank_statement_csv"
+        },
+        {
+          "node": "Get CSV Data",
+          "type": "n8n-nodes-base.extractFromFile",
+          "into": "Reconcile rental payments",
+          "reason": "the agent parses the CSV"
+        },
+        {
+          "node": "Set Variables",
+          "type": "n8n-nodes-base.set",
+          "into": "Start",
+          "reason": "run input spreadsheet_url"
+        },
+        {
+          "node": "Get Tenant Details",
+          "type": "@n8n/n8n-nodes-langchain.toolCode",
+          "into": "Reconcile rental payments",
+          "reason": "the agent reads the sheet in its sandbox"
+        },
+        {
+          "node": "Get Property Details",
+          "type": "@n8n/n8n-nodes-langchain.toolCode",
+          "into": "Reconcile rental payments",
+          "reason": "the agent reads the sheet in its sandbox"
+        },
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Reconcile rental payments",
+          "reason": "the cdecli agent brings its own model"
+        },
+        {
+          "node": "Structured Output Parser",
+          "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+          "into": "Reconcile rental payments",
+          "reason": "the agent writes the alerts table itself"
+        },
+        {
+          "node": "Alert Actions To List",
+          "type": "n8n-nodes-base.splitOut",
+          "into": "Reconcile rental payments",
+          "reason": "no per-item loop needed"
+        },
+        {
+          "node": "Append To Spreadsheet",
+          "type": "n8n-nodes-base.code",
+          "into": "Reconcile rental payments",
+          "reason": "the agent writes alerts.xlsx in its sandbox"
+        }
+      ],
+      "removedEdges": [],
+      "hints": [
+        "Provide `bank_statement_csv` (the statement as CSV text) and `spreadsheet_url` (a link the sandbox can download, for example a storage link to the tenants .xlsx) as run inputs. To react to new statements automatically, add a NodeCron in front of the agent or call the workflow API from the system that produces the statement.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`). No connector credential is needed: the agent uses the platform's model routing and its own sandbox.",
+        "The original warned that its code node overwrote the spreadsheet; this version never writes to the source file and puts alerts in a separate ./alerts.xlsx.",
+        "The agent runs its shell and file tools inside the cloud sandbox with permissionMode \"bypass\": a workflow has nobody to answer tool-approval prompts, and the sandbox keeps the effects isolated."
+      ],
+      "triggers": []
+    },
+    "notes": [
+      "The n8n original needs eleven nodes and a self-hosted instance with local file access: a file-system trigger, a file read, a CSV extractor, a Set node, the agent with an OpenAI model node, a structured output parser and two code tools that open the xlsx, then a Split Out and a Code node that appends the alerts to the workbook. On Yantra the agent node runs in a sandbox with Python and a file system, so it reads the sheets, reconciles and writes the alerts itself: Start -> agent -> End.",
+      "From the original author's notes: an AI agent can not only check against agreed amounts and compare due dates but also consider contract exceptions and tenant notes before deciding to take action."
+    ],
+    "nodes": {
+      "node_e5a7c9d1f3": {
+        "n8n": "Watch For Bank Statements",
+        "n8nType": "n8n-nodes-base.localFileTrigger"
+      },
+      "node_f6b8d0e2a4": {
+        "n8n": "Reconcile Rental Payments",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_a7c9e1f3b5": {
+        "n8n": "__end",
+        "n8nType": "synthetic"
+      },
+      "node_b8d0f2a4c6": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

@@ -1,0 +1,636 @@
+{
+  "name": "[3/3] Anomaly detection tool (crops dataset)",
+  "workflowSlug": "3-3-anomaly-detection-tool-crops-dataset",
+  "description": "Concludes the use of a vector database for big data analysis, focusing on anomaly detection for AI agents.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_8e7e308706",
+      "actorId": "actor_8e7e308706",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_c88629d5f9",
+      "actorId": "actor_c88629d5f9",
+      "type": "NodeTransform",
+      "label": "Image URL hardcode",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"imageURL\"] = ($json.query.imageURL);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_fed68b9e6d",
+      "actorId": "actor_fed68b9e6d",
+      "type": "NodeTransform",
+      "label": "Variables for medoids",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"clusterCenterType\"] = \"is_medoid\";\n  out[\"qdrantCloudURL\"] = \"https://152bc6e2-832a-415c-a1aa-fb529f8baf8d.eu-central-1-0.aws.cloud.qdrant.io\";\n  out[\"collectionName\"] = `agricultural-crops`;\n  out[\"clusterThresholdCenterType\"] = \"is_medoid_cluster_threshold\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_e68053cc48",
+      "actorId": "actor_e68053cc48",
+      "type": "NodeHttpRequest",
+      "label": "Total Points in Collection",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{last.transformed.qdrantCloudURL}}/collections/{{last.transformed.collectionName}}/points/count",
+        "headers": {
+          "Content-Type": "application/json",
+          "api-key": "{{qdrantApiKey}}"
+        },
+        "body": "{\n \"exact\": true\n}"
+      }
+    },
+    {
+      "nodeId": "node_888f68f130",
+      "actorId": "actor_888f68f130",
+      "type": "NodeHttpRequest",
+      "label": "Each Crop Counts",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_fed68b9e6d.result.qdrantCloudURL}}/collections/{{steps.xf_fed68b9e6d.result.collectionName}}/facet",
+        "headers": {
+          "Content-Type": "application/json",
+          "api-key": "{{qdrantApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_a3e8bcbf58",
+      "actorId": "actor_a3e8bcbf58",
+      "type": "NodeTransform",
+      "label": "Body: Each Crop Counts",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Each Crop Counts\".\nconst __body = ({\n \"key\": \"crop_name\",\n \"limit\": $json.result.count,\n \"exact\": true\n});\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_2583be879d",
+      "actorId": "actor_2583be879d",
+      "type": "NodeTransform",
+      "label": "Info About Crop Labeled Clusters",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"=cropsNumber\"] = Number(($json.result.hits.length));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_c4ae94e6df",
+      "actorId": "actor_c4ae94e6df",
+      "type": "NodeHttpRequest",
+      "label": "Embed image",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://api.voyageai.com/v1/multimodalembeddings",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{voyageApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_503c7f5f35",
+      "actorId": "actor_503c7f5f35",
+      "type": "NodeTransform",
+      "label": "Body: Embed image",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Execute Workflow Trigger\": {{ctx}}, \"Image URL hardcode\": {{steps.xf_c88629d5f9.result}}, \"Variables for medoids\": {\"clusterCenterType\":\"is_medoid\",\"qdrantCloudURL\":\"https://152bc6e2-832a-415c-a1aa-fb529f8baf8d.eu-central-1-0.aws.cloud.qdrant.io\",\"collectionName\":\"agricultural-crops\",\"clusterThresholdCenterType\":\"is_medoid_cluster_threshold\"}, \"Total Points in Collection\": {{steps.http_e68053cc48.result}}, \"Info About Crop Labeled Clusters\": {{steps.xf_2583be879d.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Embed image\".\nconst __body = ({\n \"inputs\": [\n {\n \"content\": [\n {\n \"type\": \"image_url\",\n \"image_url\": $('Image URL hardcode').first().json.imageURL\n }\n ]\n }\n ],\n \"model\": \"voyage-multimodal-3\",\n \"input_type\": \"document\"\n});\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_eea4f85480",
+      "actorId": "actor_eea4f85480",
+      "type": "NodeHttpRequest",
+      "label": "Get similarity of medoids",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_fed68b9e6d.result.qdrantCloudURL}}/collections/{{steps.xf_fed68b9e6d.result.collectionName}}/points/query",
+        "headers": {
+          "Content-Type": "application/json",
+          "api-key": "{{qdrantApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_1193f8cf4d",
+      "actorId": "actor_1193f8cf4d",
+      "type": "NodeTransform",
+      "label": "Body: Get similarity of medoids",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Execute Workflow Trigger\": {{ctx}}, \"Image URL hardcode\": {{steps.xf_c88629d5f9.result}}, \"Variables for medoids\": {\"clusterCenterType\":\"is_medoid\",\"qdrantCloudURL\":\"https://152bc6e2-832a-415c-a1aa-fb529f8baf8d.eu-central-1-0.aws.cloud.qdrant.io\",\"collectionName\":\"agricultural-crops\",\"clusterThresholdCenterType\":\"is_medoid_cluster_threshold\"}, \"Total Points in Collection\": {{steps.http_e68053cc48.result}}, \"Info About Crop Labeled Clusters\": {{steps.xf_2583be879d.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Get similarity of medoids\".\nconst __body = ({\n \"query\": $json.data[0].embedding,\n \"using\": \"voyage\",\n \"limit\": $('Info About Crop Labeled Clusters').first().json.cropsNumber,\n \"with_payload\": true,\n \"filter\": {\n \"must\": [\n { \n \"key\": $('Variables for medoids').first().json.clusterCenterType,\n \"match\": {\n \"value\": true\n }\n }\n ]\n }\n});\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_76b2470827",
+      "actorId": "actor_76b2470827",
+      "type": "NodeTransform",
+      "label": "Compare scores",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// Original n8n node was Python Code; no Python runtime on Transform.\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_efeaa80d5d",
+      "actorId": "actor_efeaa80d5d",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_cd4b0a426b",
+      "actorId": "actor_cd4b0a426b",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "qdrantApiKey": {
+            "$workflowSecret": "QDRANT_API_KEY"
+          },
+          "voyageApiKey": {
+            "$workflowSecret": "VOYAGE_API_KEY"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_a3e8bcbf58",
+      "target": "node_888f68f130",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_a3e8bcbf58",
+      "target": "node_888f68f130",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_503c7f5f35",
+      "target": "node_c4ae94e6df",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_503c7f5f35",
+      "target": "node_c4ae94e6df",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_1193f8cf4d",
+      "target": "node_eea4f85480",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_1193f8cf4d",
+      "target": "node_eea4f85480",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_c4ae94e6df",
+      "target": "node_1193f8cf4d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c4ae94e6df",
+      "target": "node_1193f8cf4d",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_eea4f85480",
+      "target": "node_76b2470827",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_eea4f85480",
+      "target": "node_76b2470827",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fed68b9e6d",
+      "target": "node_e68053cc48",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_2583be879d",
+      "target": "node_503c7f5f35",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2583be879d",
+      "target": "node_503c7f5f35",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e68053cc48",
+      "target": "node_a3e8bcbf58",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e68053cc48",
+      "target": "node_a3e8bcbf58",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_888f68f130",
+      "target": "node_2583be879d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_888f68f130",
+      "target": "node_2583be879d",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c88629d5f9",
+      "target": "node_fed68b9e6d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c88629d5f9",
+      "target": "node_fed68b9e6d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8e7e308706",
+      "target": "node_c88629d5f9",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_76b2470827",
+      "target": "node_efeaa80d5d",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "ai-research-and-data",
+    "categoryLabel": "AI Research, RAG and Data Analysis",
+    "department": "AI Research, Data Analysis",
+    "connectors": [],
+    "setupSecrets": [
+      {
+        "key": "QDRANT_API_KEY",
+        "label": "Qdrant API key",
+        "headerFormat": "api-key: <secret>",
+        "contextKey": "qdrantApiKey",
+        "usedBy": [
+          "Each Crop Counts",
+          "Get similarity of medoids",
+          "Total Points in Collection"
+        ]
+      },
+      {
+        "key": "VOYAGE_API_KEY",
+        "label": "Voyage AI API key",
+        "host": "api.voyageai.com",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "voyageApiKey",
+        "usedBy": [
+          "Embed image"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 9,
+      "yantraSteps": 12,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "AI_Research_RAG_and_Data_Analysis/Vector Database as a Big Data Analysis Tool for AI Agents [3_3 - anomaly].json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "[3/3] Anomaly detection tool (crops dataset)"
+    },
+    "aliases": [
+      {
+        "path": "ai-research-and-data/3-3-anomaly-detection-tool-crops-dataset-2.json",
+        "source": {
+          "path": "AI_Research_RAG_and_Data_Analysis/Automated Hugging Face Paper Summary Fetching & Categorization Workflow.json",
+          "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+        }
+      }
+    ],
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Execute Workflow Trigger",
+        "detail": "n8n-nodes-base.executeWorkflowTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Execute Workflow Trigger\" (executeWorkflowTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Workflow secret QDRANT_API_KEY: Qdrant API key (api-key: <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Workflow secret VOYAGE_API_KEY: Voyage AI API key for api.voyageai.com (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Compare scores",
+          "n8n": "code.python",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Execute Workflow Trigger",
+          "type": "n8n-nodes-base.executeWorkflowTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original was a sub-workflow called by another workflow; pass its inputs as run inputs.",
+        "\"Total Points in Collection\" authenticated with qdrantApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Each Crop Counts\" authenticated with qdrantApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Embed image\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Get similarity of medoids\" authenticated with qdrantApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Compare scores\" (code.python): Python Code has no Transform runtime; payload passes through unchanged.",
+        "\"Compare scores\": Python Code was not executed - port the logic to JavaScript Transform or run it in an agent sandbox.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "We are working here with crops dataset: \nExisting (so not anomalies) crops images in dataset are:\n- 'pearl_millet(bajra)',\n- 'tobacco-plant',\n- 'cherry',\n- 'cotton',\n- 'banana',\n- 'cucumber',\n- 'maize',\n- 'wheat',\n- 'clove',\n- 'jowar',\n- 'olive-tree',\n- 'soyabean',\n- 'coffee-plant',\n- 'rice',\n- 'lemon',\n- 'mustard-oil',\n- 'vigna-radiati(mung)',\n- 'coconut',\n- 'gram',\n- 'pineapple',\n- 'sugarcane',\n- 'sunflower',\n- 'chilli',\n- 'fox_nut(makhana)',\n- 'jute',\n- 'papaya',\n- 'tea',\n- 'cardamom',\n- 'almond'",
+      "## Crop Anomaly Detection Tool\n### This is the tool that can be used directly for anomalous crops detection. \nIt takes as input (any) **image URL** and returns a **text message** telling if whatever this image depicts is anomalous to the crop dataset stored in Qdrant. \n\n* An Image URL is received via the Execute Workflow Trigger which is used to generate embedding vectors via the Voyage.ai Embeddings API.\n* The returned vectors are used to query the Qdrant collection to determine if the given crop is known by comparing it to **threshold scores** of each image class (crop type).\n* If the image scores lower than all thresholds, then the image is considered an anomaly for the dataset.",
+      "**clusterCenterType** - either\n* \"is_text_anchor_medoid\" or\n* \"is_medoid\"\n\n\n**clusterThresholdCenterType** - either\n* \"is_text_anchor_medoid_cluster_threshold\" or\n* \"is_medoid_cluster_threshold\"",
+      "Variables to access Qdrant's collection we uploaded & prepared for anomaly detection in 2 previous pipelines",
+      "These three nodes are needed just to figure out how many different classes (crops) we have in our Qdrant collection: **cropsNumber** (needed in *\"Get similarity of medoids\"* node. \n[Note] *\"Total Points in Collection\"* -> *\"Each Crop Counts\"* were used&explained already in *\"[2/4] Set up medoids (2 types) for anomaly detection (crops dataset)\"* pipeline.",
+      "Here, we're embedding the image passed to this workflow tool with the Voyage embedding model to compare the image to all crop images in the database.",
+      "Checking how similar the image is to all the centres of clusters (crops).\nIf it's more similar to the thresholds we set up and stored in centres in the previous workflow, the image probably belongs to this crop class; otherwise, it's anomalous to the class. \nIf image is anomalous to all the classes, it's an anomaly.",
+      "### For anomaly detection\n1. The first pipeline is uploading (crops) dataset to Qdrant's collection.\n2. The second pipeline sets up cluster (class) centres in this Qdrant collection & cluster (class) threshold scores.\n3. **This is the anomaly detection tool, which takes any image as input and uses all preparatory work done with Qdrant (crops) collection.**\n\n### To recreate it\nYou'll have to upload [crops](https://www.kaggle.com/datasets/mdwaquarazam/agricultural-crops-image-classification) dataset from Kaggle to your own Google Storage bucket, and re-create APIs/connections to [Qdrant Cloud](https://qdrant.tech/documentation/quickstart-cloud/) (you can use **Free Tier** cluster), Voyage AI API & Google Cloud Storage\n\n**In general, pipelines are adaptable to any dataset of images**"
+    ],
+    "nodes": {
+      "node_8e7e308706": {
+        "n8n": "Execute Workflow Trigger",
+        "n8nType": "n8n-nodes-base.executeWorkflowTrigger"
+      },
+      "node_c88629d5f9": {
+        "n8n": "Image URL hardcode",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_fed68b9e6d": {
+        "n8n": "Variables for medoids",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_e68053cc48": {
+        "n8n": "Total Points in Collection",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "qdrantApi"
+      },
+      "node_888f68f130": {
+        "n8n": "Each Crop Counts",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "qdrantApi"
+      },
+      "node_a3e8bcbf58": {
+        "n8n": "Each Crop Counts",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_2583be879d": {
+        "n8n": "Info About Crop Labeled Clusters",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_c4ae94e6df": {
+        "n8n": "Embed image",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_503c7f5f35": {
+        "n8n": "Embed image",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_eea4f85480": {
+        "n8n": "Get similarity of medoids",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "qdrantApi"
+      },
+      "node_1193f8cf4d": {
+        "n8n": "Get similarity of medoids",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_76b2470827": {
+        "n8n": "Compare scores",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_efeaa80d5d": {
+        "n8n": "__end:Compare scores",
+        "n8nType": "synthetic"
+      },
+      "node_cd4b0a426b": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

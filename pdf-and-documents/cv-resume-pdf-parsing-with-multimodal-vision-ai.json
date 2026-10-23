@@ -1,0 +1,509 @@
+{
+  "name": "CV Resume PDF Parsing with Multimodal Vision AI",
+  "workflowSlug": "cv-resume-pdf-parsing-with-multimodal-vision-ai",
+  "description": "This workflow converts candidate resume PDFs to images, uses a Vision Language Model to assess candidate fit, and includes logic to bypass hidden AI prompts in resumes.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_f79c7c9ea1",
+      "actorId": "actor_f79c7c9ea1",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_82b0015b94",
+      "actorId": "actor_82b0015b94",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_DOWNLOAD_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive",
+        "action": "GOOGLESUPER_DOWNLOAD_FILE",
+        "params": {
+          "file_id": "{{driveFileId}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_ef01da72a7",
+      "actorId": "actor_ef01da72a7",
+      "type": "NodeTransform",
+      "label": "Params: PDF-to-Image API",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The upstream file as { contentBase64 | fileUrl, filename, mimeType }: n8n binary data travels as base64 bytes or a file URL on Yantra.\nconst __b64 = (t) => { const b = new TextEncoder().encode(String(t)); let s = ''; for (let i = 0; i < b.length; i += 1) s += String.fromCharCode(b[i]); return btoa(s); };\nconst __fileRef = (v, prop) => {\n  const s = (x) => (typeof x === 'string' && x !== '' ? x : undefined);\n  let r = Array.isArray(v) ? v[0] : v;\n  const bin = r && typeof r === 'object' && r.binary && typeof r.binary === 'object' ? r.binary[prop] ?? Object.values(r.binary)[0] : undefined;\n  if (bin && s(bin.data)) return { contentBase64: bin.data, filename: s(r.filename) ?? s(bin.fileName) ?? 'file', mimeType: s(bin.mimeType) };\n  if (r && typeof r === 'object' && r.data && typeof r.data === 'object' && !Array.isArray(r.data)) r = { ...r, ...r.data };\n  const dl = r?.downloaded_file_content ?? r?.file;\n  const filename = s(r?.filename) ?? s(r?.fileName) ?? s(dl?.name) ?? s(r?.name) ?? 'file';\n  const mimeType = s(r?.mimeType) ?? s(r?.contentType) ?? s(dl?.mimetype) ?? s(r?.mimetype);\n  if (s(r?.bodyBase64)) return { contentBase64: r.bodyBase64, filename, mimeType };\n  const url = s(dl?.s3url) ?? s(r?.s3url) ?? s(r?.fileUrl) ?? s(r?.imageUrl) ?? s(r?.imageUrls?.[0]) ?? s(r?.audioUrl) ?? s(r?.videoUrl) ?? s(r?.secure_url);\n  if (url) return { fileUrl: url, filename, mimeType };\n  if (s(r?.data)) return { contentBase64: r.encoding !== 'base64' && /^(?:text\\/|application\\/(?:json|xml|javascript|x-tex))|\\+(?:xml|json)$/.test(mimeType ?? '') ? __b64(r.data) : r.data, filename, mimeType };\n  throw new Error('No file on the upstream step: expected file bytes (base64) or a file URL.');\n};\n// Params for yantra-storage/YANTRA_STORAGE_HTTP_SEND (n8n node \"PDF-to-Image API\").\nreturn { \"url\": \"https://stirlingpdf.io/api/v1/convert/pdf/img\", \"method\": \"POST\", \"bodyType\": \"multipart\", \"fields\": { \"imageFormat\": \"jpg\", \"singleOrMultiple\": \"single\", \"dpi\": \"300\" }, \"files\": [{ \"field\": \"fileInput\", ...__fileRef(source, \"data\") }], \"responseType\": \"auto\" };"
+      }
+    },
+    {
+      "nodeId": "node_9e6c308cd4",
+      "actorId": "actor_9e6c308cd4",
+      "type": "NodeCdeConnector",
+      "label": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-storage",
+        "connectorLabel": "Yantra storage",
+        "action": "YANTRA_STORAGE_HTTP_SEND"
+      }
+    },
+    {
+      "nodeId": "node_22e3a00c26",
+      "actorId": "actor_22e3a00c26",
+      "type": "NodeTransform",
+      "label": "PDF-to-Image API: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The response the way the n8n HTTP node handed it on: the parsed body; a file body is { bodyBase64, filename, mimeType }.\nconst __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' && 'status' in source.data ? source.data : source;\nconst __body = __r?.bodyBase64 !== undefined ? { bodyBase64: __r.bodyBase64, filename: __r.filename, mimeType: __r.contentType, bytes: __r.bytes } : __r?.bodyJson !== undefined ? __r.bodyJson : __r?.bodyText;\nreturn __body;"
+      }
+    },
+    {
+      "nodeId": "node_368837d7b8",
+      "actorId": "actor_368837d7b8",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-editing/YANTRA_IMAGE_EDIT_RESIZE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-editing",
+        "connectorLabel": "Image editing",
+        "action": "YANTRA_IMAGE_EDIT_RESIZE",
+        "params": {
+          "width": 75,
+          "height": 75,
+          "fit": "percent"
+        }
+      }
+    },
+    {
+      "nodeId": "node_8ddd2a29c2",
+      "actorId": "actor_8ddd2a29c2",
+      "type": "NodeLlmChain",
+      "label": "Candidate Resume Analyser",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "is_qualified": {
+              "type": "boolean"
+            },
+            "reason": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "is_qualified",
+            "reason"
+          ],
+          "additionalProperties": false
+        },
+        "system": "Assess the given Candiate Resume for the role of Plumber.\nDetermine if the candidate's skills match the role and if they qualify for an in-person interview.",
+        "prompt": "Evaluate the candidate's resume.",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_2301aad288",
+      "actorId": "actor_2301aad288",
+      "type": "NodeTransform",
+      "label": "Should Proceed To Stage 2?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.is_qualified)) === true || (($json.is_qualified)) === 'true'));"
+      }
+    },
+    {
+      "nodeId": "node_9f1fa5ea9b",
+      "actorId": "actor_9f1fa5ea9b",
+      "type": "NodeBranch",
+      "label": "Should Proceed To Stage 2?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_c36c91f21a",
+      "actorId": "actor_c36c91f21a",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "driveFileId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_ecee8caee2",
+      "actorId": "actor_ecee8caee2",
+      "type": "NodeChatModel",
+      "label": "Candidate Resume Analyser: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2360,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "gemini",
+        "model": "models/gemini-1.5-pro-latest"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_ef01da72a7",
+      "target": "node_9e6c308cd4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ef01da72a7",
+      "target": "node_9e6c308cd4",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_9e6c308cd4",
+      "target": "node_22e3a00c26",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9e6c308cd4",
+      "target": "node_22e3a00c26",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2301aad288",
+      "target": "node_9f1fa5ea9b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_2301aad288",
+      "target": "node_9f1fa5ea9b",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_f79c7c9ea1",
+      "target": "node_82b0015b94",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_82b0015b94",
+      "target": "node_ef01da72a7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_82b0015b94",
+      "target": "node_ef01da72a7",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_22e3a00c26",
+      "target": "node_368837d7b8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_368837d7b8",
+      "target": "node_8ddd2a29c2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_8ddd2a29c2",
+      "target": "node_2301aad288",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8ddd2a29c2",
+      "target": "node_2301aad288",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ecee8caee2",
+      "target": "node_8ddd2a29c2",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "pdf-and-documents",
+    "categoryLabel": "PDF and Document Processing",
+    "department": "HR",
+    "connectors": [
+      "gemini",
+      "googlesuper",
+      "yantra-image-editing",
+      "yantra-storage"
+    ],
+    "setupVars": [
+      {
+        "key": "driveFileId",
+        "label": "Drive File id",
+        "type": "id",
+        "example": "1AbC...xyz",
+        "usedBy": [
+          "Download Resume"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 8,
+      "yantraSteps": 10,
+      "foldedHelpers": [
+        "Google Gemini Chat Model",
+        "Structured Output Parser"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "PDF_and_Document_Processing/CV Resume PDF Parsing with Multimodal Vision AI.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "action-pending-publish",
+        "node": "PDF-to-Image API",
+        "detail": "yantra-storage/YANTRA_STORAGE_HTTP_SEND waits for the yantra-storage HTTP send and signatures patch (1.4.1) to be published"
+      }
+    ],
+    "setup": [
+      "\"PDF-to-Image API\": yantra-storage/YANTRA_STORAGE_HTTP_SEND comes from the yantra-storage HTTP send and signatures patch (1.4.1), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
+      "Setup value driveFileId: Drive File id (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
+      "Connect the gemini connector (credential).",
+      "Connect the googlesuper connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "PDF-to-Image API",
+          "n8n": "httpRequest.multipart-form-data",
+          "action": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "Google Gemini Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+          "into": "Candidate Resume Analyser",
+          "model": "models/gemini-1.5-pro-latest"
+        },
+        {
+          "node": "Structured Output Parser",
+          "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+          "into": "Candidate Resume Analyser",
+          "as": "ai_outputParser"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"PDF-to-Image API\" sends its multipart-form-data body with yantra-storage HTTP_SEND (public https hosts only, 25 MB, 120 s); the file comes from \"Download Resume\".",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Try me out!\n\n### This workflow converts a Candidate Resume PDF to an image which is then \"read\" by a Vision Language Model (VLM). The VLM assesses if the candidate's CV is a fit for the desired role.\n\nThis approach can be employed to combat \"hidden prompts\" planted in resumes to bypass and/or manipulate automated ATS systems using AI.\n\n\n### Need Help?\nJoin the [Discord](https://discord.com/invite/XPKeKXeB7d) or ask in the [Forum](https://community.n8n.io/)!",
+      "## 1. Download Candidate Resume\n[Read more about using Google Drive](https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.googledrive)\n\nFor this demonstration, we'll pull the candidate's resume PDF from Google Drive but you can just as easily recieve this resume from email or your ATS.\n\nIt should be noted that our PDF is a special test case which has been deliberately injected with an AI bypass; the bypass is a hidden prompt which aims to override AI instructions and auto-qualify the candidate... sneaky!\n\nDownload a copy of this resume here: https://drive.google.com/file/d/[id removed]/view?usp=sharing",
+      "## 2. Convert PDF to Image(s)\n[Read more about using Stirling PDF](https://github.com/Stirling-Tools/Stirling-PDF)\n\nAI vision models can only accept images (and sometimes videos!) as non-text inputs but not PDFs at time of writing. We'll have to convert our PDF to an image in order to use it.\n\nHere, we'll use a tool called **Stirling PDF** which can provide this functionality and can be accessed via a HTTP API. Feel free to use an alternative solution if available, otherwise follow the instructions on the Stirling PDF website to set up your own instance.\n\nAdditionally, we'll reduce the resolution of our converted image to speed up the processing done by the LLM. I find that about 75% of an A4 (30x40cm) is a good balance.",
+      "## 3. Parse Resume with Multimodal LLM\n[Read more about using Basic LLM Chain](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.chainllm/)\n\nMultimodal LLMs are LLMs which can accept binary inputs such as images, audio and/or video files. Most newer LLMs are by default multimodal and we'll use Google's Gemini here as an example. By processing each candidate's resume as an image, we avoid scenarios where text extraction fails due to layout issues or by picking up \"hidden\" or malicious prompts planted to subvert AI automated processing.\n\nThis vision model ensures the resume is read and understood as a human would. The hidden bypass is therefore rendered mute since the AI also cannot \"see\" the special prompt embedded in the document.",
+      "### Data Privacy Warning!\nFor demo purposes, we're using the public online version of Stirling PDF. It is recommended to setup your own private instance of Stirling PDF before using this workflow in production."
+    ],
+    "nodes": {
+      "node_f79c7c9ea1": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_82b0015b94": {
+        "n8n": "Download Resume",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_ef01da72a7": {
+        "n8n": "PDF-to-Image API",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_9e6c308cd4": {
+        "n8n": "PDF-to-Image API",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_22e3a00c26": {
+        "n8n": "PDF-to-Image API",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_368837d7b8": {
+        "n8n": "Resize Converted Image",
+        "n8nType": "n8n-nodes-base.editImage"
+      },
+      "node_8ddd2a29c2": {
+        "n8n": "Candidate Resume Analyser",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_2301aad288": {
+        "n8n": "Should Proceed To Stage 2?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_9f1fa5ea9b": {
+        "n8n": "Should Proceed To Stage 2?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_c36c91f21a": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_ecee8caee2": {
+        "n8n": "Candidate Resume Analyser",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

@@ -1,0 +1,2045 @@
+{
+  "name": "Automate Customer Support Issue Resolution using AI Text Classifier",
+  "workflowSlug": "automate-customer-support-issue-resolution-using-ai-text-classifier",
+  "description": "Converted from the n8n template \"Automate Customer Support Issue Resolution using AI Text Classifier\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_a076c8bdaa",
+      "actorId": "actor_a076c8bdaa",
+      "type": "NodeCron",
+      "label": "Schedule Trigger",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 0 * * *"
+      }
+    },
+    {
+      "nodeId": "node_8a6c8bf04e",
+      "actorId": "actor_8a6c8bf04e",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f5e7c38623",
+      "actorId": "actor_f5e7c38623",
+      "type": "NodeCdeConnector",
+      "label": "jira/JIRA_SEARCH_ISSUES",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "jira",
+        "connectorLabel": "Jira",
+        "action": "JIRA_SEARCH_ISSUES",
+        "params": {
+          "jql": "status IN (\"To Do\", \"In Progress\") AND created <= -7d",
+          "max_results": 10
+        }
+      }
+    },
+    {
+      "nodeId": "node_49d45b4be1",
+      "actorId": "actor_49d45b4be1",
+      "type": "NodeTransform",
+      "label": "Get Issue Metadata",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\nconst item = { json: __items[0] ?? source, binary: {} };\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(String.prototype, { extractDomain() { try { return new URL(String(this)).hostname; } catch { return undefined; } } });\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"key\"] = ($json.key);\n  out[\"title\"] = ($json.fields.summary);\n  out[\"url\"] = ([\n 'https:/',\n $json.self.extractDomain(),\n 'browse',\n $json.key\n ].join('/'));\n  out[\"date\"] = (DateTime.fromISO($json.fields.created).format('yyyy-MM-dd'));\n  out[\"reporter\"] = ($json.fields.reporter.displayName);\n  out[\"reporter_url\"] = ([\n 'https:/',\n $json.fields.reporter.self.extractDomain(),\n 'jira',\n 'people',\n $json.fields.reporter.accountId\n ].join('/'));\n  out[\"reporter_accountId\"] = ($json.fields.reporter.accountId);\n  out[\"description\"] = ($json.fields.description);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_a56283a5d4",
+      "actorId": "actor_a56283a5d4",
+      "type": "NodeTransform",
+      "label": "Execute Workflow",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst $workflow = { id: '', name: '', active: true }; const $execution = { id: '', mode: 'manual', resumeUrl: '' }; const $executionId = $execution.id;\nconst $runIndex = 0; const $itemIndex = 0; const $binary = {}; const $prevNode = { name: '', outputIndex: 0, runIndex: 0 }; const $parameter = {}; const $position = 0;\n// executeWorkflow: compose the subflow manually (original workflow: ={{ $workflow.id }}).\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_01de2ab90d",
+      "actorId": "actor_01de2ab90d",
+      "type": "NodeCdeConnector",
+      "label": "jira/JIRA_LIST_ISSUE_COMMENTS",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "jira",
+        "connectorLabel": "Jira",
+        "action": "JIRA_LIST_ISSUE_COMMENTS",
+        "params": {
+          "issue_id_or_key": "{{last.transformed.key}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_3076e6dea3",
+      "actorId": "actor_3076e6dea3",
+      "type": "NodeTransform",
+      "label": "Join Comments",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nreturn { \"data\": __items };"
+      }
+    },
+    {
+      "nodeId": "node_1b0c549c37",
+      "actorId": "actor_1b0c549c37",
+      "type": "NodeTransform",
+      "label": "Simplify Thread For AI",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Execute Workflow Trigger\": {{ctx}}, \"Get List of Unresolved Long Lived Issues\": {{steps.JIRA_SEARCH_ISSUES.result}}, \"Get Issue Metadata\": {{steps.xf_49d45b4be1.result}}, \"Execute Workflow\": {{steps.xf_a56283a5d4.result}}, \"Get Issue Comments\": {{steps.JIRA_LIST_ISSUE_COMMENTS.result}}, \"Join Comments\": {{steps.xf_3076e6dea3.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"thread\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json.data.map(comment => {\n const { accountId, displayName } = comment.author;\n\n const message = comment.body.content.map(item =>\n `[\"${item.type}\"]${item.content\n .filter(c => c.text || c.content)\n .map(c => c.content\n ? c.content\n .filter(cc => c.text || c.content)\n .map(cc => cc.text)\n .join(' ')\n : c.text\n )}[\"/${item.type}\"]`\n ).join('');\n return `${displayName} (accountId: ${accountId}) says: ${message}`;\n})));\n  out[\"topic\"] = ([\n `title: ${$('Get Issue Metadata').item.json.title}`,\n `original message: ${$('Get Issue Metadata').item.json.description.replaceAll(/\\n/g, ' ')}`,\n `reported by: ${$('Get Issue Metadata').item.json.reporter}`\n].join('\\n'));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_1c3e5b39a6",
+      "actorId": "actor_1c3e5b39a6",
+      "type": "NodeLlmChain",
+      "label": "Classify Current Issue State",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string",
+              "enum": [
+                "resolved",
+                "pending more information",
+                "still waiting"
+              ],
+              "description": "One of: resolved, pending more information, still waiting"
+            }
+          },
+          "required": [
+            "category"
+          ],
+          "additionalProperties": false
+        },
+        "system": "Classify the input into exactly one category.\n- resolved: There are human comments and a resolution was found and/or accepted\n- pending more information: There are human comments but no resolution has been reached yet\n- still waiting: Reporter is still waiting on a response. Ignoring automated messages, there are no comments.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_4de46af4be",
+      "actorId": "actor_4de46af4be",
+      "type": "NodeTransform",
+      "label": "Prompt: Classify Current Issue State",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Schedule Trigger\": __namedCtx.steps?.[\"Schedule Trigger\"]?.[\"payload\"], \"Execute Workflow Trigger\": {{ctx}}, \"Get List of Unresolved Long Lived Issues\": __namedCtx.steps?.[\"JIRA_SEARCH_ISSUES\"]?.[\"result\"], \"Get Issue Metadata\": __namedCtx.steps?.[\"Get Issue Metadata\"]?.[\"transformed\"], \"Execute Workflow\": __namedCtx.steps?.[\"Execute Workflow\"]?.[\"transformed\"], \"Get Issue Comments\": __namedCtx.steps?.[\"JIRA_LIST_ISSUE_COMMENTS\"]?.[\"result\"], \"Join Comments\": __namedCtx.steps?.[\"Join Comments\"]?.[\"transformed\"], \"Simplify Thread For AI\": __namedCtx.steps?.[\"Simplify Thread For AI\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Classify Current Issue State.\nconst __promptValue = `issue:\n${$('Simplify Thread For AI').item.json.topic}\n\ncomments:\n${$('Simplify Thread For AI').item.json.thread.join('\\n') || 'There are no comments'}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_35738d298f",
+      "actorId": "actor_35738d298f",
+      "type": "NodeTransform",
+      "label": "Classify Current Issue State: category = resolved",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.category ?? '') === \"resolved\";"
+      }
+    },
+    {
+      "nodeId": "node_833cc9cf7b",
+      "actorId": "actor_833cc9cf7b",
+      "type": "NodeBranch",
+      "label": "Classify Current Issue State: category = resolved?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_b6ebcbb160",
+      "actorId": "actor_b6ebcbb160",
+      "type": "NodeTransform",
+      "label": "Classify Current Issue State: category = pending more inform",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.category ?? '') === \"pending more information\";"
+      }
+    },
+    {
+      "nodeId": "node_efd5106218",
+      "actorId": "actor_efd5106218",
+      "type": "NodeBranch",
+      "label": "Classify Current Issue State: category = pending more inform 2",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_bef5e439f3",
+      "actorId": "actor_bef5e439f3",
+      "type": "NodeTransform",
+      "label": "Classify Current Issue State: category = still waiting",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.category ?? '') === \"still waiting\";"
+      }
+    },
+    {
+      "nodeId": "node_a922370755",
+      "actorId": "actor_a922370755",
+      "type": "NodeBranch",
+      "label": "Classify Current Issue State: category = still waiting?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_b317381c95",
+      "actorId": "actor_b317381c95",
+      "type": "NodeLlmChain",
+      "label": "Customer Satisfaction Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3880,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "sentiment": {
+              "type": "string",
+              "enum": [
+                "Positive",
+                "Neutral",
+                "Negative"
+              ],
+              "description": "One of: Positive, Neutral, Negative"
+            }
+          },
+          "required": [
+            "sentiment"
+          ],
+          "additionalProperties": false
+        },
+        "system": "Classify the input into exactly one sentiment.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_460287edc5",
+      "actorId": "actor_460287edc5",
+      "type": "NodeTransform",
+      "label": "Prompt: Customer Satisfaction Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Schedule Trigger\": __namedCtx.steps?.[\"Schedule Trigger\"]?.[\"payload\"], \"Execute Workflow Trigger\": {{ctx}}, \"Get List of Unresolved Long Lived Issues\": __namedCtx.steps?.[\"JIRA_SEARCH_ISSUES\"]?.[\"result\"], \"Get Issue Metadata\": __namedCtx.steps?.[\"Get Issue Metadata\"]?.[\"transformed\"], \"Execute Workflow\": __namedCtx.steps?.[\"Execute Workflow\"]?.[\"transformed\"], \"Get Issue Comments\": __namedCtx.steps?.[\"JIRA_LIST_ISSUE_COMMENTS\"]?.[\"result\"], \"Join Comments\": __namedCtx.steps?.[\"Join Comments\"]?.[\"transformed\"], \"Simplify Thread For AI\": __namedCtx.steps?.[\"Simplify Thread For AI\"]?.[\"transformed\"], \"Classify Current Issue State\": ((output) => ({ ...output, output }))(__namedCtx.steps?.[\"Classify Current Issue State\"]?.[\"object\"]) };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Customer Satisfaction Agent.\nconst __promptValue = `issue:\n${$('Simplify Thread For AI').item.json.topic}\n\ncomments:\n${$('Simplify Thread For AI').item.json.thread.join('\\n')}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_ccb9dd6283",
+      "actorId": "actor_ccb9dd6283",
+      "type": "NodeTransform",
+      "label": "Customer Satisfaction Agent: sentiment = Positive",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.sentiment ?? '') === \"Positive\";"
+      }
+    },
+    {
+      "nodeId": "node_d1c6f64419",
+      "actorId": "actor_d1c6f64419",
+      "type": "NodeBranch",
+      "label": "Customer Satisfaction Agent: sentiment = Positive?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_dd643db046",
+      "actorId": "actor_dd643db046",
+      "type": "NodeTransform",
+      "label": "Customer Satisfaction Agent: sentiment = Neutral",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.sentiment ?? '') === \"Neutral\";"
+      }
+    },
+    {
+      "nodeId": "node_49881b98e5",
+      "actorId": "actor_49881b98e5",
+      "type": "NodeBranch",
+      "label": "Customer Satisfaction Agent: sentiment = Neutral?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_261483a762",
+      "actorId": "actor_261483a762",
+      "type": "NodeTransform",
+      "label": "Customer Satisfaction Agent: sentiment = Negative",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.sentiment ?? '') === \"Negative\";"
+      }
+    },
+    {
+      "nodeId": "node_3c48789638",
+      "actorId": "actor_3c48789638",
+      "type": "NodeBranch",
+      "label": "Customer Satisfaction Agent: sentiment = Negative?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_f40465d07e",
+      "actorId": "actor_f40465d07e",
+      "type": "NodeTransform",
+      "label": "Last Message is Not Bot: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Execute Workflow Trigger\": {{ctx}}, \"Get List of Unresolved Long Lived Issues\": {{steps.JIRA_SEARCH_ISSUES.result}}, \"Get Issue Metadata\": {{steps.xf_49d45b4be1.result}}, \"Execute Workflow\": {{steps.xf_a56283a5d4.result}}, \"Get Issue Comments\": {{steps.JIRA_LIST_ISSUE_COMMENTS.result}}, \"Join Comments\": {{steps.xf_3076e6dea3.result}}, \"Simplify Thread For AI\": {{steps.xf_1b0c549c37.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Array.prototype, { last() { return this[this.length - 1]; } });\nreturn Boolean((((!$('Simplify Thread For AI').item.json.thread.last().includes('this is an automated message'))) === true || ((!$('Simplify Thread For AI').item.json.thread.last().includes('this is an automated message'))) === 'true'));"
+      }
+    },
+    {
+      "nodeId": "node_f878305024",
+      "actorId": "actor_f878305024",
+      "type": "NodeBranch",
+      "label": "Last Message is Not Bot: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4640,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_02894f70e6",
+      "actorId": "actor_02894f70e6",
+      "type": "NodeCdecliAgent",
+      "label": "KnowledgeBase Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 5400,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "gpt-4o-mini",
+        "sessionId": "",
+        "system": "Help the user answer their question using the company's knowledgebase. Your answer must be based factually on documents retrieved from the knowledge. If no relevant information is found or the information is insufficent to answer the user's query, you must tell the user so and not mislead the user. If you don't know the answer, it is okay to say you don't know.",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_0b7ad2b5fd",
+      "actorId": "actor_0b7ad2b5fd",
+      "type": "NodeTransform",
+      "label": "Prompt: KnowledgeBase Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Schedule Trigger\": __namedCtx.steps?.[\"Schedule Trigger\"]?.[\"payload\"], \"Execute Workflow Trigger\": {{ctx}}, \"Get List of Unresolved Long Lived Issues\": __namedCtx.steps?.[\"JIRA_SEARCH_ISSUES\"]?.[\"result\"], \"Get Issue Metadata\": __namedCtx.steps?.[\"Get Issue Metadata\"]?.[\"transformed\"], \"Execute Workflow\": __namedCtx.steps?.[\"Execute Workflow\"]?.[\"transformed\"], \"Get Issue Comments\": __namedCtx.steps?.[\"JIRA_LIST_ISSUE_COMMENTS\"]?.[\"result\"], \"Join Comments\": __namedCtx.steps?.[\"Join Comments\"]?.[\"transformed\"], \"Simplify Thread For AI\": __namedCtx.steps?.[\"Simplify Thread For AI\"]?.[\"transformed\"], \"Classify Current Issue State\": ((output) => ({ ...output, output }))(__namedCtx.steps?.[\"Classify Current Issue State\"]?.[\"object\"]), \"Customer Satisfaction Agent\": ((output) => ({ ...output, output }))(__namedCtx.steps?.[\"Customer Satisfaction Agent\"]?.[\"object\"]) };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: KnowledgeBase Agent.\nconst __promptValue = `issue:\n${$('Simplify Thread For AI').item.json.topic}\n\ncomments:\n${$('Simplify Thread For AI').item.json.thread.join('\\n')}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_4e7b797257",
+      "actorId": "actor_4e7b797257",
+      "type": "NodeCdeConnector",
+      "label": "jira/JIRA_ADD_COMMENT",
+      "color": "#6366F1",
+      "position": {
+        "x": 5020,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "jira",
+        "connectorLabel": "Jira",
+        "action": "JIRA_ADD_COMMENT",
+        "params": {
+          "issue_id_or_key": "{{steps.xf_49d45b4be1.result.key}}",
+          "comment": "[~accountid:{{steps.xf_49d45b4be1.result.reporter_accountId}}]\n\nWe think the issue is resolved so we're autoclosing it. If you've been satisified with our service, please leave us a 5 start review here: [link](link/to/review_site)\n\nPlease feel free to create another ticket if you need further assistance.\n(this is an automated message)"
+        }
+      }
+    },
+    {
+      "nodeId": "node_0477a58534",
+      "actorId": "actor_0477a58534",
+      "type": "NodeCdeConnector",
+      "label": "jira/JIRA_ADD_COMMENT",
+      "color": "#6366F1",
+      "position": {
+        "x": 5780,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "jira",
+        "connectorLabel": "Jira",
+        "action": "JIRA_ADD_COMMENT",
+        "params": {
+          "issue_id_or_key": "{{steps.xf_49d45b4be1.result.key}}",
+          "comment": "Autoclosing due to inactivity. Please create a new ticket if you require additional support. Thank you!\n(this is an automated message)"
+        }
+      }
+    },
+    {
+      "nodeId": "node_4641f8a02e",
+      "actorId": "actor_4641f8a02e",
+      "type": "NodeTransform",
+      "label": "Params: Report Unhappy Resolution",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Execute Workflow Trigger\": {{ctx}}, \"Get List of Unresolved Long Lived Issues\": {{steps.JIRA_SEARCH_ISSUES.result}}, \"Get Issue Metadata\": {{steps.xf_49d45b4be1.result}}, \"Execute Workflow\": {{steps.xf_a56283a5d4.result}}, \"Get Issue Comments\": {{steps.JIRA_LIST_ISSUE_COMMENTS.result}}, \"Join Comments\": {{steps.xf_3076e6dea3.result}}, \"Simplify Thread For AI\": {{steps.xf_1b0c549c37.result}}, \"Ask For Feedback Message\": {{steps.JIRA_ADD_COMMENT.result}}, \"Add Autoclose Message\": {{steps.JIRA_ADD_COMMENT.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for slack/SLACK_CHAT_POST_MESSAGE (n8n node \"Report Unhappy Resolution\").\nreturn {\n  \"channel\": \"{{slackChannel}}\",\n  \"text\": '',\n  \"blocks\": ({\n\t\"blocks\": [\n\t\t{\n\t\t\t\"type\": \"section\",\n\t\t\t\"text\": {\n\t\t\t\t\"type\": \"mrkdwn\",\n\t\t\t\t\"text\": \"Hey there 👋\\nI found a unclosed ticket which was resolved but thread overall has a negative sentiment score. Please address or close the ticket.\"\n\t\t\t}\n\t\t},\n\t\t{\n\t\t\t\"type\": \"section\",\n\t\t\t\"text\": {\n\t\t\t\t\"type\": \"mrkdwn\",\n\t\t\t\t\"text\": `*[${$('Get Issue Metadata').item.json.key}] ${$('Get Issue Metadata').item.json.title}*\\n${$('KnowledgeBase Agent').item.json.output.short_summary_of_issue}\\n👤 [\"${$('Get Issue Metadata').item.json.reporter_url}|${$('Get Issue Metadata').item.json.reporter}\"] 📅 ${$('Get Issue Metadata').item.json.date} 🔗 [\"${$('Get Issue Metadata').item.json.url}|Link to Issue\"]\\n`\n\t\t\t}\n\t\t},\n\t\t{\n\t\t\t\"type\": \"divider\"\n\t\t},\n\t\t{\n\t\t\t\"type\": \"section\",\n\t\t\t\"text\": {\n\t\t\t\t\"type\": \"mrkdwn\",\n\t\t\t\t\"text\": \"Thanks!\"\n\t\t\t}\n\t\t}\n\t]\n}),\n};"
+      }
+    },
+    {
+      "nodeId": "node_05aaa4677a",
+      "actorId": "actor_05aaa4677a",
+      "type": "NodeCdeConnector",
+      "label": "slack/SLACK_CHAT_POST_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "slack",
+        "connectorLabel": "Slack",
+        "action": "SLACK_CHAT_POST_MESSAGE"
+      }
+    },
+    {
+      "nodeId": "node_c3bc7c08d1",
+      "actorId": "actor_c3bc7c08d1",
+      "type": "NodeLlmChain",
+      "label": "Issue Reminder Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 5400,
+        "y": 620
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "The user has a pending issue and some time has passed since the last update. Analyse the last message in this thread and generate a short reminder message to add to the issue comments which summarizes and reiterates what pending action or information is required. Return only the message.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_ea8f6de5f8",
+      "actorId": "actor_ea8f6de5f8",
+      "type": "NodeTransform",
+      "label": "Prompt: Issue Reminder Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Schedule Trigger\": __namedCtx.steps?.[\"Schedule Trigger\"]?.[\"payload\"], \"Execute Workflow Trigger\": {{ctx}}, \"Get List of Unresolved Long Lived Issues\": __namedCtx.steps?.[\"JIRA_SEARCH_ISSUES\"]?.[\"result\"], \"Get Issue Metadata\": __namedCtx.steps?.[\"Get Issue Metadata\"]?.[\"transformed\"], \"Execute Workflow\": __namedCtx.steps?.[\"Execute Workflow\"]?.[\"transformed\"], \"Get Issue Comments\": __namedCtx.steps?.[\"JIRA_LIST_ISSUE_COMMENTS\"]?.[\"result\"], \"Join Comments\": __namedCtx.steps?.[\"Join Comments\"]?.[\"transformed\"], \"Simplify Thread For AI\": __namedCtx.steps?.[\"Simplify Thread For AI\"]?.[\"transformed\"], \"Classify Current Issue State\": ((output) => ({ ...output, output }))(__namedCtx.steps?.[\"Classify Current Issue State\"]?.[\"object\"]), \"Customer Satisfaction Agent\": ((output) => ({ ...output, output }))(__namedCtx.steps?.[\"Customer Satisfaction Agent\"]?.[\"object\"]), \"KnowledgeBase Agent\": ((text) => ({ text, output: text, content: text, response: { text, output_text: text }, message: { content: text }, choices: [{ message: { content: text }, text }] }))(__namedCtx.steps?.[\"KnowledgeBase Agent\"]?.[\"text\"]), \"Ask For Feedback Message\": __namedCtx.steps?.[\"JIRA_ADD_COMMENT\"]?.[\"result\"], \"Add Autoclose Message\": __namedCtx.steps?.[\"JIRA_ADD_COMMENT\"]?.[\"result\"], \"Report Unhappy Resolution\": __namedCtx.steps?.[\"SLACK_CHAT_POST_MESSAGE\"]?.[\"result\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Issue Reminder Agent.\nconst __promptValue = `issue:\n${$('Simplify Thread For AI').item.json.topic}\n\ncomments:\n${$('Simplify Thread For AI').item.json.thread}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_c91f072072",
+      "actorId": "actor_c91f072072",
+      "type": "NodeTransform",
+      "label": "Solution Found?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.solution_found)) === true || (($json.solution_found)) === 'true'));"
+      }
+    },
+    {
+      "nodeId": "node_991893472d",
+      "actorId": "actor_991893472d",
+      "type": "NodeBranch",
+      "label": "Solution Found?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6160,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_e7f36765dd",
+      "actorId": "actor_e7f36765dd",
+      "type": "NodeCdeConnector",
+      "label": "jira/JIRA_EDIT_ISSUE",
+      "color": "#6366F1",
+      "position": {
+        "x": 6160,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "jira",
+        "connectorLabel": "Jira",
+        "action": "JIRA_EDIT_ISSUE",
+        "params": {
+          "issue_id_or_key": "{{steps.xf_49d45b4be1.result.key}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_bbe001016e",
+      "actorId": "actor_bbe001016e",
+      "type": "NodeCdeConnector",
+      "label": "jira/JIRA_ADD_COMMENT",
+      "color": "#6366F1",
+      "position": {
+        "x": 5780,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "jira",
+        "connectorLabel": "Jira",
+        "action": "JIRA_ADD_COMMENT",
+        "params": {
+          "issue_id_or_key": "{{steps.xf_49d45b4be1.result.key}}",
+          "comment": "{{last.text}}\n(this is an automated message)"
+        }
+      }
+    },
+    {
+      "nodeId": "node_75312b5b2e",
+      "actorId": "actor_75312b5b2e",
+      "type": "NodeTransform",
+      "label": "Params: Notify Slack Channel",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Execute Workflow Trigger\": {{ctx}}, \"Get List of Unresolved Long Lived Issues\": {{steps.JIRA_SEARCH_ISSUES.result}}, \"Get Issue Metadata\": {{steps.xf_49d45b4be1.result}}, \"Execute Workflow\": {{steps.xf_a56283a5d4.result}}, \"Get Issue Comments\": {{steps.JIRA_LIST_ISSUE_COMMENTS.result}}, \"Join Comments\": {{steps.xf_3076e6dea3.result}}, \"Simplify Thread For AI\": {{steps.xf_1b0c549c37.result}}, \"Ask For Feedback Message\": {{steps.JIRA_ADD_COMMENT.result}}, \"Add Autoclose Message\": {{steps.JIRA_ADD_COMMENT.result}}, \"Report Unhappy Resolution\": {{steps.SLACK_CHAT_POST_MESSAGE.result}}, \"Close Issue\": {{steps.JIRA_EDIT_ISSUE.result}}, \"Send Reminder\": {{steps.JIRA_ADD_COMMENT.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for slack/SLACK_CHAT_POST_MESSAGE (n8n node \"Notify Slack Channel\").\nreturn {\n  \"channel\": \"{{slackChannel}}\",\n  \"blocks\": ({\n\t\"blocks\": [\n\t\t{\n\t\t\t\"type\": \"section\",\n\t\t\t\"text\": {\n\t\t\t\t\"type\": \"mrkdwn\",\n\t\t\t\t\"text\": \"Hey there 👋\\nI found a zombie ticket that no one has taken a look at yet.\"\n\t\t\t}\n\t\t},\n\t\t{\n\t\t\t\"type\": \"section\",\n\t\t\t\"text\": {\n\t\t\t\t\"type\": \"mrkdwn\",\n\t\t\t\t\"text\": `*[${$('Get Issue Metadata').item.json.key}] ${$('Get Issue Metadata').item.json.title}*\\n${$('KnowledgeBase Agent').item.json.output.short_summary_of_issue}\\n👤 [\"${$('Get Issue Metadata').item.json.reporter_url}|${$('Get Issue Metadata').item.json.reporter}\"] 📅 ${$('Get Issue Metadata').item.json.date} 🔗 [\"${$('Get Issue Metadata').item.json.url}|Link to Issue\"]\\n`\n\t\t\t}\n\t\t},\n\t\t{\n\t\t\t\"type\": \"divider\"\n\t\t},\n\t\t{\n\t\t\t\"type\": \"section\",\n\t\t\t\"text\": {\n\t\t\t\t\"type\": \"mrkdwn\",\n\t\t\t\t\"text\": \"I couldn't find an answer in the knowledgebase so I've notified the user and closed the ticket. Thanks!\"\n\t\t\t}\n\t\t}\n\t]\n}),\n};"
+      }
+    },
+    {
+      "nodeId": "node_9ba3c160dd",
+      "actorId": "actor_9ba3c160dd",
+      "type": "NodeCdeConnector",
+      "label": "slack/SLACK_CHAT_POST_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 6920,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "slack",
+        "connectorLabel": "Slack",
+        "action": "SLACK_CHAT_POST_MESSAGE"
+      }
+    },
+    {
+      "nodeId": "node_fa55152afb",
+      "actorId": "actor_fa55152afb",
+      "type": "NodeTransform",
+      "label": "Params: Reply to Issue",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Execute Workflow Trigger\": {{ctx}}, \"Get List of Unresolved Long Lived Issues\": {{steps.JIRA_SEARCH_ISSUES.result}}, \"Get Issue Metadata\": {{steps.xf_49d45b4be1.result}}, \"Execute Workflow\": {{steps.xf_a56283a5d4.result}}, \"Get Issue Comments\": {{steps.JIRA_LIST_ISSUE_COMMENTS.result}}, \"Join Comments\": {{steps.xf_3076e6dea3.result}}, \"Simplify Thread For AI\": {{steps.xf_1b0c549c37.result}}, \"Ask For Feedback Message\": {{steps.JIRA_ADD_COMMENT.result}}, \"Add Autoclose Message\": {{steps.JIRA_ADD_COMMENT.result}}, \"Report Unhappy Resolution\": {{steps.SLACK_CHAT_POST_MESSAGE.result}}, \"Close Issue\": {{steps.JIRA_EDIT_ISSUE.result}}, \"Send Reminder\": {{steps.JIRA_ADD_COMMENT.result}}, \"Notify Slack Channel\": {{steps.SLACK_CHAT_POST_MESSAGE.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for jira/JIRA_ADD_COMMENT (n8n node \"Reply to Issue\").\nreturn {\n  \"issue_id_or_key\": ($('Get Issue Metadata').item.json.key),\n  \"comment\": `Hey there!\n${$('KnowledgeBase Agent').item.json.output.response}\nWe'll close this issue now but feel free to create a new one if needed.\n(this is an automated message)`,\n};"
+      }
+    },
+    {
+      "nodeId": "node_d71339c075",
+      "actorId": "actor_d71339c075",
+      "type": "NodeCdeConnector",
+      "label": "jira/JIRA_ADD_COMMENT",
+      "color": "#6366F1",
+      "position": {
+        "x": 7680,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "jira",
+        "connectorLabel": "Jira",
+        "action": "JIRA_ADD_COMMENT"
+      }
+    },
+    {
+      "nodeId": "node_cf95ba98ad",
+      "actorId": "actor_cf95ba98ad",
+      "type": "NodeCdeConnector",
+      "label": "jira/JIRA_EDIT_ISSUE",
+      "color": "#6366F1",
+      "position": {
+        "x": 8060,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "jira",
+        "connectorLabel": "Jira",
+        "action": "JIRA_EDIT_ISSUE",
+        "params": {
+          "issue_id_or_key": "{{steps.xf_49d45b4be1.result.key}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_1ea62d9d8e",
+      "actorId": "actor_1ea62d9d8e",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_a8ce43d18c",
+      "actorId": "actor_a8ce43d18c",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 7300,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_7eeb759b9e",
+      "actorId": "actor_7eeb759b9e",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 6540,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_2805491525",
+      "actorId": "actor_2805491525",
+      "type": "NodeEnd",
+      "label": "End 4",
+      "color": "#EF4444",
+      "position": {
+        "x": 6160,
+        "y": 880
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_e8fe569108",
+      "actorId": "actor_e8fe569108",
+      "type": "NodeEnd",
+      "label": "End 5",
+      "color": "#EF4444",
+      "position": {
+        "x": 8440,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_d04a7d194d",
+      "actorId": "actor_d04a7d194d",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 1140
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "slackChannel": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_271c5c3284",
+      "actorId": "actor_271c5c3284",
+      "type": "NodeChatModel",
+      "label": "Classify Current Issue State: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2360,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    },
+    {
+      "nodeId": "node_d5f395586a",
+      "actorId": "actor_d5f395586a",
+      "type": "NodeChatModel",
+      "label": "Customer Satisfaction Agent: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3880,
+        "y": 680
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    },
+    {
+      "nodeId": "node_0244d8a903",
+      "actorId": "actor_0244d8a903",
+      "type": "NodeChatModel",
+      "label": "Issue Reminder Agent: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 5400,
+        "y": 940
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_4de46af4be",
+      "target": "node_1c3e5b39a6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_1c3e5b39a6",
+      "target": "node_35738d298f",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1c3e5b39a6",
+      "target": "node_35738d298f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_35738d298f",
+      "target": "node_833cc9cf7b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_35738d298f",
+      "target": "node_833cc9cf7b",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_1c3e5b39a6",
+      "target": "node_b6ebcbb160",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_833cc9cf7b",
+      "target": "node_b6ebcbb160",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b6ebcbb160",
+      "target": "node_efd5106218",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_b6ebcbb160",
+      "target": "node_efd5106218",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_1c3e5b39a6",
+      "target": "node_bef5e439f3",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_efd5106218",
+      "target": "node_bef5e439f3",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bef5e439f3",
+      "target": "node_a922370755",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_bef5e439f3",
+      "target": "node_a922370755",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_460287edc5",
+      "target": "node_b317381c95",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_b317381c95",
+      "target": "node_ccb9dd6283",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b317381c95",
+      "target": "node_ccb9dd6283",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ccb9dd6283",
+      "target": "node_d1c6f64419",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_ccb9dd6283",
+      "target": "node_d1c6f64419",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_b317381c95",
+      "target": "node_dd643db046",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d1c6f64419",
+      "target": "node_dd643db046",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dd643db046",
+      "target": "node_49881b98e5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_dd643db046",
+      "target": "node_49881b98e5",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_b317381c95",
+      "target": "node_261483a762",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_49881b98e5",
+      "target": "node_261483a762",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_261483a762",
+      "target": "node_3c48789638",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_261483a762",
+      "target": "node_3c48789638",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_f40465d07e",
+      "target": "node_f878305024",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_f40465d07e",
+      "target": "node_f878305024",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_0b7ad2b5fd",
+      "target": "node_02894f70e6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_4641f8a02e",
+      "target": "node_05aaa4677a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_4641f8a02e",
+      "target": "node_05aaa4677a",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ea8f6de5f8",
+      "target": "node_c3bc7c08d1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_c91f072072",
+      "target": "node_991893472d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_c91f072072",
+      "target": "node_991893472d",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_75312b5b2e",
+      "target": "node_9ba3c160dd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_75312b5b2e",
+      "target": "node_9ba3c160dd",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_fa55152afb",
+      "target": "node_d71339c075",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_fa55152afb",
+      "target": "node_d71339c075",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_a076c8bdaa",
+      "target": "node_f5e7c38623",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_01de2ab90d",
+      "target": "node_3076e6dea3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_01de2ab90d",
+      "target": "node_3076e6dea3",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3076e6dea3",
+      "target": "node_1b0c549c37",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3076e6dea3",
+      "target": "node_1b0c549c37",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0477a58534",
+      "target": "node_e7f36765dd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_4e7b797257",
+      "target": "node_e7f36765dd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_1b0c549c37",
+      "target": "node_4de46af4be",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1b0c549c37",
+      "target": "node_4de46af4be",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_991893472d",
+      "target": "node_fa55152afb",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_02894f70e6",
+      "target": "node_fa55152afb",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_991893472d",
+      "target": "node_75312b5b2e",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_02894f70e6",
+      "target": "node_75312b5b2e",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d71339c075",
+      "target": "node_cf95ba98ad",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_f878305024",
+      "target": "node_ea8f6de5f8",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1b0c549c37",
+      "target": "node_ea8f6de5f8",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_49d45b4be1",
+      "target": "node_01de2ab90d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_9ba3c160dd",
+      "target": "node_fa55152afb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9ba3c160dd",
+      "target": "node_fa55152afb",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f5e7c38623",
+      "target": "node_a56283a5d4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f5e7c38623",
+      "target": "node_a56283a5d4",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8a6c8bf04e",
+      "target": "node_49d45b4be1",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d1c6f64419",
+      "target": "node_4e7b797257",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_49881b98e5",
+      "target": "node_0477a58534",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_3c48789638",
+      "target": "node_4641f8a02e",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1b0c549c37",
+      "target": "node_4641f8a02e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_02894f70e6",
+      "target": "node_c91f072072",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_02894f70e6",
+      "target": "node_c91f072072",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c3bc7c08d1",
+      "target": "node_bbe001016e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_833cc9cf7b",
+      "target": "node_460287edc5",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1b0c549c37",
+      "target": "node_460287edc5",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_efd5106218",
+      "target": "node_f40465d07e",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1b0c549c37",
+      "target": "node_f40465d07e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a922370755",
+      "target": "node_0b7ad2b5fd",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1b0c549c37",
+      "target": "node_0b7ad2b5fd",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a56283a5d4",
+      "target": "node_1ea62d9d8e",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_05aaa4677a",
+      "target": "node_a8ce43d18c",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_e7f36765dd",
+      "target": "node_7eeb759b9e",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_bbe001016e",
+      "target": "node_2805491525",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_cf95ba98ad",
+      "target": "node_e8fe569108",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_271c5c3284",
+      "target": "node_1c3e5b39a6",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_d5f395586a",
+      "target": "node_b317381c95",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_0244d8a903",
+      "target": "node_c3bc7c08d1",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "",
+    "connectors": [
+      "jira",
+      "notion",
+      "openai",
+      "slack"
+    ],
+    "setupVars": [
+      {
+        "key": "slackChannel",
+        "label": "Slack channel (name or id)",
+        "type": "channel",
+        "example": "#general",
+        "usedBy": [
+          "Notify Slack Channel",
+          "Report Unhappy Resolution"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate automate-customer-support-issue-resolution-using-ai-text-classifier",
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 29,
+      "yantraSteps": 46,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "OpenAI Chat Model4",
+        "OpenAI Chat Model1",
+        "Find Simlar Issues",
+        "Query KnowledgeBase",
+        "Structured Output Parser",
+        "OpenAI Chat Model3"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/Automate Customer Support Issue Resolution using AI Text Classifier.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Execute Workflow Trigger",
+        "detail": "n8n-nodes-base.executeWorkflowTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Execute Workflow Trigger\" (executeWorkflowTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value slackChannel: Slack channel (name or id) (for example #general). Write it into the Workflow Configs initialContext before import.",
+      "Connect the jira connector (credential).",
+      "Connect the notion connector (credential).",
+      "Connect the openai connector (credential).",
+      "Connect the slack connector (credential).",
+      "After import, start the schedule: cdecli cron activate automate-customer-support-issue-resolution-using-ai-text-classifier."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Execute Workflow",
+          "n8n": "executeWorkflow",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Classify Current Issue State",
+          "model": "gpt-4o-mini"
+        },
+        {
+          "node": "OpenAI Chat Model4",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Customer Satisfaction Agent",
+          "model": "gpt-4o-mini"
+        },
+        {
+          "node": "OpenAI Chat Model1",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "KnowledgeBase Agent",
+          "model": "gpt-4o-mini"
+        },
+        {
+          "node": "Find Simlar Issues",
+          "type": "n8n-nodes-base.jiraTool",
+          "into": "KnowledgeBase Agent",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Query KnowledgeBase",
+          "type": "n8n-nodes-base.notionTool",
+          "into": "KnowledgeBase Agent",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Structured Output Parser",
+          "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+          "into": "KnowledgeBase Agent",
+          "as": "ai_outputParser"
+        },
+        {
+          "node": "OpenAI Chat Model3",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Issue Reminder Agent",
+          "model": "gpt-4o-mini"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Schedule Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        },
+        {
+          "node": "Execute Workflow Trigger",
+          "type": "n8n-nodes-base.executeWorkflowTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original was a sub-workflow called by another workflow; pass its inputs as run inputs.",
+        "\"Execute Workflow\" (executeWorkflow): Sub-workflow calls are not imported automatically; compose the child graph by hand or paste its steps inline.",
+        "\"Execute Workflow\" called another n8n workflow (={{ $workflow.id }}); on Yantra, open that workflow as its own template (or rebuild it) and replace this passthrough with a call into it.",
+        "\"KnowledgeBase Agent\" used agent tools in the original: Find Simlar Issues (jiraTool), Query KnowledgeBase (notionTool). The cdecli agent calls connectors directly; connect credentials for the services those tools reached. Prefer connectors: jira, notion.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect jira: `cdecli credential create -n \"jira\" -p jira --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect notion: `cdecli credential create -n \"notion\" -p notion --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect slack: `cdecli credential create -n \"slack\" -p slack --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## 1. Search For Unresolved Long-lived JIRA Issues\n[Learn more about the JIRA node](https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.jira)\n\nIn this demonstration, we'll define \"long-lived\" as any issue which is unresolved after 7 days. Adjust to fit your own criteria.\n\nWe'll also use the Execute Workflow node to run the issues separate in parallel. This is a performance optimisation and if not required, the alternative is to use a loop node instead.",
+      "## 2. Retrieves and Combine JIRA Issue Comments\n[Learn more about the JIRA node](https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.jira)\n\nTo provide the necessary information for our AI agents, we'll fetch and combine all the issue's comments along with our issue. This gives a accurate history of the the issues progress (or lack thereof!).",
+      "## 3. Classify the Current State of the Issue\n[Learn more about the Text Classifier node](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.text-classifier)\n\nToday's AI/LLMs are well suited for solving contextual problems like determining issue state. Here, we can use the text classifier node to analyse the issue as a whole to determine our next move. Almost like a really, really smart Switch node!\n\nThere are 3 branches we want to take: Check if a resolution was reached, blocked issues and auto-resolving when no team member has yet to respond.",
+      "## 4. Sentiment Analysis on Issue Resolution\n[Read more about the Sentiment Analysis node](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.sentimentanalysis)\n\nThe Sentiment Analysis node is a convenient method of assessing\ncustomer satisfaction from resolved issues. Here, when resolution\nis detected as positive, we can ask use the opportunity to\ncapitalise of the favourable experience which in this example,\nis to ask for a review. In the opposite vein, if the exchange has\nbeen negative, we can escalate in an attempt to improve\nthe situation before closing the ticket.\n\nAI can equip teams to provide unrivalled customer support\nwhich can differentiate themselves significantly against\nthe competition.",
+      "## 5. Attempt to Resolve The Issue With KnowledgeBase\n[Read more about the AI Agent node](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.agent/)\n\nWhen the issue is unaddressed, we can attempt to resolve the issue automatically using AI. Here an AI agent can easily be deployed with\naccess to knowledge tools to research and generate solutions for the user. Since n8n v1.62.1, AI Tools Agents can attach nodes directly as\ntools providing a very easy way to linking documents to the LLM.\n\nHere, we use both the JIRA tool to search for similar issues and the notion tool to query for product pages. If a solution can be generated,\nwe create a new comment with the solution and attach it to the issue. If not, then we can leave a simple message notifying the user that we could not do so. Finally, we close the issue as no further action can likely be taken in this case.",
+      "## 6. Notify for Unanswered Questions or Response Waiting\n[Read more about the Basic LLM Chain node](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.chainllm/)\n\nIn this step, where signals indicate that the issue is not yet ready to be close, we can try to re-engage issue participants by summarize the conversation so far and sending a reminder comment for any pending actions that were requested. This action can help reduce the number of issues which linger for too long.",
+      "## Try It Out!\n\n### This n8n template is designed to assist and improve customer support team member capacity by automating the resolution of long-lived and forgotten JIRA issues.\n\n* Schedule Trigger runs daily to check for long-lived unresolved issues and imports them into the workflow.\n* Each Issue is handled as a separate subworkflow by using an execute workflow node. This allows parallel processing.\n* A report is generated from the issue using its comment history allowing the issue to be classified by AI - determining the state and progress of the issue.\n* If determined to be resolved, sentiment analysis is performed to track customer satisfaction. If negative, a slack message is sent to escalate, otherwise the issue is closed automatically.\n* If no response has been initiated, an AI agent will attempt to search and resolve the issue itself using similar resolved issues or from the notion database. If a solution is found, it is posted to the issue and closed.\n* If the issue is blocked and waiting for responses, then a reminder message is added.\n\n### Need Help?\nJoin the [Discord](https://discord.com/invite/XPKeKXeB7d) or ask in the [Forum](https://community.n8n.io/)!"
+    ],
+    "nodes": {
+      "node_a076c8bdaa": {
+        "n8n": "Schedule Trigger",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_8a6c8bf04e": {
+        "n8n": "Execute Workflow Trigger",
+        "n8nType": "n8n-nodes-base.executeWorkflowTrigger"
+      },
+      "node_f5e7c38623": {
+        "n8n": "Get List of Unresolved Long Lived Issues",
+        "n8nType": "n8n-nodes-base.jira"
+      },
+      "node_49d45b4be1": {
+        "n8n": "Get Issue Metadata",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_a56283a5d4": {
+        "n8n": "Execute Workflow",
+        "n8nType": "n8n-nodes-base.executeWorkflow"
+      },
+      "node_01de2ab90d": {
+        "n8n": "Get Issue Comments",
+        "n8nType": "n8n-nodes-base.jira"
+      },
+      "node_3076e6dea3": {
+        "n8n": "Join Comments",
+        "n8nType": "n8n-nodes-base.aggregate"
+      },
+      "node_1b0c549c37": {
+        "n8n": "Simplify Thread For AI",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_1c3e5b39a6": {
+        "n8n": "Classify Current Issue State",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_4de46af4be": {
+        "n8n": "Classify Current Issue State",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_35738d298f": {
+        "n8n": "Classify Current Issue State",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_833cc9cf7b": {
+        "n8n": "Classify Current Issue State",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_b6ebcbb160": {
+        "n8n": "Classify Current Issue State",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_efd5106218": {
+        "n8n": "Classify Current Issue State",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_bef5e439f3": {
+        "n8n": "Classify Current Issue State",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_a922370755": {
+        "n8n": "Classify Current Issue State",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_b317381c95": {
+        "n8n": "Customer Satisfaction Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.sentimentAnalysis"
+      },
+      "node_460287edc5": {
+        "n8n": "Customer Satisfaction Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.sentimentAnalysis"
+      },
+      "node_ccb9dd6283": {
+        "n8n": "Customer Satisfaction Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.sentimentAnalysis"
+      },
+      "node_d1c6f64419": {
+        "n8n": "Customer Satisfaction Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.sentimentAnalysis"
+      },
+      "node_dd643db046": {
+        "n8n": "Customer Satisfaction Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.sentimentAnalysis"
+      },
+      "node_49881b98e5": {
+        "n8n": "Customer Satisfaction Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.sentimentAnalysis"
+      },
+      "node_261483a762": {
+        "n8n": "Customer Satisfaction Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.sentimentAnalysis"
+      },
+      "node_3c48789638": {
+        "n8n": "Customer Satisfaction Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.sentimentAnalysis"
+      },
+      "node_f40465d07e": {
+        "n8n": "Last Message is Not Bot",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_f878305024": {
+        "n8n": "Last Message is Not Bot",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_02894f70e6": {
+        "n8n": "KnowledgeBase Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_0b7ad2b5fd": {
+        "n8n": "KnowledgeBase Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_4e7b797257": {
+        "n8n": "Ask For Feedback Message",
+        "n8nType": "n8n-nodes-base.jira"
+      },
+      "node_0477a58534": {
+        "n8n": "Add Autoclose Message",
+        "n8nType": "n8n-nodes-base.jira"
+      },
+      "node_4641f8a02e": {
+        "n8n": "Report Unhappy Resolution",
+        "n8nType": "n8n-nodes-base.slack"
+      },
+      "node_05aaa4677a": {
+        "n8n": "Report Unhappy Resolution",
+        "n8nType": "n8n-nodes-base.slack"
+      },
+      "node_c3bc7c08d1": {
+        "n8n": "Issue Reminder Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_ea8f6de5f8": {
+        "n8n": "Issue Reminder Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_c91f072072": {
+        "n8n": "Solution Found?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_991893472d": {
+        "n8n": "Solution Found?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_e7f36765dd": {
+        "n8n": "Close Issue",
+        "n8nType": "n8n-nodes-base.jira"
+      },
+      "node_bbe001016e": {
+        "n8n": "Send Reminder",
+        "n8nType": "n8n-nodes-base.jira"
+      },
+      "node_75312b5b2e": {
+        "n8n": "Notify Slack Channel",
+        "n8nType": "n8n-nodes-base.slack"
+      },
+      "node_9ba3c160dd": {
+        "n8n": "Notify Slack Channel",
+        "n8nType": "n8n-nodes-base.slack"
+      },
+      "node_fa55152afb": {
+        "n8n": "Reply to Issue",
+        "n8nType": "n8n-nodes-base.jira"
+      },
+      "node_d71339c075": {
+        "n8n": "Reply to Issue",
+        "n8nType": "n8n-nodes-base.jira"
+      },
+      "node_cf95ba98ad": {
+        "n8n": "Close Issue2",
+        "n8nType": "n8n-nodes-base.jira"
+      },
+      "node_1ea62d9d8e": {
+        "n8n": "__end:Execute Workflow",
+        "n8nType": "synthetic"
+      },
+      "node_a8ce43d18c": {
+        "n8n": "__end:Report Unhappy Resolution",
+        "n8nType": "synthetic"
+      },
+      "node_7eeb759b9e": {
+        "n8n": "__end:Close Issue",
+        "n8nType": "synthetic"
+      },
+      "node_2805491525": {
+        "n8n": "__end:Send Reminder",
+        "n8nType": "synthetic"
+      },
+      "node_e8fe569108": {
+        "n8n": "__end:Close Issue2",
+        "n8nType": "synthetic"
+      },
+      "node_d04a7d194d": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_271c5c3284": {
+        "n8n": "Classify Current Issue State",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_d5f395586a": {
+        "n8n": "Customer Satisfaction Agent",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_0244d8a903": {
+        "n8n": "Issue Reminder Agent",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

@@ -1,0 +1,505 @@
+{
+  "name": "Disk Space Watchdog with Tiered Thresholds",
+  "workflowSlug": "disk-space-watchdog-with-tiered-thresholds",
+  "description": "Check disk usage over SSH on a schedule, warn at 80% and 90%, and alert only when a mountpoint changes level - no repeated alerts for the same full disk. Telegram with e-mail fallback.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_9b28712972",
+      "actorId": "actor_9b28712972",
+      "type": "NodeCron",
+      "label": "Schedule Trigger",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "*/30 * * * *"
+      }
+    },
+    {
+      "nodeId": "node_b73f849b4f",
+      "actorId": "actor_b73f849b4f",
+      "type": "NodeCdeConnector",
+      "label": "ssh/SSH_RUN_COMMAND",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "ssh",
+        "connectorLabel": "SSH",
+        "action": "SSH_RUN_COMMAND",
+        "params": {
+          "command": "df -P"
+        }
+      }
+    },
+    {
+      "nodeId": "node_2bf3555271",
+      "actorId": "actor_2bf3555271",
+      "type": "NodeTransform",
+      "label": "Parse & Evaluate",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// n8n $env values come from the Workflow Configs initialContext (setup values and workflow secrets).\nconst __envCtx = {{ctx}};\nconst $env = { \"DISK_CRIT_PCT\": __envCtx[\"diskCritPct\"], \"DISK_WARN_PCT\": __envCtx[\"diskWarnPct\"] };\nconst __staticData = {}; const $getWorkflowStaticData = () => __staticData; // not persisted between runs on Yantra\n// Ported from n8n Code node \"Parse & Evaluate\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Parses the output of \"df -P\", compares it against tiered thresholds (WARN/CRIT)\n  // and only reports when a mountpoint CHANGES level. The de-duplication uses n8n's\n  // workflow static data, so a disk sitting at 85% for a week alerts once, not 336 times.\n  // Thresholds are read from environment variables so the workflow needs no editing.\n  const warnPct = parseInt($env.DISK_WARN_PCT || '80', 10);\n  const critPct = parseInt($env.DISK_CRIT_PCT || '90', 10);\n  \n  const raw = $input.first().json.stdout || '';\n  const lines = raw.trim().split('\\n').slice(1);\n  \n  const staticData = $getWorkflowStaticData('node');\n  if (!staticData.lastLevel) staticData.lastLevel = {};\n  \n  const alerts = [];\n  for (const line of lines) {\n    const parts = line.trim().split(/\\s+/);\n    if (parts.length < 6) continue;\n    const filesystem = parts[0];\n    const capacityStr = parts[parts.length - 2];\n    const mount = parts[parts.length - 1];\n    const usedPct = parseInt(capacityStr.replace('%', ''), 10);\n    if (Number.isNaN(usedPct)) continue;\n  \n    let level = 'ok';\n    if (usedPct >= critPct) level = 'critical';\n    else if (usedPct >= warnPct) level = 'warning';\n  \n    const prevLevel = staticData.lastLevel[mount] || 'ok';\n    if (level !== prevLevel) {\n      staticData.lastLevel[mount] = level;\n      const availGB = (parseInt(parts[parts.length - 3], 10) / 1024 / 1024).toFixed(1);\n      if (level !== 'ok') {\n        alerts.push({ mount, filesystem, usedPct, level, availGB });\n      } else {\n        // Recovery is reported too, so a silent channel means \"nothing changed\",\n        // not \"the workflow died\".\n        alerts.push({ mount, filesystem, usedPct, level, availGB, recovered: true });\n      }\n    }\n  }\n  \n  const hasAlerts = alerts.length > 0;\n  let message = null;\n  if (hasAlerts) {\n    message = alerts.map(a => a.recovered\n      ? `[OK] ${a.mount} back below threshold (${a.usedPct}%)`\n      : `${a.level === 'critical' ? '[CRITICAL]' : '[WARNING]'} ${a.mount} (${a.filesystem}): ${a.usedPct}% used, ${a.availGB} GB free`\n    ).join('\\n');\n  }\n  \n  return [{ json: { hasAlerts, message, alerts } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_7fd0aef46f",
+      "actorId": "actor_7fd0aef46f",
+      "type": "NodeTransform",
+      "label": "Any alerts?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.hasAlerts)) === true || (($json.hasAlerts)) === 'true'));"
+      }
+    },
+    {
+      "nodeId": "node_9bda1d0514",
+      "actorId": "actor_9bda1d0514",
+      "type": "NodeBranch",
+      "label": "Any alerts?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_5b7be28001",
+      "actorId": "actor_5b7be28001",
+      "type": "NodeTransform",
+      "label": "Params: Send Telegram Alert",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// n8n $env values come from the Workflow Configs initialContext (setup values and workflow secrets).\nconst __envCtx = {{ctx}};\nconst $env = { \"TG_CHAT_ID\": __envCtx[\"tgChatId\"] };\n// Params for telegram/TELEGRAM_SEND_MESSAGE (n8n node \"Send Telegram Alert\").\nreturn {\n  \"chat_id\": ($env.TG_CHAT_ID),\n  \"text\": ($json.message),\n};"
+      }
+    },
+    {
+      "nodeId": "node_b29fef3d22",
+      "actorId": "actor_b29fef3d22",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_SEND_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_SEND_MESSAGE"
+      }
+    },
+    {
+      "nodeId": "node_7ced91e81b",
+      "actorId": "actor_7ced91e81b",
+      "type": "NodeTransform",
+      "label": "Params: Send Email Fallback",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// n8n $env values come from the Workflow Configs initialContext (setup values and workflow secrets).\nconst __envCtx = {{ctx}};\nconst $env = { \"SMTP_TO\": __envCtx[\"smtpTo\"] };\n// Params for googlesuper/GOOGLESUPER_SEND_EMAIL (n8n node \"Send Email Fallback\").\nreturn {\n  \"recipient_email\": ($env.SMTP_TO),\n  \"subject\": \"Disk space watchdog alert\",\n  \"body\": ($json.message),\n};"
+      }
+    },
+    {
+      "nodeId": "node_86863aed6b",
+      "actorId": "actor_86863aed6b",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (SMTP original)",
+        "action": "GOOGLESUPER_SEND_EMAIL"
+      }
+    },
+    {
+      "nodeId": "node_938fe8c047",
+      "actorId": "actor_938fe8c047",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_a137cb803c",
+      "actorId": "actor_a137cb803c",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "diskCritPct": "",
+          "diskWarnPct": "",
+          "tgChatId": "",
+          "smtpTo": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_7fd0aef46f",
+      "target": "node_9bda1d0514",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_7fd0aef46f",
+      "target": "node_9bda1d0514",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_5b7be28001",
+      "target": "node_b29fef3d22",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_5b7be28001",
+      "target": "node_b29fef3d22",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_7ced91e81b",
+      "target": "node_86863aed6b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_7ced91e81b",
+      "target": "node_86863aed6b",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_9b28712972",
+      "target": "node_b73f849b4f",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_b73f849b4f",
+      "target": "node_2bf3555271",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b73f849b4f",
+      "target": "node_2bf3555271",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2bf3555271",
+      "target": "node_7fd0aef46f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2bf3555271",
+      "target": "node_7fd0aef46f",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9bda1d0514",
+      "target": "node_5b7be28001",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2bf3555271",
+      "target": "node_5b7be28001",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b29fef3d22",
+      "target": "node_7ced91e81b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b29fef3d22",
+      "target": "node_7ced91e81b",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_86863aed6b",
+      "target": "node_938fe8c047",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "devops",
+    "categoryLabel": "DevOps and Server Automation",
+    "department": "SSH Tools",
+    "connectors": [
+      "googlesuper",
+      "ssh",
+      "telegram"
+    ],
+    "setupVars": [
+      {
+        "key": "diskCritPct",
+        "label": "disk crit pct (was the n8n environment variable DISK_CRIT_PCT)",
+        "type": "text",
+        "usedBy": [
+          "Parse & Evaluate"
+        ]
+      },
+      {
+        "key": "diskWarnPct",
+        "label": "disk warn pct (was the n8n environment variable DISK_WARN_PCT)",
+        "type": "text",
+        "usedBy": [
+          "Parse & Evaluate"
+        ]
+      },
+      {
+        "key": "tgChatId",
+        "label": "tg chat id (was the n8n environment variable TG_CHAT_ID)",
+        "type": "id",
+        "usedBy": [
+          "Send Telegram Alert"
+        ]
+      },
+      {
+        "key": "smtpTo",
+        "label": "smtp to (was the n8n environment variable SMTP_TO)",
+        "type": "email",
+        "usedBy": [
+          "Send Email Fallback"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate disk-space-watchdog-with-tiered-thresholds",
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeCron",
+      "NodeEnd",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 6,
+      "yantraSteps": 9,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "devops/disk-space-watchdog.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Disk space watchdog with tiered thresholds and Telegram alert"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Setup value diskCritPct: disk crit pct (was the n8n environment variable DISK_CRIT_PCT). Write it into the Workflow Configs initialContext before import.",
+      "Setup value diskWarnPct: disk warn pct (was the n8n environment variable DISK_WARN_PCT). Write it into the Workflow Configs initialContext before import.",
+      "Setup value tgChatId: tg chat id (was the n8n environment variable TG_CHAT_ID). Write it into the Workflow Configs initialContext before import.",
+      "Setup value smtpTo: smtp to (was the n8n environment variable SMTP_TO). Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the ssh connector (credential).",
+      "Connect the telegram connector (credential).",
+      "After import, start the schedule: cdecli cron activate disk-space-watchdog-with-tiered-thresholds."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Check Disk Usage (SSH)",
+          "n8n": "command.execute",
+          "action": "ssh/SSH_RUN_COMMAND",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Schedule Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "\"Check Disk Usage (SSH)\": the original used SSH; check the mapped ssh/SSH_RUN_COMMAND params before running.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect ssh: `cdecli credential create -n \"ssh\" -p ssh --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect telegram: `cdecli credential create -n \"telegram\" -p telegram --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_9b28712972": {
+        "n8n": "Schedule Trigger",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_b73f849b4f": {
+        "n8n": "Check Disk Usage (SSH)",
+        "n8nType": "n8n-nodes-base.ssh",
+        "approximate": true
+      },
+      "node_2bf3555271": {
+        "n8n": "Parse & Evaluate",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_7fd0aef46f": {
+        "n8n": "Any alerts?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_9bda1d0514": {
+        "n8n": "Any alerts?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_5b7be28001": {
+        "n8n": "Send Telegram Alert",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_b29fef3d22": {
+        "n8n": "Send Telegram Alert",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_7ced91e81b": {
+        "n8n": "Send Email Fallback",
+        "n8nType": "n8n-nodes-base.emailSend"
+      },
+      "node_86863aed6b": {
+        "n8n": "Send Email Fallback",
+        "n8nType": "n8n-nodes-base.emailSend"
+      },
+      "node_938fe8c047": {
+        "n8n": "__end:Send Email Fallback",
+        "n8nType": "synthetic"
+      },
+      "node_a137cb803c": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

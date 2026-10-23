@@ -1,0 +1,1361 @@
+{
+  "name": "Scrape Trustpilot Reviews with DeepSeek, Analyze Sentiment with OpenAI",
+  "workflowSlug": "scrape-trustpilot-reviews-with-deepseek-analyze-sentiment-with-openai",
+  "description": "Scrapes Trustpilot Reviews using DeepSeek and analyzes sentiment with OpenAI.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_9c37657c29",
+      "actorId": "actor_9c37657c29",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_243d09e6bb",
+      "actorId": "actor_243d09e6bb",
+      "type": "NodeTransform",
+      "label": "Set Parameters",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"company_id\"] = \"COMPANY\";\n  out[\"max_page\"] = Number(2);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_ad93652d0a",
+      "actorId": "actor_ad93652d0a",
+      "type": "NodeHttpRequest",
+      "label": "Get reviews",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://it.trustpilot.com/review/{{last.transformed.company_id}}?sort=recency"
+      }
+    },
+    {
+      "nodeId": "node_2f05385cde",
+      "actorId": "actor_2f05385cde",
+      "type": "NodeLlmChain",
+      "label": "Extract",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "recensioni": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Every match: the \"href\" attribute of the element(s) matching the CSS selector article section a"
+            }
+          },
+          "required": [
+            "recensioni"
+          ],
+          "additionalProperties": false
+        },
+        "system": "Extract values from the HTML page the way the given CSS selectors would. Copy text exactly as it appears in the page. Use an empty string or an empty array when nothing matches.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_8c05eab92e",
+      "actorId": "actor_8c05eab92e",
+      "type": "NodeTransform",
+      "label": "Prompt: Extract",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Extract.\nconst __promptValue = `HTML page:\n${$json}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_c3a21b6e29",
+      "actorId": "actor_c3a21b6e29",
+      "type": "NodeTransform",
+      "label": "Split Out",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"recensioni\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"recensioni\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"recensioni\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_d4c56be55c",
+      "actorId": "actor_d4c56be55c",
+      "type": "NodeTransform",
+      "label": "Limit1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nreturn __items.slice(0, 3);"
+      }
+    },
+    {
+      "nodeId": "node_faeeb58642",
+      "actorId": "actor_faeeb58642",
+      "type": "NodeTransform",
+      "label": "Params: Get Google Sheets",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When clicking ‘Test workflow’\": {{ctx}}, \"Set Parameters\": {\"company_id\":\"COMPANY\",\"max_page\":2}, \"Get reviews\": {{steps.http_ad93652d0a.result}}, \"Split Out\": {{steps.xf_c3a21b6e29.result}}, \"Limit1\": {{steps.xf_d4c56be55c.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND (n8n node \"Get Google Sheets\").\nreturn {\n  \"spreadsheetId\": \"{{spreadsheetId}}\",\n  \"range\": \"Foglio1\",\n  \"values\": [[($('Split Out').item.json.recensioni.replace('/reviews/',''))]],\n  \"valueInputOption\": \"USER_ENTERED\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_b6f2ffa6cf",
+      "actorId": "actor_b6f2ffa6cf",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_SPREADSHEETS_VALUES_APPEND"
+      }
+    },
+    {
+      "nodeId": "node_51a799c483",
+      "actorId": "actor_51a799c483",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_BATCH_GET",
+      "color": "#6366F1",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_BATCH_GET",
+        "params": {
+          "spreadsheet_id": "{{spreadsheetId}}",
+          "ranges": [
+            "Foglio1"
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_604d141efc",
+      "actorId": "actor_604d141efc",
+      "type": "NodeTransform",
+      "label": "If: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.Valutazione) ?? '').trim() === ''));"
+      }
+    },
+    {
+      "nodeId": "node_29f6e4938f",
+      "actorId": "actor_29f6e4938f",
+      "type": "NodeBranch",
+      "label": "If: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_78292122f0",
+      "actorId": "actor_78292122f0",
+      "type": "NodeHttpRequest",
+      "label": "Get Single review",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://it.trustpilot.com{{steps.xf_c3a21b6e29.result.recensioni}}"
+      }
+    },
+    {
+      "nodeId": "node_4929800726",
+      "actorId": "actor_4929800726",
+      "type": "NodeLlmChain",
+      "label": "Extract review",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "recensione": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Every match: the text of the element(s) matching the CSS selector article"
+            }
+          },
+          "required": [
+            "recensione"
+          ],
+          "additionalProperties": false
+        },
+        "system": "Extract values from the HTML page the way the given CSS selectors would. Copy text exactly as it appears in the page. Use an empty string or an empty array when nothing matches.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_c6139854d0",
+      "actorId": "actor_c6139854d0",
+      "type": "NodeTransform",
+      "label": "Prompt: Extract review",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Extract review.\nconst __promptValue = `HTML page:\n${$json}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_153abe240f",
+      "actorId": "actor_153abe240f",
+      "type": "NodeLlmChain",
+      "label": "Information Extractor",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "autore": {
+              "type": "string",
+              "description": "Extract the name of the review author"
+            },
+            "valutazione": {
+              "type": "number",
+              "description": "Extract the rating given to the review (from 1 to 5)"
+            },
+            "data": {
+              "type": "string",
+              "description": "Extract review date in YYYY-MM-DD format"
+            },
+            "titolo": {
+              "type": "string",
+              "description": "Extract the review title"
+            },
+            "testo": {
+              "type": "string",
+              "description": "Extract the review text"
+            },
+            "n_recensioni": {
+              "type": "number",
+              "description": "Extract the total number of reviews made by the user"
+            },
+            "nazione": {
+              "type": "string",
+              "description": "Extract the country of the user who wrote the review. Must be two characters"
+            }
+          },
+          "required": [
+            "autore",
+            "valutazione",
+            "data",
+            "titolo",
+            "testo",
+            "n_recensioni",
+            "nazione"
+          ],
+          "additionalProperties": false
+        },
+        "system": "You are a review expert. You need to extract only the required information and report it without changing anything.\nAll the required information is in the text.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_955e235cfd",
+      "actorId": "actor_955e235cfd",
+      "type": "NodeTransform",
+      "label": "Prompt: Information Extractor",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Information Extractor.\nconst __promptValue = `You need to extract the review from the following HTML: ${$json.recensione}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_41f7a89a78",
+      "actorId": "actor_41f7a89a78",
+      "type": "NodeLlmChain",
+      "label": "Sentiment Analysis",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "sentiment": {
+              "type": "string",
+              "enum": [
+                "Positive",
+                "Neutral",
+                "Negative"
+              ],
+              "description": "One of: Positive, Neutral, Negative"
+            }
+          },
+          "required": [
+            "sentiment"
+          ],
+          "additionalProperties": false
+        },
+        "system": "Classify the input into exactly one sentiment.\nYou are highly intelligent and accurate sentiment analyzer. Analyze the sentiment of the provided text. Categorize it into one of the following: {categories}. Use the provided formatting instructions. Only output the JSON.",
+        "prompt": "{{last.object.testo}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_cf228e4976",
+      "actorId": "actor_cf228e4976",
+      "type": "NodeTransform",
+      "label": "Sentiment Analysis: sentiment = Positive",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.sentiment ?? '') === \"Positive\";"
+      }
+    },
+    {
+      "nodeId": "node_99263ecafc",
+      "actorId": "actor_99263ecafc",
+      "type": "NodeBranch",
+      "label": "Sentiment Analysis: sentiment = Positive?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 7680,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_ed3c170aac",
+      "actorId": "actor_ed3c170aac",
+      "type": "NodeTransform",
+      "label": "Sentiment Analysis: sentiment = Neutral",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8060,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.sentiment ?? '') === \"Neutral\";"
+      }
+    },
+    {
+      "nodeId": "node_0037a6e67a",
+      "actorId": "actor_0037a6e67a",
+      "type": "NodeBranch",
+      "label": "Sentiment Analysis: sentiment = Neutral?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 8440,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_88306f9d10",
+      "actorId": "actor_88306f9d10",
+      "type": "NodeTransform",
+      "label": "Sentiment Analysis: sentiment = Negative",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8820,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.sentiment ?? '') === \"Negative\";"
+      }
+    },
+    {
+      "nodeId": "node_b45918047e",
+      "actorId": "actor_b45918047e",
+      "type": "NodeBranch",
+      "label": "Sentiment Analysis: sentiment = Negative?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 9200,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_8369cb5fa2",
+      "actorId": "actor_8369cb5fa2",
+      "type": "NodeTransform",
+      "label": "Params: Update sheet",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9580,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When clicking ‘Test workflow’\": {{ctx}}, \"Set Parameters\": {\"company_id\":\"COMPANY\",\"max_page\":2}, \"Get reviews\": {{steps.http_ad93652d0a.result}}, \"Split Out\": {{steps.xf_c3a21b6e29.result}}, \"Limit1\": {{steps.xf_d4c56be55c.result}}, \"Get Google Sheets\": {{steps.GOOGLESUPER_SPREADSHEETS_VALUES_APPEND.result}}, \"Get rows\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Get Single review\": {{steps.http_78292122f0.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND (n8n node \"Update sheet\").\nreturn {\n  \"spreadsheetId\": \"{{spreadsheetId}}\",\n  \"range\": \"Foglio1\",\n  \"values\": [[($('Split Out').item.json.recensioni.replace('/reviews/','')), `https://it.trustpilot.com${$('Split Out').item.json.recensioni}`, ($('Information Extractor').item.json.output.data), ($json.autore), ($('Information Extractor').item.json.output.testo), ($('Information Extractor').item.json.output.titolo), ($('Information Extractor').item.json.output.nazione), ($json.sentimentAnalysis.category), ($('Information Extractor').item.json.output.valutazione), ($('Information Extractor').item.json.output.n_recensioni)]],\n  \"valueInputOption\": \"USER_ENTERED\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_a8a035546d",
+      "actorId": "actor_a8a035546d",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 9960,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_SPREADSHEETS_VALUES_APPEND"
+      }
+    },
+    {
+      "nodeId": "node_4eb660a25e",
+      "actorId": "actor_4eb660a25e",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 10340,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_ed93bbee61",
+      "actorId": "actor_ed93bbee61",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "spreadsheetId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_843dda04ea",
+      "actorId": "actor_843dda04ea",
+      "type": "NodeChatModel",
+      "label": "Extract: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1600,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    },
+    {
+      "nodeId": "node_9ebb2c951e",
+      "actorId": "actor_9ebb2c951e",
+      "type": "NodeChatModel",
+      "label": "Extract review: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 5400,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    },
+    {
+      "nodeId": "node_4c2ab7d0d9",
+      "actorId": "actor_4c2ab7d0d9",
+      "type": "NodeChatModel",
+      "label": "Information Extractor: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 6160,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "deepseek",
+        "model": "deepseek-reasoner"
+      }
+    },
+    {
+      "nodeId": "node_5d9d7864e0",
+      "actorId": "actor_5d9d7864e0",
+      "type": "NodeChatModel",
+      "label": "Sentiment Analysis: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 6920,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_8c05eab92e",
+      "target": "node_2f05385cde",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_faeeb58642",
+      "target": "node_b6f2ffa6cf",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_faeeb58642",
+      "target": "node_b6f2ffa6cf",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_604d141efc",
+      "target": "node_29f6e4938f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_604d141efc",
+      "target": "node_29f6e4938f",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_c6139854d0",
+      "target": "node_4929800726",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_955e235cfd",
+      "target": "node_153abe240f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_41f7a89a78",
+      "target": "node_cf228e4976",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_41f7a89a78",
+      "target": "node_cf228e4976",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cf228e4976",
+      "target": "node_99263ecafc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_cf228e4976",
+      "target": "node_99263ecafc",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_41f7a89a78",
+      "target": "node_ed3c170aac",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_99263ecafc",
+      "target": "node_ed3c170aac",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ed3c170aac",
+      "target": "node_0037a6e67a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_ed3c170aac",
+      "target": "node_0037a6e67a",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_41f7a89a78",
+      "target": "node_88306f9d10",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0037a6e67a",
+      "target": "node_88306f9d10",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_88306f9d10",
+      "target": "node_b45918047e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_88306f9d10",
+      "target": "node_b45918047e",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_8369cb5fa2",
+      "target": "node_a8a035546d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_8369cb5fa2",
+      "target": "node_a8a035546d",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_c3a21b6e29",
+      "target": "node_d4c56be55c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c3a21b6e29",
+      "target": "node_d4c56be55c",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_29f6e4938f",
+      "target": "node_78292122f0",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_9c37657c29",
+      "target": "node_243d09e6bb",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d4c56be55c",
+      "target": "node_faeeb58642",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d4c56be55c",
+      "target": "node_faeeb58642",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_243d09e6bb",
+      "target": "node_ad93652d0a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_ad93652d0a",
+      "target": "node_8c05eab92e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ad93652d0a",
+      "target": "node_8c05eab92e",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2f05385cde",
+      "target": "node_c3a21b6e29",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2f05385cde",
+      "target": "node_c3a21b6e29",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_51a799c483",
+      "target": "node_604d141efc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_51a799c483",
+      "target": "node_604d141efc",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b6f2ffa6cf",
+      "target": "node_51a799c483",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_78292122f0",
+      "target": "node_c6139854d0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_78292122f0",
+      "target": "node_c6139854d0",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4929800726",
+      "target": "node_955e235cfd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4929800726",
+      "target": "node_955e235cfd",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_99263ecafc",
+      "target": "node_8369cb5fa2",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_153abe240f",
+      "target": "node_8369cb5fa2",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0037a6e67a",
+      "target": "node_8369cb5fa2",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b45918047e",
+      "target": "node_8369cb5fa2",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a8a035546d",
+      "target": "node_4eb660a25e",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_843dda04ea",
+      "target": "node_2f05385cde",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_9ebb2c951e",
+      "target": "node_4929800726",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_4c2ab7d0d9",
+      "target": "node_153abe240f",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_5d9d7864e0",
+      "target": "node_41f7a89a78",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_153abe240f",
+      "target": "node_41f7a89a78",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "ai-research-and-data",
+    "categoryLabel": "AI Research, RAG and Data Analysis",
+    "department": "Marketing, Data Analysis",
+    "connectors": [
+      "deepseek",
+      "googlesuper",
+      "openai"
+    ],
+    "setupVars": [
+      {
+        "key": "spreadsheetId",
+        "label": "Spreadsheet id",
+        "type": "id",
+        "example": "1AbC...xyz",
+        "usedBy": [
+          "Get Google Sheets",
+          "Get rows",
+          "Update sheet"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 16,
+      "yantraSteps": 30,
+      "foldedHelpers": [
+        "DeepSeek Chat Model",
+        "OpenAI Chat Model"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "AI_Research_RAG_and_Data_Analysis/Scrape Trustpilot Reviews with DeepSeek, Analyze Sentiment with OpenAI.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Scrape Trustpilot Reviews with DeepSeek, Analyze Sentiment with OpenAI"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Setup value spreadsheetId: Spreadsheet id (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
+      "Connect the deepseek connector (credential).",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Extract",
+          "n8n": "html.extractHtmlContent",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Get Google Sheets",
+          "n8n": "sheet.appendOrUpdate",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Extract review",
+          "n8n": "html.extractHtmlContent",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Update sheet",
+          "n8n": "sheet.appendOrUpdate",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "DeepSeek Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Information Extractor",
+          "model": "deepseek-reasoner"
+        },
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Sentiment Analysis"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Extract\" (html.extractHtmlContent): CSS selectors become a structured-output LLM extract; verify results on a real page.",
+        "\"Extract\" extracted HTML with CSS selectors; on Yantra a structured-output step reads the page instead. Check the result on a real page, and trim very large pages before this step.",
+        "\"Get Google Sheets\" (sheet.appendOrUpdate): Sheets upsert without a match key → APPEND only (soft).",
+        "\"Extract review\" (html.extractHtmlContent): CSS selectors become a structured-output LLM extract; verify results on a real page.",
+        "\"Extract review\" extracted HTML with CSS selectors; on Yantra a structured-output step reads the page instead. Check the result on a real page, and trim very large pages before this step.",
+        "\"Update sheet\" (sheet.appendOrUpdate): Sheets upsert without a match key → APPEND only (soft).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "Change to the name of the company registered on Trustpilot and the maximum number of pages to scrape",
+      "Extract all information with DeepSeek (remember to change base_url with https://api.deepseek.com/v1)",
+      "Check if the review has already been saved to Google Drive",
+      "Analyze review sentiment"
+    ],
+    "nodes": {
+      "node_9c37657c29": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_243d09e6bb": {
+        "n8n": "Set Parameters",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_ad93652d0a": {
+        "n8n": "Get reviews",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_2f05385cde": {
+        "n8n": "Extract",
+        "n8nType": "n8n-nodes-base.html"
+      },
+      "node_8c05eab92e": {
+        "n8n": "Extract",
+        "n8nType": "n8n-nodes-base.html"
+      },
+      "node_c3a21b6e29": {
+        "n8n": "Split Out",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_d4c56be55c": {
+        "n8n": "Limit1",
+        "n8nType": "n8n-nodes-base.limit"
+      },
+      "node_faeeb58642": {
+        "n8n": "Get Google Sheets",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_b6f2ffa6cf": {
+        "n8n": "Get Google Sheets",
+        "n8nType": "n8n-nodes-base.googleSheets",
+        "approximate": true
+      },
+      "node_51a799c483": {
+        "n8n": "Get rows",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_604d141efc": {
+        "n8n": "If",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_29f6e4938f": {
+        "n8n": "If",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_78292122f0": {
+        "n8n": "Get Single review",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_4929800726": {
+        "n8n": "Extract review",
+        "n8nType": "n8n-nodes-base.html"
+      },
+      "node_c6139854d0": {
+        "n8n": "Extract review",
+        "n8nType": "n8n-nodes-base.html"
+      },
+      "node_153abe240f": {
+        "n8n": "Information Extractor",
+        "n8nType": "@n8n/n8n-nodes-langchain.informationExtractor"
+      },
+      "node_955e235cfd": {
+        "n8n": "Information Extractor",
+        "n8nType": "@n8n/n8n-nodes-langchain.informationExtractor"
+      },
+      "node_41f7a89a78": {
+        "n8n": "Sentiment Analysis",
+        "n8nType": "@n8n/n8n-nodes-langchain.sentimentAnalysis"
+      },
+      "node_cf228e4976": {
+        "n8n": "Sentiment Analysis",
+        "n8nType": "@n8n/n8n-nodes-langchain.sentimentAnalysis"
+      },
+      "node_99263ecafc": {
+        "n8n": "Sentiment Analysis",
+        "n8nType": "@n8n/n8n-nodes-langchain.sentimentAnalysis"
+      },
+      "node_ed3c170aac": {
+        "n8n": "Sentiment Analysis",
+        "n8nType": "@n8n/n8n-nodes-langchain.sentimentAnalysis"
+      },
+      "node_0037a6e67a": {
+        "n8n": "Sentiment Analysis",
+        "n8nType": "@n8n/n8n-nodes-langchain.sentimentAnalysis"
+      },
+      "node_88306f9d10": {
+        "n8n": "Sentiment Analysis",
+        "n8nType": "@n8n/n8n-nodes-langchain.sentimentAnalysis"
+      },
+      "node_b45918047e": {
+        "n8n": "Sentiment Analysis",
+        "n8nType": "@n8n/n8n-nodes-langchain.sentimentAnalysis"
+      },
+      "node_8369cb5fa2": {
+        "n8n": "Update sheet",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_a8a035546d": {
+        "n8n": "Update sheet",
+        "n8nType": "n8n-nodes-base.googleSheets",
+        "approximate": true
+      },
+      "node_4eb660a25e": {
+        "n8n": "__end:Update sheet",
+        "n8nType": "synthetic"
+      },
+      "node_ed93bbee61": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_843dda04ea": {
+        "n8n": "Extract",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_9ebb2c951e": {
+        "n8n": "Extract review",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_4c2ab7d0d9": {
+        "n8n": "Information Extractor",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_5d9d7864e0": {
+        "n8n": "Sentiment Analysis",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

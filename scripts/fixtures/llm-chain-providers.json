@@ -1,0 +1,24 @@
+{
+  "name": "fixture-llm-chain-providers",
+  "nodes": [
+    { "name": "Start", "type": "n8n-nodes-base.manualTrigger", "parameters": {}, "position": [0, 0] },
+    { "name": "Gemini Chain", "type": "@n8n/n8n-nodes-langchain.chainLlm", "parameters": { "promptType": "define", "text": "List two cities" }, "position": [200, 0] },
+    { "name": "Gemini Model", "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini", "parameters": { "modelName": "models/gemini-2.0-flash" }, "position": [200, 200] },
+    { "name": "Router Chain", "type": "@n8n/n8n-nodes-langchain.chainLlm", "parameters": { "promptType": "define", "text": "Name a city" }, "position": [400, 0] },
+    { "name": "Router Model", "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter", "parameters": { "model": "google/gemini-2.0-flash-001" }, "position": [400, 200] },
+    { "name": "Ollama Chain", "type": "@n8n/n8n-nodes-langchain.chainLlm", "parameters": { "promptType": "define", "text": "={{ $json.text }}", "hasOutputParser": true }, "position": [600, 0] },
+    { "name": "Ollama Model", "type": "@n8n/n8n-nodes-langchain.lmChatOllama", "parameters": { "model": "mistral-nemo:latest" }, "position": [600, 200] },
+    { "name": "Parser", "type": "@n8n/n8n-nodes-langchain.outputParserStructured", "parameters": { "schemaType": "manual", "inputSchema": "{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"name\":\"string\"},\"required\":[\"name\"]}}" }, "position": [600, 400] },
+    { "name": "Count", "type": "n8n-nodes-base.code", "parameters": { "jsCode": "return [{json: {count: $input.all().length}}];" }, "position": [800, 0] }
+  ],
+  "connections": {
+    "Start": { "main": [[{ "node": "Gemini Chain", "type": "main", "index": 0 }]] },
+    "Gemini Chain": { "main": [[{ "node": "Router Chain", "type": "main", "index": 0 }]] },
+    "Router Chain": { "main": [[{ "node": "Ollama Chain", "type": "main", "index": 0 }]] },
+    "Ollama Chain": { "main": [[{ "node": "Count", "type": "main", "index": 0 }]] },
+    "Gemini Model": { "ai_languageModel": [[{ "node": "Gemini Chain", "type": "ai_languageModel", "index": 0 }]] },
+    "Router Model": { "ai_languageModel": [[{ "node": "Router Chain", "type": "ai_languageModel", "index": 0 }]] },
+    "Ollama Model": { "ai_languageModel": [[{ "node": "Ollama Chain", "type": "ai_languageModel", "index": 0 }]] },
+    "Parser": { "ai_outputParser": [[{ "node": "Ollama Chain", "type": "ai_outputParser", "index": 0 }]] }
+  }
+}

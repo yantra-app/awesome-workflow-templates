@@ -1,0 +1,1058 @@
+{
+  "name": "Upload to Instagram and Tiktok from Google Drive",
+  "workflowSlug": "upload-to-instagram-and-tiktok-from-google-drive",
+  "description": "Automates uploading media from Google Drive directly to Instagram and TikTok, streamlining social media content publishing.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_d9f2af5404",
+      "actorId": "actor_d9f2af5404",
+      "type": "NodeCdeWebhookTrigger",
+      "label": "Webhook: googlesuper/GOOGLESUPER_FILE_CREATED_TRIGGER",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "connector": "googlesuper",
+        "webhookEndpointId": "",
+        "triggerSlug": "GOOGLESUPER_FILE_CREATED_TRIGGER",
+        "connectedAccountId": "",
+        "config": {},
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "nodeId": "node_6b96f0f22f",
+      "actorId": "actor_6b96f0f22f",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_21aa360049",
+      "actorId": "actor_21aa360049",
+      "type": "NodeTransform",
+      "label": "Params: Google Drive",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for googlesuper/GOOGLESUPER_DOWNLOAD_FILE (n8n node \"Google Drive\").\nreturn {\n  \"file_id\": ($json.id || $json.data[0].id),\n};"
+      }
+    },
+    {
+      "nodeId": "node_acd5fec13f",
+      "actorId": "actor_acd5fec13f",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_DOWNLOAD_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive",
+        "action": "GOOGLESUPER_DOWNLOAD_FILE"
+      }
+    },
+    {
+      "nodeId": "node_ef57774ae4",
+      "actorId": "actor_ef57774ae4",
+      "type": "NodeTransform",
+      "label": "If: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((!String(($json.trigger.error.message) ?? '').includes(String(\"The DNS server returned an error, perhaps the server is offline\" ?? ''))));"
+      }
+    },
+    {
+      "nodeId": "node_fa70a5c182",
+      "actorId": "actor_fa70a5c182",
+      "type": "NodeBranch",
+      "label": "If: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_1e74f171ac",
+      "actorId": "actor_1e74f171ac",
+      "type": "NodeTransform",
+      "label": "Read video from Google Drive",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Write file: emit a Yantra file object (no host filesystem).\nconst __file = typeof source === 'string' ? source : source?.data ?? source?.content ?? source?.body ?? source;\nconst __text = typeof __file === 'string' ? __file : JSON.stringify(__file ?? '');\nreturn { data: __text, fileName: \"={{ $json.originalFilename.replaceAll(\\\" \\\", \\\"_\\\") }}\", mimeType: 'application/octet-stream' };"
+      }
+    },
+    {
+      "nodeId": "node_bcd0962309",
+      "actorId": "actor_bcd0962309",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_SEND_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_SEND_MESSAGE",
+        "params": {
+          "chat_id": "{{telegramChatId}}",
+          "text": "🔔 ERROR SUBIENDO VIDEOS"
+        }
+      }
+    },
+    {
+      "nodeId": "node_9c6646d34e",
+      "actorId": "actor_9c6646d34e",
+      "type": "NodeTransform",
+      "label": "Params: Get Audio from Video",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The upstream file as { contentBase64 | fileUrl, filename, mimeType }: n8n binary data travels as base64 bytes or a file URL on Yantra.\nconst __b64 = (t) => { const b = new TextEncoder().encode(String(t)); let s = ''; for (let i = 0; i < b.length; i += 1) s += String.fromCharCode(b[i]); return btoa(s); };\nconst __fileRef = (v, prop) => {\n  const s = (x) => (typeof x === 'string' && x !== '' ? x : undefined);\n  let r = Array.isArray(v) ? v[0] : v;\n  const bin = r && typeof r === 'object' && r.binary && typeof r.binary === 'object' ? r.binary[prop] ?? Object.values(r.binary)[0] : undefined;\n  if (bin && s(bin.data)) return { contentBase64: bin.data, filename: s(r.filename) ?? s(bin.fileName) ?? 'file', mimeType: s(bin.mimeType) };\n  if (r && typeof r === 'object' && r.data && typeof r.data === 'object' && !Array.isArray(r.data)) r = { ...r, ...r.data };\n  const dl = r?.downloaded_file_content ?? r?.file;\n  const filename = s(r?.filename) ?? s(r?.fileName) ?? s(dl?.name) ?? s(r?.name) ?? 'file';\n  const mimeType = s(r?.mimeType) ?? s(r?.contentType) ?? s(dl?.mimetype) ?? s(r?.mimetype);\n  if (s(r?.bodyBase64)) return { contentBase64: r.bodyBase64, filename, mimeType };\n  const url = s(dl?.s3url) ?? s(r?.s3url) ?? s(r?.fileUrl) ?? s(r?.imageUrl) ?? s(r?.imageUrls?.[0]) ?? s(r?.audioUrl) ?? s(r?.videoUrl) ?? s(r?.secure_url);\n  if (url) return { fileUrl: url, filename, mimeType };\n  if (s(r?.data)) return { contentBase64: r.encoding !== 'base64' && /^(?:text\\/|application\\/(?:json|xml|javascript|x-tex))|\\+(?:xml|json)$/.test(mimeType ?? '') ? __b64(r.data) : r.data, filename, mimeType };\n  throw new Error('No file on the upstream step: expected file bytes (base64) or a file URL.');\n};\n// Params for yantra-voicebox/YANTRA_VOICEBOX_TRANSCRIBE (n8n node \"Get Audio from Video\").\nreturn (() => { const __f = __fileRef({{steps.GOOGLESUPER_DOWNLOAD_FILE.result}}, \"data\"); if (__f.fileUrl === undefined) throw new Error(\"expected a file URL from Google Drive\"); return { \"audioUrl\": __f.fileUrl }; })();"
+      }
+    },
+    {
+      "nodeId": "node_e8fd5b4895",
+      "actorId": "actor_e8fd5b4895",
+      "type": "NodeCdeConnector",
+      "label": "yantra-voicebox/YANTRA_VOICEBOX_TRANSCRIBE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-voicebox",
+        "connectorLabel": "Audio",
+        "action": "YANTRA_VOICEBOX_TRANSCRIBE"
+      }
+    },
+    {
+      "nodeId": "node_d0790520f0",
+      "actorId": "actor_d0790520f0",
+      "type": "NodeLlmChain",
+      "label": "Generate Description for Videos in Tiktok and Instagram",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "You are an expert assistant in creating engaging social media video titles.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_f5bbb31724",
+      "actorId": "actor_f5bbb31724",
+      "type": "NodeTransform",
+      "label": "Prompt: Generate Description for Videos in Tiktok and Instag",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Google Drive Trigger\": __namedCtx.steps?.[\"Webhook: googlesuper/GOOGLESUPER_FILE_CREATED_TRIGGER\"]?.[\"payload\"], \"Error Trigger\": {{ctx}}, \"Google Drive\": __namedCtx.steps?.[\"GOOGLESUPER_DOWNLOAD_FILE\"]?.[\"result\"], \"Read video from Google Drive\": __namedCtx.steps?.[\"Read video from Google Drive\"]?.[\"transformed\"], \"Telegram\": __namedCtx.steps?.[\"TELEGRAM_SEND_MESSAGE\"]?.[\"result\"], \"Get Audio from Video\": __namedCtx.steps?.[\"YANTRA_VOICEBOX_TRANSCRIBE\"]?.[\"result\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Generate Description for Videos in Tiktok and Instagram.\nconst __promptValue = `I'm going to upload a video to social media. Here are some examples of descriptions that have worked well on Instagram:\n\nFollow and save for later. Discover InfluencersDe, the AI tool that automates TikTok creation and publishing to drive traffic to your website. Perfect for entrepreneurs and brands.\n#digitalmarketing #ugc #tiktok #ai #influencersde #contentcreation\n\nDiscover the video marketing revolution with InfluencersDe!\n.\n.\n.\n#socialmedia #videomarketing #ai #tiktok #influencersde #growthhacking\n\nDon't miss InfluencersDe, the tool that transforms your marketing strategy with just one click!\n.\n.\n.\n#ugc #ai #tiktok #digitalmarketing #influencersde #branding\n\nCan you create another title for the Instagram post based on this recognized audio from the video?\n\nAudio: ${$('Get Audio from Video').item.json.text}\n\nIMPORTANT: Reply only with the description, don't add anything else.`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_470cb94e74",
+      "actorId": "actor_470cb94e74",
+      "type": "NodeTransform",
+      "label": "Read Video from Google Drive",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Error Trigger\": {{ctx}}, \"Google Drive\": {{steps.GOOGLESUPER_DOWNLOAD_FILE.result}}, \"Read video from Google Drive\": {{steps.xf_1e74f171ac.result}}, \"Telegram\": {{steps.TELEGRAM_SEND_MESSAGE.result}}, \"Get Audio from Video\": {{steps.YANTRA_VOICEBOX_TRANSCRIBE.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Read file: expect file content on the previous step (text or base64).\nconst __file = typeof source === 'string' ? source : source?.data ?? source?.content ?? source?.body ?? source;\nconst __text = typeof __file === 'string' ? __file : JSON.stringify(__file ?? '');\nreturn { data: __text, fileName: \"={{ $('Read video from Google Drive').item.json.originalFilename.replaceAll(\\\" \\\", \\\"_\\\") }}\", mimeType: 'application/octet-stream' };"
+      }
+    },
+    {
+      "nodeId": "node_552f15c20b",
+      "actorId": "actor_552f15c20b",
+      "type": "NodeTransform",
+      "label": "Read Video from Google Drive2",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Error Trigger\": {{ctx}}, \"Google Drive\": {{steps.GOOGLESUPER_DOWNLOAD_FILE.result}}, \"Read video from Google Drive\": {{steps.xf_1e74f171ac.result}}, \"Telegram\": {{steps.TELEGRAM_SEND_MESSAGE.result}}, \"Get Audio from Video\": {{steps.YANTRA_VOICEBOX_TRANSCRIBE.result}}, \"Read Video from Google Drive\": {{steps.xf_470cb94e74.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Read file: expect file content on the previous step (text or base64).\nconst __file = typeof source === 'string' ? source : source?.data ?? source?.content ?? source?.body ?? source;\nconst __text = typeof __file === 'string' ? __file : JSON.stringify(__file ?? '');\nreturn { data: __text, fileName: \"={{ $('Read video from Google Drive').item.json.originalFilename.replaceAll(\\\" \\\", \\\"_\\\") }}\", mimeType: 'application/octet-stream' };"
+      }
+    },
+    {
+      "nodeId": "node_d7e4c422ca",
+      "actorId": "actor_d7e4c422ca",
+      "type": "NodeTransform",
+      "label": "Params: Upload Video and Description to Tiktok",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Error Trigger\": {{ctx}}, \"Google Drive\": {{steps.GOOGLESUPER_DOWNLOAD_FILE.result}}, \"Read video from Google Drive\": {{steps.xf_1e74f171ac.result}}, \"Telegram\": {{steps.TELEGRAM_SEND_MESSAGE.result}}, \"Get Audio from Video\": {{steps.YANTRA_VOICEBOX_TRANSCRIBE.result}}, \"Read Video from Google Drive\": {{steps.xf_470cb94e74.result}}, \"Read Video from Google Drive2\": {{steps.xf_552f15c20b.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// The upstream file as { contentBase64 | fileUrl, filename, mimeType }: n8n binary data travels as base64 bytes or a file URL on Yantra.\nconst __b64 = (t) => { const b = new TextEncoder().encode(String(t)); let s = ''; for (let i = 0; i < b.length; i += 1) s += String.fromCharCode(b[i]); return btoa(s); };\nconst __fileRef = (v, prop) => {\n  const s = (x) => (typeof x === 'string' && x !== '' ? x : undefined);\n  let r = Array.isArray(v) ? v[0] : v;\n  const bin = r && typeof r === 'object' && r.binary && typeof r.binary === 'object' ? r.binary[prop] ?? Object.values(r.binary)[0] : undefined;\n  if (bin && s(bin.data)) return { contentBase64: bin.data, filename: s(r.filename) ?? s(bin.fileName) ?? 'file', mimeType: s(bin.mimeType) };\n  if (r && typeof r === 'object' && r.data && typeof r.data === 'object' && !Array.isArray(r.data)) r = { ...r, ...r.data };\n  const dl = r?.downloaded_file_content ?? r?.file;\n  const filename = s(r?.filename) ?? s(r?.fileName) ?? s(dl?.name) ?? s(r?.name) ?? 'file';\n  const mimeType = s(r?.mimeType) ?? s(r?.contentType) ?? s(dl?.mimetype) ?? s(r?.mimetype);\n  if (s(r?.bodyBase64)) return { contentBase64: r.bodyBase64, filename, mimeType };\n  const url = s(dl?.s3url) ?? s(r?.s3url) ?? s(r?.fileUrl) ?? s(r?.imageUrl) ?? s(r?.imageUrls?.[0]) ?? s(r?.audioUrl) ?? s(r?.videoUrl) ?? s(r?.secure_url);\n  if (url) return { fileUrl: url, filename, mimeType };\n  if (s(r?.data)) return { contentBase64: r.encoding !== 'base64' && /^(?:text\\/|application\\/(?:json|xml|javascript|x-tex))|\\+(?:xml|json)$/.test(mimeType ?? '') ? __b64(r.data) : r.data, filename, mimeType };\n  throw new Error('No file on the upstream step: expected file bytes (base64) or a file URL.');\n};\n// Params for yantra-storage/YANTRA_STORAGE_HTTP_SEND (n8n node \"Upload Video and Description to Tiktok\").\nreturn { \"url\": \"https://api.upload-post.com/api/upload\", \"method\": \"POST\", \"headers\": { \"Authorization\": \"{{uploadPostApiKey}}\" }, \"bodyType\": \"multipart\", \"fields\": { \"title\": ($('Generate Description for Videos in Tiktok and Instagram').item.json.message.content.replaceAll(\"\\\"\", \"\")), \"platform[]\": \"tiktok\", \"user\": \"Add user generated in upload-post\" }, \"files\": [{ \"field\": \"video\", ...__fileRef({{steps.GOOGLESUPER_DOWNLOAD_FILE.result}}, \"datavideo\") }], \"responseType\": \"auto\" };"
+      }
+    },
+    {
+      "nodeId": "node_56aec4aee0",
+      "actorId": "actor_56aec4aee0",
+      "type": "NodeCdeConnector",
+      "label": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-storage",
+        "connectorLabel": "Yantra storage",
+        "action": "YANTRA_STORAGE_HTTP_SEND"
+      }
+    },
+    {
+      "nodeId": "node_59288bb3fa",
+      "actorId": "actor_59288bb3fa",
+      "type": "NodeTransform",
+      "label": "Upload Video and Description to Tiktok: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The response the way the n8n HTTP node handed it on: the parsed body; a file body is { bodyBase64, filename, mimeType }.\nconst __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' && 'status' in source.data ? source.data : source;\nconst __body = __r?.bodyBase64 !== undefined ? { bodyBase64: __r.bodyBase64, filename: __r.filename, mimeType: __r.contentType, bytes: __r.bytes } : __r?.bodyJson !== undefined ? __r.bodyJson : __r?.bodyText;\nreturn __body;"
+      }
+    },
+    {
+      "nodeId": "node_eba8432eb3",
+      "actorId": "actor_eba8432eb3",
+      "type": "NodeTransform",
+      "label": "Params: Upload Video and Description to Instagram",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Error Trigger\": {{ctx}}, \"Google Drive\": {{steps.GOOGLESUPER_DOWNLOAD_FILE.result}}, \"Read video from Google Drive\": {{steps.xf_1e74f171ac.result}}, \"Telegram\": {{steps.TELEGRAM_SEND_MESSAGE.result}}, \"Get Audio from Video\": {{steps.YANTRA_VOICEBOX_TRANSCRIBE.result}}, \"Read Video from Google Drive\": {{steps.xf_470cb94e74.result}}, \"Read Video from Google Drive2\": {{steps.xf_552f15c20b.result}}, \"Upload Video and Description to Tiktok\": {{steps.xf_59288bb3fa.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// The upstream file as { contentBase64 | fileUrl, filename, mimeType }: n8n binary data travels as base64 bytes or a file URL on Yantra.\nconst __b64 = (t) => { const b = new TextEncoder().encode(String(t)); let s = ''; for (let i = 0; i < b.length; i += 1) s += String.fromCharCode(b[i]); return btoa(s); };\nconst __fileRef = (v, prop) => {\n  const s = (x) => (typeof x === 'string' && x !== '' ? x : undefined);\n  let r = Array.isArray(v) ? v[0] : v;\n  const bin = r && typeof r === 'object' && r.binary && typeof r.binary === 'object' ? r.binary[prop] ?? Object.values(r.binary)[0] : undefined;\n  if (bin && s(bin.data)) return { contentBase64: bin.data, filename: s(r.filename) ?? s(bin.fileName) ?? 'file', mimeType: s(bin.mimeType) };\n  if (r && typeof r === 'object' && r.data && typeof r.data === 'object' && !Array.isArray(r.data)) r = { ...r, ...r.data };\n  const dl = r?.downloaded_file_content ?? r?.file;\n  const filename = s(r?.filename) ?? s(r?.fileName) ?? s(dl?.name) ?? s(r?.name) ?? 'file';\n  const mimeType = s(r?.mimeType) ?? s(r?.contentType) ?? s(dl?.mimetype) ?? s(r?.mimetype);\n  if (s(r?.bodyBase64)) return { contentBase64: r.bodyBase64, filename, mimeType };\n  const url = s(dl?.s3url) ?? s(r?.s3url) ?? s(r?.fileUrl) ?? s(r?.imageUrl) ?? s(r?.imageUrls?.[0]) ?? s(r?.audioUrl) ?? s(r?.videoUrl) ?? s(r?.secure_url);\n  if (url) return { fileUrl: url, filename, mimeType };\n  if (s(r?.data)) return { contentBase64: r.encoding !== 'base64' && /^(?:text\\/|application\\/(?:json|xml|javascript|x-tex))|\\+(?:xml|json)$/.test(mimeType ?? '') ? __b64(r.data) : r.data, filename, mimeType };\n  throw new Error('No file on the upstream step: expected file bytes (base64) or a file URL.');\n};\n// Params for yantra-storage/YANTRA_STORAGE_HTTP_SEND (n8n node \"Upload Video and Description to Instagram\").\nreturn { \"url\": \"https://api.upload-post.com/api/upload\", \"method\": \"POST\", \"headers\": { \"Authorization\": \"{{uploadPostApiKey}}\" }, \"bodyType\": \"multipart\", \"fields\": { \"title\": ($('Generate Description for Videos in Tiktok and Instagram').item.json.message.content.replaceAll(\"\\\"\", \"\")), \"platform[]\": \"instagram\", \"user\": \"Add user generated in upload-post\" }, \"files\": [{ \"field\": \"video\", ...__fileRef({{steps.GOOGLESUPER_DOWNLOAD_FILE.result}}, \"datavideo\") }], \"responseType\": \"auto\" };"
+      }
+    },
+    {
+      "nodeId": "node_a3586e110d",
+      "actorId": "actor_a3586e110d",
+      "type": "NodeCdeConnector",
+      "label": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 3880,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-storage",
+        "connectorLabel": "Yantra storage",
+        "action": "YANTRA_STORAGE_HTTP_SEND"
+      }
+    },
+    {
+      "nodeId": "node_2315f7a924",
+      "actorId": "actor_2315f7a924",
+      "type": "NodeTransform",
+      "label": "Upload Video and Description to Instagram: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The response the way the n8n HTTP node handed it on: the parsed body; a file body is { bodyBase64, filename, mimeType }.\nconst __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' && 'status' in source.data ? source.data : source;\nconst __body = __r?.bodyBase64 !== undefined ? { bodyBase64: __r.bodyBase64, filename: __r.filename, mimeType: __r.contentType, bytes: __r.bytes } : __r?.bodyJson !== undefined ? __r.bodyJson : __r?.bodyText;\nreturn __body;"
+      }
+    },
+    {
+      "nodeId": "node_70b9209457",
+      "actorId": "actor_70b9209457",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_549e8dd9e8",
+      "actorId": "actor_549e8dd9e8",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_3189e1b331",
+      "actorId": "actor_3189e1b331",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_843fb5fc6e",
+      "actorId": "actor_843fb5fc6e",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "event": {},
+          "telegramChatId": "",
+          "uploadPostApiKey": {
+            "$workflowSecret": "UPLOAD_POST_API_KEY"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_70c55b622c",
+      "actorId": "actor_70c55b622c",
+      "type": "NodeChatModel",
+      "label": "Generate Description for Videos in Tiktok and Instagram: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2740,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_21aa360049",
+      "target": "node_acd5fec13f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_21aa360049",
+      "target": "node_acd5fec13f",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ef57774ae4",
+      "target": "node_fa70a5c182",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_ef57774ae4",
+      "target": "node_fa70a5c182",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_9c6646d34e",
+      "target": "node_e8fd5b4895",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_9c6646d34e",
+      "target": "node_e8fd5b4895",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_f5bbb31724",
+      "target": "node_d0790520f0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_d7e4c422ca",
+      "target": "node_56aec4aee0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d7e4c422ca",
+      "target": "node_56aec4aee0",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_56aec4aee0",
+      "target": "node_59288bb3fa",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_56aec4aee0",
+      "target": "node_59288bb3fa",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_eba8432eb3",
+      "target": "node_a3586e110d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_eba8432eb3",
+      "target": "node_a3586e110d",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_a3586e110d",
+      "target": "node_2315f7a924",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a3586e110d",
+      "target": "node_2315f7a924",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d9f2af5404",
+      "target": "node_21aa360049",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d9f2af5404",
+      "target": "node_21aa360049",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_acd5fec13f",
+      "target": "node_1e74f171ac",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_acd5fec13f",
+      "target": "node_1e74f171ac",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6b96f0f22f",
+      "target": "node_ef57774ae4",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fa70a5c182",
+      "target": "node_bcd0962309",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_e8fd5b4895",
+      "target": "node_f5bbb31724",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e8fd5b4895",
+      "target": "node_f5bbb31724",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1e74f171ac",
+      "target": "node_9c6646d34e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1e74f171ac",
+      "target": "node_9c6646d34e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d0790520f0",
+      "target": "node_470cb94e74",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d0790520f0",
+      "target": "node_470cb94e74",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d0790520f0",
+      "target": "node_552f15c20b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d0790520f0",
+      "target": "node_552f15c20b",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_470cb94e74",
+      "target": "node_d7e4c422ca",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_470cb94e74",
+      "target": "node_d7e4c422ca",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_552f15c20b",
+      "target": "node_eba8432eb3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_552f15c20b",
+      "target": "node_eba8432eb3",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bcd0962309",
+      "target": "node_70b9209457",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_59288bb3fa",
+      "target": "node_549e8dd9e8",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_2315f7a924",
+      "target": "node_3189e1b331",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_70c55b622c",
+      "target": "node_d0790520f0",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "google-drive-and-sheets",
+    "categoryLabel": "Google Drive and Google Sheets",
+    "department": "Marketing",
+    "connectors": [
+      "googlesuper",
+      "openai",
+      "telegram",
+      "yantra-storage",
+      "yantra-voicebox"
+    ],
+    "setupVars": [
+      {
+        "key": "telegramChatId",
+        "label": "Telegram chat id",
+        "type": "id",
+        "example": "123456789",
+        "usedBy": [
+          "Telegram"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "UPLOAD_POST_API_KEY",
+        "label": "api.upload-post.com API credential header value (for example \"Bearer <key>\"; rename the header if the API expects another one)",
+        "host": "api.upload-post.com",
+        "headerFormat": "Authorization: <secret>",
+        "contextKey": "uploadPostApiKey",
+        "usedBy": [
+          "Upload Video and Description to Instagram",
+          "Upload Video and Description to Tiktok"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeCdeWebhookTrigger",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 12,
+      "yantraSteps": 21,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Google_Drive_and_Google_Sheets/Upload to Instagram and Tiktok from Google Drive.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "template in store"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "webhook-registration",
+        "node": "Google Drive Trigger",
+        "detail": "webhook trigger googlesuper/GOOGLESUPER_FILE_CREATED_TRIGGER needs webhookEndpointId, connectedAccountId"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Error Trigger",
+        "detail": "n8n-nodes-base.errorTrigger became the Start node"
+      },
+      {
+        "code": "action-pending-publish",
+        "node": "Upload Video and Description to Instagram",
+        "detail": "yantra-storage/YANTRA_STORAGE_HTTP_SEND waits for the yantra-storage HTTP send and signatures patch (1.4.1) to be published"
+      },
+      {
+        "code": "action-pending-publish",
+        "node": "Upload Video and Description to Tiktok",
+        "detail": "yantra-storage/YANTRA_STORAGE_HTTP_SEND waits for the yantra-storage HTTP send and signatures patch (1.4.1) to be published"
+      }
+    ],
+    "setup": [
+      "\"Google Drive Trigger\": after import, register the googlesuper webhook (`cdecli webhook endpoint create -c googlesuper`, then `cdecli trigger instance upsert --slug GOOGLESUPER_FILE_CREATED_TRIGGER`) and set webhookEndpointId, connectedAccountId on the trigger node.",
+      "\"Error Trigger\" (errorTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Upload Video and Description to Instagram\": yantra-storage/YANTRA_STORAGE_HTTP_SEND comes from the yantra-storage HTTP send and signatures patch (1.4.1), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
+      "\"Upload Video and Description to Tiktok\": yantra-storage/YANTRA_STORAGE_HTTP_SEND comes from the yantra-storage HTTP send and signatures patch (1.4.1), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
+      "Setup value telegramChatId: Telegram chat id (for example 123456789). Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret UPLOAD_POST_API_KEY: api.upload-post.com API credential header value (for example \"Bearer <key>\"; rename the header if the API expects another one) for api.upload-post.com (Authorization: <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "Connect the telegram connector (credential).",
+      "Provide run inputs: event, $, $json."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Read video from Google Drive",
+          "n8n": "writeBinaryFile",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Get Audio from Video",
+          "n8n": "audio.transcribe",
+          "action": "yantra-voicebox/YANTRA_VOICEBOX_TRANSCRIBE",
+          "soft": true
+        },
+        {
+          "node": "Read Video from Google Drive",
+          "n8n": "readBinaryFile",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Read Video from Google Drive2",
+          "n8n": "readBinaryFile",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Upload Video and Description to Tiktok",
+          "n8n": "httpRequest.multipart-form-data",
+          "action": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+          "soft": true
+        },
+        {
+          "node": "Upload Video and Description to Instagram",
+          "n8n": "httpRequest.multipart-form-data",
+          "action": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Google Drive Trigger",
+          "type": "n8n-nodes-base.googleDriveTrigger",
+          "as": "NodeCdeWebhookTrigger"
+        },
+        {
+          "node": "Error Trigger",
+          "type": "n8n-nodes-base.errorTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Google Drive Trigger\" is a provider webhook (googlesuper/GOOGLESUPER_FILE_CREATED_TRIGGER). Create the endpoint and trigger instance, then paste the we_… id and connected account into this node before the first run: `cdecli webhook endpoint create -c googlesuper --client-id <id>`, `cdecli webhook endpoint set-data <we_id> --signing-secret <secret>`, `cdecli trigger instance upsert --slug GOOGLESUPER_FILE_CREATED_TRIGGER --account <connectedAccountId>`.",
+        "The original started from errorTrigger; Yantra has no webhook slug for it, so run on demand, on a schedule (add a NodeCron), or via the workflow API with the event under the run input `event`.",
+        "\"Read video from Google Drive\" (writeBinaryFile): Local filesystem / binary helpers become `{ data, fileName, mimeType }` fields on Yantra; there is no host disk.",
+        "\"Read video from Google Drive\": Yantra steps exchange file content as text or base64 fields, not paths on disk. Point this at the upstream file payload.",
+        "\"Get Audio from Video\" transcribes the audio from \"Google Drive\" with the platform Whisper; no OpenAI key needed.",
+        "\"Read Video from Google Drive\" (readBinaryFile): Local filesystem / binary helpers become `{ data, fileName, mimeType }` fields on Yantra; there is no host disk.",
+        "\"Read Video from Google Drive\": Yantra steps exchange file content as text or base64 fields, not paths on disk. Point this at the upstream file payload.",
+        "\"Read Video from Google Drive2\" (readBinaryFile): Local filesystem / binary helpers become `{ data, fileName, mimeType }` fields on Yantra; there is no host disk.",
+        "\"Read Video from Google Drive2\": Yantra steps exchange file content as text or base64 fields, not paths on disk. Point this at the upstream file payload.",
+        "\"Upload Video and Description to Tiktok\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Upload Video and Description to Tiktok\" sends its multipart-form-data body with yantra-storage HTTP_SEND (public https hosts only, 25 MB, 120 s); the file comes from \"Google Drive\".",
+        "\"Upload Video and Description to Instagram\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Upload Video and Description to Instagram\" sends its multipart-form-data body with yantra-storage HTTP_SEND (public https hosts only, 25 MB, 120 s); the file comes from \"Google Drive\".",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect telegram: `cdecli credential create -n \"telegram\" -p telegram --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Description\nThis automation allows you to upload a video to a configured Google Drive folder, and it will automatically create descriptions and upload it to Instagram and TikTok.\n\n## How to Use\n1. Generate an API token at upload-post.com and add to Upload to Tiktok and Upload to Instagram nodes\n2. Configure your Google Drive folder\n3. Customize the OpenAI prompt for your specific use case\n4. Optional: Configure Telegram for error notifications\n\n## Requirements\n- upload-post.com account\n- Google Drive account\n- OpenAI API key"
+    ],
+    "nodes": {
+      "node_d9f2af5404": {
+        "n8n": "Google Drive Trigger",
+        "n8nType": "n8n-nodes-base.googleDriveTrigger"
+      },
+      "node_6b96f0f22f": {
+        "n8n": "Error Trigger",
+        "n8nType": "n8n-nodes-base.errorTrigger"
+      },
+      "node_21aa360049": {
+        "n8n": "Google Drive",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_acd5fec13f": {
+        "n8n": "Google Drive",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_ef57774ae4": {
+        "n8n": "If",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_fa70a5c182": {
+        "n8n": "If",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_1e74f171ac": {
+        "n8n": "Read video from Google Drive",
+        "n8nType": "n8n-nodes-base.writeBinaryFile"
+      },
+      "node_bcd0962309": {
+        "n8n": "Telegram",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_9c6646d34e": {
+        "n8n": "Get Audio from Video",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_e8fd5b4895": {
+        "n8n": "Get Audio from Video",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_d0790520f0": {
+        "n8n": "Generate Description for Videos in Tiktok and Instagram",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_f5bbb31724": {
+        "n8n": "Generate Description for Videos in Tiktok and Instagram",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_470cb94e74": {
+        "n8n": "Read Video from Google Drive",
+        "n8nType": "n8n-nodes-base.readBinaryFile"
+      },
+      "node_552f15c20b": {
+        "n8n": "Read Video from Google Drive2",
+        "n8nType": "n8n-nodes-base.readBinaryFile"
+      },
+      "node_d7e4c422ca": {
+        "n8n": "Upload Video and Description to Tiktok",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_56aec4aee0": {
+        "n8n": "Upload Video and Description to Tiktok",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_59288bb3fa": {
+        "n8n": "Upload Video and Description to Tiktok",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_eba8432eb3": {
+        "n8n": "Upload Video and Description to Instagram",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_a3586e110d": {
+        "n8n": "Upload Video and Description to Instagram",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_2315f7a924": {
+        "n8n": "Upload Video and Description to Instagram",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_70b9209457": {
+        "n8n": "__end:Telegram",
+        "n8nType": "synthetic"
+      },
+      "node_549e8dd9e8": {
+        "n8n": "__end:Upload Video and Description to Tiktok",
+        "n8nType": "synthetic"
+      },
+      "node_3189e1b331": {
+        "n8n": "__end:Upload Video and Description to Instagram",
+        "n8nType": "synthetic"
+      },
+      "node_843fb5fc6e": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_70c55b622c": {
+        "n8n": "Generate Description for Videos in Tiktok and Instagram",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

@@ -1,0 +1,710 @@
+{
+  "name": "Convert URL HTML to Markdown Format and Get Page Links",
+  "workflowSlug": "convert-url-html-to-markdown-format-and-get-page-links",
+  "description": "This workflow converts HTML content from a given URL into Markdown format and extracts all page links, useful for content scraping and analysis.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_6e4f9ad8cb",
+      "actorId": "actor_6e4f9ad8cb",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_d7bef24252",
+      "actorId": "actor_d7bef24252",
+      "type": "NodeTransform",
+      "label": "Prepare page batches",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// Page URLs and processing limits come from Workflow Configs or run inputs.\nconst ctx = {{ctx}};\nconst pageLimit = Number(ctx.pageLimit);\nconst batchSize = Number(ctx.batchSize);\nif (!Number.isInteger(pageLimit) || pageLimit < 1) throw new Error('pageLimit must be a positive integer');\nif (!Number.isInteger(batchSize) || batchSize < 1) throw new Error('batchSize must be a positive integer');\n\nconst pages = Array.isArray(ctx.Page) ? ctx.Page : ctx.Page == null ? [] : [ctx.Page];\nconst items = pages.slice(0, pageLimit).map((page) => {\n  const item = page && typeof page === 'object' && !Array.isArray(page) ? page : { Page: page };\n  if (typeof item.Page !== 'string' || !item.Page.trim()) throw new Error('Each Page entry must contain a non-empty URL string');\n  return item;\n});\n\n// Each outer-loop item is a batch, including when batchSize is 1.\nconst batches = [];\nfor (let i = 0; i < items.length; i += batchSize) batches.push(items.slice(i, i + batchSize));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_41148d3a09",
+      "actorId": "actor_41148d3a09",
+      "type": "NodeLoop",
+      "label": "Process page batches",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_f0a0ffa9d6",
+      "actorId": "actor_f0a0ffa9d6",
+      "type": "NodeTransform",
+      "label": "Item: Page batch",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_090bea9800",
+      "actorId": "actor_090bea9800",
+      "type": "NodeTransform",
+      "label": "Results: Page batches",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_8852719091",
+      "actorId": "actor_8852719091",
+      "type": "NodeTransform",
+      "label": "Items: Each item: Retrieve Page Markdown and Links",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_0d374a02d8",
+      "actorId": "actor_0d374a02d8",
+      "type": "NodeLoop",
+      "label": "Each item: Retrieve Page Markdown and Links",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_13e46ae8e3",
+      "actorId": "actor_13e46ae8e3",
+      "type": "NodeTransform",
+      "label": "Item: Each item: Retrieve Page Markdown and Links",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_2fd28395e6",
+      "actorId": "actor_2fd28395e6",
+      "type": "NodeTransform",
+      "label": "Results: Each item: Retrieve Page Markdown and Links",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_1a693aa728",
+      "actorId": "actor_1a693aa728",
+      "type": "NodeTransform",
+      "label": "Params: Retrieve Page Markdown and Links",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for firecrawl/FIRECRAWL_SCRAPE (n8n node \"Retrieve Page Markdown and Links\").\nreturn (() => { const __p = (() => { const __v = `{\n \"url\": \"${$json.Page}\",\n \"formats\" : [\"markdown\", \"links\"]\n} `; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })(); return { ...__p, \"url\": __p.url }; })();"
+      }
+    },
+    {
+      "nodeId": "node_5b067d1fbd",
+      "actorId": "actor_5b067d1fbd",
+      "type": "NodeCdeConnector",
+      "label": "firecrawl/FIRECRAWL_SCRAPE",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "firecrawl",
+        "connectorLabel": "Firecrawl",
+        "action": "FIRECRAWL_SCRAPE"
+      }
+    },
+    {
+      "nodeId": "node_45ebc4feda",
+      "actorId": "actor_45ebc4feda",
+      "type": "NodeTransform",
+      "label": "Markdown data and Links",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"title\"] = ($json.data.metadata.title);\n  out[\"description\"] = ($json.data.metadata.description);\n  out[\"content\"] = ($json.data.markdown);\n  out[\"links\"] = `${$json.data.links} `;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_fafa8adaca",
+      "actorId": "actor_fafa8adaca",
+      "type": "NodeTransform",
+      "label": "Wait",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The original waited here (45 seconds).\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_6a9cd3b328",
+      "actorId": "actor_6a9cd3b328",
+      "type": "NodeTransform",
+      "label": "Return: Wait",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_6aedaf9f86",
+      "actorId": "actor_6aedaf9f86",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_bb27664f28",
+      "actorId": "actor_bb27664f28",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "Page": [
+            "https://www.n8n.io/",
+            "https://developer.mozilla.org/en-US/docs/Web/HTML",
+            "https://developer.mozilla.org/en-US/docs/Web/CSS"
+          ],
+          "pageLimit": 40,
+          "batchSize": 10
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_d7bef24252",
+      "target": "node_41148d3a09",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_d7bef24252",
+      "target": "node_41148d3a09",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_41148d3a09",
+      "target": "node_f0a0ffa9d6",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_41148d3a09",
+      "target": "node_f0a0ffa9d6",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_41148d3a09",
+      "target": "node_090bea9800",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_41148d3a09",
+      "target": "node_090bea9800",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8852719091",
+      "target": "node_0d374a02d8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_8852719091",
+      "target": "node_0d374a02d8",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_0d374a02d8",
+      "target": "node_13e46ae8e3",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0d374a02d8",
+      "target": "node_13e46ae8e3",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0d374a02d8",
+      "target": "node_2fd28395e6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0d374a02d8",
+      "target": "node_2fd28395e6",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1a693aa728",
+      "target": "node_5b067d1fbd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_1a693aa728",
+      "target": "node_5b067d1fbd",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_13e46ae8e3",
+      "target": "node_1a693aa728",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_13e46ae8e3",
+      "target": "node_1a693aa728",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5b067d1fbd",
+      "target": "node_0d374a02d8",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_5b067d1fbd",
+      "target": "node_0d374a02d8",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_f0a0ffa9d6",
+      "target": "node_8852719091",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f0a0ffa9d6",
+      "target": "node_8852719091",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_45ebc4feda",
+      "target": "node_fafa8adaca",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_45ebc4feda",
+      "target": "node_fafa8adaca",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2fd28395e6",
+      "target": "node_45ebc4feda",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2fd28395e6",
+      "target": "node_45ebc4feda",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fafa8adaca",
+      "target": "node_6a9cd3b328",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fafa8adaca",
+      "target": "node_6a9cd3b328",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6a9cd3b328",
+      "target": "node_41148d3a09",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_6a9cd3b328",
+      "target": "node_41148d3a09",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_090bea9800",
+      "target": "node_6aedaf9f86",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_6e4f9ad8cb",
+      "target": "node_d7bef24252",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "pdf-and-documents",
+    "categoryLabel": "PDF and Document Processing",
+    "department": "Marketing/Content",
+    "connectors": [
+      "firecrawl"
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeEnd",
+      "NodeLoop",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 10,
+      "yantraSteps": 14,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "PDF_and_Document_Processing/Convert URL HTML to Markdown Format and Get Page Links.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Connect the firecrawl connector (credential).",
+      "Provide run inputs: Page, pageLimit, batchSize."
+    ],
+    "conversion": {
+      "tool": "hand",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Wait",
+          "n8n": "wait",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "Example fields from data source",
+          "type": "n8n-nodes-base.set",
+          "into": "Workflow Configs",
+          "reason": "Page URLs are configurable initial context rather than hard-coded transform output"
+        },
+        {
+          "node": "Split out page URLs",
+          "type": "n8n-nodes-base.splitOut",
+          "into": "Prepare page batches",
+          "reason": "normalize Page URLs while preparing batches"
+        },
+        {
+          "node": "40 items at a time",
+          "type": "n8n-nodes-base.limit",
+          "into": "Prepare page batches",
+          "reason": "apply the configurable pageLimit before batching"
+        }
+      ],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "Process page batches uses NodeLoop: process each batch, return through NEXT, and continue only after all results are collected.",
+        "\"Each item: Retrieve Page Markdown and Links\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "\"Retrieve Page Markdown and Links\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Wait\" paused the original (45 seconds); Yantra has no delay node, so this step passes data straight through.",
+        "\"Wait\" (wait): Wait/delay is a soft passthrough; add a schedule or external delay if timing matters.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect firecrawl: `cdecli credential create -n \"firecrawl\" -p firecrawl --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Maintained directly in this template: the four input preparation transforms are consolidated into Workflow Configs and Prepare page batches.",
+        "Set Page (an array of URLs or objects with a Page URL), pageLimit (default 40), and batchSize (default 10) in Workflow Configs initialContext, or override them with run inputs. Prepare page batches applies the limit and emits arrays for the existing nested loops."
+      ]
+    },
+    "notes": [
+      "**40 at a time seems to be the memory limit on my server - run until complete with batches of 40 or increase based on your server memory**",
+      "**Firecrawl.dev retrieves markdown inc. title, description, links & content. First define the URLs you'd like to scrape**",
+      "**REQUIRED**\nConnect to your database of urls to input. Name the column `Page` like in the `Example fields from data source` node and make sure it has one link per row like `split out page urls`",
+      "**REQUIRED**\nUpdate the Auth parameter to your own [Firecrawl](https://firecrawl.dev) dev token\n\n**Header Auth parameter**\nname - Authorization\nvalue - your-own-api-key",
+      "**REQUIRED** \nOutput the data to your own data source e.g. Airtable",
+      "**Respect API limits (10 requests per min)**",
+      "## Convert URL HTML to Markdown and Get Page Links\n\n## Use Case\nTransform web pages into AI-friendly markdown format:\n- You need to process webpage content for LLM analysis\n- You want to extract both content and links from web pages\n- You need clean, formatted text without HTML markup\n- You want to respect API rate limits while crawling pages\n\n## What this Workflow Does\nThe workflow uses Firecrawl.dev API to process webpages:\n- Converts HTML content to markdown format\n- Extracts all links from each webpage\n- Handles API rate limiting automatically\n- Processes URLs in batches from your database\n\n## Setup\n1. Create a [Firecrawl.dev](https://www.firecrawl.dev/) account and get your API key\n2. Add your Firecrawl API key to the HTTP Request node's Authorization header\n3. Connect your URL database to the input node (column name must be \"Page\") or edit the array in `Example fields from data source`\n4. Configure your preferred output database connection\n\n## How to Adjust it to Your Needs\n- Modify input source to pull URLs from different databases\n- Adjust rate limiting parameters if needed\n- Customize output format for your specific use case\n\n\nMade by Simon @ [automake.io](https://automake.io)"
+    ],
+    "nodes": {
+      "node_6e4f9ad8cb": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_d7bef24252": {
+        "n8n": "10 at a time",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_41148d3a09": {
+        "n8n": "10 at a time",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_f0a0ffa9d6": {
+        "n8n": "10 at a time",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_090bea9800": {
+        "n8n": "10 at a time",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_8852719091": {
+        "n8n": "Each item: Retrieve Page Markdown and Links",
+        "n8nType": "synthetic"
+      },
+      "node_0d374a02d8": {
+        "n8n": "Each item: Retrieve Page Markdown and Links",
+        "n8nType": "synthetic"
+      },
+      "node_13e46ae8e3": {
+        "n8n": "Each item: Retrieve Page Markdown and Links",
+        "n8nType": "synthetic"
+      },
+      "node_2fd28395e6": {
+        "n8n": "Each item: Retrieve Page Markdown and Links",
+        "n8nType": "synthetic"
+      },
+      "node_1a693aa728": {
+        "n8n": "Retrieve Page Markdown and Links",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_5b067d1fbd": {
+        "n8n": "Retrieve Page Markdown and Links",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_45ebc4feda": {
+        "n8n": "Markdown data and Links",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_fafa8adaca": {
+        "n8n": "Wait",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_6a9cd3b328": {
+        "n8n": "Wait",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_6aedaf9f86": {
+        "n8n": "__end:10 at a time",
+        "n8nType": "synthetic"
+      },
+      "node_bb27664f28": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

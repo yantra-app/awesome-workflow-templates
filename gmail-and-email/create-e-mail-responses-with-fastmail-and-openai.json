@@ -1,0 +1,664 @@
+{
+  "name": "create e-mail responses with fastmail and OpenAI",
+  "workflowSlug": "create-e-mail-responses-with-fastmail-and-openai",
+  "description": "Converted from the n8n template \"create e-mail responses with fastmail and OpenAI\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_ed70961817",
+      "actorId": "actor_ed70961817",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_FETCH_EMAILS",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Mailbox (IMAP original)",
+        "action": "GOOGLESUPER_FETCH_EMAILS",
+        "params": {
+          "query": "is:unread",
+          "max_results": 20
+        }
+      }
+    },
+    {
+      "nodeId": "node_6bef63d1ad",
+      "actorId": "actor_6bef63d1ad",
+      "type": "NodeTransform",
+      "label": "Get fields from source email",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"textPlain\"] = ($json.textPlain);\n  out[\"from\"] = ($json.from);\n  out[\"subject\"] = ($json.subject);\n  out[\"metadata['message-id']\"] = ($json.metadata['message-id']);\n  out[\"metadata['reply-to']\"] = ($json.metadata['reply-to']);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_f1fed7cf56",
+      "actorId": "actor_f1fed7cf56",
+      "type": "NodeLlmChain",
+      "label": "OpenAI",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_f5620cb31f",
+      "actorId": "actor_f5620cb31f",
+      "type": "NodeTransform",
+      "label": "Prompt: OpenAI",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: OpenAI.\nconst __promptValue = `Please analyze the following personal email and draft a casual response based solely on its content. Return only the response text without any additional introductions or formatting. The response should include appropriate greetings (e.g., \"Hi\", \"Hallo\", \"Moin\" in German or \"Hi\", \"Hello\" in English) and sign-offs (e.g., \"Gruß\", \"Lieben Gruß\" in German or \"Regards\" in English). Add a thanks if appropriate. Use \"Du\" only if appropriate; if the email contains \"Sie\", maintain the same formality.\n\nSubject: ${$json.subject}\nEmail Content: ${$json.textPlain}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_a788db194a",
+      "actorId": "actor_a788db194a",
+      "type": "NodeHttpRequest",
+      "label": "Session",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://api.fastmail.com/jmap/session",
+        "headers": {
+          "Authorization": "Bearer {{fastmailToken}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_8b4c19bfa2",
+      "actorId": "actor_8b4c19bfa2",
+      "type": "NodeHttpRequest",
+      "label": "Get Mailbox IDs",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://api.fastmail.com/jmap/api/",
+        "headers": {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": "Bearer {{fastmailToken}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_60708fb515",
+      "actorId": "actor_60708fb515",
+      "type": "NodeTransform",
+      "label": "Body: Get Mailbox IDs",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Email Trigger (IMAP)\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Get fields from source email\": {{steps.xf_6bef63d1ad.result}}, \"Session\": {{steps.http_a788db194a.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Get Mailbox IDs\".\nconst __body = `{\n \"using\": [\"urn:ietf:params:jmap:core\", \"urn:ietf:params:jmap:mail\"],\n \"methodCalls\": [\n [\n \"Mailbox/get\",\n {\n \"accountId\": \"${$('Session').item.json.primaryAccounts['urn:ietf:params:jmap:mail']}\"\n },\n \"c0\"\n ]\n ]\n }`;\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_ca464a5edb",
+      "actorId": "actor_ca464a5edb",
+      "type": "NodeTransform",
+      "label": "Split Out",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"methodResponses[0][1].list\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"methodResponses[0][1].list\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"methodResponses[0][1].list\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_5b81663527",
+      "actorId": "actor_5b81663527",
+      "type": "NodeTransform",
+      "label": "Filter for drafts folder",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn __items.filter(($json) => Boolean((String(($json.role) ?? '') === String(\"drafts\" ?? ''))));"
+      }
+    },
+    {
+      "nodeId": "node_b70f33b321",
+      "actorId": "actor_b70f33b321",
+      "type": "NodeTransform",
+      "label": "gather data for draft email",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Email Trigger (IMAP)\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Get fields from source email\": {{steps.xf_6bef63d1ad.result}}, \"Session\": {{steps.http_a788db194a.result}}, \"Split Out\": {{steps.xf_ca464a5edb.result}}, \"Filter for drafts folder\": {{steps.xf_5b81663527.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __set = (o, p, v) => { const ks = String(p).split('.'); let c = o; for (const k of ks.slice(0, -1)) { if (c[k] == null || typeof c[k] !== 'object') c[k] = {}; c = c[k]; } c[ks[ks.length - 1]] = v; return o; };\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"draftsId\"] = ($json.id);\n  out[\"to-friendly\"] = ($('Get fields from source email').item.json.from.match(/[^<]+/)[0].trim().replaceAll(/\\\"/g, \"\"));\n  out[\"subject\"] = `Re: ${$('Get fields from source email').item.json.subject}`;\n  __set(out, \"message.content\", ($('OpenAI').item.json.message.content));\n  out[\"metadata['message-id']\"] = ($('Get fields from source email').item.json.metadata['message-id']);\n  out[\"to\"] = (\"«$('Get fields from source email').item.json.metadata['reply-to'].match(/<([^>]+)>/)[1] ?? $('Get fields from source emai»\");\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_436d94aca6",
+      "actorId": "actor_436d94aca6",
+      "type": "NodeHttpRequest",
+      "label": "upload draft email",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://api.fastmail.com/jmap/api/",
+        "headers": {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": "Bearer {{fastmailToken}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_e6db40679c",
+      "actorId": "actor_e6db40679c",
+      "type": "NodeTransform",
+      "label": "Body: upload draft email",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Email Trigger (IMAP)\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Get fields from source email\": {{steps.xf_6bef63d1ad.result}}, \"Session\": {{steps.http_a788db194a.result}}, \"Split Out\": {{steps.xf_ca464a5edb.result}}, \"Filter for drafts folder\": {{steps.xf_5b81663527.result}}, \"gather data for draft email\": {{steps.xf_b70f33b321.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"upload draft email\".\nconst __body = `{\n \"using\": [\"urn:ietf:params:jmap:core\", \"urn:ietf:params:jmap:mail\"],\n \"methodCalls\": [\n [\n \"Email/set\",\n {\n \"accountId\": \"${$('Session').item.json.primaryAccounts['urn:ietf:params:jmap:mail']}\",\n \"create\": {\n \"newDraft\": {\n \"mailboxIds\": {\n \"${$json.draftsId}\": true\n },\n \"keywords\": {\n \"$draft\": true\n },\n \"inReplyTo\": [\"${$json.metadata['message-id']}\"],\n \"references\": [\"${$json.metadata['message-id']}\"],\n \"from\": [{\n \"name\": \"\",\n \"email\": \"${$('Session').item.json.username}\"\n }],\n \"to\": [{\n \"name\": \"${$json['to-friendly']}\",\n \"email\": \"${$json.to}\"\n }],\n \"subject\": \"${$json.subject}\",\n \"bodyValues\": {\n \"textBody\": {\n \"value\": \"${$json.message.content.replace(/\\n/g, '\\\\n')}\"\n }\n },\n \"bodyStructure\": {\n \"partId\": \"textBody\"\n }\n }\n }\n },\n \"c1\"\n ]\n ]\n}`;\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_d6d7032a27",
+      "actorId": "actor_d6d7032a27",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_4b323f7e0c",
+      "actorId": "actor_4b323f7e0c",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f60f2aa135",
+      "actorId": "actor_f60f2aa135",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "fastmailToken": {
+            "$workflowSecret": "FASTMAIL_TOKEN"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_3740df98a0",
+      "actorId": "actor_3740df98a0",
+      "type": "NodeChatModel",
+      "label": "OpenAI: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1600,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_f5620cb31f",
+      "target": "node_f1fed7cf56",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_60708fb515",
+      "target": "node_8b4c19bfa2",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_60708fb515",
+      "target": "node_8b4c19bfa2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_e6db40679c",
+      "target": "node_436d94aca6",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_e6db40679c",
+      "target": "node_436d94aca6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_a788db194a",
+      "target": "node_60708fb515",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a788db194a",
+      "target": "node_60708fb515",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8b4c19bfa2",
+      "target": "node_ca464a5edb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8b4c19bfa2",
+      "target": "node_ca464a5edb",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ca464a5edb",
+      "target": "node_5b81663527",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ca464a5edb",
+      "target": "node_5b81663527",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ed70961817",
+      "target": "node_6bef63d1ad",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ed70961817",
+      "target": "node_6bef63d1ad",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6bef63d1ad",
+      "target": "node_f5620cb31f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6bef63d1ad",
+      "target": "node_f5620cb31f",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f1fed7cf56",
+      "target": "node_a788db194a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_5b81663527",
+      "target": "node_b70f33b321",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5b81663527",
+      "target": "node_b70f33b321",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b70f33b321",
+      "target": "node_e6db40679c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b70f33b321",
+      "target": "node_e6db40679c",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d6d7032a27",
+      "target": "node_ed70961817",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_436d94aca6",
+      "target": "node_4b323f7e0c",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_3740df98a0",
+      "target": "node_f1fed7cf56",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "gmail-and-email",
+    "categoryLabel": "Gmail and Email Automation",
+    "department": "",
+    "connectors": [
+      "googlesuper",
+      "openai"
+    ],
+    "setupSecrets": [
+      {
+        "key": "FASTMAIL_TOKEN",
+        "label": "Fastmail API token",
+        "host": "api.fastmail.com",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "fastmailToken",
+        "usedBy": [
+          "Get Mailbox IDs",
+          "Session",
+          "upload draft email"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 9,
+      "yantraSteps": 14,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Gmail_and_Email_Automation/create e-mail responses with fastmail and OpenAI.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Workflow secret FASTMAIL_TOKEN: Fastmail API token for api.fastmail.com (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Email Trigger (IMAP)",
+          "n8n": "email.read",
+          "action": "googlesuper/GOOGLESUPER_FETCH_EMAILS",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [],
+      "hints": [
+        "\"Email Trigger (IMAP)\": the original used Mailbox (IMAP original); check the mapped googlesuper/GOOGLESUPER_FETCH_EMAILS params before running.",
+        "\"Session\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Get Mailbox IDs\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"upload draft email\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Workflow Description:\nThis n8n workflow automates the drafting of email replies for Fastmail using OpenAI's GPT-4 model. Here’s the overall process:\n\n1. **Email Monitoring**: The workflow continuously monitors a specified IMAP inbox for new, unread emails.\n2. **Email Data Extraction**: When a new email is detected, it extracts relevant details such as the sender, subject, email body, and metadata.\n3. **AI Response Generation**: The extracted email content is sent to OpenAI's GPT-4, which generates a personalized draft response.\n4. **Get Fastmail Session and Mailbox IDs**: Connects to the Fastmail API to retrieve necessary session details and mailbox IDs.\n5. **Draft Identification**: Identifies the \"Drafts\" folder in the mailbox.\n6. **Draft Preparation**: Compiles all the necessary information to create the draft, including the generated response, original email details, and specified recipient.\n7. **Draft Uploading**: Uploads the prepared draft email to the \"Drafts\" folder in the Fastmail mailbox.",
+      "## Prerequisites:\n1. **IMAP Email Account**: You need to configure an IMAP email account in n8n to monitor incoming emails.\n2. **Fastmail API Credentials**: A Fastmail account with JMAP API enabled. You should set up HTTP Header authentication in n8n with your Fastmail API credentials.\n3. **OpenAI API Key**: An API key from OpenAI to access GPT-4. Make sure to configure the OpenAI credentials in n8n."
+    ],
+    "nodes": {
+      "node_ed70961817": {
+        "n8n": "Email Trigger (IMAP)",
+        "n8nType": "n8n-nodes-base.emailReadImap",
+        "approximate": true
+      },
+      "node_6bef63d1ad": {
+        "n8n": "Get fields from source email",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_f1fed7cf56": {
+        "n8n": "OpenAI",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_f5620cb31f": {
+        "n8n": "OpenAI",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_a788db194a": {
+        "n8n": "Session",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_8b4c19bfa2": {
+        "n8n": "Get Mailbox IDs",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_60708fb515": {
+        "n8n": "Get Mailbox IDs",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_ca464a5edb": {
+        "n8n": "Split Out",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_5b81663527": {
+        "n8n": "Filter for drafts folder",
+        "n8nType": "n8n-nodes-base.filter"
+      },
+      "node_b70f33b321": {
+        "n8n": "gather data for draft email",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_436d94aca6": {
+        "n8n": "upload draft email",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_e6db40679c": {
+        "n8n": "upload draft email",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_d6d7032a27": {
+        "n8n": "__start",
+        "n8nType": "synthetic"
+      },
+      "node_4b323f7e0c": {
+        "n8n": "__end:upload draft email",
+        "n8nType": "synthetic"
+      },
+      "node_f60f2aa135": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_3740df98a0": {
+        "n8n": "OpenAI",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

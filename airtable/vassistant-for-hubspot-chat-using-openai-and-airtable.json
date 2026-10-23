@@ -1,0 +1,4106 @@
+{
+  "name": "vAssistant for Hubspot Chat using OpenAi and Airtable",
+  "workflowSlug": "vassistant-for-hubspot-chat-using-openai-and-airtable",
+  "description": "This workflow integrates an OpenAI assistant with HubSpot Chat and Airtable to provide automated responses and manage customer interactions. It fetches chat messages, processes them with AI, and can store relevant information in Airtable.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_3d0c6b8d8c",
+      "actorId": "actor_3d0c6b8d8c",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_76035ca8b1",
+      "actorId": "actor_76035ca8b1",
+      "type": "NodeTransform",
+      "label": "IF2: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json[\"body\"][0][\"messageId\"]) ?? '').trim() !== ''));"
+      }
+    },
+    {
+      "nodeId": "node_0d6367f7b7",
+      "actorId": "actor_0d6367f7b7",
+      "type": "NodeBranch",
+      "label": "IF2: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_c642f8e1d8",
+      "actorId": "actor_c642f8e1d8",
+      "type": "NodeHttpRequest",
+      "label": "getHubspotMessage",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://api.hubapi.com/conversations/v3/conversations/threads/{{body.0.objectId}}/messages/{{body.0.messageId}}",
+        "headers": {
+          "Authorization": "Bearer {{hubspotToken}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_de5f448fe6",
+      "actorId": "actor_de5f448fe6",
+      "type": "NodeTransform",
+      "label": "IF: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"getHubspotMessage\": __namedCtx.steps?.[\"getHubspotMessage\"]?.[\"body\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('getHubspotMessage').item.json[\"senders\"][0][\"actorId\"]) ?? '') !== String(\"A-5721819\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_fcf67c932e",
+      "actorId": "actor_fcf67c932e",
+      "type": "NodeBranch",
+      "label": "IF: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_77273e91fb",
+      "actorId": "actor_77273e91fb",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_LIST_RECORDS",
+      "color": "#6366F1",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_LIST_RECORDS",
+        "params": {
+          "baseId": "{{airtableBaseId}}",
+          "tableIdOrName": "{{airtableTableId}}",
+          "filterByFormula": "{Hubspot Thread ID}=\"{{last.body.conversationsThreadId}}\""
+        }
+      }
+    },
+    {
+      "nodeId": "node_fee5661a4f",
+      "actorId": "actor_fee5661a4f",
+      "type": "NodeTransform",
+      "label": "IF1: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Airtable\": __namedCtx.steps?.[\"AIRTABLE_LIST_RECORDS\"]?.[\"result\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Airtable').item.json.id) ?? '').trim() === ''));"
+      }
+    },
+    {
+      "nodeId": "node_6633348f43",
+      "actorId": "actor_6633348f43",
+      "type": "NodeBranch",
+      "label": "IF1: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_76c6a39e62",
+      "actorId": "actor_76c6a39e62",
+      "type": "NodeHttpRequest",
+      "label": "OpenAi Create Thread",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/threads",
+        "headers": {
+          "openai-beta": "assistants=v1",
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{openaiApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_7910a2a545",
+      "actorId": "actor_7910a2a545",
+      "type": "NodeTransform",
+      "label": "Body: OpenAi Create Thread",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"getHubspotMessage\": __namedCtx.steps?.[\"getHubspotMessage\"]?.[\"body\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"OpenAi Create Thread\".\nconst __body = `{\n \"messages\": [\n {\n \"role\": \"user\",\n \"content\": \"${$('getHubspotMessage').item.json[\"text\"]}\"\n }\n ]\n}`;\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_fb480b3de7",
+      "actorId": "actor_fb480b3de7",
+      "type": "NodeCdecliAgent",
+      "label": "OpenAI",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3880,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "sessionId": "",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_4169df91d0",
+      "actorId": "actor_4169df91d0",
+      "type": "NodeTransform",
+      "label": "Prompt: OpenAI",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"getHubspotMessage\": __namedCtx.steps?.[\"getHubspotMessage\"]?.[\"body\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: OpenAI.\nconst __promptValue = ($('getHubspotMessage').item.json[\"text\"]);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_8493d37a75",
+      "actorId": "actor_8493d37a75",
+      "type": "NodeTransform",
+      "label": "Params: createThread",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"getHubspotMessage\": __namedCtx.steps?.[\"getHubspotMessage\"]?.[\"body\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for airtable/AIRTABLE_CREATE_RECORD (n8n node \"createThread\").\nreturn {\n  \"baseId\": \"{{airtableBaseId}}\",\n  \"tableIdOrName\": \"{{airtableTableId}}\",\n  \"fields\": { \"OpenAI Thread ID\": ($json[\"id\"]), \"Hubspot Thread ID\": ($('getHubspotMessage').item.json.conversationsThreadId) },\n};"
+      }
+    },
+    {
+      "nodeId": "node_6d63e05c25",
+      "actorId": "actor_6d63e05c25",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_CREATE_RECORD",
+      "color": "#6366F1",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_CREATE_RECORD"
+      }
+    },
+    {
+      "nodeId": "node_13c9b583de",
+      "actorId": "actor_13c9b583de",
+      "type": "NodeHttpRequest",
+      "label": "OpenAI Run1",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "headers": {
+          "openai-beta": "assistants=v1",
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{openaiApiKey}}"
+        },
+        "body": "{\n \"assistant_id\": \"asst_MA71Jq0SElVpdjmJa212CTFd\"\n}"
+      }
+    },
+    {
+      "nodeId": "node_735b978b92",
+      "actorId": "actor_735b978b92",
+      "type": "NodeTransform",
+      "label": "URL: OpenAI Run1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Airtable\": __namedCtx.steps?.[\"AIRTABLE_LIST_RECORDS\"]?.[\"result\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"OpenAI Run1\".\nreturn `https://api.openai.com/v1/threads/${$('Airtable').item.json[\"OpenAI Thread ID\"]}/runs`;"
+      }
+    },
+    {
+      "nodeId": "node_2f561ab455",
+      "actorId": "actor_2f561ab455",
+      "type": "NodeHttpRequest",
+      "label": "OpenAI Run",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "headers": {
+          "openai-beta": "assistants=v1",
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{openaiApiKey}}"
+        },
+        "body": "{\n \"assistant_id\": \"asst_MA71Jq0SElVpdjmJa212CTFd\"\n}"
+      }
+    },
+    {
+      "nodeId": "node_5bdda63f18",
+      "actorId": "actor_5bdda63f18",
+      "type": "NodeTransform",
+      "label": "URL: OpenAI Run",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request URL for \"OpenAI Run\".\nreturn `https://api.openai.com/v1/threads/${$json[\"OpenAI Thread ID\"]}/runs`;"
+      }
+    },
+    {
+      "nodeId": "node_133dac2c3c",
+      "actorId": "actor_133dac2c3c",
+      "type": "NodeTransform",
+      "label": "Before repeat: Get Run",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_f3c9c0f79f",
+      "actorId": "actor_f3c9c0f79f",
+      "type": "NodeRepeatUntil",
+      "label": "Repeat: Get Run",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "delaySeconds": 0,
+        "maxAttempts": 30
+      }
+    },
+    {
+      "nodeId": "node_3ca40981d4",
+      "actorId": "actor_3ca40981d4",
+      "type": "NodeTransform",
+      "label": "Return to repeat: Get Run",
+      "color": "#F59E0B",
+      "position": {
+        "x": 15280,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_718ee46f7d",
+      "actorId": "actor_718ee46f7d",
+      "type": "NodeTransform",
+      "label": "Ready: Get Run",
+      "color": "#F59E0B",
+      "position": {
+        "x": 15660,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.ready;"
+      }
+    },
+    {
+      "nodeId": "node_e910e0025f",
+      "actorId": "actor_e910e0025f",
+      "type": "NodeTransform",
+      "label": "Check input: Get Run",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "const ctx = {{ctx}};\nreturn ctx.steps?.[\"Repeat: Get Run\"]?.[\"attempt\"] === 1 ? ctx.steps?.[\"Before repeat: Get Run\"]?.[\"transformed\"] : ctx.steps?.[\"Return to repeat: Get Run\"]?.[\"transformed\"]?.value;"
+      }
+    },
+    {
+      "nodeId": "node_10ec809431",
+      "actorId": "actor_10ec809431",
+      "type": "NodeTransform",
+      "label": "Failed: Repeat: Get Run",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "throw Object.assign(new Error(source?.message || 'Repeat Until failed'), { name: source?.name || 'Error' });"
+      }
+    },
+    {
+      "nodeId": "node_61061f0673",
+      "actorId": "actor_61061f0673",
+      "type": "NodeHttpRequest",
+      "label": "Get Run",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://api.openai.com/v1/threads/{{last.transformed.thread_id}}/runs/{{last.transformed.id}}",
+        "headers": {
+          "openai-beta": "assistants=v1",
+          "Authorization": "Bearer {{openaiApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_a0bdc9e003",
+      "actorId": "actor_a0bdc9e003",
+      "type": "NodeTransform",
+      "label": "Get Run: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "const ctx = {{ctx}};\nconst response = ctx.steps[\"Get Run\"];\nif (response.error && (response.statusCode == null || true)) throw new Error(response.error.message || 'HTTP check failed');\nif (response.body == null) throw new Error('HTTP check returned an empty body');\nreturn response.body;"
+      }
+    },
+    {
+      "nodeId": "node_8fb89bd396",
+      "actorId": "actor_8fb89bd396",
+      "type": "NodeTransform",
+      "label": "Completed, Action or Inprogress: rule 1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7680,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(String(($json.status) ?? '') === String(\"completed\" ?? ''));"
+      }
+    },
+    {
+      "nodeId": "node_b6076ad38f",
+      "actorId": "actor_b6076ad38f",
+      "type": "NodeBranch",
+      "label": "Completed, Action or Inprogress: rule 1?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 8060,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_8ff3bc8afe",
+      "actorId": "actor_8ff3bc8afe",
+      "type": "NodeTransform",
+      "label": "Completed, Action or Inprogress: rule 2",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8440,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(String(($json.status) ?? '') === String(\"requires_action\" ?? ''));"
+      }
+    },
+    {
+      "nodeId": "node_12596a3f4c",
+      "actorId": "actor_12596a3f4c",
+      "type": "NodeBranch",
+      "label": "Completed, Action or Inprogress: rule 2?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 8820,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_847e127d34",
+      "actorId": "actor_847e127d34",
+      "type": "NodeTransform",
+      "label": "Completed, Action or Inprogress: rule 3",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9200,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(String(($json.status) ?? '') === String(\"in_progress\" ?? ''));"
+      }
+    },
+    {
+      "nodeId": "node_734bc17ea7",
+      "actorId": "actor_734bc17ea7",
+      "type": "NodeBranch",
+      "label": "Completed, Action or Inprogress: rule 3?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 9580,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_fc2b394228",
+      "actorId": "actor_fc2b394228",
+      "type": "NodeTransform",
+      "label": "Completed, Action or Inprogress: rule 4",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9960,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(String(($json.status) ?? '') === String(\"queued\" ?? ''));"
+      }
+    },
+    {
+      "nodeId": "node_63615ccbbd",
+      "actorId": "actor_63615ccbbd",
+      "type": "NodeBranch",
+      "label": "Completed, Action or Inprogress: rule 4?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 10340,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_a6aac26638",
+      "actorId": "actor_a6aac26638",
+      "type": "NodeHttpRequest",
+      "label": "Get Last Message",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 7680,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://api.openai.com/v1/threads/{{last.transformed.thread_id}}/messages",
+        "headers": {
+          "openai-beta": "assistants=v1",
+          "Authorization": "Bearer {{openaiApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_49da7002f0",
+      "actorId": "actor_49da7002f0",
+      "type": "NodeTransform",
+      "label": "Select Function: rule 1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9200,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(String(($json.required_action.submit_tool_outputs.tool_calls[0].function.name) ?? '') === String(\"getAWBbyOrder\" ?? ''));"
+      }
+    },
+    {
+      "nodeId": "node_e7c416e504",
+      "actorId": "actor_e7c416e504",
+      "type": "NodeBranch",
+      "label": "Select Function: rule 1?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 9580,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_e5b616f17f",
+      "actorId": "actor_e5b616f17f",
+      "type": "NodeTransform",
+      "label": "Select Function: rule 2",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9960,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(String(($json.required_action.submit_tool_outputs.tool_calls[0].function.name) ?? '') === String(\"get_awb_history\" ?? ''));"
+      }
+    },
+    {
+      "nodeId": "node_b08be3fa97",
+      "actorId": "actor_b08be3fa97",
+      "type": "NodeBranch",
+      "label": "Select Function: rule 2?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 10340,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_e153f5116c",
+      "actorId": "actor_e153f5116c",
+      "type": "NodeTransform",
+      "label": "Before wait: Wait1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9960,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_173b0ceca1",
+      "actorId": "actor_173b0ceca1",
+      "type": "NodeTransform",
+      "label": "Seconds: Wait1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 10340,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return Number(1) * 1;"
+      }
+    },
+    {
+      "nodeId": "node_f34f417b57",
+      "actorId": "actor_f34f417b57",
+      "type": "NodeRepeatUntil",
+      "label": "Wait1",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 10720,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "delaySeconds": 0,
+        "maxAttempts": 2
+      }
+    },
+    {
+      "nodeId": "node_3b58477e74",
+      "actorId": "actor_3b58477e74",
+      "type": "NodeTransform",
+      "label": "Wait elapsed: Wait1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11100,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source === 2;"
+      }
+    },
+    {
+      "nodeId": "node_defc40b279",
+      "actorId": "actor_defc40b279",
+      "type": "NodeTransform",
+      "label": "Failed: Wait1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11100,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "throw Object.assign(new Error(source?.message || 'Repeat Until failed'), { name: source?.name || 'Error' });"
+      }
+    },
+    {
+      "nodeId": "node_80f2cdedef",
+      "actorId": "actor_80f2cdedef",
+      "type": "NodeTransform",
+      "label": "Before wait: Wait",
+      "color": "#F59E0B",
+      "position": {
+        "x": 10720,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_0878822b80",
+      "actorId": "actor_0878822b80",
+      "type": "NodeTransform",
+      "label": "Seconds: Wait",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11100,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return Number(1) * 1;"
+      }
+    },
+    {
+      "nodeId": "node_6e4f5547a3",
+      "actorId": "actor_6e4f5547a3",
+      "type": "NodeRepeatUntil",
+      "label": "Wait",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 11480,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "delaySeconds": 0,
+        "maxAttempts": 2
+      }
+    },
+    {
+      "nodeId": "node_263c4b6da4",
+      "actorId": "actor_263c4b6da4",
+      "type": "NodeTransform",
+      "label": "Wait elapsed: Wait",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11860,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source === 2;"
+      }
+    },
+    {
+      "nodeId": "node_8b500df049",
+      "actorId": "actor_8b500df049",
+      "type": "NodeTransform",
+      "label": "Failed: Wait",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11860,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "throw Object.assign(new Error(source?.message || 'Repeat Until failed'), { name: source?.name || 'Error' });"
+      }
+    },
+    {
+      "nodeId": "node_a7c16bf086",
+      "actorId": "actor_a7c16bf086",
+      "type": "NodeHttpRequest",
+      "label": "respondHubspotMessage1",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 8820,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer {{hubspotToken}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_bcb6912270",
+      "actorId": "actor_bcb6912270",
+      "type": "NodeTransform",
+      "label": "URL: respondHubspotMessage1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8060,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"getHubspotMessage\": __namedCtx.steps?.[\"getHubspotMessage\"]?.[\"body\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"respondHubspotMessage1\".\nreturn `https://api.hubapi.com/conversations/v3/conversations/threads/${$('getHubspotMessage').item.json[\"conversationsThreadId\"]}/messages`;"
+      }
+    },
+    {
+      "nodeId": "node_980c3a746d",
+      "actorId": "actor_980c3a746d",
+      "type": "NodeTransform",
+      "label": "Body: respondHubspotMessage1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8440,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"getHubspotMessage\": __namedCtx.steps?.[\"getHubspotMessage\"]?.[\"body\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"respondHubspotMessage1\".\nconst __body = { \"type\": \"MESSAGE\", \"richText\": ($json.data[0].content[0].text.value), \"senderActorId\": \"A-5721819\", \"channelId\": ($('getHubspotMessage').item.json.channelId), \"channelAccountId\": ($('getHubspotMessage').item.json.channelAccountId), \"text\": \"{{ $json.data[0].content[0].text.value }}\" };\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_8e9fa05ad9",
+      "actorId": "actor_8e9fa05ad9",
+      "type": "NodeHttpRequest",
+      "label": "HTTP Request",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 10340,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET"
+      }
+    },
+    {
+      "nodeId": "node_e1b564ef69",
+      "actorId": "actor_e1b564ef69",
+      "type": "NodeTransform",
+      "label": "URL: HTTP Request",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9960,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request URL for \"HTTP Request\".\nreturn `https://www.listafirme.ro/api/search-v1.asp?key={{listafirmeApiKey}}&src=${JSON.parse($json[\"required_action\"][\"submit_tool_outputs\"][\"tool_calls\"][0][\"function\"][\"arguments\"]).src}`;"
+      }
+    },
+    {
+      "nodeId": "node_9508c8f5cb",
+      "actorId": "actor_9508c8f5cb",
+      "type": "NodeTransform",
+      "label": "HTTP Request: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 10720,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "const ctx = {{ctx}};\nconst response = ctx.steps[\"HTTP Request\"];\nif (response.error && (response.statusCode == null || true)) throw new Error(response.error.message || 'HTTP check failed');\nif (response.body == null) throw new Error('HTTP check returned an empty body');\nreturn response.body;"
+      }
+    },
+    {
+      "nodeId": "node_965c928341",
+      "actorId": "actor_965c928341",
+      "type": "NodeHttpRequest",
+      "label": "HTTP Request1",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 11100,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET"
+      }
+    },
+    {
+      "nodeId": "node_abd91e5ed6",
+      "actorId": "actor_abd91e5ed6",
+      "type": "NodeTransform",
+      "label": "URL: HTTP Request1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 10720,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request URL for \"HTTP Request1\".\nreturn `https://www.listafirme.ro/api/info-v1.asp?key={{listafirmeApiKey}}&data={\"TaxCode\":\"${JSON.parse($json[\"required_action\"][\"submit_tool_outputs\"][\"tool_calls\"][0][\"function\"][\"arguments\"]).src}\",\"NACE\":\"info\",\"VAT\":\"\", \"RegNo\":\"\", \"Status\":\"\", \"LegalForm\":\"\", \"Name\":\"\", \"Date\":\"\", \"TownCode\":\"\", \"County\":\"\", \"City\":\"\", \"Address\":\"\", \"Administrators\":\"\", \"Shareholders\":\"\", \"Balance\":\"latest\", \"Phone\":\"\", \"Mobile\":\"\", \"Fax\":\"\", \"Email\":\"\", \"Web\":\"\", \"Geolocation\":\"\", \"Description\":\"\", \"Trademarks\":\"\", \"Subsidiaries\":\"\", \"Branches\":\"\", \"FiscalActivity\":\"\", \"Obligations\":\"\", \"Links\":\"\"}`;"
+      }
+    },
+    {
+      "nodeId": "node_f2086624c9",
+      "actorId": "actor_f2086624c9",
+      "type": "NodeTransform",
+      "label": "HTTP Request1: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11480,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "const ctx = {{ctx}};\nconst response = ctx.steps[\"HTTP Request1\"];\nif (response.error && (response.statusCode == null || true)) throw new Error(response.error.message || 'HTTP check failed');\nif (response.body == null) throw new Error('HTTP check returned an empty body');\nreturn response.body;"
+      }
+    },
+    {
+      "nodeId": "node_77ff21c236",
+      "actorId": "actor_77ff21c236",
+      "type": "NodeTransform",
+      "label": "Code1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11100,
+        "y": 1140
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Code1\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const item1 = $input.all()[0]?.json;\n  const jsonString = JSON.stringify(item1);\n  const escapedJsonString = jsonString.replace(/\"/g, '\\\\\"');\n  \n  return { escapedJsonString };\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_a820b2f651",
+      "actorId": "actor_a820b2f651",
+      "type": "NodeTransform",
+      "label": "Code",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11860,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Code\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const item1 = $input.all()[0]?.json;\n  const jsonString = JSON.stringify(item1);\n  const escapedJsonString = jsonString.replace(/\"/g, '\\\\\"');\n  \n  return { escapedJsonString };\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_c8a00e6481",
+      "actorId": "actor_c8a00e6481",
+      "type": "NodeHttpRequest",
+      "label": "Submit Data",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 12240,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "headers": {
+          "openai-beta": "assistants=v1",
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{openaiApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_34bf4c4f1c",
+      "actorId": "actor_34bf4c4f1c",
+      "type": "NodeTransform",
+      "label": "URL: Submit Data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11480,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Select Function\": __namedCtx.steps?.[\"Get Run: response\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"Submit Data\".\nreturn `https://api.openai.com/v1/threads/${$('Select Function').item.json[\"thread_id\"]}/runs/${$('Select Function').item.json[\"id\"]}/submit_tool_outputs`;"
+      }
+    },
+    {
+      "nodeId": "node_bdf6b22b7a",
+      "actorId": "actor_bdf6b22b7a",
+      "type": "NodeTransform",
+      "label": "Body: Submit Data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11860,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Select Function\": __namedCtx.steps?.[\"Get Run: response\"]?.[\"transformed\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Submit Data\".\nconst __body = `{\n \"tool_outputs\": [\n {\n \"tool_call_id\": \"${$('Select Function').item.json[\"required_action\"][\"submit_tool_outputs\"][\"tool_calls\"][0][\"id\"]}\",\n \"output\": \"${$json.escapedJsonString}\"\n }\n ]\n} `;\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_4e043eaca8",
+      "actorId": "actor_4e043eaca8",
+      "type": "NodeTransform",
+      "label": "Submit Data: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 12620,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "const ctx = {{ctx}};\nconst response = ctx.steps[\"Submit Data\"];\nif (response.error && (response.statusCode == null || true)) throw new Error(response.error.message || 'HTTP check failed');\nif (response.body == null) throw new Error('HTTP check returned an empty body');\nreturn response.body;"
+      }
+    },
+    {
+      "nodeId": "node_34f2e815c6",
+      "actorId": "actor_34f2e815c6",
+      "type": "NodeHttpRequest",
+      "label": "Submit Data1",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 13000,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "headers": {
+          "openai-beta": "assistants=v1",
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{openaiApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_84d52d26d9",
+      "actorId": "actor_84d52d26d9",
+      "type": "NodeTransform",
+      "label": "URL: Submit Data1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 12240,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Select Function\": __namedCtx.steps?.[\"Get Run: response\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"Submit Data1\".\nreturn `https://api.openai.com/v1/threads/${$('Select Function').item.json[\"thread_id\"]}/runs/${$('Select Function').item.json[\"id\"]}/submit_tool_outputs`;"
+      }
+    },
+    {
+      "nodeId": "node_9214540177",
+      "actorId": "actor_9214540177",
+      "type": "NodeTransform",
+      "label": "Body: Submit Data1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 12620,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Select Function\": __namedCtx.steps?.[\"Get Run: response\"]?.[\"transformed\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Submit Data1\".\nconst __body = `{\n \"tool_outputs\": [\n {\n \"tool_call_id\": \"${$('Select Function').item.json[\"required_action\"][\"submit_tool_outputs\"][\"tool_calls\"][0][\"id\"]}\",\n \"output\": \"${$json.escapedJsonString}\"\n }\n ]\n} `;\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_eaf1dc4a4d",
+      "actorId": "actor_eaf1dc4a4d",
+      "type": "NodeTransform",
+      "label": "Submit Data1: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 13380,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "const ctx = {{ctx}};\nconst response = ctx.steps[\"Submit Data1\"];\nif (response.error && (response.statusCode == null || true)) throw new Error(response.error.message || 'HTTP check failed');\nif (response.body == null) throw new Error('HTTP check returned an empty body');\nreturn response.body;"
+      }
+    },
+    {
+      "nodeId": "node_9c0218d4e2",
+      "actorId": "actor_9c0218d4e2",
+      "type": "NodeTransform",
+      "label": "Before wait: Wait2",
+      "color": "#F59E0B",
+      "position": {
+        "x": 13000,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_8da56da141",
+      "actorId": "actor_8da56da141",
+      "type": "NodeTransform",
+      "label": "Seconds: Wait2",
+      "color": "#F59E0B",
+      "position": {
+        "x": 13380,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return Number(1) * 1;"
+      }
+    },
+    {
+      "nodeId": "node_bc247a275b",
+      "actorId": "actor_bc247a275b",
+      "type": "NodeRepeatUntil",
+      "label": "Wait2",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 13760,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "delaySeconds": 0,
+        "maxAttempts": 2
+      }
+    },
+    {
+      "nodeId": "node_250a00aae7",
+      "actorId": "actor_250a00aae7",
+      "type": "NodeTransform",
+      "label": "Wait elapsed: Wait2",
+      "color": "#F59E0B",
+      "position": {
+        "x": 14140,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source === 2;"
+      }
+    },
+    {
+      "nodeId": "node_cb3c025490",
+      "actorId": "actor_cb3c025490",
+      "type": "NodeTransform",
+      "label": "Failed: Wait2",
+      "color": "#F59E0B",
+      "position": {
+        "x": 14140,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "throw Object.assign(new Error(source?.message || 'Repeat Until failed'), { name: source?.name || 'Error' });"
+      }
+    },
+    {
+      "nodeId": "node_54fd24adb7",
+      "actorId": "actor_54fd24adb7",
+      "type": "NodeTransform",
+      "label": "Before wait: Wait3",
+      "color": "#F59E0B",
+      "position": {
+        "x": 13760,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_b602f1520d",
+      "actorId": "actor_b602f1520d",
+      "type": "NodeTransform",
+      "label": "Seconds: Wait3",
+      "color": "#F59E0B",
+      "position": {
+        "x": 14140,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return Number(1) * 1;"
+      }
+    },
+    {
+      "nodeId": "node_e8ed0b9df4",
+      "actorId": "actor_e8ed0b9df4",
+      "type": "NodeRepeatUntil",
+      "label": "Wait3",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 14520,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "delaySeconds": 0,
+        "maxAttempts": 2
+      }
+    },
+    {
+      "nodeId": "node_196c3d6733",
+      "actorId": "actor_196c3d6733",
+      "type": "NodeTransform",
+      "label": "Wait elapsed: Wait3",
+      "color": "#F59E0B",
+      "position": {
+        "x": 14900,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source === 2;"
+      }
+    },
+    {
+      "nodeId": "node_1225aa37be",
+      "actorId": "actor_1225aa37be",
+      "type": "NodeTransform",
+      "label": "Failed: Wait3",
+      "color": "#F59E0B",
+      "position": {
+        "x": 14900,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "throw Object.assign(new Error(source?.message || 'Repeat Until failed'), { name: source?.name || 'Error' });"
+      }
+    },
+    {
+      "nodeId": "node_afe144446e",
+      "actorId": "actor_afe144446e",
+      "type": "NodeTransform",
+      "label": "Retry: Wait (0)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11860,
+        "y": 1140
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return { ready: false, route: 0, value: source };"
+      }
+    },
+    {
+      "nodeId": "node_7ad525e73b",
+      "actorId": "actor_7ad525e73b",
+      "type": "NodeTransform",
+      "label": "Retry: Wait1 (0)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11100,
+        "y": 1400
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return { ready: false, route: 1, value: source };"
+      }
+    },
+    {
+      "nodeId": "node_fd1c671ce4",
+      "actorId": "actor_fd1c671ce4",
+      "type": "NodeTransform",
+      "label": "Retry: Wait2 (0)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 14140,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return { ready: false, route: 2, value: source };"
+      }
+    },
+    {
+      "nodeId": "node_7e73aa21b4",
+      "actorId": "actor_7e73aa21b4",
+      "type": "NodeTransform",
+      "label": "Retry: Wait3 (0)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 14900,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return { ready: false, route: 3, value: source };"
+      }
+    },
+    {
+      "nodeId": "node_ed79a8068a",
+      "actorId": "actor_ed79a8068a",
+      "type": "NodeTransform",
+      "label": "Finish: Completed, Action or Inprogress (0)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8440,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return { ready: true, route: 4, value: source };"
+      }
+    },
+    {
+      "nodeId": "node_ef90729120",
+      "actorId": "actor_ef90729120",
+      "type": "NodeTransform",
+      "label": "Exit 4: Get Run",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.route === 4;"
+      }
+    },
+    {
+      "nodeId": "node_8d6a56a1e0",
+      "actorId": "actor_8d6a56a1e0",
+      "type": "NodeBranch",
+      "label": "Select exit 4: Get Run",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6920,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_b70a4f086a",
+      "actorId": "actor_b70a4f086a",
+      "type": "NodeTransform",
+      "label": "Result 4: Get Run",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.value;"
+      }
+    },
+    {
+      "nodeId": "node_8f6e967ed4",
+      "actorId": "actor_8f6e967ed4",
+      "type": "NodeTransform",
+      "label": "Finish: Completed, Action or Inprogress (4)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 10720,
+        "y": 1140
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return { ready: true, route: 5, value: source };"
+      }
+    },
+    {
+      "nodeId": "node_5c72297ebe",
+      "actorId": "actor_5c72297ebe",
+      "type": "NodeTransform",
+      "label": "Exit 5: Get Run",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.route === 5;"
+      }
+    },
+    {
+      "nodeId": "node_f86e0489ed",
+      "actorId": "actor_f86e0489ed",
+      "type": "NodeBranch",
+      "label": "Select exit 5: Get Run",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6920,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_76b3c0f065",
+      "actorId": "actor_76b3c0f065",
+      "type": "NodeTransform",
+      "label": "Result 5: Get Run",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.value;"
+      }
+    },
+    {
+      "nodeId": "node_ae96f5c2f5",
+      "actorId": "actor_ae96f5c2f5",
+      "type": "NodeEnd",
+      "label": "End: Completed, Action or Inprogress (4)",
+      "color": "#EF4444",
+      "position": {
+        "x": 7680,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f516c5d8ae",
+      "actorId": "actor_f516c5d8ae",
+      "type": "NodeTransform",
+      "label": "Finish: Select Function (2)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 10720,
+        "y": 1400
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return { ready: true, route: 6, value: source };"
+      }
+    },
+    {
+      "nodeId": "node_27ebe78259",
+      "actorId": "actor_27ebe78259",
+      "type": "NodeTransform",
+      "label": "Exit 6: Get Run",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 1140
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.route === 6;"
+      }
+    },
+    {
+      "nodeId": "node_d22cf24c51",
+      "actorId": "actor_d22cf24c51",
+      "type": "NodeBranch",
+      "label": "Select exit 6: Get Run",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6920,
+        "y": 880
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_6fcbe86f38",
+      "actorId": "actor_6fcbe86f38",
+      "type": "NodeTransform",
+      "label": "Result 6: Get Run",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.value;"
+      }
+    },
+    {
+      "nodeId": "node_938130cefc",
+      "actorId": "actor_938130cefc",
+      "type": "NodeEnd",
+      "label": "End: Select Function (2)",
+      "color": "#EF4444",
+      "position": {
+        "x": 7680,
+        "y": 880
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_5fee0a053c",
+      "actorId": "actor_5fee0a053c",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 9200,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_890c230ef1",
+      "actorId": "actor_890c230ef1",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 1660
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {},
+          "airtableBaseId": "",
+          "airtableTableId": "",
+          "hubspotToken": {
+            "$workflowSecret": "HUBSPOT_TOKEN"
+          },
+          "openaiApiKey": {
+            "$workflowSecret": "OPENAI_API_KEY"
+          },
+          "listafirmeApiKey": {
+            "$workflowSecret": "LISTAFIRME_API_KEY"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_76035ca8b1",
+      "target": "node_0d6367f7b7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_76035ca8b1",
+      "target": "node_0d6367f7b7",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_de5f448fe6",
+      "target": "node_fcf67c932e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_de5f448fe6",
+      "target": "node_fcf67c932e",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_fee5661a4f",
+      "target": "node_6633348f43",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_fee5661a4f",
+      "target": "node_6633348f43",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_7910a2a545",
+      "target": "node_76c6a39e62",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_7910a2a545",
+      "target": "node_76c6a39e62",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_4169df91d0",
+      "target": "node_fb480b3de7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_8493d37a75",
+      "target": "node_6d63e05c25",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_8493d37a75",
+      "target": "node_6d63e05c25",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_735b978b92",
+      "target": "node_13c9b583de",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_735b978b92",
+      "target": "node_13c9b583de",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_5bdda63f18",
+      "target": "node_2f561ab455",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_5bdda63f18",
+      "target": "node_2f561ab455",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_133dac2c3c",
+      "target": "node_f3c9c0f79f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_3ca40981d4",
+      "target": "node_718ee46f7d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3ca40981d4",
+      "target": "node_718ee46f7d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_718ee46f7d",
+      "target": "node_f3c9c0f79f",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_718ee46f7d",
+      "target": "node_f3c9c0f79f",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_3ca40981d4",
+      "target": "node_f3c9c0f79f",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_f3c9c0f79f",
+      "target": "node_e910e0025f",
+      "sourceOutput": "onCheck",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f3c9c0f79f",
+      "target": "node_10ec809431",
+      "sourceOutput": "onError",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f3c9c0f79f",
+      "target": "node_10ec809431",
+      "sourceOutput": "error",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_61061f0673",
+      "target": "node_a0bdc9e003",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8fb89bd396",
+      "target": "node_b6076ad38f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_8fb89bd396",
+      "target": "node_b6076ad38f",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_b6076ad38f",
+      "target": "node_8ff3bc8afe",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8ff3bc8afe",
+      "target": "node_12596a3f4c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_8ff3bc8afe",
+      "target": "node_12596a3f4c",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_12596a3f4c",
+      "target": "node_847e127d34",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_847e127d34",
+      "target": "node_734bc17ea7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_847e127d34",
+      "target": "node_734bc17ea7",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_734bc17ea7",
+      "target": "node_fc2b394228",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fc2b394228",
+      "target": "node_63615ccbbd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_fc2b394228",
+      "target": "node_63615ccbbd",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_49da7002f0",
+      "target": "node_e7c416e504",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_49da7002f0",
+      "target": "node_e7c416e504",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_e7c416e504",
+      "target": "node_e5b616f17f",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e5b616f17f",
+      "target": "node_b08be3fa97",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_e5b616f17f",
+      "target": "node_b08be3fa97",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_e153f5116c",
+      "target": "node_173b0ceca1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e153f5116c",
+      "target": "node_173b0ceca1",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_173b0ceca1",
+      "target": "node_f34f417b57",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_173b0ceca1",
+      "target": "node_f34f417b57",
+      "sourceOutput": "transformed",
+      "targetInput": "delaySeconds",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_f34f417b57",
+      "target": "node_3b58477e74",
+      "sourceOutput": "onCheck",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f34f417b57",
+      "target": "node_3b58477e74",
+      "sourceOutput": "attempt",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3b58477e74",
+      "target": "node_f34f417b57",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_3b58477e74",
+      "target": "node_f34f417b57",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_e153f5116c",
+      "target": "node_f34f417b57",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_f34f417b57",
+      "target": "node_defc40b279",
+      "sourceOutput": "onError",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f34f417b57",
+      "target": "node_defc40b279",
+      "sourceOutput": "error",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_80f2cdedef",
+      "target": "node_0878822b80",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_80f2cdedef",
+      "target": "node_0878822b80",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0878822b80",
+      "target": "node_6e4f5547a3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_0878822b80",
+      "target": "node_6e4f5547a3",
+      "sourceOutput": "transformed",
+      "targetInput": "delaySeconds",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_6e4f5547a3",
+      "target": "node_263c4b6da4",
+      "sourceOutput": "onCheck",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6e4f5547a3",
+      "target": "node_263c4b6da4",
+      "sourceOutput": "attempt",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_263c4b6da4",
+      "target": "node_6e4f5547a3",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_263c4b6da4",
+      "target": "node_6e4f5547a3",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_80f2cdedef",
+      "target": "node_6e4f5547a3",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_6e4f5547a3",
+      "target": "node_8b500df049",
+      "sourceOutput": "onError",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6e4f5547a3",
+      "target": "node_8b500df049",
+      "sourceOutput": "error",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bcb6912270",
+      "target": "node_a7c16bf086",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_bcb6912270",
+      "target": "node_980c3a746d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_980c3a746d",
+      "target": "node_a7c16bf086",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_980c3a746d",
+      "target": "node_a7c16bf086",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_e1b564ef69",
+      "target": "node_8e9fa05ad9",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_e1b564ef69",
+      "target": "node_8e9fa05ad9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_8e9fa05ad9",
+      "target": "node_9508c8f5cb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_abd91e5ed6",
+      "target": "node_965c928341",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_abd91e5ed6",
+      "target": "node_965c928341",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_965c928341",
+      "target": "node_f2086624c9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_34bf4c4f1c",
+      "target": "node_c8a00e6481",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_34bf4c4f1c",
+      "target": "node_bdf6b22b7a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bdf6b22b7a",
+      "target": "node_c8a00e6481",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_bdf6b22b7a",
+      "target": "node_c8a00e6481",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_c8a00e6481",
+      "target": "node_4e043eaca8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_84d52d26d9",
+      "target": "node_34f2e815c6",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_84d52d26d9",
+      "target": "node_9214540177",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9214540177",
+      "target": "node_34f2e815c6",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_9214540177",
+      "target": "node_34f2e815c6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_34f2e815c6",
+      "target": "node_eaf1dc4a4d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9c0218d4e2",
+      "target": "node_8da56da141",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9c0218d4e2",
+      "target": "node_8da56da141",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8da56da141",
+      "target": "node_bc247a275b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_8da56da141",
+      "target": "node_bc247a275b",
+      "sourceOutput": "transformed",
+      "targetInput": "delaySeconds",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_bc247a275b",
+      "target": "node_250a00aae7",
+      "sourceOutput": "onCheck",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bc247a275b",
+      "target": "node_250a00aae7",
+      "sourceOutput": "attempt",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_250a00aae7",
+      "target": "node_bc247a275b",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_250a00aae7",
+      "target": "node_bc247a275b",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_9c0218d4e2",
+      "target": "node_bc247a275b",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_bc247a275b",
+      "target": "node_cb3c025490",
+      "sourceOutput": "onError",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bc247a275b",
+      "target": "node_cb3c025490",
+      "sourceOutput": "error",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_54fd24adb7",
+      "target": "node_b602f1520d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_54fd24adb7",
+      "target": "node_b602f1520d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b602f1520d",
+      "target": "node_e8ed0b9df4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_b602f1520d",
+      "target": "node_e8ed0b9df4",
+      "sourceOutput": "transformed",
+      "targetInput": "delaySeconds",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_e8ed0b9df4",
+      "target": "node_196c3d6733",
+      "sourceOutput": "onCheck",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e8ed0b9df4",
+      "target": "node_196c3d6733",
+      "sourceOutput": "attempt",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_196c3d6733",
+      "target": "node_e8ed0b9df4",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_196c3d6733",
+      "target": "node_e8ed0b9df4",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_54fd24adb7",
+      "target": "node_e8ed0b9df4",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_e8ed0b9df4",
+      "target": "node_1225aa37be",
+      "sourceOutput": "onError",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e8ed0b9df4",
+      "target": "node_1225aa37be",
+      "sourceOutput": "error",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c642f8e1d8",
+      "target": "node_de5f448fe6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c642f8e1d8",
+      "target": "node_de5f448fe6",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_76c6a39e62",
+      "target": "node_8493d37a75",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_76c6a39e62",
+      "target": "node_8493d37a75",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a0bdc9e003",
+      "target": "node_8fb89bd396",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a0bdc9e003",
+      "target": "node_8fb89bd396",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a0bdc9e003",
+      "target": "node_8ff3bc8afe",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a0bdc9e003",
+      "target": "node_847e127d34",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a0bdc9e003",
+      "target": "node_fc2b394228",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a6aac26638",
+      "target": "node_bcb6912270",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a6aac26638",
+      "target": "node_bcb6912270",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9508c8f5cb",
+      "target": "node_77ff21c236",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9508c8f5cb",
+      "target": "node_77ff21c236",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_12596a3f4c",
+      "target": "node_49da7002f0",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a0bdc9e003",
+      "target": "node_49da7002f0",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a0bdc9e003",
+      "target": "node_e5b616f17f",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_734bc17ea7",
+      "target": "node_e153f5116c",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a0bdc9e003",
+      "target": "node_e153f5116c",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_63615ccbbd",
+      "target": "node_80f2cdedef",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a0bdc9e003",
+      "target": "node_80f2cdedef",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4e043eaca8",
+      "target": "node_9c0218d4e2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4e043eaca8",
+      "target": "node_9c0218d4e2",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e7c416e504",
+      "target": "node_e1b564ef69",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a0bdc9e003",
+      "target": "node_e1b564ef69",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b08be3fa97",
+      "target": "node_abd91e5ed6",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a0bdc9e003",
+      "target": "node_abd91e5ed6",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_77ff21c236",
+      "target": "node_34bf4c4f1c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_77ff21c236",
+      "target": "node_34bf4c4f1c",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f2086624c9",
+      "target": "node_a820b2f651",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f2086624c9",
+      "target": "node_a820b2f651",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a820b2f651",
+      "target": "node_84d52d26d9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a820b2f651",
+      "target": "node_84d52d26d9",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_eaf1dc4a4d",
+      "target": "node_54fd24adb7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_eaf1dc4a4d",
+      "target": "node_54fd24adb7",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fcf67c932e",
+      "target": "node_77273e91fb",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_77273e91fb",
+      "target": "node_fee5661a4f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_77273e91fb",
+      "target": "node_fee5661a4f",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6633348f43",
+      "target": "node_7910a2a545",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_77273e91fb",
+      "target": "node_7910a2a545",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6633348f43",
+      "target": "node_4169df91d0",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_77273e91fb",
+      "target": "node_4169df91d0",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6d63e05c25",
+      "target": "node_5bdda63f18",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6d63e05c25",
+      "target": "node_5bdda63f18",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0d6367f7b7",
+      "target": "node_c642f8e1d8",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_fb480b3de7",
+      "target": "node_735b978b92",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fb480b3de7",
+      "target": "node_735b978b92",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3d0c6b8d8c",
+      "target": "node_76035ca8b1",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e910e0025f",
+      "target": "node_61061f0673",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_2f561ab455",
+      "target": "node_133dac2c3c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2f561ab455",
+      "target": "node_133dac2c3c",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_13c9b583de",
+      "target": "node_133dac2c3c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_13c9b583de",
+      "target": "node_133dac2c3c",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6e4f5547a3",
+      "target": "node_afe144446e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6e4f5547a3",
+      "target": "node_afe144446e",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_afe144446e",
+      "target": "node_3ca40981d4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_afe144446e",
+      "target": "node_3ca40981d4",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f34f417b57",
+      "target": "node_7ad525e73b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f34f417b57",
+      "target": "node_7ad525e73b",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7ad525e73b",
+      "target": "node_3ca40981d4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7ad525e73b",
+      "target": "node_3ca40981d4",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bc247a275b",
+      "target": "node_fd1c671ce4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bc247a275b",
+      "target": "node_fd1c671ce4",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fd1c671ce4",
+      "target": "node_3ca40981d4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fd1c671ce4",
+      "target": "node_3ca40981d4",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e8ed0b9df4",
+      "target": "node_7e73aa21b4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e8ed0b9df4",
+      "target": "node_7e73aa21b4",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7e73aa21b4",
+      "target": "node_3ca40981d4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7e73aa21b4",
+      "target": "node_3ca40981d4",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b6076ad38f",
+      "target": "node_ed79a8068a",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a0bdc9e003",
+      "target": "node_ed79a8068a",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ed79a8068a",
+      "target": "node_3ca40981d4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ed79a8068a",
+      "target": "node_3ca40981d4",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f3c9c0f79f",
+      "target": "node_ef90729120",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f3c9c0f79f",
+      "target": "node_ef90729120",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ef90729120",
+      "target": "node_8d6a56a1e0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_ef90729120",
+      "target": "node_8d6a56a1e0",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_8d6a56a1e0",
+      "target": "node_b70a4f086a",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f3c9c0f79f",
+      "target": "node_b70a4f086a",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b70a4f086a",
+      "target": "node_a6aac26638",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_63615ccbbd",
+      "target": "node_8f6e967ed4",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a0bdc9e003",
+      "target": "node_8f6e967ed4",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8f6e967ed4",
+      "target": "node_3ca40981d4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8f6e967ed4",
+      "target": "node_3ca40981d4",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f3c9c0f79f",
+      "target": "node_5c72297ebe",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f3c9c0f79f",
+      "target": "node_5c72297ebe",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5c72297ebe",
+      "target": "node_f86e0489ed",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_5c72297ebe",
+      "target": "node_f86e0489ed",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_f86e0489ed",
+      "target": "node_76b3c0f065",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f3c9c0f79f",
+      "target": "node_76b3c0f065",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_76b3c0f065",
+      "target": "node_ae96f5c2f5",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_b08be3fa97",
+      "target": "node_f516c5d8ae",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a0bdc9e003",
+      "target": "node_f516c5d8ae",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f516c5d8ae",
+      "target": "node_3ca40981d4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f516c5d8ae",
+      "target": "node_3ca40981d4",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f3c9c0f79f",
+      "target": "node_27ebe78259",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f3c9c0f79f",
+      "target": "node_27ebe78259",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_27ebe78259",
+      "target": "node_d22cf24c51",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_27ebe78259",
+      "target": "node_d22cf24c51",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_d22cf24c51",
+      "target": "node_6fcbe86f38",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f3c9c0f79f",
+      "target": "node_6fcbe86f38",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6fcbe86f38",
+      "target": "node_938130cefc",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_a7c16bf086",
+      "target": "node_5fee0a053c",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "airtable",
+    "categoryLabel": "Airtable",
+    "department": "Sales",
+    "connectors": [
+      "airtable"
+    ],
+    "setupVars": [
+      {
+        "key": "airtableBaseId",
+        "label": "Airtable base id",
+        "type": "id",
+        "example": "appXXXX (from the base URL)",
+        "usedBy": [
+          "Airtable",
+          "createThread"
+        ]
+      },
+      {
+        "key": "airtableTableId",
+        "label": "Airtable table id",
+        "type": "id",
+        "example": "tblXXXX (from the table URL)",
+        "usedBy": [
+          "Airtable",
+          "createThread"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "HUBSPOT_TOKEN",
+        "label": "HubSpot private app token",
+        "host": "api.hubapi.com",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "hubspotToken",
+        "usedBy": [
+          "getHubspotMessage",
+          "respondHubspotMessage1"
+        ]
+      },
+      {
+        "key": "OPENAI_API_KEY",
+        "label": "OpenAI API key",
+        "host": "api.openai.com",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "openaiApiKey",
+        "usedBy": [
+          "Get Last Message",
+          "Get Run",
+          "OpenAI Run",
+          "OpenAI Run1",
+          "OpenAi Create Thread",
+          "Submit Data",
+          "Submit Data1"
+        ]
+      },
+      {
+        "key": "LISTAFIRME_API_KEY",
+        "label": "www.listafirme.ro API key",
+        "host": "www.listafirme.ro",
+        "headerFormat": "query parameter key=<secret>",
+        "contextKey": "listafirmeApiKey",
+        "usedBy": [
+          "HTTP Request",
+          "HTTP Request1"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeRepeatUntil",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 26,
+      "yantraSteps": 95,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Airtable/vAssistant for Hubspot Chat using OpenAi and Airtable.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "OpenAI Assistant for Hubspot Chat"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Webhook",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Webhook\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value airtableBaseId: Airtable base id (for example appXXXX (from the base URL)). Write it into the Workflow Configs initialContext before import.",
+      "Setup value airtableTableId: Airtable table id (for example tblXXXX (from the table URL)). Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret HUBSPOT_TOKEN: HubSpot private app token for api.hubapi.com (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Workflow secret OPENAI_API_KEY: OpenAI API key for api.openai.com (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Workflow secret LISTAFIRME_API_KEY: www.listafirme.ro API key for www.listafirme.ro (query parameter key=<secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the airtable connector (credential).",
+      "Provide run inputs: body, query, headers, $json."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "Webhook",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /hubspot-tinder). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "\"getHubspotMessage\" authenticated with hubspotAppToken in the original; add the matching Authorization header (or use the service's connector).",
+        "\"OpenAi Create Thread\" authenticated with openAiApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"OpenAI Run1\" authenticated with openAiApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"OpenAI Run1\": a request field used $('OtherNode'); on Yantra $() resolves via the named upstream map when that node ran earlier, else the immediate upstream - check that expression.",
+        "\"OpenAI Run\" authenticated with openAiApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Repeat: Get Run\" uses NodeRepeatUntil: carry each retry's state, return readiness through NEXT, and resume the selected exit only after onDone. Original interval waits are preserved. The attempt limit defaults to 30; adjust maxAttempts for the service or retry budget. Exhaustion stops with an error.",
+        "\"Get Run\" authenticated with openAiApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Get Last Message\" authenticated with openAiApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"respondHubspotMessage1\" authenticated with hubspotAppToken in the original; add the matching Authorization header (or use the service's connector).",
+        "\"respondHubspotMessage1\": a request field used $('OtherNode'); on Yantra $() resolves via the named upstream map when that node ran earlier, else the immediate upstream - check that expression.",
+        "\"HTTP Request\": the original shipped a literal API key in the URL; it was removed. Add your own.",
+        "\"HTTP Request1\": the original shipped a literal API key in the URL; it was removed. Add your own.",
+        "\"Submit Data\" authenticated with openAiApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Submit Data\": a request field used $('OtherNode'); on Yantra $() resolves via the named upstream map when that node ran earlier, else the immediate upstream - check that expression.",
+        "\"Submit Data1\" authenticated with openAiApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Submit Data1\": a request field used $('OtherNode'); on Yantra $() resolves via the named upstream map when that node ran earlier, else the immediate upstream - check that expression.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect airtable: `cdecli credential create -n \"airtable\" -p airtable --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "Watch for new message on the chatbot. \nThis can be triggered with [n8n chat widget](https://www.npmjs.com/package/@n8n/chat), hubspot or other chat services.",
+      "Post assistant Message back to chat service, in this case Hubspot",
+      "Create a new Thread, save it to database and RUN",
+      "UPDATE USER FILTER FOR DUPLICATION",
+      "Search for Thread ID in a database. \n\nThis database is maintaing references between messaging service thread id and OpenI Thread ID.",
+      "POST a new message to existing thread.",
+      "Get Run Status:\nIf still in progress, run again. \nIf action needed go to respective action.\nIf Completed, post message.",
+      "Run required actions based on Assistant answer and respond to Assistant with the function answer. \n\nEach route is a function that you need to define inside your assistant configuration."
+    ],
+    "nodes": {
+      "node_3d0c6b8d8c": {
+        "n8n": "Webhook",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_76035ca8b1": {
+        "n8n": "IF2",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_0d6367f7b7": {
+        "n8n": "IF2",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_c642f8e1d8": {
+        "n8n": "getHubspotMessage",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "hubspotAppToken"
+      },
+      "node_de5f448fe6": {
+        "n8n": "IF",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_fcf67c932e": {
+        "n8n": "IF",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_77273e91fb": {
+        "n8n": "Airtable",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_fee5661a4f": {
+        "n8n": "IF1",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_6633348f43": {
+        "n8n": "IF1",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_76c6a39e62": {
+        "n8n": "OpenAi Create Thread",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "openAiApi"
+      },
+      "node_7910a2a545": {
+        "n8n": "OpenAi Create Thread",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_fb480b3de7": {
+        "n8n": "OpenAI",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_4169df91d0": {
+        "n8n": "OpenAI",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_8493d37a75": {
+        "n8n": "createThread",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_6d63e05c25": {
+        "n8n": "createThread",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_13c9b583de": {
+        "n8n": "OpenAI Run1",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "openAiApi"
+      },
+      "node_735b978b92": {
+        "n8n": "OpenAI Run1",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_2f561ab455": {
+        "n8n": "OpenAI Run",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "openAiApi"
+      },
+      "node_5bdda63f18": {
+        "n8n": "OpenAI Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_133dac2c3c": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_f3c9c0f79f": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_3ca40981d4": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_718ee46f7d": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_e910e0025f": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_10ec809431": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_61061f0673": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "openAiApi"
+      },
+      "node_a0bdc9e003": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_8fb89bd396": {
+        "n8n": "Completed, Action or Inprogress",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_b6076ad38f": {
+        "n8n": "Completed, Action or Inprogress",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_8ff3bc8afe": {
+        "n8n": "Completed, Action or Inprogress",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_12596a3f4c": {
+        "n8n": "Completed, Action or Inprogress",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_847e127d34": {
+        "n8n": "Completed, Action or Inprogress",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_734bc17ea7": {
+        "n8n": "Completed, Action or Inprogress",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_fc2b394228": {
+        "n8n": "Completed, Action or Inprogress",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_63615ccbbd": {
+        "n8n": "Completed, Action or Inprogress",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_a6aac26638": {
+        "n8n": "Get Last Message",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "openAiApi"
+      },
+      "node_49da7002f0": {
+        "n8n": "Select Function",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_e7c416e504": {
+        "n8n": "Select Function",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_e5b616f17f": {
+        "n8n": "Select Function",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_b08be3fa97": {
+        "n8n": "Select Function",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_e153f5116c": {
+        "n8n": "Wait1",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_173b0ceca1": {
+        "n8n": "Wait1",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_f34f417b57": {
+        "n8n": "Wait1",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_3b58477e74": {
+        "n8n": "Wait1",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_defc40b279": {
+        "n8n": "Wait1",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_80f2cdedef": {
+        "n8n": "Wait",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_0878822b80": {
+        "n8n": "Wait",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_6e4f5547a3": {
+        "n8n": "Wait",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_263c4b6da4": {
+        "n8n": "Wait",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_8b500df049": {
+        "n8n": "Wait",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_a7c16bf086": {
+        "n8n": "respondHubspotMessage1",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "hubspotAppToken"
+      },
+      "node_bcb6912270": {
+        "n8n": "respondHubspotMessage1",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_980c3a746d": {
+        "n8n": "respondHubspotMessage1",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_8e9fa05ad9": {
+        "n8n": "HTTP Request",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_e1b564ef69": {
+        "n8n": "HTTP Request",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_9508c8f5cb": {
+        "n8n": "HTTP Request",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_965c928341": {
+        "n8n": "HTTP Request1",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_abd91e5ed6": {
+        "n8n": "HTTP Request1",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_f2086624c9": {
+        "n8n": "HTTP Request1",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_77ff21c236": {
+        "n8n": "Code1",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_a820b2f651": {
+        "n8n": "Code",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_c8a00e6481": {
+        "n8n": "Submit Data",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "openAiApi"
+      },
+      "node_34bf4c4f1c": {
+        "n8n": "Submit Data",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_bdf6b22b7a": {
+        "n8n": "Submit Data",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_4e043eaca8": {
+        "n8n": "Submit Data",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_34f2e815c6": {
+        "n8n": "Submit Data1",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "openAiApi"
+      },
+      "node_84d52d26d9": {
+        "n8n": "Submit Data1",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_9214540177": {
+        "n8n": "Submit Data1",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_eaf1dc4a4d": {
+        "n8n": "Submit Data1",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_9c0218d4e2": {
+        "n8n": "Wait2",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_8da56da141": {
+        "n8n": "Wait2",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_bc247a275b": {
+        "n8n": "Wait2",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_250a00aae7": {
+        "n8n": "Wait2",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_cb3c025490": {
+        "n8n": "Wait2",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_54fd24adb7": {
+        "n8n": "Wait3",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_b602f1520d": {
+        "n8n": "Wait3",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_e8ed0b9df4": {
+        "n8n": "Wait3",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_196c3d6733": {
+        "n8n": "Wait3",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_1225aa37be": {
+        "n8n": "Wait3",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_afe144446e": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_7ad525e73b": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_fd1c671ce4": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_7e73aa21b4": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_ed79a8068a": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_ef90729120": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_8d6a56a1e0": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_b70a4f086a": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_8f6e967ed4": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_5c72297ebe": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_f86e0489ed": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_76b3c0f065": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_ae96f5c2f5": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_f516c5d8ae": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_27ebe78259": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_d22cf24c51": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_6fcbe86f38": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_938130cefc": {
+        "n8n": "Get Run",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_5fee0a053c": {
+        "n8n": "__end:respondHubspotMessage1",
+        "n8nType": "synthetic"
+      },
+      "node_890c230ef1": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

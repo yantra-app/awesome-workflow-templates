@@ -1,0 +1,1149 @@
+{
+  "name": "Qualifying Appointment Requests with AI & n8n Forms",
+  "workflowSlug": "qualifying-appointment-requests-with-ai-n8n-forms",
+  "description": "Uses AI to qualify and process appointment requests submitted through n8n Forms.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_64db7e7fc2",
+      "actorId": "actor_64db7e7fc2",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_9ee8aac33a",
+      "actorId": "actor_9ee8aac33a",
+      "type": "NodeLlmChain",
+      "label": "Enquiry Classifier",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string",
+              "enum": [
+                "relevant enquiry",
+                "other"
+              ],
+              "description": "One of: relevant enquiry, other"
+            }
+          },
+          "required": [
+            "category"
+          ],
+          "additionalProperties": false
+        },
+        "system": "Classify the input into exactly one category.\n- relevant enquiry: Enquire about AI, automation, digital products and product engineering.",
+        "prompt": "{{Enquiry}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_428bba3d24",
+      "actorId": "actor_428bba3d24",
+      "type": "NodeTransform",
+      "label": "Enquiry Classifier: category = relevant enquiry",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.category ?? '') === \"relevant enquiry\";"
+      }
+    },
+    {
+      "nodeId": "node_4693c923ed",
+      "actorId": "actor_4693c923ed",
+      "type": "NodeBranch",
+      "label": "Enquiry Classifier: category = relevant enquiry?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_814e7e7533",
+      "actorId": "actor_814e7e7533",
+      "type": "NodeTransform",
+      "label": "Enquiry Classifier: category = other",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.category ?? '') === \"other\";"
+      }
+    },
+    {
+      "nodeId": "node_e110ec5dfc",
+      "actorId": "actor_e110ec5dfc",
+      "type": "NodeBranch",
+      "label": "Enquiry Classifier: category = other?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_c1e72b4e70",
+      "actorId": "actor_c1e72b4e70",
+      "type": "NodeLlmChain",
+      "label": "Summarise Enquiry",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "Summarise the given enquiry",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_931b3aabb5",
+      "actorId": "actor_931b3aabb5",
+      "type": "NodeTransform",
+      "label": "Prompt: Summarise Enquiry",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"n8n Form Trigger\": {{ctx}}, \"Execute Workflow Trigger\": {{ctx}}, \"Enquiry Classifier\": ((output) => ({ ...output, output }))(__namedCtx.steps?.[\"Enquiry Classifier\"]?.[\"object\"]) };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Summarise Enquiry.\nconst __promptValue = `The enquiry is as follows:\n${$('Execute Workflow Trigger').first().json.enquiry.substring(0, 500)}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_a5513b5d6c",
+      "actorId": "actor_a5513b5d6c",
+      "type": "NodeTransform",
+      "label": "Params: Wait for Approval",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"n8n Form Trigger\": {{ctx}}, \"Execute Workflow Trigger\": {{ctx}}, \"Terms & Conditions\": {{ctx}}, \"Decline\": {{ctx}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Params for googlesuper/GOOGLESUPER_SEND_EMAIL (n8n node \"Wait for Approval\").\nreturn {\n  \"recipient_email\": `admin@example.com`,\n  \"subject\": \"New Appointment Request!\",\n  \"body\": `<h2>A new appointment request was submitted!</h2>\n<p>\nRequesting appointment date is <strong>${DateTime.fromISO($('Execute Workflow Trigger').item.json.dateTime).format('EEE, dd MMM @ t')}</strong>.\n</p>\n<p>\nName: ${$('Execute Workflow Trigger').first().json.name}<br/>\nEmail: ${$('Execute Workflow Trigger').first().json.email}<br/>\nEnquiry Summary: ${$json}<br/>\nSubmitted at: ${$('Execute Workflow Trigger').first().json.submittedAt}\n</p>`,\n};"
+      }
+    },
+    {
+      "nodeId": "node_cb7816bd52",
+      "actorId": "actor_cb7816bd52",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_SEND_EMAIL"
+      }
+    },
+    {
+      "nodeId": "node_7da1c8665f",
+      "actorId": "actor_7da1c8665f",
+      "type": "NodeTransform",
+      "label": "Has Accepted?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json[\"Please select\"]) ?? '').startsWith(String(\"I accept\" ?? ''))));"
+      }
+    },
+    {
+      "nodeId": "node_1c00b38bb3",
+      "actorId": "actor_1c00b38bb3",
+      "type": "NodeBranch",
+      "label": "Has Accepted?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_771490642a",
+      "actorId": "actor_771490642a",
+      "type": "NodeTransform",
+      "label": "Has Approval?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.data.approved)) === true || (($json.data.approved)) === 'true'));"
+      }
+    },
+    {
+      "nodeId": "node_c2a7375f0d",
+      "actorId": "actor_c2a7375f0d",
+      "type": "NodeBranch",
+      "label": "Has Approval?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_435d444eb5",
+      "actorId": "actor_435d444eb5",
+      "type": "NodeTransform",
+      "label": "Params: Create Appointment",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"n8n Form Trigger\": {{ctx}}, \"Execute Workflow Trigger\": {{ctx}}, \"Terms & Conditions\": {{ctx}}, \"Decline\": {{ctx}}, \"Wait for Approval\": {{steps.GOOGLESUPER_SEND_EMAIL.result}}, \"Enter Date & Time\": {{ctx}}, \"Decline1\": {{ctx}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_CREATE_EVENT (n8n node \"Create Appointment\").\nreturn {\n  \"calendar_id\": \"{{calendarId}}\",\n  \"start_datetime\": ($('Execute Workflow Trigger').first().json.dateTime),\n  \"summary\": `Appointment Scheduled - ${$('Execute Workflow Trigger').item.json.name} & Jim`,\n  \"description\": `${$('Summarise Enquiry').first().json.text}\n\nOriginal message:\n> ${$('Execute Workflow Trigger').item.json.enquiry}`,\n  \"attendees\": [($('Execute Workflow Trigger').item.json.email)],\n};"
+      }
+    },
+    {
+      "nodeId": "node_8852230432",
+      "actorId": "actor_8852230432",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_CREATE_EVENT",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Calendar",
+        "action": "GOOGLESUPER_CREATE_EVENT"
+      }
+    },
+    {
+      "nodeId": "node_6bae838edf",
+      "actorId": "actor_6bae838edf",
+      "type": "NodeTransform",
+      "label": "Params: Send Rejection",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"n8n Form Trigger\": {{ctx}}, \"Execute Workflow Trigger\": {{ctx}}, \"Terms & Conditions\": {{ctx}}, \"Decline\": {{ctx}}, \"Wait for Approval\": {{steps.GOOGLESUPER_SEND_EMAIL.result}}, \"Enter Date & Time\": {{ctx}}, \"Decline1\": {{ctx}}, \"Create Appointment\": {{steps.GOOGLESUPER_CREATE_EVENT.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Params for googlesuper/GOOGLESUPER_SEND_EMAIL (n8n node \"Send Rejection\").\nreturn {\n  \"recipient_email\": ($('Execute Workflow Trigger').first().json.email),\n  \"subject\": `Appointment Request Rejected for ${DateTime.fromISO($('Execute Workflow Trigger').first().json.dateTime).format('EEE, dd MMM @ t')}`,\n  \"body\": `<p>Dear ${$('Execute Workflow Trigger').first().json.name},</p>\n<p>Unfortunately, we cannot schedule the requested appointment at the requested time.</p>\n<p>Kind regards</p>\n`,\n};"
+      }
+    },
+    {
+      "nodeId": "node_9f1d193224",
+      "actorId": "actor_9f1d193224",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_SEND_EMAIL"
+      }
+    },
+    {
+      "nodeId": "node_be3d0d3c4c",
+      "actorId": "actor_be3d0d3c4c",
+      "type": "NodeTransform",
+      "label": "Get Form Values",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"n8n Form Trigger\": {{ctx}}, \"Execute Workflow Trigger\": {{ctx}}, \"Terms & Conditions\": {{ctx}}, \"Decline\": {{ctx}}, \"Wait for Approval\": {{steps.GOOGLESUPER_SEND_EMAIL.result}}, \"Enter Date & Time\": {{ctx}}, \"Decline1\": {{ctx}}, \"Create Appointment\": {{steps.GOOGLESUPER_CREATE_EVENT.result}}, \"Send Rejection\": {{steps.GOOGLESUPER_SEND_EMAIL.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields from JSON (n8n Set node, JSON mode): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const __raw = ({\n name: $('n8n Form Trigger').first().json['Your Name'],\n email: $('n8n Form Trigger').first().json.Email,\n enquiry: $('n8n Form Trigger').first().json.Enquiry,\n dateTime: DateTime.fromFormat(`${$json.Date} ${$json.Time}`, \"EEE, dd MMM t\"),\n submittedAt: $('n8n Form Trigger').first().json.submittedAt,\n});\n  let __obj;\n  try { __obj = typeof __raw === 'string' ? JSON.parse(__raw) : __raw; } catch (e) { throw new Error('Set node JSON is not valid JSON: ' + e.message); }\n  return __obj;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_5ce6bdfea1",
+      "actorId": "actor_5ce6bdfea1",
+      "type": "NodeTransform",
+      "label": "Trigger Approval Process",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst $workflow = { id: '', name: '', active: true }; const $execution = { id: '', mode: 'manual', resumeUrl: '' }; const $executionId = $execution.id;\nconst $runIndex = 0; const $itemIndex = 0; const $binary = {}; const $prevNode = { name: '', outputIndex: 0, runIndex: 0 }; const $parameter = {}; const $position = 0;\n// executeWorkflow: compose the subflow manually (original workflow: ={{ $workflow.id }}).\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_bcb8d71075",
+      "actorId": "actor_bcb8d71075",
+      "type": "NodeTransform",
+      "label": "Params: Send Receipt",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"n8n Form Trigger\": {{ctx}}, \"Execute Workflow Trigger\": {{ctx}}, \"Terms & Conditions\": {{ctx}}, \"Decline\": {{ctx}}, \"Wait for Approval\": {{steps.GOOGLESUPER_SEND_EMAIL.result}}, \"Enter Date & Time\": {{ctx}}, \"Decline1\": {{ctx}}, \"Create Appointment\": {{steps.GOOGLESUPER_CREATE_EVENT.result}}, \"Send Rejection\": {{steps.GOOGLESUPER_SEND_EMAIL.result}}, \"Get Form Values\": {{steps.xf_be3d0d3c4c.result}}, \"Trigger Approval Process\": {{steps.xf_5ce6bdfea1.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Params for googlesuper/GOOGLESUPER_SEND_EMAIL (n8n node \"Send Receipt\").\nreturn {\n  \"recipient_email\": ($('Get Form Values').first().json.email),\n  \"subject\": `Appointment Request Received for ${DateTime.fromISO($('Get Form Values').first().json.dateTime).format('EEE, dd MMM @ t')}`,\n  \"body\": `<p>Dear ${$('Get Form Values').first().json.name},</p>\n<p>Thanks for requesting an appointment. We will review and get back to you shortly.</p>\n<p>Here is the summary of the request that was sent:</p>\n<p>\nName: ${$('Get Form Values').first().json.name}<br/>\nEmail: ${$('Get Form Values').first().json.email}<br/>\nEnquiry: ${$('Get Form Values').first().json.enquiry}<br/>\nSubmitted at: ${$('Get Form Values').first().json.submittedAt}\n</p>\n`,\n};"
+      }
+    },
+    {
+      "nodeId": "node_1a8e2622dd",
+      "actorId": "actor_1a8e2622dd",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 1600,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_SEND_EMAIL"
+      }
+    },
+    {
+      "nodeId": "node_bb6c5f5d39",
+      "actorId": "actor_bb6c5f5d39",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_3e3aa6db4e",
+      "actorId": "actor_3e3aa6db4e",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_7cbe5a102f",
+      "actorId": "actor_7cbe5a102f",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 1140
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "Your Name": "",
+          "Email": "",
+          "Enquiry": "",
+          "Please select": "",
+          "calendarId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_9573606245",
+      "actorId": "actor_9573606245",
+      "type": "NodeChatModel",
+      "label": "Enquiry Classifier: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 1320
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    },
+    {
+      "nodeId": "node_438242ad95",
+      "actorId": "actor_438242ad95",
+      "type": "NodeChatModel",
+      "label": "Summarise Enquiry: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 1280
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_9ee8aac33a",
+      "target": "node_428bba3d24",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9ee8aac33a",
+      "target": "node_428bba3d24",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_428bba3d24",
+      "target": "node_4693c923ed",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_428bba3d24",
+      "target": "node_4693c923ed",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_9ee8aac33a",
+      "target": "node_814e7e7533",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4693c923ed",
+      "target": "node_814e7e7533",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_814e7e7533",
+      "target": "node_e110ec5dfc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_814e7e7533",
+      "target": "node_e110ec5dfc",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_931b3aabb5",
+      "target": "node_c1e72b4e70",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_a5513b5d6c",
+      "target": "node_cb7816bd52",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_a5513b5d6c",
+      "target": "node_cb7816bd52",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_7da1c8665f",
+      "target": "node_1c00b38bb3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_7da1c8665f",
+      "target": "node_1c00b38bb3",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_771490642a",
+      "target": "node_c2a7375f0d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_771490642a",
+      "target": "node_c2a7375f0d",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_435d444eb5",
+      "target": "node_8852230432",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_435d444eb5",
+      "target": "node_8852230432",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_6bae838edf",
+      "target": "node_9f1d193224",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_6bae838edf",
+      "target": "node_9f1d193224",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_bcb8d71075",
+      "target": "node_1a8e2622dd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_bcb8d71075",
+      "target": "node_1a8e2622dd",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_64db7e7fc2",
+      "target": "node_9ee8aac33a",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_64db7e7fc2",
+      "target": "node_be3d0d3c4c",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_be3d0d3c4c",
+      "target": "node_5ce6bdfea1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_be3d0d3c4c",
+      "target": "node_5ce6bdfea1",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_64db7e7fc2",
+      "target": "node_7da1c8665f",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cb7816bd52",
+      "target": "node_771490642a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cb7816bd52",
+      "target": "node_771490642a",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c2a7375f0d",
+      "target": "node_435d444eb5",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cb7816bd52",
+      "target": "node_435d444eb5",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c2a7375f0d",
+      "target": "node_6bae838edf",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cb7816bd52",
+      "target": "node_6bae838edf",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5ce6bdfea1",
+      "target": "node_bcb8d71075",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5ce6bdfea1",
+      "target": "node_bcb8d71075",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_64db7e7fc2",
+      "target": "node_931b3aabb5",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c1e72b4e70",
+      "target": "node_a5513b5d6c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c1e72b4e70",
+      "target": "node_a5513b5d6c",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8852230432",
+      "target": "node_bb6c5f5d39",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_9f1d193224",
+      "target": "node_3e3aa6db4e",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_9573606245",
+      "target": "node_9ee8aac33a",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_438242ad95",
+      "target": "node_c1e72b4e70",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "forms-and-surveys",
+    "categoryLabel": "Forms and Surveys",
+    "department": "Sales/Support",
+    "connectors": [
+      "googlesuper",
+      "openai"
+    ],
+    "setupVars": [
+      {
+        "key": "calendarId",
+        "label": "Google Calendar id",
+        "type": "id",
+        "example": "primary",
+        "usedBy": [
+          "Create Appointment"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 19,
+      "yantraSteps": 24,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "OpenAI Chat Model1"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Forms_and_Surveys/Qualifying Appointment Requests with AI & n8n Forms.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Decline",
+        "detail": "n8n-nodes-base.form became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Decline1",
+        "detail": "n8n-nodes-base.form became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Enter Date & Time",
+        "detail": "n8n-nodes-base.form became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Execute Workflow Trigger",
+        "detail": "n8n-nodes-base.executeWorkflowTrigger became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Form End",
+        "detail": "n8n-nodes-base.form became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "n8n Form Trigger",
+        "detail": "n8n-nodes-base.formTrigger became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Terms & Conditions",
+        "detail": "n8n-nodes-base.form became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Decline\" (form) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Decline1\" (form) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Enter Date & Time\" (form) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Execute Workflow Trigger\" (executeWorkflowTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Form End\" (form) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"n8n Form Trigger\" (formTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Terms & Conditions\" (form) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value calendarId: Google Calendar id (for example primary). Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "Provide run inputs: Your Name, Email, Enquiry, Please select."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Trigger Approval Process",
+          "n8n": "executeWorkflow",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Enquiry Classifier"
+        },
+        {
+          "node": "OpenAI Chat Model1",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Summarise Enquiry"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "n8n Form Trigger",
+          "type": "n8n-nodes-base.formTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Execute Workflow Trigger",
+          "type": "n8n-nodes-base.executeWorkflowTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Terms & Conditions",
+          "type": "n8n-nodes-base.form",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Decline",
+          "type": "n8n-nodes-base.form",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Enter Date & Time",
+          "type": "n8n-nodes-base.form",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Decline1",
+          "type": "n8n-nodes-base.form",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Form End",
+          "type": "n8n-nodes-base.form",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from a form submission; pass the form fields as run inputs.",
+        "The original was a sub-workflow called by another workflow; pass its inputs as run inputs.",
+        "\"Trigger Approval Process\" (executeWorkflow): Sub-workflow calls are not imported automatically; compose the child graph by hand or paste its steps inline.",
+        "\"Trigger Approval Process\" called another n8n workflow (={{ $workflow.id }}); on Yantra, open that workflow as its own template (or rebuild it) and replace this passthrough with a call into it.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## 1. Qualify Enquiries Using AI\n[Learn more about the text classifier](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.text-classifier/)\n\nWith n8n's multi-forms, you’re no longer stuck creating long, overwhelming forms. Instead, you have more flexibility and control to design smarter, more engaging form experiences.\n\nIn this demo, we’ll explore an appointment request scenario where a user wants to schedule a call to discuss their inquiry. However, not all inquiries require a meeting, making it a perfect use case for AI to pre-qualify the request. We can handle this validation using the text classifier node.",
+      "## 2. Split Form For Better User Experience\n[Learn more about the forms](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.form)\n\nOnboarding is a great reason to split your big form into smaller ones. Taking the user through a step by step process ensures a smooth experience and keeps them engaged throughout.\n\nHere, we take the opportunity of the extra context space to display a terms and conditions which the user must agree to making their request. The next form then asks for desired date and time of the event.",
+      "## 3. Send Acknowledgement to User and Start Approval Process\n[Learn more about the Gmail node](https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.gmail/)\n\nOnce all form steps are concluded, we can send a notification to the requester via email and in the background, trigger another email to the admin to initiate the approval process. The approval process works in a separate execution so doesn't interrupt the user's form experience.",
+      "## 4. Approve or Decline Appointment\n[Learn more about the Waiting for Approval](https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.gmail/message-operations/#send-a-message-and-wait-for-approval)\n\nThe Wait for Approval feature for Gmail is a special operation which allows for human-in-the-loop interaction in n8n workflows. In this example, the human interaction is the approval of the appointment request. The feature will put the workflow in a waiting state where a message is sent to the admin with 2 buttons: confirm and decline.\n\nWhen the admin clicks on the confirm button, the workflow resumes from the Gmail node and a meeting event is created for the requesting user in Google Calendar.\n\nWhen declined, a rejection email is sent to the requester instead.",
+      "## Try it out!\n\n### This n8n template is a simple appointment scheduling workflow using n8n forms with AI thrown in the mix for good measure. It also uses n8n's wait for approval feature which allows the ability to confirm appointment requests and create events in Google Calendar.\n\n### How it works\n* We start with a form trigger which asks for the purpose of the appointment.\n* Instantly, we can qualify this by using a text classifier node which uses AI's contextual understanding to ensure the appointment is worthwhile. If not, an alternative is suggested instead.\n* Multi-page forms are then used to set the terms of the appointment and ask the user for a desired date and time.\n* An acknowledgement is sent to the user while an approval by email process is triggered in the background.\n* In a subworkflow, we use Gmail with the wait for approval operation to send an approval form to the admin user who can either confirm or decline the appointment request.\n* When approved, a Google Calendar event is created. When declined, the user is notified via email that the appointment request was declined.\n\n### Need Help?\nJoin the [Discord](https://discord.com/invite/XPKeKXeB7d) or ask in the [Forum](https://community.n8n.io/)!\n\nHappy Hacking!",
+      "### 🚨 Set your admin email here!"
+    ],
+    "nodes": {
+      "node_64db7e7fc2": {
+        "n8n": "n8n Form Trigger",
+        "n8nType": "n8n-nodes-base.formTrigger",
+        "also": [
+          "Execute Workflow Trigger",
+          "Terms & Conditions",
+          "Decline",
+          "Enter Date & Time",
+          "Decline1",
+          "Form End"
+        ]
+      },
+      "node_9ee8aac33a": {
+        "n8n": "Enquiry Classifier",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_428bba3d24": {
+        "n8n": "Enquiry Classifier",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_4693c923ed": {
+        "n8n": "Enquiry Classifier",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_814e7e7533": {
+        "n8n": "Enquiry Classifier",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_e110ec5dfc": {
+        "n8n": "Enquiry Classifier",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_c1e72b4e70": {
+        "n8n": "Summarise Enquiry",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_931b3aabb5": {
+        "n8n": "Summarise Enquiry",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_a5513b5d6c": {
+        "n8n": "Wait for Approval",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_cb7816bd52": {
+        "n8n": "Wait for Approval",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_7da1c8665f": {
+        "n8n": "Has Accepted?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_1c00b38bb3": {
+        "n8n": "Has Accepted?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_771490642a": {
+        "n8n": "Has Approval?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_c2a7375f0d": {
+        "n8n": "Has Approval?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_435d444eb5": {
+        "n8n": "Create Appointment",
+        "n8nType": "n8n-nodes-base.googleCalendar"
+      },
+      "node_8852230432": {
+        "n8n": "Create Appointment",
+        "n8nType": "n8n-nodes-base.googleCalendar"
+      },
+      "node_6bae838edf": {
+        "n8n": "Send Rejection",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_9f1d193224": {
+        "n8n": "Send Rejection",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_be3d0d3c4c": {
+        "n8n": "Get Form Values",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_5ce6bdfea1": {
+        "n8n": "Trigger Approval Process",
+        "n8nType": "n8n-nodes-base.executeWorkflow"
+      },
+      "node_bcb8d71075": {
+        "n8n": "Send Receipt",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_1a8e2622dd": {
+        "n8n": "Send Receipt",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_bb6c5f5d39": {
+        "n8n": "__end:Create Appointment",
+        "n8nType": "synthetic"
+      },
+      "node_3e3aa6db4e": {
+        "n8n": "__end:Send Rejection",
+        "n8nType": "synthetic"
+      },
+      "node_7cbe5a102f": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_9573606245": {
+        "n8n": "Enquiry Classifier",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_438242ad95": {
+        "n8n": "Summarise Enquiry",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

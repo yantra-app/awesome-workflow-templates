@@ -1,0 +1,373 @@
+{
+  "name": "AI Customer feedback sentiment analysis",
+  "workflowSlug": "ai-customer-feedback-sentiment-analysis",
+  "description": "Sentiment analysis on customer feedback.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_3a10ad3c32",
+      "actorId": "actor_3a10ad3c32",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_8402cc93cb",
+      "actorId": "actor_8402cc93cb",
+      "type": "NodeLlmChain",
+      "label": "Classify feedback with OpenAI",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_2f36be7a82",
+      "actorId": "actor_2f36be7a82",
+      "type": "NodeTransform",
+      "label": "Prompt: Classify feedback with OpenAI",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Classify feedback with OpenAI.\nconst __promptValue = `Classify the sentiment in the following customer feedback: ${$json['Your feedback']}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_a68e1cd678",
+      "actorId": "actor_a68e1cd678",
+      "type": "NodeSync",
+      "label": "Merge sentiment with form content",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_49c0d68530",
+      "actorId": "actor_49c0d68530",
+      "type": "NodeTransform",
+      "label": "Params: Add customer feedback to Google Sheets",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND (n8n node \"Add customer feedback to Google Sheets\").\nreturn {\n  \"spreadsheetId\": \"{{spreadsheetId}}\",\n  \"range\": \"Sheet1\",\n  \"values\": [[($json['What is your feedback about?']), ($json.text), ($json.submittedAt), `Form`, ($json.Name), ($json['How do we get in touch with you?']), ($json['Your feedback'])]],\n  \"valueInputOption\": \"USER_ENTERED\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_91d8344adf",
+      "actorId": "actor_91d8344adf",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_SPREADSHEETS_VALUES_APPEND"
+      }
+    },
+    {
+      "nodeId": "node_ca37f50f46",
+      "actorId": "actor_ca37f50f46",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_6b1dfd3d9c",
+      "actorId": "actor_6b1dfd3d9c",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "Name": "",
+          "What is your feedback about?": "",
+          "Your feedback": "",
+          "How do we get in touch with you?": "",
+          "spreadsheetId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_d39e0634a6",
+      "actorId": "actor_d39e0634a6",
+      "type": "NodeChatModel",
+      "label": "Classify feedback with OpenAI: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_2f36be7a82",
+      "target": "node_8402cc93cb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_49c0d68530",
+      "target": "node_91d8344adf",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_49c0d68530",
+      "target": "node_91d8344adf",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_a68e1cd678",
+      "target": "node_49c0d68530",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a68e1cd678",
+      "target": "node_49c0d68530",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8402cc93cb",
+      "target": "node_a68e1cd678",
+      "sourceOutput": "text",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_3a10ad3c32",
+      "target": "node_2f36be7a82",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_91d8344adf",
+      "target": "node_ca37f50f46",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_d39e0634a6",
+      "target": "node_8402cc93cb",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "Customer Service/Marketing/Data Analysis",
+    "connectors": [
+      "googlesuper",
+      "openai"
+    ],
+    "setupVars": [
+      {
+        "key": "spreadsheetId",
+        "label": "Spreadsheet id",
+        "type": "id",
+        "example": "1AbC...xyz",
+        "usedBy": [
+          "Add customer feedback to Google Sheets"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 4,
+      "yantraSteps": 7,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/AI Customer feedback sentiment analysis.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Submit form with customer feedback",
+        "detail": "n8n-nodes-base.formTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Submit form with customer feedback\" (formTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value spreadsheetId: Spreadsheet id (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "Provide run inputs: Name, What is your feedback about?, Your feedback, How do we get in touch with you?."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Submit form with customer feedback",
+          "type": "n8n-nodes-base.formTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from a form submission; pass the form fields as run inputs.",
+        "\"Merge sentiment with form content\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Send customer feedback to OpenAI for sentiment analysis",
+      "## Add new feedback to google sheets",
+      "## Instructions\n1. Connect Google sheets\n2. Connect your OpenAi account (api key + org Id)\n3. Create a customer feedback form, use an existing one or use the one below as example. \nAll set!\n\n\n- Here is the example google sheet being used in this workflow: https://docs.google.com/spreadsheets/d/[id removed]/edit?usp=sharing. You can download it to your account.",
+      "## Feedback form is submitted",
+      "## Merge form data and OpenAI result"
+    ],
+    "nodes": {
+      "node_3a10ad3c32": {
+        "n8n": "Submit form with customer feedback",
+        "n8nType": "n8n-nodes-base.formTrigger"
+      },
+      "node_8402cc93cb": {
+        "n8n": "Classify feedback with OpenAI",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_2f36be7a82": {
+        "n8n": "Classify feedback with OpenAI",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_a68e1cd678": {
+        "n8n": "Merge sentiment with form content",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_49c0d68530": {
+        "n8n": "Add customer feedback to Google Sheets",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_91d8344adf": {
+        "n8n": "Add customer feedback to Google Sheets",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_ca37f50f46": {
+        "n8n": "__end:Add customer feedback to Google Sheets",
+        "n8nType": "synthetic"
+      },
+      "node_6b1dfd3d9c": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_d39e0634a6": {
+        "n8n": "Classify feedback with OpenAI",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

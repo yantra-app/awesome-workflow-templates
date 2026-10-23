@@ -1,0 +1,483 @@
+{
+  "name": "AI Stock Image Metadata Generator",
+  "workflowSlug": "ai-stock-image-metadata-generator",
+  "description": "Generates title, description, and 20-40 keywords for stock photos using OpenAI Vision. Webhook-triggered, returns CSV-ready metadata.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_96d15df2ba",
+      "actorId": "actor_96d15df2ba",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_206622e9cc",
+      "actorId": "actor_206622e9cc",
+      "type": "NodeTransform",
+      "label": "Parse Input",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook\": {{ctx}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Parse Input\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Accept either { imageUrl } or { imageBase64 } (data URL) in the webhook body\n  const raw = $('Webhook').first().json.body || $('Webhook').first().json || {};\n  let imageRef = raw.imageUrl || raw.image_url || raw.image || null;\n  if (!imageRef && raw.imageBase64) {\n    // Allow raw base64 without the data: prefix - wrap it\n    imageRef = raw.imageBase64.startsWith('data:') ? raw.imageBase64 : 'data:image/jpeg;base64,' + raw.imageBase64;\n  }\n  if (!imageRef) {\n    throw new Error('No image provided. Send JSON with \"imageUrl\" (public URL) or \"imageBase64\" (data URL).');\n  }\n  return [{ json: { imageRef } }];\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_dc339afcc9",
+      "actorId": "actor_dc339afcc9",
+      "type": "NodeTransform",
+      "label": "Build Vision Request",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Ported from n8n Code node \"Build Vision Request\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Build the OpenAI vision request body. Prompt: stock metadata (title, description, 20-40 keywords).\n  const imageRef = $json.imageRef;\n  const body = {\n    model: 'gpt-4o-mini',\n    messages: [\n      {\n        role: 'system',\n        content: 'You are a professional stock-photo metadata writer. You write metadata that makes images SELL on stock marketplaces (Adobe Stock, Shutterstock, Getty).'\n      },\n      {\n        role: 'user',\n        content: [\n          {\n            type: 'text',\n            text: 'Analyze this image and return ONLY raw JSON (no markdown, no code fences) with exactly these fields: {\"title\": \"compelling stock title under 12 words\", \"description\": \"2-3 sentence description with subject, setting, mood, use cases\", \"keywords\": [\"20-40 lowercase keywords\", \"comma-separated array\"]}. Keywords: mix of subject, style, concept, mood, and usage keywords a buyer would search.'\n          },\n          { type: 'image_url', image_url: { url: imageRef } }\n        ]\n      }\n    ],\n    temperature: 0.3,\n    max_tokens: 800\n  };\n  return [{ json: { requestBody: JSON.stringify(body) } }];\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_30d2970e03",
+      "actorId": "actor_30d2970e03",
+      "type": "NodeLlmChain",
+      "label": "Vision LLM",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{llm_system_9de8aada00}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_9de8aada00",
+      "actorId": "actor_9de8aada00",
+      "type": "NodeTransform",
+      "label": "System: Vision LLM",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: Vision LLM.\nconst __promptValue = (() => { const __b = (() => { const __v = ($json.requestBody); if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn (__b.messages || []).filter((m) => m?.role === 'system' || m?.role === 'developer').map((m) => __t(m.content)).join('\\n\\n'); })();\nreturn { \"llm_system_9de8aada00\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_48f5bc2286",
+      "actorId": "actor_48f5bc2286",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Vision LLM",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_e3d7520e2e",
+      "actorId": "actor_e3d7520e2e",
+      "type": "NodeTransform",
+      "label": "Prompt: Vision LLM",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Vision LLM.\nconst __promptValue = (() => { const __b = (() => { const __v = ($json.requestBody); if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn (() => { const u = (__b.messages || []).filter((m) => m && m.role !== 'system' && m.role !== 'developer'); return __b.__raw ?? (u.length === 1 ? __t(u[0].content) : u.map((m) => m.role + ': ' + __t(m.content)).join('\\n\\n')); })(); })();\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_c3824fc3d1",
+      "actorId": "actor_c3824fc3d1",
+      "type": "NodeTransform",
+      "label": "Parse Metadata",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Ported from n8n Code node \"Parse Metadata\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Parse the LLM response; tolerate code fences and whitespace\n  let content = $json.choices && $json.choices[0] && $json.choices[0].message\n    ? $json : String($json || '');\n  content = content.replace(/```json\\s*/gi, '').replace(/```/g, '').trim();\n  let meta;\n  try {\n    meta = JSON.parse(content);\n  } catch (e) {\n    // Fallback: extract first {...} block\n    const m = content.match(/\\{[\\s\\S]*\\}/);\n    meta = m ? JSON.parse(m[0]) : {};\n  }\n  const title = (meta.title || 'Untitled').trim();\n  const description = (meta.description || '').trim();\n  const keywords = Array.isArray(meta.keywords) ? meta.keywords.map(k => String(k).trim()).filter(Boolean) : [];\n  if (!title || !description || keywords.length === 0) {\n    throw new Error('Bad LLM output: missing title/description/keywords. Got: ' + content.slice(0, 200));\n  }\n  return [{ json: { title, description, keywords, keyword_count: keywords.length } }];\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_75d22d7d4b",
+      "actorId": "actor_75d22d7d4b",
+      "type": "NodeTransform",
+      "label": "Build CSV Row",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Ported from n8n Code node \"Build CSV Row\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Emit the metadata row as CSV (RFC-4180-ish quoting) + a JSON view for the response\n  const t = $json.title.replace(/\"/g, '\"\"');\n  const d = $json.description.replace(/\"/g, '\"\"');\n  const kw = $json.keywords.join('; ').replace(/\"/g, '\"\"');\n  const csvLine = `\"${t}\",\"${d}\",\"${kw}\"`;\n  const csvHeader = '\"title\",\"description\",\"keywords\"';\n  return [{\n    json: {\n      title: $json.title,\n      description: $json.description,\n      keywords: $json.keywords,\n      keyword_count: $json.keyword_count,\n      csv_row: csvLine,\n      csv: csvHeader + '\\n' + csvLine\n    }\n  }];\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_29ec214018",
+      "actorId": "actor_29ec214018",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_d97ddac3dd",
+      "actorId": "actor_d97ddac3dd",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {}
+        }
+      }
+    },
+    {
+      "nodeId": "node_864bed82ec",
+      "actorId": "actor_864bed82ec",
+      "type": "NodeChatModel",
+      "label": "Vision LLM: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2360,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_9de8aada00",
+      "target": "node_48f5bc2286",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_9de8aada00",
+      "target": "node_48f5bc2286",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_48f5bc2286",
+      "target": "node_e3d7520e2e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e3d7520e2e",
+      "target": "node_30d2970e03",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_96d15df2ba",
+      "target": "node_206622e9cc",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_206622e9cc",
+      "target": "node_dc339afcc9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_206622e9cc",
+      "target": "node_dc339afcc9",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dc339afcc9",
+      "target": "node_9de8aada00",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dc339afcc9",
+      "target": "node_9de8aada00",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dc339afcc9",
+      "target": "node_e3d7520e2e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_30d2970e03",
+      "target": "node_c3824fc3d1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_30d2970e03",
+      "target": "node_c3824fc3d1",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c3824fc3d1",
+      "target": "node_75d22d7d4b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c3824fc3d1",
+      "target": "node_75d22d7d4b",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_75d22d7d4b",
+      "target": "node_29ec214018",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_864bed82ec",
+      "target": "node_30d2970e03",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "Content Creation/AI/Photography",
+    "connectors": [
+      "openai"
+    ],
+    "nodeTypes": [
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 7,
+      "yantraSteps": 10,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/AI Stock Image Metadata Generator.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "AI Stock Image Metadata Generator"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Webhook",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Webhook\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Connect the openai connector (credential).",
+      "Provide run inputs: body, query, headers, llm_system_9de8aada00."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Vision LLM",
+          "n8n": "httpRequest.openai.chat",
+          "action": "NodeLlmChain",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Webhook",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /stock-image-meta). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "\"Vision LLM\" called the OpenAI API over HTTP; it now runs on LLMChain with a Chat Model and provider connector credential, and later steps read the answer text instead of the provider's JSON.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_96d15df2ba": {
+        "n8n": "Webhook",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_206622e9cc": {
+        "n8n": "Parse Input",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_dc339afcc9": {
+        "n8n": "Build Vision Request",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_30d2970e03": {
+        "n8n": "Vision LLM",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "llmProvider": "openai"
+      },
+      "node_9de8aada00": {
+        "n8n": "Vision LLM",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_48f5bc2286": {
+        "n8n": "Vision LLM",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_e3d7520e2e": {
+        "n8n": "Vision LLM",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_c3824fc3d1": {
+        "n8n": "Parse Metadata",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_75d22d7d4b": {
+        "n8n": "Build CSV Row",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_29ec214018": {
+        "n8n": "Respond to Webhook",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_d97ddac3dd": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_864bed82ec": {
+        "n8n": "Vision LLM",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

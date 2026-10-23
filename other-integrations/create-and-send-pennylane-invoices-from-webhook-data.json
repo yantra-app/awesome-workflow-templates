@@ -1,0 +1,1996 @@
+{
+  "name": "Create and send Pennylane invoices from webhook data",
+  "workflowSlug": "create-and-send-pennylane-invoices-from-webhook-data",
+  "description": "Receives validated invoice data through an HTTP Basic Auth-protected webhook, finds or creates the customer in Pennylane, creates a finalized invoice, optionally emails it through Pennylane, and returns the result.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_690f6450cb",
+      "actorId": "actor_690f6450cb",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_ced401e30e",
+      "actorId": "actor_ced401e30e",
+      "type": "NodeTransform",
+      "label": "Code Validate Payload",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\nconst items = __items.map((json) => ({ json }));\n// Ported from n8n Code node \"Code Validate Payload\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const webhookItem = $input.first().json;\n  const input = webhookItem.body ?? webhookItem;\n  const errors = [];\n  \n  if (typeof input.customer_name !== 'string' || input.customer_name.trim() === '') {\n    errors.push('customer_name is required');\n  }\n  if (typeof input.customer_email !== 'string' || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(input.customer_email)) {\n    errors.push('customer_email is required and must be valid');\n  }\n  if (!Array.isArray(input.items) || input.items.length === 0) {\n    errors.push('items array is required and must contain at least one item');\n  } else {\n    input.items.forEach((item, i) => {\n      if (typeof item.label !== 'string' || item.label.trim() === '') errors.push(`items[${i}].label is required`);\n      if (typeof item.quantity !== 'number' || !Number.isFinite(item.quantity) || item.quantity <= 0) errors.push(`items[${i}].quantity must be a number > 0`);\n      if (typeof item.unit_price !== 'number' || !Number.isFinite(item.unit_price) || item.unit_price <= 0) errors.push(`items[${i}].unit_price must be a number > 0`);\n    });\n  }\n  if (input.customer_country && !/^[A-Z]{2}$/.test(input.customer_country)) {\n    errors.push('customer_country must be an uppercase ISO alpha-2 code');\n  }\n  if (input.due_date && !/^\\d{4}-\\d{2}-\\d{2}$/.test(input.due_date)) {\n    errors.push('due_date must use YYYY-MM-DD format');\n  }\n  if (errors.length > 0) throw new Error('Validation failed: ' + errors.join('; '));\n  \n  return [{ json: {\n    customer_name: input.customer_name.trim(),\n    customer_email: input.customer_email.trim().toLowerCase(),\n    customer_address: typeof input.customer_address === 'string' ? input.customer_address : '',\n    customer_postal_code: typeof input.customer_postal_code === 'string' ? input.customer_postal_code : '00000',\n    customer_city: typeof input.customer_city === 'string' ? input.customer_city : 'Non renseigné',\n    customer_country: input.customer_country || 'FR',\n    items: input.items.map(item => ({\n      label: item.label.trim(),\n      quantity: item.quantity,\n      unit_price: item.unit_price,\n      vat_rate: item.vat_rate || 'FR_200'\n    })),\n    due_date: input.due_date || new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],\n    currency: input.currency || 'EUR',\n    reference: input.reference || null,\n    send_email: input.send_email === true\n  } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_388021c5c1",
+      "actorId": "actor_388021c5c1",
+      "type": "NodeHttpRequest",
+      "label": "PL Search Customer",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "headers": {
+          "Authorization": "Bearer {{pennylaneToken}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_a622397c94",
+      "actorId": "actor_a622397c94",
+      "type": "NodeTransform",
+      "label": "URL: PL Search Customer",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request URL for \"PL Search Customer\".\nreturn `https://app.pennylane.com/api/external/v2/customers?filter=${JSON.stringify([{ field: 'emails', operator: 'in', value: $json.customer_email }])}`;"
+      }
+    },
+    {
+      "nodeId": "node_4a34f29bd3",
+      "actorId": "actor_4a34f29bd3",
+      "type": "NodeTransform",
+      "label": "IF Customer Exists: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((Number(($json.items.length)) > Number(0)));"
+      }
+    },
+    {
+      "nodeId": "node_89ef3dbb58",
+      "actorId": "actor_89ef3dbb58",
+      "type": "NodeBranch",
+      "label": "IF Customer Exists: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_1e322e693e",
+      "actorId": "actor_1e322e693e",
+      "type": "NodeHttpRequest",
+      "label": "PL Create Customer",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://app.pennylane.com/api/external/v2/company_customers",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{pennylaneToken}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_e0159babcc",
+      "actorId": "actor_e0159babcc",
+      "type": "NodeTransform",
+      "label": "Body: PL Create Customer",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Code Validate Payload\": __namedCtx.steps?.[\"Code Validate Payload\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"PL Create Customer\".\nconst __body = (JSON.stringify({ name: $('Code Validate Payload').item.json.customer_name, emails: [$('Code Validate Payload').item.json.customer_email], billing_address: { address: $('Code Validate Payload').item.json.customer_address, postal_code: $('Code Validate Payload').item.json.customer_postal_code, city: $('Code Validate Payload').item.json.customer_city, country: $('Code Validate Payload').item.json.customer_country } }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_497d1c51dd",
+      "actorId": "actor_497d1c51dd",
+      "type": "NodeTransform",
+      "label": "Set Customer ID",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"customer_id\"] = Number(($json.id ?? $json.items?.[0]?.id));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_c888038e39",
+      "actorId": "actor_c888038e39",
+      "type": "NodeTransform",
+      "label": "Code Build Invoice Payload",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Code Validate Payload\": __namedCtx.steps?.[\"Code Validate Payload\"]?.[\"transformed\"], \"Set Customer ID\": __namedCtx.steps?.[\"Set Customer ID\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Code Build Invoice Payload\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Refs: 'Set Customer ID', 'Code Validate Payload'\n  const data = $('Code Validate Payload').first().json;\n  const customerId = $('Set Customer ID').first().json.customer_id;\n  \n  const invoiceLines = data.items.map(item => ({\n    label: item.label,\n    quantity: item.quantity,\n    unit: 'piece',\n    raw_currency_unit_price: String(item.unit_price.toFixed(2)),\n    vat_rate: item.vat_rate\n  }));\n  \n  const today = new Date().toISOString().split('T')[0];\n  \n  const payload = {\n    customer_id: customerId,\n    date: today,\n    deadline: data.due_date,\n    currency: data.currency,\n    invoice_lines: invoiceLines,\n    draft: false\n  };\n  \n  if (data.reference) {\n    payload.external_reference = data.reference;\n  }\n  \n  return [{ json: payload }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_84996efc4d",
+      "actorId": "actor_84996efc4d",
+      "type": "NodeHttpRequest",
+      "label": "PL Create Invoice",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://app.pennylane.com/api/external/v2/customer_invoices",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{pennylaneToken}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_12bddc7b1a",
+      "actorId": "actor_12bddc7b1a",
+      "type": "NodeTransform",
+      "label": "Body: PL Create Invoice",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"PL Create Invoice\".\nconst __body = (JSON.stringify($json));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_e7440152d0",
+      "actorId": "actor_e7440152d0",
+      "type": "NodeTransform",
+      "label": "IF Send Email: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Code Validate Payload\": __namedCtx.steps?.[\"Code Validate Payload\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean(((($('Code Validate Payload').item.json.send_email)) === true || (($('Code Validate Payload').item.json.send_email)) === 'true'));"
+      }
+    },
+    {
+      "nodeId": "node_500961e5fb",
+      "actorId": "actor_500961e5fb",
+      "type": "NodeBranch",
+      "label": "IF Send Email: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_d51e517918",
+      "actorId": "actor_d51e517918",
+      "type": "NodeTransform",
+      "label": "Before repeat: Set Email Attempt",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_c3aa8dd2fa",
+      "actorId": "actor_c3aa8dd2fa",
+      "type": "NodeRepeatUntil",
+      "label": "Repeat: Set Email Attempt",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "delaySeconds": 0,
+        "maxAttempts": 5
+      }
+    },
+    {
+      "nodeId": "node_89f3bb9c9a",
+      "actorId": "actor_89f3bb9c9a",
+      "type": "NodeTransform",
+      "label": "Return to repeat: Set Email Attempt",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11480,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_87bff5dadb",
+      "actorId": "actor_87bff5dadb",
+      "type": "NodeTransform",
+      "label": "Ready: Set Email Attempt",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11860,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.ready;"
+      }
+    },
+    {
+      "nodeId": "node_1271e1bfc3",
+      "actorId": "actor_1271e1bfc3",
+      "type": "NodeTransform",
+      "label": "Check input: Set Email Attempt",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "const ctx = {{ctx}};\nreturn ctx.steps?.[\"Repeat: Set Email Attempt\"]?.[\"attempt\"] === 1 ? ctx.steps?.[\"Before repeat: Set Email Attempt\"]?.[\"transformed\"] : ctx.steps?.[\"Return to repeat: Set Email Attempt\"]?.[\"transformed\"]?.value;"
+      }
+    },
+    {
+      "nodeId": "node_545bcc4b57",
+      "actorId": "actor_545bcc4b57",
+      "type": "NodeTransform",
+      "label": "Failed: Repeat: Set Email Attempt",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "throw Object.assign(new Error(source?.message || 'Repeat Until failed'), { name: source?.name || 'Error' });"
+      }
+    },
+    {
+      "nodeId": "node_e4aaa8bb25",
+      "actorId": "actor_e4aaa8bb25",
+      "type": "NodeTransform",
+      "label": "Set Email Attempt",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"attempt\"] = Number((($json.attempt ?? 0) + 1));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_f798125fee",
+      "actorId": "actor_f798125fee",
+      "type": "NodeTransform",
+      "label": "Before wait: Wait PDF Generation",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_2b22a681d5",
+      "actorId": "actor_2b22a681d5",
+      "type": "NodeTransform",
+      "label": "Seconds: Wait PDF Generation",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return Number(1) * 60;"
+      }
+    },
+    {
+      "nodeId": "node_f30594dde6",
+      "actorId": "actor_f30594dde6",
+      "type": "NodeRepeatUntil",
+      "label": "Wait PDF Generation",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 7680,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "delaySeconds": 0,
+        "maxAttempts": 2
+      }
+    },
+    {
+      "nodeId": "node_d1541e1fcf",
+      "actorId": "actor_d1541e1fcf",
+      "type": "NodeTransform",
+      "label": "Wait elapsed: Wait PDF Generation",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8060,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source === 2;"
+      }
+    },
+    {
+      "nodeId": "node_a69ae8ce6a",
+      "actorId": "actor_a69ae8ce6a",
+      "type": "NodeTransform",
+      "label": "Failed: Wait PDF Generation",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8060,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "throw Object.assign(new Error(source?.message || 'Repeat Until failed'), { name: source?.name || 'Error' });"
+      }
+    },
+    {
+      "nodeId": "node_819c979f7b",
+      "actorId": "actor_819c979f7b",
+      "type": "NodeHttpRequest",
+      "label": "PL Send Invoice Email",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 8440,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer {{pennylaneToken}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_73523d2a75",
+      "actorId": "actor_73523d2a75",
+      "type": "NodeTransform",
+      "label": "URL: PL Send Invoice Email",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8060,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"PL Create Invoice\": __namedCtx.steps?.[\"PL Create Invoice\"]?.[\"body\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"PL Send Invoice Email\".\nreturn `https://app.pennylane.com/api/external/v2/customer_invoices/${$('PL Create Invoice').item.json.id}/send_by_email`;"
+      }
+    },
+    {
+      "nodeId": "node_05e66c2b81",
+      "actorId": "actor_05e66c2b81",
+      "type": "NodeTransform",
+      "label": "PL Send Invoice Email: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8820,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "const ctx = {{ctx}};\nconst response = ctx.steps[\"PL Send Invoice Email\"];\nif (response.error && (response.statusCode == null || false)) throw new Error(response.error.message || 'HTTP check failed');\nreturn { body: response.body, headers: response.headers, statusCode: response.statusCode };"
+      }
+    },
+    {
+      "nodeId": "node_00910a619d",
+      "actorId": "actor_00910a619d",
+      "type": "NodeTransform",
+      "label": "IF Email Sent: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9200,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((Number(($json.statusCode)) === Number(204)));"
+      }
+    },
+    {
+      "nodeId": "node_dfc65479de",
+      "actorId": "actor_dfc65479de",
+      "type": "NodeBranch",
+      "label": "IF Email Sent: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 9580,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_b4a0b60909",
+      "actorId": "actor_b4a0b60909",
+      "type": "NodeTransform",
+      "label": "Set Output Response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Code Validate Payload\": __namedCtx.steps?.[\"Code Validate Payload\"]?.[\"transformed\"], \"PL Create Invoice\": __namedCtx.steps?.[\"PL Create Invoice\"]?.[\"body\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"success\"] = ((v) => v === true || v === 'true')(true);\n  out[\"invoice_id\"] = ($('PL Create Invoice').item.json.id);\n  out[\"invoice_number\"] = ($('PL Create Invoice').item.json.invoice_number);\n  out[\"amount\"] = ($('PL Create Invoice').item.json.currency_amount);\n  out[\"customer\"] = ($('Code Validate Payload').item.json.customer_name);\n  out[\"public_url\"] = ($('PL Create Invoice').item.json.public_file_url || null);\n  out[\"email_sent\"] = ((v) => v === true || v === 'true')(($('Code Validate Payload').item.json.send_email));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_69b16423be",
+      "actorId": "actor_69b16423be",
+      "type": "NodeTransform",
+      "label": "Code Evaluate Email Retry",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9960,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Set Email Attempt\": __namedCtx.steps?.[\"Set Email Attempt\"]?.[\"transformed\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Code Evaluate Email Retry\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const statusCode = $input.first().json.statusCode;\n  const attempt = $('Set Email Attempt').first().json.attempt;\n  return [{ json: {\n    attempt,\n    status_code: statusCode,\n    retry: statusCode === 409 && attempt < 5\n  } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_ec55110d8d",
+      "actorId": "actor_ec55110d8d",
+      "type": "NodeTransform",
+      "label": "IF Can Retry Email: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 10340,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.retry)) === true || (($json.retry)) === 'true'));"
+      }
+    },
+    {
+      "nodeId": "node_67e090931c",
+      "actorId": "actor_67e090931c",
+      "type": "NodeBranch",
+      "label": "IF Can Retry Email: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 10720,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_7e41ab596d",
+      "actorId": "actor_7e41ab596d",
+      "type": "NodeTransform",
+      "label": "Set Email Delivery Failed",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"PL Create Invoice\": __namedCtx.steps?.[\"PL Create Invoice\"]?.[\"body\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"success\"] = ((v) => v === true || v === 'true')(false);\n  out[\"invoice_created\"] = ((v) => v === true || v === 'true')(true);\n  out[\"email_sent\"] = ((v) => v === true || v === 'true')(false);\n  out[\"invoice_id\"] = ($('PL Create Invoice').item.json.id);\n  out[\"invoice_number\"] = ($('PL Create Invoice').item.json.invoice_number);\n  out[\"status_code\"] = Number(($json.status_code));\n  out[\"message\"] = \"Invoice created, but Pennylane email delivery did not succeed after bounded retries.\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_a6c051d6e0",
+      "actorId": "actor_a6c051d6e0",
+      "type": "NodeTransform",
+      "label": "Retry: IF Can Retry Email (0)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11100,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return { ready: false, route: 0, value: source };"
+      }
+    },
+    {
+      "nodeId": "node_829bb15a5d",
+      "actorId": "actor_829bb15a5d",
+      "type": "NodeTransform",
+      "label": "Finish: IF Email Sent (0)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9960,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return { ready: true, route: 1, value: source };"
+      }
+    },
+    {
+      "nodeId": "node_8df40ec16e",
+      "actorId": "actor_8df40ec16e",
+      "type": "NodeTransform",
+      "label": "Exit 1: Set Email Attempt",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.route === 1;"
+      }
+    },
+    {
+      "nodeId": "node_8d1397cb77",
+      "actorId": "actor_8d1397cb77",
+      "type": "NodeBranch",
+      "label": "Select exit 1: Set Email Attempt",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6540,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_eb5371387d",
+      "actorId": "actor_eb5371387d",
+      "type": "NodeTransform",
+      "label": "Result 1: Set Email Attempt",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6920,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.value;"
+      }
+    },
+    {
+      "nodeId": "node_e5ed58b463",
+      "actorId": "actor_e5ed58b463",
+      "type": "NodeTransform",
+      "label": "Finish: IF Can Retry Email (1)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11100,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return { ready: true, route: 2, value: source };"
+      }
+    },
+    {
+      "nodeId": "node_708badc9aa",
+      "actorId": "actor_708badc9aa",
+      "type": "NodeTransform",
+      "label": "Exit 2: Set Email Attempt",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.route === 2;"
+      }
+    },
+    {
+      "nodeId": "node_1e93ecb465",
+      "actorId": "actor_1e93ecb465",
+      "type": "NodeBranch",
+      "label": "Select exit 2: Set Email Attempt",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6540,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_adc01e18fc",
+      "actorId": "actor_adc01e18fc",
+      "type": "NodeTransform",
+      "label": "Result 2: Set Email Attempt",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6920,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.value;"
+      }
+    },
+    {
+      "nodeId": "node_e919207eaa",
+      "actorId": "actor_e919207eaa",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 7680,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_7b797a9463",
+      "actorId": "actor_7b797a9463",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 7680,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_10415e314a",
+      "actorId": "actor_10415e314a",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 1140
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {},
+          "pennylaneToken": {
+            "$workflowSecret": "PENNYLANE_TOKEN"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_a622397c94",
+      "target": "node_388021c5c1",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_a622397c94",
+      "target": "node_388021c5c1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_4a34f29bd3",
+      "target": "node_89ef3dbb58",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_4a34f29bd3",
+      "target": "node_89ef3dbb58",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_e0159babcc",
+      "target": "node_1e322e693e",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_e0159babcc",
+      "target": "node_1e322e693e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_12bddc7b1a",
+      "target": "node_84996efc4d",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_12bddc7b1a",
+      "target": "node_84996efc4d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_e7440152d0",
+      "target": "node_500961e5fb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_e7440152d0",
+      "target": "node_500961e5fb",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_d51e517918",
+      "target": "node_c3aa8dd2fa",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_89f3bb9c9a",
+      "target": "node_87bff5dadb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_89f3bb9c9a",
+      "target": "node_87bff5dadb",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_87bff5dadb",
+      "target": "node_c3aa8dd2fa",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_87bff5dadb",
+      "target": "node_c3aa8dd2fa",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_89f3bb9c9a",
+      "target": "node_c3aa8dd2fa",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_c3aa8dd2fa",
+      "target": "node_1271e1bfc3",
+      "sourceOutput": "onCheck",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c3aa8dd2fa",
+      "target": "node_545bcc4b57",
+      "sourceOutput": "onError",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c3aa8dd2fa",
+      "target": "node_545bcc4b57",
+      "sourceOutput": "error",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f798125fee",
+      "target": "node_2b22a681d5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f798125fee",
+      "target": "node_2b22a681d5",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2b22a681d5",
+      "target": "node_f30594dde6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_2b22a681d5",
+      "target": "node_f30594dde6",
+      "sourceOutput": "transformed",
+      "targetInput": "delaySeconds",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_f30594dde6",
+      "target": "node_d1541e1fcf",
+      "sourceOutput": "onCheck",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f30594dde6",
+      "target": "node_d1541e1fcf",
+      "sourceOutput": "attempt",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d1541e1fcf",
+      "target": "node_f30594dde6",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_d1541e1fcf",
+      "target": "node_f30594dde6",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_f798125fee",
+      "target": "node_f30594dde6",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_f30594dde6",
+      "target": "node_a69ae8ce6a",
+      "sourceOutput": "onError",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f30594dde6",
+      "target": "node_a69ae8ce6a",
+      "sourceOutput": "error",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_73523d2a75",
+      "target": "node_819c979f7b",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_73523d2a75",
+      "target": "node_819c979f7b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_819c979f7b",
+      "target": "node_05e66c2b81",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_00910a619d",
+      "target": "node_dfc65479de",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_00910a619d",
+      "target": "node_dfc65479de",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_ec55110d8d",
+      "target": "node_67e090931c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_ec55110d8d",
+      "target": "node_67e090931c",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_690f6450cb",
+      "target": "node_ced401e30e",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ced401e30e",
+      "target": "node_a622397c94",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ced401e30e",
+      "target": "node_a622397c94",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_388021c5c1",
+      "target": "node_4a34f29bd3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_388021c5c1",
+      "target": "node_4a34f29bd3",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_89ef3dbb58",
+      "target": "node_497d1c51dd",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_388021c5c1",
+      "target": "node_497d1c51dd",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_89ef3dbb58",
+      "target": "node_e0159babcc",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_388021c5c1",
+      "target": "node_e0159babcc",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1e322e693e",
+      "target": "node_497d1c51dd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1e322e693e",
+      "target": "node_497d1c51dd",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_497d1c51dd",
+      "target": "node_c888038e39",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_497d1c51dd",
+      "target": "node_c888038e39",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_84996efc4d",
+      "target": "node_e7440152d0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_84996efc4d",
+      "target": "node_e7440152d0",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c888038e39",
+      "target": "node_12bddc7b1a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c888038e39",
+      "target": "node_12bddc7b1a",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_500961e5fb",
+      "target": "node_b4a0b60909",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_84996efc4d",
+      "target": "node_b4a0b60909",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f30594dde6",
+      "target": "node_73523d2a75",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f30594dde6",
+      "target": "node_73523d2a75",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_05e66c2b81",
+      "target": "node_00910a619d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_05e66c2b81",
+      "target": "node_00910a619d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e4aaa8bb25",
+      "target": "node_f798125fee",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e4aaa8bb25",
+      "target": "node_f798125fee",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dfc65479de",
+      "target": "node_69b16423be",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_05e66c2b81",
+      "target": "node_69b16423be",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_69b16423be",
+      "target": "node_ec55110d8d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_69b16423be",
+      "target": "node_ec55110d8d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1271e1bfc3",
+      "target": "node_e4aaa8bb25",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1271e1bfc3",
+      "target": "node_e4aaa8bb25",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_500961e5fb",
+      "target": "node_d51e517918",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_84996efc4d",
+      "target": "node_d51e517918",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_67e090931c",
+      "target": "node_a6c051d6e0",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_69b16423be",
+      "target": "node_a6c051d6e0",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a6c051d6e0",
+      "target": "node_89f3bb9c9a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a6c051d6e0",
+      "target": "node_89f3bb9c9a",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dfc65479de",
+      "target": "node_829bb15a5d",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_05e66c2b81",
+      "target": "node_829bb15a5d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_829bb15a5d",
+      "target": "node_89f3bb9c9a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_829bb15a5d",
+      "target": "node_89f3bb9c9a",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c3aa8dd2fa",
+      "target": "node_8df40ec16e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c3aa8dd2fa",
+      "target": "node_8df40ec16e",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8df40ec16e",
+      "target": "node_8d1397cb77",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_8df40ec16e",
+      "target": "node_8d1397cb77",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_8d1397cb77",
+      "target": "node_eb5371387d",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c3aa8dd2fa",
+      "target": "node_eb5371387d",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_eb5371387d",
+      "target": "node_b4a0b60909",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_eb5371387d",
+      "target": "node_b4a0b60909",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_67e090931c",
+      "target": "node_e5ed58b463",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_69b16423be",
+      "target": "node_e5ed58b463",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e5ed58b463",
+      "target": "node_89f3bb9c9a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e5ed58b463",
+      "target": "node_89f3bb9c9a",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c3aa8dd2fa",
+      "target": "node_708badc9aa",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c3aa8dd2fa",
+      "target": "node_708badc9aa",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_708badc9aa",
+      "target": "node_1e93ecb465",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_708badc9aa",
+      "target": "node_1e93ecb465",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_1e93ecb465",
+      "target": "node_adc01e18fc",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c3aa8dd2fa",
+      "target": "node_adc01e18fc",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_adc01e18fc",
+      "target": "node_7e41ab596d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_adc01e18fc",
+      "target": "node_7e41ab596d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b4a0b60909",
+      "target": "node_e919207eaa",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_7e41ab596d",
+      "target": "node_7b797a9463",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "other-integrations",
+    "categoryLabel": "Other Integrations and Use Cases",
+    "department": "Finance/Ops",
+    "connectors": [],
+    "setupSecrets": [
+      {
+        "key": "PENNYLANE_TOKEN",
+        "label": "Pennylane API token",
+        "host": "app.pennylane.com",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "pennylaneToken",
+        "usedBy": [
+          "PL Create Customer",
+          "PL Create Invoice",
+          "PL Search Customer",
+          "PL Send Invoice Email"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeRepeatUntil",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 17,
+      "yantraSteps": 45,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Other_Integrations_and_Use_Cases/Create and send Pennylane invoices from webhook data.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Create and send Pennylane invoices from webhook data"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "WH Receive Invoice Data",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"WH Receive Invoice Data\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Workflow secret PENNYLANE_TOKEN: Pennylane API token for app.pennylane.com (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Provide run inputs: body, query, headers."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "WH Receive Invoice Data",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /pennylane-invoice). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "\"PL Search Customer\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"PL Create Customer\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"PL Create Invoice\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Repeat: Set Email Attempt\" uses NodeRepeatUntil: carry each retry's state, return readiness through NEXT, and resume the selected exit only after onDone. Original interval waits are preserved. The original 5-attempt bound is retained. Exhaustion stops with an error.",
+        "\"PL Send Invoice Email\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"PL Send Invoice Email\": a request field used $('OtherNode'); on Yantra $() resolves via the named upstream map when that node ran earlier, else the immediate upstream - check that expression.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "# Create and send Pennylane invoices from webhook data\n\n## Who is this for\n\nSMEs and freelancers using Pennylane who want to create invoices automatically from a CRM, form, or business application.\n\n## What it does\n\nA protected POST webhook validates customer and line-item data, finds or creates the customer in Pennylane, creates a finalized invoice, optionally emails it through Pennylane, and returns the invoice details to the caller.\n\n## Security and setup\n\n1. Create an **HTTP Basic Auth** credential and select it on `WH Receive Invoice Data`. Never expose an unauthenticated invoicing webhook.\n2. Create an **HTTP Header Auth** credential for Pennylane: name `Authorization`, value `Bearer <YOUR_PENNYLANE_TOKEN>`.\n3. Select that Pennylane credential on all four `PL` HTTP Request nodes.\n4. Configure sequential invoice numbering in Pennylane.\n5. Test with `send_email: false` before enabling customer delivery. Email delivery retries Pennylane HTTP 409 responses once per minute, up to five attempts.\n6. Activate the workflow and use its production webhook URL.\n\nRequires n8n 1.40+ and a Pennylane API token with `customer_invoices:all` and `customers:all` scopes. Import verified with n8n 2.31.5.\n\nSource and full payload documentation: https://github.com/Gauthier-Huguenin/n8n-pennylane-auto-invoicing\n\nAdapted from the original template © 2026 Gauthier Huguenin. Distributed under the MIT License; the complete notice is included in this workflow.\n\n---\n\n### Flow\n\n`WH Receive Invoice Data`\n  → `Code Validate Payload`\n  → `PL Search Customer`\n  → `IF Customer Exists`\n    → yes: `Set Customer ID`\n    → no: `PL Create Customer` → `Set Customer ID`\n  → `Code Build Invoice Payload`\n  → `PL Create Invoice`\n  → `IF Send Email`\n    → yes: retry `Wait PDF Generation` → `PL Send Invoice Email` up to five times on HTTP 409\n    → no: `Set Output Response`\n  → `Set Output Response`",
+      "## 1. Authenticated input\n\nReceives invoice data through a POST webhook protected by HTTP Basic Auth.\n\nAny authorized CRM, form, or script can call this endpoint. See the linked source repository for sample payloads.",
+      "## 2. Validation\n\nChecks required fields:\n- customer_name\n- customer_email\n- items[] with label, quantity, unit_price\n\nApplies defaults:\n- country: FR\n- currency: EUR\n- vat_rate: FR_200\n- due_date: +30 days",
+      "## 3. Customer lookup\n\nSearches Pennylane for an existing customer by email. Creates one if none is found.\n\nEndpoints:\n- GET /customers (filter by emails)\n- POST /company_customers\n\nRequired billing_address fields: address, postal_code, city, country.",
+      "## 4. Invoice creation\n\nBuilds the invoice payload with line items,\nVAT, and deadline, then sends it to Pennylane.\n\nEndpoint: POST /customer_invoices\n\nAmounts must be strings (e.g. \"1500.00\").\nVAT codes: FR_200 (20%), FR_100 (10%),\nFR_055 (5.5%), exempt (0%).\n\nSet draft: true to create without finalizing.",
+      "## 5. Email sending (optional)\n\nIf send_email is true, waits one minute for PDF generation and calls:\nPOST /customer_invoices/{id}/send_by_email\n\nHTTP 204 means the email was accepted. HTTP 409 means the PDF is not ready, so the workflow retries once per minute for up to five attempts. Other errors return a clear partial-failure response: invoice created, email not sent.",
+      "## 6. Webhook response\n\nReturns JSON with invoice ID, number, amount, customer, public URL, and email delivery status.\n\nIf bounded email retries fail, the response clearly reports invoice_created: true and email_sent: false.\n\nConfigure an Error Workflow in Settings for production error handling.",
+      "## MIT License notice\n\nCopyright (c) 2026 Gauthier Huguenin\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
+    ],
+    "nodes": {
+      "node_690f6450cb": {
+        "n8n": "WH Receive Invoice Data",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_ced401e30e": {
+        "n8n": "Code Validate Payload",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_388021c5c1": {
+        "n8n": "PL Search Customer",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_a622397c94": {
+        "n8n": "PL Search Customer",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_4a34f29bd3": {
+        "n8n": "IF Customer Exists",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_89ef3dbb58": {
+        "n8n": "IF Customer Exists",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_1e322e693e": {
+        "n8n": "PL Create Customer",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_e0159babcc": {
+        "n8n": "PL Create Customer",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_497d1c51dd": {
+        "n8n": "Set Customer ID",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_c888038e39": {
+        "n8n": "Code Build Invoice Payload",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_84996efc4d": {
+        "n8n": "PL Create Invoice",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_12bddc7b1a": {
+        "n8n": "PL Create Invoice",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_e7440152d0": {
+        "n8n": "IF Send Email",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_500961e5fb": {
+        "n8n": "IF Send Email",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_d51e517918": {
+        "n8n": "Set Email Attempt",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_c3aa8dd2fa": {
+        "n8n": "Set Email Attempt",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_89f3bb9c9a": {
+        "n8n": "Set Email Attempt",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_87bff5dadb": {
+        "n8n": "Set Email Attempt",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_1271e1bfc3": {
+        "n8n": "Set Email Attempt",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_545bcc4b57": {
+        "n8n": "Set Email Attempt",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_e4aaa8bb25": {
+        "n8n": "Set Email Attempt",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_f798125fee": {
+        "n8n": "Wait PDF Generation",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_2b22a681d5": {
+        "n8n": "Wait PDF Generation",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_f30594dde6": {
+        "n8n": "Wait PDF Generation",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_d1541e1fcf": {
+        "n8n": "Wait PDF Generation",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_a69ae8ce6a": {
+        "n8n": "Wait PDF Generation",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_819c979f7b": {
+        "n8n": "PL Send Invoice Email",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_73523d2a75": {
+        "n8n": "PL Send Invoice Email",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_05e66c2b81": {
+        "n8n": "PL Send Invoice Email",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_00910a619d": {
+        "n8n": "IF Email Sent",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_dfc65479de": {
+        "n8n": "IF Email Sent",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_b4a0b60909": {
+        "n8n": "Set Output Response",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_69b16423be": {
+        "n8n": "Code Evaluate Email Retry",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_ec55110d8d": {
+        "n8n": "IF Can Retry Email",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_67e090931c": {
+        "n8n": "IF Can Retry Email",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_7e41ab596d": {
+        "n8n": "Set Email Delivery Failed",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_a6c051d6e0": {
+        "n8n": "Set Email Attempt",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_829bb15a5d": {
+        "n8n": "Set Email Attempt",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_8df40ec16e": {
+        "n8n": "Set Email Attempt",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_8d1397cb77": {
+        "n8n": "Set Email Attempt",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_eb5371387d": {
+        "n8n": "Set Email Attempt",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_e5ed58b463": {
+        "n8n": "Set Email Attempt",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_708badc9aa": {
+        "n8n": "Set Email Attempt",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_1e93ecb465": {
+        "n8n": "Set Email Attempt",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_adc01e18fc": {
+        "n8n": "Set Email Attempt",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_e919207eaa": {
+        "n8n": "__end:Set Output Response",
+        "n8nType": "synthetic"
+      },
+      "node_7b797a9463": {
+        "n8n": "__end:Set Email Delivery Failed",
+        "n8nType": "synthetic"
+      },
+      "node_10415e314a": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

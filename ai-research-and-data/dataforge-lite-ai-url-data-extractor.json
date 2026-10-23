@@ -1,0 +1,433 @@
+{
+  "name": "DataForge Lite - AI URL Data Extractor",
+  "workflowSlug": "dataforge-lite-ai-url-data-extractor",
+  "description": "POST any URL and extract structured data using OpenAI. Returns clean JSON output for easy integration with other workflows.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_0c567de97f",
+      "actorId": "actor_0c567de97f",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_0d7aefa954",
+      "actorId": "actor_0d7aefa954",
+      "type": "NodeTransform",
+      "label": "Validate",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Validate\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  try {\n    const b = $input.first().json.body || $input.first().json;\n    if (!b.url) throw new Error('URL is required.');\n    return [{ json: { url: b.url, extractFields: b.extract_fields || 'price,features,description', name: b.name || '' } }];\n  } catch (e) { throw new Error('Invalid input: ' + e.message); }\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_36c4d7c8b7",
+      "actorId": "actor_36c4d7c8b7",
+      "type": "NodeHttpRequest",
+      "label": "Fetch Page",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "{{last.transformed.url}}",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (compatible; DataForge/1.0)"
+        }
+      }
+    },
+    {
+      "nodeId": "node_37c894522f",
+      "actorId": "actor_37c894522f",
+      "type": "NodeTransform",
+      "label": "Extract Text",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Scrape URL\": {{ctx}}, \"Validate\": {{steps.xf_0d7aefa954.result}}, \"Fetch Page\": {{steps.http_36c4d7c8b7.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Extract Text\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  try {\n    const url = $('Validate').first().json;\n    const r = $input.first().json;\n    const html = typeof r === 'string' ? r : (r.data || r.body || JSON.stringify(r));\n    const text = html.replace(/<script[^>]*>[\\s\\S]*?<\\/script>/gi,'').replace(/<style[^>]*>[\\s\\S]*?<\\/style>/gi,'').replace(/<[^>]+>/g,' ').replace(/\\s+/g,' ').trim().substring(0,4000);\n    return [{ json: { ...url, pageText: text } }];\n  } catch(e) { throw new Error('Extract failed: ' + e.message); }\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_9745b1c3e9",
+      "actorId": "actor_9745b1c3e9",
+      "type": "NodeLlmChain",
+      "label": "AI: Extract Data",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{llm_system_e8ce2874a6}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_e8ce2874a6",
+      "actorId": "actor_e8ce2874a6",
+      "type": "NodeTransform",
+      "label": "System: AI: Extract Data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: AI: Extract Data.\nconst __promptValue = `Extract from the page: ${$json.extractFields}. Also: title, description, stats, sentiment. JSON: { \"title\": \"\", \"description\": \"\", \"extractedData\": {}, \"statistics\": [], \"sentiment\": \"\" }`;\nreturn { \"llm_system_e8ce2874a6\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_22182a47c5",
+      "actorId": "actor_22182a47c5",
+      "type": "NodeUpdateContext",
+      "label": "Save System: AI: Extract Data",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_edbd49454d",
+      "actorId": "actor_edbd49454d",
+      "type": "NodeTransform",
+      "label": "Prompt: AI: Extract Data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: AI: Extract Data.\nconst __promptValue = `URL: ${$json.url}\nExtract: ${$json.extractFields}\n\nContent:\n${$json.pageText}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_044861e77e",
+      "actorId": "actor_044861e77e",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_dfd0511aff",
+      "actorId": "actor_dfd0511aff",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {}
+        }
+      }
+    },
+    {
+      "nodeId": "node_1b47510a0b",
+      "actorId": "actor_1b47510a0b",
+      "type": "NodeChatModel",
+      "label": "AI: Extract Data: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2740,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_e8ce2874a6",
+      "target": "node_22182a47c5",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_e8ce2874a6",
+      "target": "node_22182a47c5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_22182a47c5",
+      "target": "node_edbd49454d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_edbd49454d",
+      "target": "node_9745b1c3e9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_0c567de97f",
+      "target": "node_0d7aefa954",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0d7aefa954",
+      "target": "node_36c4d7c8b7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_36c4d7c8b7",
+      "target": "node_37c894522f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_36c4d7c8b7",
+      "target": "node_37c894522f",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_37c894522f",
+      "target": "node_e8ce2874a6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_37c894522f",
+      "target": "node_e8ce2874a6",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_37c894522f",
+      "target": "node_edbd49454d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9745b1c3e9",
+      "target": "node_044861e77e",
+      "sourceOutput": "text",
+      "targetInput": "result",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_1b47510a0b",
+      "target": "node_9745b1c3e9",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "ai-research-and-data",
+    "categoryLabel": "AI Research, RAG and Data Analysis",
+    "department": "Data Extraction, AI Research",
+    "connectors": [
+      "openai"
+    ],
+    "nodeTypes": [
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 6,
+      "yantraSteps": 9,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "AI_Research_RAG_and_Data_Analysis/DataForge Lite - AI URL Data Extractor.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "DataForge Lite - Single URL AI Scraper"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Scrape URL",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Scrape URL\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Connect the openai connector (credential).",
+      "Provide run inputs: body, query, headers, llm_system_e8ce2874a6."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Scrape URL",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /dataforge-lite). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "## DataForge Lite\nPOST a URL, get structured data.\nNo Sheets, no schedule."
+    ],
+    "nodes": {
+      "node_0c567de97f": {
+        "n8n": "Scrape URL",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_0d7aefa954": {
+        "n8n": "Validate",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_36c4d7c8b7": {
+        "n8n": "Fetch Page",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_37c894522f": {
+        "n8n": "Extract Text",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_9745b1c3e9": {
+        "n8n": "AI: Extract Data",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_e8ce2874a6": {
+        "n8n": "AI: Extract Data",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_22182a47c5": {
+        "n8n": "AI: Extract Data",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_edbd49454d": {
+        "n8n": "AI: Extract Data",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_044861e77e": {
+        "n8n": "Respond",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_dfd0511aff": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_1b47510a0b": {
+        "n8n": "AI: Extract Data",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

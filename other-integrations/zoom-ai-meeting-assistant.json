@@ -1,0 +1,1001 @@
+{
+  "name": "Zoom AI Meeting Assistant",
+  "workflowSlug": "zoom-ai-meeting-assistant",
+  "description": "Creates meeting summaries, ClickUp tasks, and schedules follow-ups from Zoom meetings.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_27fe8db1d8",
+      "actorId": "actor_27fe8db1d8",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_cc79fad4ed",
+      "actorId": "actor_cc79fad4ed",
+      "type": "NodeTransform",
+      "label": "Split Out",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"query.items\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"query.items\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"query.items\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_80fbdd98b4",
+      "actorId": "actor_80fbdd98b4",
+      "type": "NodeCdeConnector",
+      "label": "zoom/ZOOM_LIST_MEETINGS",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "zoom",
+        "connectorLabel": "Zoom",
+        "action": "ZOOM_LIST_MEETINGS",
+        "params": {
+          "userId": "me"
+        }
+      }
+    },
+    {
+      "nodeId": "node_037ee312d5",
+      "actorId": "actor_037ee312d5",
+      "type": "NodeCdeConnector",
+      "label": "clickup/CLICKUP_CREATE_TASK",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "clickup",
+        "connectorLabel": "ClickUp",
+        "action": "CLICKUP_CREATE_TASK",
+        "params": {
+          "list_id": "901207046581",
+          "name": "{{last.transformed.name}}",
+          "description": "{{last.transformed.description}}",
+          "due_date": "{{last.transformed.due_date}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_3dac256569",
+      "actorId": "actor_3dac256569",
+      "type": "NodeTransform",
+      "label": "Filter: Last 24 hours",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\nreturn __items.filter(($json) => Boolean((new Date(($json.start_time)) >= new Date(($now.minus({ hours: 24 }).toISO())))));"
+      }
+    },
+    {
+      "nodeId": "node_22e2c66e8d",
+      "actorId": "actor_22e2c66e8d",
+      "type": "NodeHttpRequest",
+      "label": "Zoom: Get transcripts data",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://api.zoom.us/v2/meetings/{{last.transformed.id}}/recordings",
+        "headers": {
+          "Authorization": "Bearer {{zoomAccessToken}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_1723c973e0",
+      "actorId": "actor_1723c973e0",
+      "type": "NodeTransform",
+      "label": "Filter transcript URL",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"transcript_file\"] = ($json.recording_files.find(f => f.file_type === 'TRANSCRIPT').download_url);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_c45fff671d",
+      "actorId": "actor_c45fff671d",
+      "type": "NodeEnd",
+      "label": "Stop: No Recording/Transcript available",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_27d282b774",
+      "actorId": "actor_27d282b774",
+      "type": "NodeTransform",
+      "label": "Filter: Only 1 item",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// No body returns to this batch node in the original: emit only the first batch.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nconst batch = __items.slice(0, size);\nreturn batch.length === 1 ? batch[0] : batch;"
+      }
+    },
+    {
+      "nodeId": "node_a60159f593",
+      "actorId": "actor_a60159f593",
+      "type": "NodeHttpRequest",
+      "label": "Zoom: Get transcript file",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "{{last.transformed.transcript_file}}",
+        "headers": {
+          "Authorization": "Bearer {{zoomToken}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_6216bd42ac",
+      "actorId": "actor_6216bd42ac",
+      "type": "NodeTransform",
+      "label": "Extract text from transcript file",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// Read the file content as text.\nconst __file = typeof source === 'string' ? source : source?.data ?? source?.content ?? source?.body ?? source;\nconst __text = typeof __file === 'string' ? __file : JSON.stringify(__file ?? '');\nreturn { \"data\": __text };"
+      }
+    },
+    {
+      "nodeId": "node_514029c5b0",
+      "actorId": "actor_514029c5b0",
+      "type": "NodeTransform",
+      "label": "Format transcript text",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"transcript\"] = ($json.data.split('\\r\\n\\r\\n').slice(1).map(block => {\n const lines = block.split('\\r\\n');\n return lines.slice(2).join(' ');\n}).join('\\n'));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_b45258f073",
+      "actorId": "actor_b45258f073",
+      "type": "NodeHttpRequest",
+      "label": "Zoom: Get participants data",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://api.zoom.us/v2/past_meetings/{{steps.xf_3dac256569.result.id}}/participants",
+        "headers": {
+          "Authorization": "Bearer {{zoomAccessToken}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_ee95679df5",
+      "actorId": "actor_ee95679df5",
+      "type": "NodeLlmChain",
+      "label": "Create meeting summary",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_a16bcd3c11",
+      "actorId": "actor_a16bcd3c11",
+      "type": "NodeTransform",
+      "label": "Prompt: Create meeting summary",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When clicking ‘Test workflow’\": {{ctx}}, \"Split Out\": __namedCtx.steps?.[\"Split Out\"]?.[\"transformed\"], \"Zoom: Get data of last meeting\": __namedCtx.steps?.[\"ZOOM_LIST_MEETINGS\"]?.[\"result\"], \"ClickUp\": __namedCtx.steps?.[\"CLICKUP_CREATE_TASK\"]?.[\"result\"], \"Filter: Last 24 hours\": __namedCtx.steps?.[\"Filter: Last 24 hours\"]?.[\"transformed\"], \"Zoom: Get transcripts data\": __namedCtx.steps?.[\"Zoom: Get transcripts data\"]?.[\"body\"], \"Filter transcript URL\": __namedCtx.steps?.[\"Filter transcript URL\"]?.[\"transformed\"], \"Filter: Only 1 item\": __namedCtx.steps?.[\"Filter: Only 1 item\"]?.[\"transformed\"], \"Zoom: Get transcript file\": __namedCtx.steps?.[\"Zoom: Get transcript file\"]?.[\"body\"], \"Extract text from transcript file\": __namedCtx.steps?.[\"Extract text from transcript file\"]?.[\"transformed\"], \"Format transcript text\": __namedCtx.steps?.[\"Format transcript text\"]?.[\"transformed\"], \"Zoom: Get participants data\": __namedCtx.steps?.[\"Zoom: Get participants data\"]?.[\"body\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Create meeting summary.\nconst __promptValue = `Create a formal meeting minutes document from the following transcript and meeting details.\n\nMeeting Date: ${$('Zoom: Get data of last meeting').item.json.start_time} // This needs to be formatted from the meeting details\nParticipants: ${$json.participants.map(p => p.name + ' (' + p.user_email + ')').join(', ')}\n\nTranscript:\n${$('Format transcript text').item.json.transcript}\n\nPlease create the minutes in the following format:\n\nMeeting on [Date]\n\nParticipants:\n[List of participants with email addresses]\n\nSummary of the Meeting:\n[Brief and concise summary of the topics discussed]\n\nTasks:\n- [Task] (Responsible: [Name])\n- ...\n\nImportant Dates:\n- [Date] ([Context])\n- ...\n`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_306eab0449",
+      "actorId": "actor_306eab0449",
+      "type": "NodeTransform",
+      "label": "Sort for mail delivery",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When clicking ‘Test workflow’\": {{ctx}}, \"Split Out\": {{steps.xf_cc79fad4ed.result}}, \"Zoom: Get data of last meeting\": {{steps.ZOOM_LIST_MEETINGS.result}}, \"ClickUp\": {{steps.CLICKUP_CREATE_TASK.result}}, \"Filter: Last 24 hours\": {{steps.xf_3dac256569.result}}, \"Zoom: Get transcripts data\": {{steps.http_22e2c66e8d.result}}, \"Filter transcript URL\": {{steps.xf_1723c973e0.result}}, \"Filter: Only 1 item\": {{steps.xf_27d282b774.result}}, \"Zoom: Get transcript file\": {{steps.http_a60159f593.result}}, \"Extract text from transcript file\": {{steps.xf_6216bd42ac.result}}, \"Format transcript text\": {{steps.xf_514029c5b0.result}}, \"Zoom: Get participants data\": {{steps.http_b45258f073.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"subject\"] = `Meeting summary: ${$('Zoom: Get data of last meeting').item.json.topic} on ${$('Zoom: Get data of last meeting').item.json.start_time}`;\n  out[\"=to\"] = ($('Zoom: Get participants data').item.json.participants[0].user_email);\n  out[\"body\"] = ($json);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_ae171d84fd",
+      "actorId": "actor_ae171d84fd",
+      "type": "NodeCdecliAgent",
+      "label": "Create tasks and follow-up call",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "gpt-4o",
+        "sessionId": "",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_bd3fc31cb8",
+      "actorId": "actor_bd3fc31cb8",
+      "type": "NodeTransform",
+      "label": "Prompt: Create tasks and follow-up call",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When clicking ‘Test workflow’\": {{ctx}}, \"Split Out\": __namedCtx.steps?.[\"Split Out\"]?.[\"transformed\"], \"Zoom: Get data of last meeting\": __namedCtx.steps?.[\"ZOOM_LIST_MEETINGS\"]?.[\"result\"], \"ClickUp\": __namedCtx.steps?.[\"CLICKUP_CREATE_TASK\"]?.[\"result\"], \"Filter: Last 24 hours\": __namedCtx.steps?.[\"Filter: Last 24 hours\"]?.[\"transformed\"], \"Zoom: Get transcripts data\": __namedCtx.steps?.[\"Zoom: Get transcripts data\"]?.[\"body\"], \"Filter transcript URL\": __namedCtx.steps?.[\"Filter transcript URL\"]?.[\"transformed\"], \"Filter: Only 1 item\": __namedCtx.steps?.[\"Filter: Only 1 item\"]?.[\"transformed\"], \"Zoom: Get transcript file\": __namedCtx.steps?.[\"Zoom: Get transcript file\"]?.[\"body\"], \"Extract text from transcript file\": __namedCtx.steps?.[\"Extract text from transcript file\"]?.[\"transformed\"], \"Format transcript text\": __namedCtx.steps?.[\"Format transcript text\"]?.[\"transformed\"], \"Zoom: Get participants data\": __namedCtx.steps?.[\"Zoom: Get participants data\"]?.[\"body\"], \"Create meeting summary\": ((text) => ({ text, output: text, content: text, response: { text, output_text: text }, message: { content: text }, choices: [{ message: { content: text }, text }] }))(__namedCtx.steps?.[\"Create meeting summary\"]?.[\"text\"]), \"Sort for mail delivery\": __namedCtx.steps?.[\"Sort for mail delivery\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Prompt: Create tasks and follow-up call.\nconst __promptValue = `<system_prompt>\n\nTODAY IS: ${$now}\n\nYOU ARE A MEETING ASSISTANT FOR AUTOMATION IN N8N. YOUR TASK IS TO EFFICIENTLY AND PRECISELY PROCESS INFORMATION FROM ZOOM MEETINGS TO GENERATE TO-DOS AND SCHEDULE FOLLOW-UP MEETINGS. YOU HAVE ACCESS TO THE FOLLOWING DATA:\n\n### INPUTS ###\n- **MEETING TITLE**: ${$('Zoom: Get data of last meeting').item.json.topic}\n- **PARTICIPANTS**: ${$('Zoom: Get participants data').item.json.participants[0].name}\n- **TRANSCRIPT**: ${$('Format transcript text').item.json.transcript}\n\n### YOUR TASKS ###\n1. **CREATE TO-DOS**:\n - IDENTIFY TASKS AND TO-DOS IN THE TRANSCRIPT.\n - FORMULATE CLEAR, CONCRETE TASKS.\n - PASS THESE TASKS TO THE TOOL \"Create tasks\" TO SAVE THEM IN CLICKUP. \n - DATA STRUCTURE:\n - **TASK DESCRIPTION**: Brief description of the task.\n - **ASSIGNED PERSON**: First name from the participant list.\n - **DUE DATE**: Use any date mentioned in the transcript; otherwise, set to \"Not specified.\"\n\n2. **CREATE MEETING**:\n - ANALYZE THE TRANSCRIPT TO IDENTIFY INFORMATION ABOUT THE NEXT MEETING (DATE, TIME, AND TOPIC).\n - PASS THIS INFORMATION TO THE TOOL \"Create follow-up call.\"\n - DATA STRUCTURE:\n - **MEETING TITLE**: \"Follow-up: [Meeting Title]\"\n - **DATE AND TIME**: Determined from the transcript or set to \"Next Tuesday at 10:00 AM\" if no information is provided.\n - **PARTICIPANTS**: Add all participants from the list.\n\n### CHAIN OF THOUGHTS ###\n1. **UNDERSTAND**: Read and analyze the provided inputs (title, participants, transcript).\n2. **IDENTIFY**: Extract relevant information for the to-dos and the next meeting.\n3. **DIVIDE**: Split the task into two separate processes: creating to-dos and creating the meeting.\n4. **STRUCTURE**: Format the results in the required structure for the respective tools.\n5. **TRANSMIT**: Pass the data to the designated tools in n8n.\n6. **VERIFY**: Ensure the data is correct and complete.\n\n### WHAT YOU SHOULD NOT DO ###\n- **NEVER**: Create unclear or vague to-dos.\n- **NEVER**: Ignore missing data - use default values where uncertain.\n- **NEVER**: Overlook information from the inputs or make incorrect connections.\n- **NEVER**: Transmit tasks or meetings without proper formatting.\n\n### OUTPUT EXAMPLES ###\n1. **TO-DO**:\n - **TASK DESCRIPTION**: \"Prepare presentation for the next meeting.\"\n - **ASSIGNED PERSON**: \"John Doe.\"\n - **DUE DATE**: \"2025-01-25.\"\n\n2. **MEETING**:\n - **MEETING TITLE**: \"Follow-up: Project Discussion.\"\n - **DATE AND TIME**: \"2025-01-28 at 10:00 AM.\"\n - **PARTICIPANTS**: \"John Doe, Jane Example.\"\n\n### NOTES ###\n- EXECUTE YOUR TASKS WITH THE HIGHEST PRECISION AND CONTEXT SENSITIVITY.\n- RELY ON THE PROVIDED DATA AND DEFAULT VALUES WHERE NECESSARY.\n</system_prompt>\n`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_41bd155628",
+      "actorId": "actor_41bd155628",
+      "type": "NodeTransform",
+      "label": "Format to html",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Format to html\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const items = [];\n  \n  for (const item of $input.all()) {\n   const body = item.json.body;\n   if (!body) continue;\n  \n   // Simple split approach\n   const sections = body.split('\\n\\n');\n   const title = sections[0].replace(/\\*\\*/g, '');\n   const participants = sections[1].split('\\n').slice(1).join('\\n');\n   const summary = sections[2].split('\\n').slice(1).join('\\n');\n   const tasks = sections[3].split('\\n').slice(1).join('\\n');\n   const dates = sections[4].split('\\n').slice(1).join('\\n');\n  \n   const html = `<html>\n  <body style=\"font-family: Arial, sans-serif; max-width: 800px; margin: 20px;\">\n  <h1 style=\"color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;\">${title}</h1>\n  <h2 style=\"color: #2c3e50; margin-top: 20px;\">Participants:</h2>\n  <ul style=\"list-style-type: none; padding-left: 20px;\">\n  ${participants.split('\\n').map(p => `<li>${p.replace('- ', '')}</li>`).join('\\n')}\n  </ul>\n  <h2 style=\"color: #2c3e50; margin-top: 20px;\">Meeting Summary:</h2>\n  <p style=\"margin-left: 20px;\">${summary}</p>\n  <h2 style=\"color: #2c3e50; margin-top: 20px;\">Tasks:</h2>\n  <ul style=\"margin-left: 20px;\">\n  ${tasks.split('\\n').map(t => `<li>${t.replace('- ', '')}</li>`).join('\\n')}\n  </ul>\n  <h2 style=\"color: #2c3e50; margin-top: 20px;\">Important Dates:</h2>\n  <ul style=\"margin-left: 20px;\">\n  ${dates.split('\\n').map(d => `<li>${d.replace('- ', '')}</li>`).join('\\n')}\n  </ul>\n  </body>\n  </html>`;\n  \n   items.push({\n   json: {\n   html,\n   to: item.json.to,\n   subject: item.json.subject\n   }\n   });\n  }\n  \n  return items;\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_e6049e68a1",
+      "actorId": "actor_e6049e68a1",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (SMTP original)",
+        "action": "GOOGLESUPER_SEND_EMAIL",
+        "params": {
+          "recipient_email": "{{last.transformed.to}}",
+          "subject": "{{last.transformed.subject}}",
+          "body": "{{last.transformed.html}}",
+          "is_html": true
+        }
+      }
+    },
+    {
+      "nodeId": "node_1d0dc02d75",
+      "actorId": "actor_1d0dc02d75",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_6f7ef74c6b",
+      "actorId": "actor_6f7ef74c6b",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 5400,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_7612106451",
+      "actorId": "actor_7612106451",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_c41a6cdf6f",
+      "actorId": "actor_c41a6cdf6f",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "zoomAccessToken": {
+            "$workflowSecret": "ZOOM_ACCESS_TOKEN"
+          },
+          "zoomToken": {
+            "$workflowSecret": "ZOOM_TOKEN"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_0d2b1acdbe",
+      "actorId": "actor_0d2b1acdbe",
+      "type": "NodeChatModel",
+      "label": "Create meeting summary: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4260,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_a16bcd3c11",
+      "target": "node_ee95679df5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_bd3fc31cb8",
+      "target": "node_ae171d84fd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_27fe8db1d8",
+      "target": "node_80fbdd98b4",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_80fbdd98b4",
+      "target": "node_3dac256569",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_80fbdd98b4",
+      "target": "node_3dac256569",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1723c973e0",
+      "target": "node_27d282b774",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1723c973e0",
+      "target": "node_27d282b774",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_27d282b774",
+      "target": "node_a60159f593",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_a60159f593",
+      "target": "node_6216bd42ac",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a60159f593",
+      "target": "node_6216bd42ac",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6216bd42ac",
+      "target": "node_514029c5b0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6216bd42ac",
+      "target": "node_514029c5b0",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_514029c5b0",
+      "target": "node_b45258f073",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_b45258f073",
+      "target": "node_a16bcd3c11",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b45258f073",
+      "target": "node_a16bcd3c11",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ee95679df5",
+      "target": "node_306eab0449",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ee95679df5",
+      "target": "node_306eab0449",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ee95679df5",
+      "target": "node_bd3fc31cb8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ee95679df5",
+      "target": "node_bd3fc31cb8",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_306eab0449",
+      "target": "node_41bd155628",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_306eab0449",
+      "target": "node_41bd155628",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_41bd155628",
+      "target": "node_e6049e68a1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_3dac256569",
+      "target": "node_22e2c66e8d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_cc79fad4ed",
+      "target": "node_037ee312d5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_22e2c66e8d",
+      "target": "node_1723c973e0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_22e2c66e8d",
+      "target": "node_1723c973e0",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_22e2c66e8d",
+      "target": "node_c45fff671d",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_27fe8db1d8",
+      "target": "node_cc79fad4ed",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_037ee312d5",
+      "target": "node_1d0dc02d75",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_ae171d84fd",
+      "target": "node_6f7ef74c6b",
+      "sourceOutput": "text",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_e6049e68a1",
+      "target": "node_7612106451",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_0d2b1acdbe",
+      "target": "node_ee95679df5",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "other-integrations",
+    "categoryLabel": "Other Integrations and Use Cases",
+    "department": "Productivity/Communication",
+    "connectors": [
+      "clickup",
+      "googlesuper",
+      "openai",
+      "zoom"
+    ],
+    "setupSecrets": [
+      {
+        "key": "ZOOM_ACCESS_TOKEN",
+        "label": "Zoom OAuth access token",
+        "host": "api.zoom.us",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "zoomAccessToken",
+        "usedBy": [
+          "Zoom: Get participants data",
+          "Zoom: Get transcripts data"
+        ],
+        "oauth": true
+      },
+      {
+        "key": "ZOOM_TOKEN",
+        "label": "zoomOAuth2Api access token (the original used the zoomOAuth2Api credential)",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "zoomToken",
+        "usedBy": [
+          "Zoom: Get transcript file"
+        ],
+        "oauth": true
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 21,
+      "yantraSteps": 20,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "Create tasks",
+        "Create follow-up call"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Other_Integrations_and_Use_Cases/Zoom AI Meeting Assistant creates mail summary, ClickUp tasks and follow-up call.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Zoom AI Meeting Assistant"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Workflow secret ZOOM_ACCESS_TOKEN: Zoom OAuth access token for api.zoom.us (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Workflow secret ZOOM_TOKEN: zoomOAuth2Api access token (the original used the zoomOAuth2Api credential) (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the clickup connector (credential).",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "Connect the zoom connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Extract text from transcript file",
+          "n8n": "extractFromFile.text",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "Execute Workflow Trigger",
+          "type": "n8n-nodes-base.executeWorkflowTrigger",
+          "reason": "disabled in the original"
+        },
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Create tasks and follow-up call",
+          "model": "gpt-4o"
+        },
+        {
+          "node": "Create tasks",
+          "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+          "into": "Create tasks and follow-up call",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Create follow-up call",
+          "type": "n8n-nodes-base.microsoftOutlookTool",
+          "into": "Create tasks and follow-up call",
+          "as": "ai_tool"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Zoom: Get transcripts data\" authenticated with zoomOAuth2Api in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Zoom: Get transcripts data\": Zoom OAuth access token expires; refresh the workflow secret ZOOM_ACCESS_TOKEN when calls start failing, or move this step onto the service's connector.",
+        "\"Filter: Only 1 item\" has no body return in the original; it selects its first batch instead of repeating.",
+        "\"Zoom: Get transcript file\" authenticated with zoomOAuth2Api in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Zoom: Get transcript file\": zoomOAuth2Api access token (the original used the zoomOAuth2Api credential) expires; refresh the workflow secret ZOOM_TOKEN when calls start failing, or move this step onto the service's connector.",
+        "\"Extract text from transcript file\" (extractFromFile.text): Files flow as text or base64 fields on Yantra, not binary attachments; check the previous step hands over the file content.",
+        "\"Zoom: Get participants data\" authenticated with zoomOAuth2Api in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Zoom: Get participants data\": Zoom OAuth access token expires; refresh the workflow secret ZOOM_ACCESS_TOKEN when calls start failing, or move this step onto the service's connector.",
+        "\"Create tasks and follow-up call\" used agent tools in the original: Create tasks (toolWorkflow), Create follow-up call (microsoftOutlookTool). The cdecli agent calls connectors directly; connect credentials for the services those tools reached. Prefer connectors: googlesuper.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect clickup: `cdecli credential create -n \"clickup\" -p clickup --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect zoom: `cdecli credential create -n \"zoom\" -p zoom --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Sub workflow: Create Task in ClickUp",
+      "## Welcome to my Zoom AI Meeting Assistant Workflow!\n\n### This workflow has the following sequence:\n\n1. manual trigger (Can be replaced by a scheduled trigger or a webhook)\n2. retrieval of of Zoom meeting data\n3. filter the events of the last 24 hours\n4. retrieval of transcripts and extract of the text\n5. creating a meeting summary, format to html and send per mail\n6. create tasks and follow-up call (if discussed in the meeting) in ClickUp/Outlook (can be replaced by Gmail, Airtable, and so forth) via sub workflow\n\n### The following accesses are required for the workflow:\n- Zoom Workspace (via API and HTTP Request): [Documentation](https://docs.n8n.io/integrations/builtin/credentials/zoom/)\n- Microsoft Outlook: [Documentation](https://docs.n8n.io/integrations/builtin/credentials/microsoft/)\n- ClickUp: [Documentation](https://docs.n8n.io/integrations/builtin/credentials/clickup/)\n- AI API access (e.g. via OpenAI, Anthropic, Google or Ollama)\n- SMTP access data (for sending the mail)\n\nYou can contact me via LinkedIn, if you have any questions: https://www.linkedin.com/in/friedemann-schuetz"
+    ],
+    "nodes": {
+      "node_27fe8db1d8": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_cc79fad4ed": {
+        "n8n": "Split Out",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_80fbdd98b4": {
+        "n8n": "Zoom: Get data of last meeting",
+        "n8nType": "n8n-nodes-base.zoom"
+      },
+      "node_037ee312d5": {
+        "n8n": "ClickUp",
+        "n8nType": "n8n-nodes-base.clickUp"
+      },
+      "node_3dac256569": {
+        "n8n": "Filter: Last 24 hours",
+        "n8nType": "n8n-nodes-base.filter"
+      },
+      "node_22e2c66e8d": {
+        "n8n": "Zoom: Get transcripts data",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "zoomOAuth2Api"
+      },
+      "node_1723c973e0": {
+        "n8n": "Filter transcript URL",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_c45fff671d": {
+        "n8n": "No Recording/Transcript available",
+        "n8nType": "n8n-nodes-base.stopAndError"
+      },
+      "node_27d282b774": {
+        "n8n": "Filter: Only 1 item",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_a60159f593": {
+        "n8n": "Zoom: Get transcript file",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "zoomOAuth2Api"
+      },
+      "node_6216bd42ac": {
+        "n8n": "Extract text from transcript file",
+        "n8nType": "n8n-nodes-base.extractFromFile"
+      },
+      "node_514029c5b0": {
+        "n8n": "Format transcript text",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_b45258f073": {
+        "n8n": "Zoom: Get participants data",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "zoomOAuth2Api"
+      },
+      "node_ee95679df5": {
+        "n8n": "Create meeting summary",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_a16bcd3c11": {
+        "n8n": "Create meeting summary",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_306eab0449": {
+        "n8n": "Sort for mail delivery",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_ae171d84fd": {
+        "n8n": "Create tasks and follow-up call",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_bd3fc31cb8": {
+        "n8n": "Create tasks and follow-up call",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_41bd155628": {
+        "n8n": "Format to html",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_e6049e68a1": {
+        "n8n": "Send meeting summary",
+        "n8nType": "n8n-nodes-base.emailSend"
+      },
+      "node_1d0dc02d75": {
+        "n8n": "__end:ClickUp",
+        "n8nType": "synthetic"
+      },
+      "node_6f7ef74c6b": {
+        "n8n": "__end:Create tasks and follow-up call",
+        "n8nType": "synthetic"
+      },
+      "node_7612106451": {
+        "n8n": "__end:Send meeting summary",
+        "n8nType": "synthetic"
+      },
+      "node_c41a6cdf6f": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_0d2b1acdbe": {
+        "n8n": "Create meeting summary",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

@@ -1,0 +1,474 @@
+{
+  "name": "AI Powered Web Scraping with Jina, Google Sheets and OpenAI _ the EASY way",
+  "workflowSlug": "ai-powered-web-scraping-with-jina-google-sheets-and-openai-the-easy-wa",
+  "description": "Converted from the n8n template \"AI Powered Web Scraping with Jina, Google Sheets and OpenAI _ the EASY way\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_a0d03b7579",
+      "actorId": "actor_a0d03b7579",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_6ecf9b83cd",
+      "actorId": "actor_6ecf9b83cd",
+      "type": "NodeHttpRequest",
+      "label": "Jina Fetch",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://r.jina.ai/http://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html",
+        "headers": {
+          "Authorization": "Bearer {{jinaApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_04dd25f8a6",
+      "actorId": "actor_04dd25f8a6",
+      "type": "NodeLlmChain",
+      "label": "Information Extractor",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "results": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "price": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "image_url": {
+                    "type": "string"
+                  },
+                  "product_url": {
+                    "type": "string"
+                  },
+                  "availability": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "system": "You are an expert extraction algorithm.\nOnly extract relevant information from the text.\nIf you do not know the value of an attribute asked to extract, you may omit the attribute's value.\nAlways output the data in a json array called results. Each book should have a title, price, availability and product_url, image_url",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_4945b1be3e",
+      "actorId": "actor_4945b1be3e",
+      "type": "NodeTransform",
+      "label": "Prompt: Information Extractor",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Information Extractor.\nconst __promptValue = ($json.data);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_47c836f50c",
+      "actorId": "actor_47c836f50c",
+      "type": "NodeTransform",
+      "label": "Split Out",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"output.results\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"output.results\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"output.results\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_35b452c169",
+      "actorId": "actor_35b452c169",
+      "type": "NodeTransform",
+      "label": "Params: Save to Google Sheets",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Params for googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND (n8n node \"Save to Google Sheets\").\nreturn {\n  \"spreadsheetId\": \"{{spreadsheetId}}\",\n  \"range\": \"Sheet2\",\n  \"values\": ($input.all().map((i) => Object.values(i.json ?? {}))),\n  \"valueInputOption\": \"USER_ENTERED\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_283a85bce0",
+      "actorId": "actor_283a85bce0",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_SPREADSHEETS_VALUES_APPEND"
+      }
+    },
+    {
+      "nodeId": "node_75a2746b59",
+      "actorId": "actor_75a2746b59",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_98a103722f",
+      "actorId": "actor_98a103722f",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "spreadsheetId": "",
+          "jinaApiKey": {
+            "$workflowSecret": "JINA_API_KEY"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_c3ccdf17f4",
+      "actorId": "actor_c3ccdf17f4",
+      "type": "NodeChatModel",
+      "label": "Information Extractor: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_4945b1be3e",
+      "target": "node_04dd25f8a6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_35b452c169",
+      "target": "node_283a85bce0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_35b452c169",
+      "target": "node_283a85bce0",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_a0d03b7579",
+      "target": "node_6ecf9b83cd",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_47c836f50c",
+      "target": "node_35b452c169",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_47c836f50c",
+      "target": "node_35b452c169",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_04dd25f8a6",
+      "target": "node_47c836f50c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_04dd25f8a6",
+      "target": "node_47c836f50c",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6ecf9b83cd",
+      "target": "node_4945b1be3e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6ecf9b83cd",
+      "target": "node_4945b1be3e",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_283a85bce0",
+      "target": "node_75a2746b59",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_c3ccdf17f4",
+      "target": "node_04dd25f8a6",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "",
+    "connectors": [
+      "googlesuper",
+      "openai"
+    ],
+    "setupVars": [
+      {
+        "key": "spreadsheetId",
+        "label": "Spreadsheet id",
+        "type": "id",
+        "example": "1AbC...xyz",
+        "usedBy": [
+          "Save to Google Sheets"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "JINA_API_KEY",
+        "label": "Jina AI API key",
+        "host": "r.jina.ai",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "jinaApiKey",
+        "usedBy": [
+          "Jina Fetch"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 6,
+      "yantraSteps": 8,
+      "foldedHelpers": [
+        "OpenAI Chat Model"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/AI Powered Web Scraping with Jina, Google Sheets and OpenAI _ the EASY way.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Setup value spreadsheetId: Spreadsheet id (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret JINA_API_KEY: Jina AI API key for r.jina.ai (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Save to Google Sheets",
+          "n8n": "sheet.append.autoMap",
+          "action": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Information Extractor"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking \"Test workflow\"",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Jina Fetch\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Save to Google Sheets\" mapped columns automatically; here each item's fields are appended in their own order, so keep them in the same order as the sheet's header row.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "\"Information Extractor\": normalized the legacy output schema for LLMChain's strict parser (shorthand/examples become JSON Schema; email/date formats use syntax patterns). Review the schema before running."
+      ]
+    },
+    "notes": [
+      "## Start here: Step-by Step Youtube Tutorial :star:\n\n[![AI Powered Web Scraping : the EASY way with n8n and Jina.ai (no-code!)](https://img.youtube.com/vi/f3AJYXHirr8/sddefault.jpg)](https://youtu.be/f3AJYXHirr8)\n\n[Google Sheet Example](https://docs.google.com/spreadsheets/d/[id removed]/edit?usp=sharing)"
+    ],
+    "nodes": {
+      "node_a0d03b7579": {
+        "n8n": "When clicking \"Test workflow\"",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_6ecf9b83cd": {
+        "n8n": "Jina Fetch",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_04dd25f8a6": {
+        "n8n": "Information Extractor",
+        "n8nType": "@n8n/n8n-nodes-langchain.informationExtractor"
+      },
+      "node_4945b1be3e": {
+        "n8n": "Information Extractor",
+        "n8nType": "@n8n/n8n-nodes-langchain.informationExtractor"
+      },
+      "node_47c836f50c": {
+        "n8n": "Split Out",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_35b452c169": {
+        "n8n": "Save to Google Sheets",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_283a85bce0": {
+        "n8n": "Save to Google Sheets",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_75a2746b59": {
+        "n8n": "__end:Save to Google Sheets",
+        "n8nType": "synthetic"
+      },
+      "node_98a103722f": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_c3ccdf17f4": {
+        "n8n": "Information Extractor",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

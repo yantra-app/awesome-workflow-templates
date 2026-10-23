@@ -1,0 +1,231 @@
+{
+  "name": "Talk to your SQLite database with an AI agent",
+  "workflowSlug": "talk-to-your-sqlite-database-with-a-langchain-ai-agent",
+  "description": "Ask questions about a SQLite database in plain language. The agent downloads the Chinook sample database on first use, runs as many SQL queries as it needs in its sandbox, and answers with the result and the SQL it ran.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_a1c3e5b7d9",
+      "actorId": "actor_a1c3e5b7d9",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_b2d4f6a8c0",
+      "actorId": "actor_b2d4f6a8c0",
+      "type": "NodeCdecliAgent",
+      "label": "SQL agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "message": "{{chatInput}}",
+        "system": "You answer questions about a SQLite database by running SQL against it in your sandbox.\n\nDatabase: {{database_url}}\nIf that URL ends in .zip, download it, unzip it and use the .db file inside; otherwise download the file as-is. Keep the file at ./chinook.db between turns of the same session and only download it again when it is missing.\n\nHow to work:\n1. Inspect the schema first (sqlite3 .tables / .schema, or Python's sqlite3 module) when you do not know it yet.\n2. Run as many read-only SELECT queries as you need before answering. Never modify the database.\n3. Answer the user's question with the figures or rows they asked for, then show the final SQL you used in a code block.\n\nExamples the database supports: \"Please describe the database\", \"What are the revenues by genre?\", \"Which employees are responsible for the most sales?\".",
+        "sessionId": "{{sessionId}}",
+        "sandbox": true,
+        "permissionMode": "bypass"
+      }
+    },
+    {
+      "nodeId": "node_c3e5a7b9d1",
+      "actorId": "actor_c3e5a7b9d1",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_d4f6b8c0e2",
+      "actorId": "actor_d4f6b8c0e2",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "chatInput": "Please describe the database",
+          "sessionId": "",
+          "database_url": "https://www.sqlitetutorial.net/wp-content/uploads/2018/03/chinook.zip"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_a1c3e5b7d9",
+      "target": "node_b2d4f6a8c0",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_b2d4f6a8c0",
+      "target": "node_c3e5a7b9d1",
+      "sourceOutput": "text",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "database-and-storage",
+    "categoryLabel": "Database and Storage",
+    "department": "Data Analytics",
+    "connectors": [],
+    "nodeTypes": [
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeStart",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 10,
+      "yantraSteps": 2,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "Window Buffer Memory",
+        "Get chinook.zip example",
+        "Extract zip file",
+        "Save chinook.db locally",
+        "Load local chinook.db",
+        "Combine chat input with the binary"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Database_and_Storage/Talk to your SQLite database with a LangChain AI Agent.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Talk to your SQLite database with a LangChain AI Agent"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Provide run inputs: chatInput, sessionId, database_url."
+    ],
+    "conversion": {
+      "tool": "hand",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "SQL agent",
+          "reason": "the cdecli agent brings its own model"
+        },
+        {
+          "node": "Window Buffer Memory",
+          "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+          "into": "SQL agent",
+          "reason": "sessionId keeps the conversation"
+        },
+        {
+          "node": "Get chinook.zip example",
+          "type": "n8n-nodes-base.httpRequest",
+          "into": "SQL agent",
+          "reason": "the agent downloads the file in its sandbox"
+        },
+        {
+          "node": "Extract zip file",
+          "type": "n8n-nodes-base.compression",
+          "into": "SQL agent",
+          "reason": "the agent unzips in its sandbox"
+        },
+        {
+          "node": "Save chinook.db locally",
+          "type": "n8n-nodes-base.readWriteFile",
+          "into": "SQL agent",
+          "reason": "sandbox file system"
+        },
+        {
+          "node": "Load local chinook.db",
+          "type": "n8n-nodes-base.readWriteFile",
+          "into": "SQL agent",
+          "reason": "sandbox file system"
+        },
+        {
+          "node": "Combine chat input with the binary",
+          "type": "n8n-nodes-base.set",
+          "into": "SQL agent",
+          "reason": "the question is a run input"
+        },
+        {
+          "node": "When clicking \"Test workflow\"",
+          "type": "n8n-nodes-base.manualTrigger",
+          "into": "Start",
+          "reason": "one entry node"
+        },
+        {
+          "node": "Chat Trigger",
+          "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+          "into": "Start",
+          "reason": "chatInput is a run input"
+        }
+      ],
+      "removedEdges": [],
+      "hints": [
+        "Provide `chatInput` (your question) and optionally `sessionId` (to continue a conversation) as run inputs; `database_url` defaults to the Chinook sample database and can point at any SQLite file or zip.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`). No connector credential is needed: the agent uses the platform's model routing and its own sandbox.",
+        "The agent runs its shell and file tools inside the cloud sandbox with permissionMode \"bypass\": a workflow has nobody to answer tool-approval prompts, and the sandbox keeps the effects isolated."
+      ],
+      "triggers": []
+    },
+    "notes": [
+      "The n8n original needs ten nodes: a manual trigger and three file nodes to download, unzip and save the database once, then a chat trigger, a file read, a Set node to combine the question with the binary, the LangChain SQL agent, its OpenAI model node and a memory node. On Yantra the agent node has a sandbox with a shell and a file system, its own model routing and a session id, so the whole workflow is Start -> agent -> End.",
+      "The agent may run several queries before the final answer, exactly like the LangChain SQL agent did. Try \"Please describe the database\" (one query plus an observation) or \"What are the revenues by genre?\" (a series of queries)."
+    ],
+    "nodes": {
+      "node_a1c3e5b7d9": {
+        "n8n": "Chat Trigger",
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
+      },
+      "node_b2d4f6a8c0": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_c3e5a7b9d1": {
+        "n8n": "__end",
+        "n8nType": "synthetic"
+      },
+      "node_d4f6b8c0e2": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

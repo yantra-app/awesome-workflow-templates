@@ -1,0 +1,1581 @@
+{
+  "name": "Microsoft Outlook AI Email Assistant with contact support from Monday and Airtable",
+  "workflowSlug": "microsoft-outlook-ai-email-assistant-with-contact-support-from-monday",
+  "description": "An AI-powered assistant for Outlook that processes emails, sanitizes content, and assigns categories using rules from Airtable. Integrates with Monday.com for contact support.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_4b5485a325",
+      "actorId": "actor_4b5485a325",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_40347e2658",
+      "actorId": "actor_40347e2658",
+      "type": "NodeCron",
+      "label": "Update Contacts Schedule Trigger",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 0 * * *"
+      }
+    },
+    {
+      "nodeId": "node_89f594d80c",
+      "actorId": "actor_89f594d80c",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_FETCH_EMAILS",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (Outlook original)",
+        "action": "GOOGLESUPER_FETCH_EMAILS",
+        "params": {
+          "query": "in:inbox",
+          "max_results": 10
+        }
+      }
+    },
+    {
+      "nodeId": "node_8f1e4dd476",
+      "actorId": "actor_8f1e4dd476",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_LIST_RECORDS",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_LIST_RECORDS",
+        "params": {
+          "baseId": "{{airtableBaseId}}",
+          "tableIdOrName": "{{airtableTableId}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_25db0f505a",
+      "actorId": "actor_25db0f505a",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_LIST_RECORDS",
+      "color": "#6366F1",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_LIST_RECORDS",
+        "params": {
+          "baseId": "{{airtableBaseId}}",
+          "tableIdOrName": "{{airtableTableId2}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_6acc969689",
+      "actorId": "actor_6acc969689",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_LIST_RECORDS",
+      "color": "#6366F1",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_LIST_RECORDS",
+        "params": {
+          "baseId": "{{airtableBaseId}}",
+          "tableIdOrName": "{{airtableTableId3}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_545249c1dc",
+      "actorId": "actor_545249c1dc",
+      "type": "NodeCdeConnector",
+      "label": "monday/MONDAY_LIST_BOARD_ITEMS",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "monday",
+        "connectorLabel": "monday.com",
+        "action": "MONDAY_LIST_BOARD_ITEMS",
+        "params": {
+          "board_id": "1840712625"
+        }
+      }
+    },
+    {
+      "nodeId": "node_f6a0575599",
+      "actorId": "actor_f6a0575599",
+      "type": "NodeTransform",
+      "label": "Convert to Markdown",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst __md = String(null ?? '');\nconst __html = __md.replace(/^### (.*)$/gm, '<h3>$1</h3>').replace(/^## (.*)$/gm, '<h2>$1</h2>').replace(/^# (.*)$/gm, '<h1>$1</h1>').replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>').replace(/\\*(.+?)\\*/g, '<em>$1</em>').replace(/\\[(.+?)\\]\\((.+?)\\)/g, '<a href=\"$2\">$1</a>').replace(/\\n{2,}/g, '</p><p>');\nreturn { ...$json, \"data\": '<p>' + __html + '</p>' };"
+      }
+    },
+    {
+      "nodeId": "node_1b52cbd149",
+      "actorId": "actor_1b52cbd149",
+      "type": "NodeTransform",
+      "label": "Params: Airtable - Contacts",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Array.prototype, { first() { return this[0]; }, last() { return this[this.length - 1]; } });\n// Params for airtable/AIRTABLE_CREATE_RECORD (n8n node \"Airtable - Contacts\").\nreturn {\n  \"baseId\": \"{{airtableBaseId}}\",\n  \"tableIdOrName\": \"{{airtableTableId4}}\",\n  \"fields\": { \"Type\": ($json.column_values[1].text), \"Email\": ($json.column_values[6].text), \"Last Name\": ($json.name.split(\" \",2).last()), \"First Name\": ($json.name.split(\" \",2).first()) },\n};"
+      }
+    },
+    {
+      "nodeId": "node_865be01be9",
+      "actorId": "actor_865be01be9",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_CREATE_RECORD",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_CREATE_RECORD"
+      }
+    },
+    {
+      "nodeId": "node_391f53b88d",
+      "actorId": "actor_391f53b88d",
+      "type": "NodeTransform",
+      "label": "Email Messages",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"subject\"] = ($json.subject);\n  out[\"importance\"] = ($json.importance);\n  out[\"sender\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json.sender.emailAddress));\n  out[\"from\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json.from.emailAddress));\n  out[\"body\"] = `${\"«$json.data\\n .replace(/<[^>]*>/g, '') // Remove HTML tags\\n .replace(/\\\\[(.*?)\\\\]\\\\((.*?)\\\\)/g, '') // Remove Markdown links l»\"\n}\n`;\n  out[\"id\"] = ($json.id);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_3abecd73e5",
+      "actorId": "actor_3abecd73e5",
+      "type": "NodeTransform",
+      "label": "Items: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_be6711dd38",
+      "actorId": "actor_be6711dd38",
+      "type": "NodeLoop",
+      "label": "Loop Over Items",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_46407efad7",
+      "actorId": "actor_46407efad7",
+      "type": "NodeTransform",
+      "label": "Item: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_d1a2883a24",
+      "actorId": "actor_d1a2883a24",
+      "type": "NodeTransform",
+      "label": "Results: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_4b8d8a218e",
+      "actorId": "actor_4b8d8a218e",
+      "type": "NodeTransform",
+      "label": "Params: Contact",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Loop Over Items\": __namedCtx.steps?.[\"Item: Loop Over Items\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for airtable/AIRTABLE_LIST_RECORDS (n8n node \"Contact\").\nreturn {\n  \"baseId\": \"{{airtableBaseId}}\",\n  \"tableIdOrName\": \"{{airtableTableId4}}\",\n  \"filterByFormula\": `{Email}='${$('Loop Over Items').item.json.from.address}'`,\n};"
+      }
+    },
+    {
+      "nodeId": "node_0c60d550d2",
+      "actorId": "actor_0c60d550d2",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_LIST_RECORDS",
+      "color": "#6366F1",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_LIST_RECORDS"
+      }
+    },
+    {
+      "nodeId": "node_5fe67bd09d",
+      "actorId": "actor_5fe67bd09d",
+      "type": "NodeTransform",
+      "label": "Initialized: Rules",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_07b00b4d50",
+      "actorId": "actor_07b00b4d50",
+      "type": "NodeTransform",
+      "label": "Initialized: Categories",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_6e7806294d",
+      "actorId": "actor_6e7806294d",
+      "type": "NodeTransform",
+      "label": "Initialized: Delete Rules",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_8124a7da4c",
+      "actorId": "actor_8124a7da4c",
+      "type": "NodeTransform",
+      "label": "Merge",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "const ctx = {{ctx}};\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_1ddf522bbd",
+      "actorId": "actor_1ddf522bbd",
+      "type": "NodeCdecliAgent",
+      "label": "AI: Analyse Email",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 7680,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "gpt-4o",
+        "sessionId": "",
+        "system": "{{llm_system_c0317f7e1e}}",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_c0317f7e1e",
+      "actorId": "actor_c0317f7e1e",
+      "type": "NodeTransform",
+      "label": "System: AI: Analyse Email",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Categories\": __namedCtx.steps?.[\"Initialized: Categories\"]?.[\"transformed\"], \"Loop Over Items\": __namedCtx.steps?.[\"Item: Loop Over Items\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Array.prototype, { toJsonString() { return JSON.stringify(this); } });\n__def(Object.prototype, { toJsonString() { return JSON.stringify(this); } });\n// System: AI: Analyse Email.\nconst __promptValue = `Categories: \"\"\"${$('Categories').all().toJsonString()}\"\"\"\n\nYou are an AI email assistant for the *insert role & title*. Your task is to categorize incoming emails using one of the category 'Name' values defined in 'Categories' above.\n\nYou may also use the subcategory:\n- Action\n\nInstructions:\nAnalyse the email subject, body, and sender's email address to determine the appropriate category by referring to the 'Usage', 'Sender Indicators' and 'Subject Indicators' defined in the 'Categories' above.\n\n\nOutput Format:\nProduce output in valid JSON format:\n{\n \"id\": \"${$('Loop Over Items').item.json.id}\",\n \"subject\": \"SUBJECT_LINE\",\n \"category\": \"PRIMARY CATEGORY\",\n \"subCategory\": \"SUBCATEGORY\", // use sparingly\n \"analysis\": \"Brief 1-2 sentence explanation of category choice\"\n}\n- Replace \"SUBJECT_LINE\" with the actual subject of the email.\n- \"PRIMARY CATEGORY\" should be one of the categories listed above.\n- \"SUBCATEGORY\" should be \"Action\" if applicable; otherwise, omit or leave blank.\n- The \"analysis\" should be a brief 1-2 sentence explanation of why the category was chosen. Also, indicate if there was a match for the 'Contact' email and the email sender.\n\nImportant:\nYou may only use the categories and the subcategory listed above; do not create any additional categories or subcategories.\n\nNo additional text or tokens should be included outside the JSON output.\n`;\nreturn { \"llm_system_c0317f7e1e\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_f2ddea62ee",
+      "actorId": "actor_f2ddea62ee",
+      "type": "NodeUpdateContext",
+      "label": "Save System: AI: Analyse Email",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_bcc2cbe9d9",
+      "actorId": "actor_bcc2cbe9d9",
+      "type": "NodeTransform",
+      "label": "Prompt: AI: Analyse Email",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Categories\": __namedCtx.steps?.[\"Initialized: Categories\"]?.[\"transformed\"], \"Delete Rules\": __namedCtx.steps?.[\"Initialized: Delete Rules\"]?.[\"transformed\"], \"Loop Over Items\": __namedCtx.steps?.[\"Item: Loop Over Items\"]?.[\"transformed\"], \"Contact\": __namedCtx.steps?.[\"AIRTABLE_LIST_RECORDS\"]?.[\"result\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Array.prototype, { toJsonString() { return JSON.stringify(this); } });\n__def(Object.prototype, { toJsonString() { return JSON.stringify(this); } });\n// Prompt: AI: Analyse Email.\nconst __promptValue = `Categorise the following email:\n<email>\n${$('Loop Over Items').item.json.toJsonString()}\n</email>\n\n<Contact>\n${$('Contact').all().toJsonString()}\n</Contact>\n\n<DeleteRules>\n${$('Delete Rules').all().toJsonString()}\n</DeleteRules>\n\n<Categories>\n${$('Categories').all().toJsonString()}\n</Categories>\n\nEnsure your final output is valid JSON with no additional text or token in the following format:\n\n{\n \"subject\": \"SUBJECT_LINE\",1\n \"category\": \"CATEGORY\",\n \"subCategory\": \"SUBCATEGORY\", //use sparingly\n \"analysis\": \"ANALYSIS_REASONING\"\n}\n\nRemember you can only use ONE of the following category 'Name' values from the 'Categories' defined above. No other categories can be used. Use the subcategory for additional context, for example, if a client email requires action or if a supplier email requires action. Do not create any additional subcategories; you can only use ONE of the category 'Name' values from the 'Categories' defined above.`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_69d88a88aa",
+      "actorId": "actor_69d88a88aa",
+      "type": "NodeTransform",
+      "label": "Params: Set Category",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8060,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL (n8n node \"Set Category\").\nreturn {\n  \"message_id\": ($json.id),\n  \"add_label_ids\": ([$json.category]),\n};"
+      }
+    },
+    {
+      "nodeId": "node_02299a09b9",
+      "actorId": "actor_02299a09b9",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 8440,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (Outlook original)",
+        "action": "GOOGLESUPER_ADD_LABEL_TO_EMAIL"
+      }
+    },
+    {
+      "nodeId": "node_0d4ecc15f8",
+      "actorId": "actor_0d4ecc15f8",
+      "type": "NodeTransform",
+      "label": "If: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8820,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('AI: Analyse Email').item.json.output.subCategory) ?? '') === String(\"Action\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_b496394526",
+      "actorId": "actor_b496394526",
+      "type": "NodeBranch",
+      "label": "If: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 9200,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_86a6e5ee4a",
+      "actorId": "actor_86a6e5ee4a",
+      "type": "NodeTransform",
+      "label": "Params: Set Importance",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9580,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL (n8n node \"Set Importance\").\nreturn {\n  \"message_id\": ($('AI: Analyse Email').item.json.output.id),\n};"
+      }
+    },
+    {
+      "nodeId": "node_d3bb697ff7",
+      "actorId": "actor_d3bb697ff7",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 9960,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (Outlook original)",
+        "action": "GOOGLESUPER_ADD_LABEL_TO_EMAIL"
+      }
+    },
+    {
+      "nodeId": "node_7cb2427d63",
+      "actorId": "actor_7cb2427d63",
+      "type": "NodeTransform",
+      "label": "Before loop: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_79c808dbe3",
+      "actorId": "actor_79c808dbe3",
+      "type": "NodeTransform",
+      "label": "Return: If",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9580,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_7a19e811f0",
+      "actorId": "actor_7a19e811f0",
+      "type": "NodeTransform",
+      "label": "Return: Set Importance",
+      "color": "#F59E0B",
+      "position": {
+        "x": 10340,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_c53bad51ff",
+      "actorId": "actor_c53bad51ff",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_a148a04601",
+      "actorId": "actor_a148a04601",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 5400,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_72f19208b2",
+      "actorId": "actor_72f19208b2",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "airtableBaseId": "",
+          "airtableTableId": "",
+          "airtableTableId2": "",
+          "airtableTableId3": "",
+          "airtableTableId4": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_1b52cbd149",
+      "target": "node_865be01be9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_1b52cbd149",
+      "target": "node_865be01be9",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_3abecd73e5",
+      "target": "node_be6711dd38",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_3abecd73e5",
+      "target": "node_be6711dd38",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_be6711dd38",
+      "target": "node_46407efad7",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_be6711dd38",
+      "target": "node_46407efad7",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_be6711dd38",
+      "target": "node_d1a2883a24",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_be6711dd38",
+      "target": "node_d1a2883a24",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4b8d8a218e",
+      "target": "node_0c60d550d2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_4b8d8a218e",
+      "target": "node_0c60d550d2",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_8f1e4dd476",
+      "target": "node_5fe67bd09d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8f1e4dd476",
+      "target": "node_5fe67bd09d",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_25db0f505a",
+      "target": "node_07b00b4d50",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_25db0f505a",
+      "target": "node_07b00b4d50",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6acc969689",
+      "target": "node_6e7806294d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6acc969689",
+      "target": "node_6e7806294d",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c0317f7e1e",
+      "target": "node_f2ddea62ee",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_c0317f7e1e",
+      "target": "node_f2ddea62ee",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_f2ddea62ee",
+      "target": "node_bcc2cbe9d9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bcc2cbe9d9",
+      "target": "node_1ddf522bbd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_69d88a88aa",
+      "target": "node_02299a09b9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_69d88a88aa",
+      "target": "node_02299a09b9",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_0d4ecc15f8",
+      "target": "node_b496394526",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_0d4ecc15f8",
+      "target": "node_b496394526",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_86a6e5ee4a",
+      "target": "node_d3bb697ff7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_86a6e5ee4a",
+      "target": "node_d3bb697ff7",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_7cb2427d63",
+      "target": "node_3abecd73e5",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7cb2427d63",
+      "target": "node_8f1e4dd476",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_5fe67bd09d",
+      "target": "node_25db0f505a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_07b00b4d50",
+      "target": "node_6acc969689",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_6e7806294d",
+      "target": "node_3abecd73e5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4b5485a325",
+      "target": "node_89f594d80c",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_89f594d80c",
+      "target": "node_f6a0575599",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_89f594d80c",
+      "target": "node_f6a0575599",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_02299a09b9",
+      "target": "node_0d4ecc15f8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_02299a09b9",
+      "target": "node_0d4ecc15f8",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b496394526",
+      "target": "node_86a6e5ee4a",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_02299a09b9",
+      "target": "node_86a6e5ee4a",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1ddf522bbd",
+      "target": "node_69d88a88aa",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1ddf522bbd",
+      "target": "node_69d88a88aa",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_40347e2658",
+      "target": "node_545249c1dc",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_545249c1dc",
+      "target": "node_1b52cbd149",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_545249c1dc",
+      "target": "node_1b52cbd149",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f6a0575599",
+      "target": "node_391f53b88d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f6a0575599",
+      "target": "node_391f53b88d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_391f53b88d",
+      "target": "node_7cb2427d63",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_391f53b88d",
+      "target": "node_7cb2427d63",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0c60d550d2",
+      "target": "node_8124a7da4c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0c60d550d2",
+      "target": "node_8124a7da4c",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_46407efad7",
+      "target": "node_4b8d8a218e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_46407efad7",
+      "target": "node_4b8d8a218e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8124a7da4c",
+      "target": "node_c0317f7e1e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8124a7da4c",
+      "target": "node_c0317f7e1e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8124a7da4c",
+      "target": "node_bcc2cbe9d9",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b496394526",
+      "target": "node_79c808dbe3",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_02299a09b9",
+      "target": "node_79c808dbe3",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_79c808dbe3",
+      "target": "node_be6711dd38",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_79c808dbe3",
+      "target": "node_be6711dd38",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_d3bb697ff7",
+      "target": "node_7a19e811f0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d3bb697ff7",
+      "target": "node_7a19e811f0",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7a19e811f0",
+      "target": "node_be6711dd38",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_7a19e811f0",
+      "target": "node_be6711dd38",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_865be01be9",
+      "target": "node_c53bad51ff",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_d1a2883a24",
+      "target": "node_a148a04601",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "gmail-and-email",
+    "categoryLabel": "Gmail and Email Automation",
+    "department": "Ops",
+    "connectors": [
+      "airtable",
+      "googlesuper",
+      "monday"
+    ],
+    "setupVars": [
+      {
+        "key": "airtableBaseId",
+        "label": "Airtable base id",
+        "type": "id",
+        "example": "appXXXX (from the base URL)",
+        "usedBy": [
+          "Airtable - Contacts",
+          "Categories",
+          "Contact",
+          "Delete Rules",
+          "Rules"
+        ]
+      },
+      {
+        "key": "airtableTableId",
+        "label": "Airtable table id",
+        "type": "id",
+        "example": "tblXXXX (from the table URL)",
+        "usedBy": [
+          "Rules"
+        ]
+      },
+      {
+        "key": "airtableTableId2",
+        "label": "Airtable table id",
+        "type": "id",
+        "example": "tblXXXX (from the table URL)",
+        "usedBy": [
+          "Categories"
+        ]
+      },
+      {
+        "key": "airtableTableId3",
+        "label": "Airtable table id",
+        "type": "id",
+        "example": "tblXXXX (from the table URL)",
+        "usedBy": [
+          "Delete Rules"
+        ]
+      },
+      {
+        "key": "airtableTableId4",
+        "label": "Airtable table id",
+        "type": "id",
+        "example": "tblXXXX (from the table URL)",
+        "usedBy": [
+          "Airtable - Contacts",
+          "Contact"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate microsoft-outlook-ai-email-assistant-with-contact-support-from-monday",
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeCron",
+      "NodeEnd",
+      "NodeLoop",
+      "NodeStart",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 19,
+      "yantraSteps": 34,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "Structured Output Parser"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Gmail_and_Email_Automation/Microsoft Outlook AI Email Assistant with contact support from Monday and Airtable.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Microsoft Outlook AI Email Assistant"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Setup value airtableBaseId: Airtable base id (for example appXXXX (from the base URL)). Write it into the Workflow Configs initialContext before import.",
+      "Setup value airtableTableId: Airtable table id (for example tblXXXX (from the table URL)). Write it into the Workflow Configs initialContext before import.",
+      "Setup value airtableTableId2: Airtable table id (for example tblXXXX (from the table URL)). Write it into the Workflow Configs initialContext before import.",
+      "Setup value airtableTableId3: Airtable table id (for example tblXXXX (from the table URL)). Write it into the Workflow Configs initialContext before import.",
+      "Setup value airtableTableId4: Airtable table id (for example tblXXXX (from the table URL)). Write it into the Workflow Configs initialContext before import.",
+      "Connect the airtable connector (credential).",
+      "Connect the googlesuper connector (credential).",
+      "Connect the monday connector (credential).",
+      "After import, start the schedule: cdecli cron activate microsoft-outlook-ai-email-assistant-with-contact-support-from-monday.",
+      "Provide run inputs: llm_system_c0317f7e1e."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Convert to Markdown",
+          "n8n": "markdown.markdownToHtml",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Airtable - Contacts",
+          "n8n": "record.upsert",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Set Category",
+          "n8n": "message.update",
+          "action": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+          "soft": true
+        },
+        {
+          "node": "Set Importance",
+          "n8n": "message.update",
+          "action": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "Check Mail Schedule Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "reason": "disabled in the original"
+        },
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "AI: Analyse Email",
+          "model": "gpt-4o"
+        },
+        {
+          "node": "Structured Output Parser",
+          "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+          "into": "AI: Analyse Email",
+          "as": "ai_outputParser"
+        }
+      ],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Update Contacts Schedule Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "\"Convert to Markdown\" (markdown.markdownToHtml): Markdown to HTML is a minimal converter on Yantra.",
+        "\"Convert to Markdown\": Markdown to HTML is a minimal converter on Yantra; swap in a connector if you need full fidelity.",
+        "\"Airtable - Contacts\" (record.upsert): Airtable upsert without id → CREATE_RECORD (no match-key upsert).",
+        "\"Loop Over Items\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "\"Set Category\": the original used Email (Outlook original); check the mapped googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL params before running.",
+        "\"Set Importance\": the original used Email (Outlook original); check the mapped googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL params before running.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect airtable: `cdecli credential create -n \"airtable\" -p airtable --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect monday: `cdecli credential create -n \"monday\" -p monday --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "# Microsoft Outlook AI Email Assistant",
+      "## Outlook Business with filters\nFilters:\n```\nflag/flagStatus eq 'notFlagged' and not categories/any()\n```\n\nThese filters ensure we do not process flagged emails or email that already have a category set.",
+      "## Sanitise Email \nRemoves HTML and useless information in preparation for the AI Agent",
+      "## Get Rules & Categories\nEdit the airtables to set your own categories, rules, contacts and/or delete rules.",
+      "## CRM Contact List Integration \nFor this workflow I am retrieving supplier & client contacts from Monday.com the email assistant has better context to categorise, prioritise and reply to emails.\nThe list is updated daily or you can change the scheduler trigger to update more or less frequently.\nYou could replace this with your own CRM.",
+      "## Categorise & Prioritise Emails Agent",
+      "## Set the category & importance using the output from the agent",
+      "## Match Contact\nCheck if the sender is an existing contact. Note in this workflow the contacts are dynamically loaded from Monday.com"
+    ],
+    "nodes": {
+      "node_4b5485a325": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_40347e2658": {
+        "n8n": "Update Contacts Schedule Trigger",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_89f594d80c": {
+        "n8n": "Microsoft Outlook23",
+        "n8nType": "n8n-nodes-base.microsoftOutlook"
+      },
+      "node_8f1e4dd476": {
+        "n8n": "Rules",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_25db0f505a": {
+        "n8n": "Categories",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_6acc969689": {
+        "n8n": "Delete Rules",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_545249c1dc": {
+        "n8n": "Monday.com - Get Contacts",
+        "n8nType": "n8n-nodes-base.mondayCom"
+      },
+      "node_f6a0575599": {
+        "n8n": "Convert to Markdown",
+        "n8nType": "n8n-nodes-base.markdown"
+      },
+      "node_1b52cbd149": {
+        "n8n": "Airtable - Contacts",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_865be01be9": {
+        "n8n": "Airtable - Contacts",
+        "n8nType": "n8n-nodes-base.airtable",
+        "approximate": true
+      },
+      "node_391f53b88d": {
+        "n8n": "Email Messages",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_3abecd73e5": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_be6711dd38": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_46407efad7": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_d1a2883a24": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_4b8d8a218e": {
+        "n8n": "Contact",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_0c60d550d2": {
+        "n8n": "Contact",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_5fe67bd09d": {
+        "n8n": "Rules",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_07b00b4d50": {
+        "n8n": "Categories",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_6e7806294d": {
+        "n8n": "Delete Rules",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_8124a7da4c": {
+        "n8n": "Merge",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_1ddf522bbd": {
+        "n8n": "AI: Analyse Email",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_c0317f7e1e": {
+        "n8n": "AI: Analyse Email",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_f2ddea62ee": {
+        "n8n": "AI: Analyse Email",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_bcc2cbe9d9": {
+        "n8n": "AI: Analyse Email",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_69d88a88aa": {
+        "n8n": "Set Category",
+        "n8nType": "n8n-nodes-base.microsoftOutlook"
+      },
+      "node_02299a09b9": {
+        "n8n": "Set Category",
+        "n8nType": "n8n-nodes-base.microsoftOutlook",
+        "approximate": true
+      },
+      "node_0d4ecc15f8": {
+        "n8n": "If",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_b496394526": {
+        "n8n": "If",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_86a6e5ee4a": {
+        "n8n": "Set Importance",
+        "n8nType": "n8n-nodes-base.microsoftOutlook"
+      },
+      "node_d3bb697ff7": {
+        "n8n": "Set Importance",
+        "n8nType": "n8n-nodes-base.microsoftOutlook",
+        "approximate": true
+      },
+      "node_7cb2427d63": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_79c808dbe3": {
+        "n8n": "If",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_7a19e811f0": {
+        "n8n": "Set Importance",
+        "n8nType": "n8n-nodes-base.microsoftOutlook"
+      },
+      "node_c53bad51ff": {
+        "n8n": "__end:Airtable - Contacts",
+        "n8nType": "synthetic"
+      },
+      "node_a148a04601": {
+        "n8n": "__end:Loop Over Items",
+        "n8nType": "synthetic"
+      },
+      "node_72f19208b2": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

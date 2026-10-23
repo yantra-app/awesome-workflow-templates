@@ -1,0 +1,325 @@
+{
+  "name": "GCF Token Optimization for LLM Tool Responses",
+  "workflowSlug": "gcf-token-optimization-for-llm-tool-responses",
+  "description": "Fetches GitHub contributors, batches into an array, encodes to GCF (Graph Compact Format) for 53-71% fewer tokens, then decodes back to JSON losslessly. Uses the n8n-nodes-gcf community node.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_663ee44a73",
+      "actorId": "actor_663ee44a73",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_aeb1588c3c",
+      "actorId": "actor_aeb1588c3c",
+      "type": "NodeHttpRequest",
+      "label": "GET /contributors (100 records)",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://api.github.com/repos/n8n-io/n8n/contributors?per_page=100",
+        "headers": {
+          "Authorization": "Bearer {{githubToken}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_7bd4a23687",
+      "actorId": "actor_7bd4a23687",
+      "type": "NodeTransform",
+      "label": "Batch into Array",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Batch into Array\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const allData = $input.all().map(i => i.json);\n  return [{ json: { payload: allData } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_450c4d67f1",
+      "actorId": "actor_450c4d67f1",
+      "type": "NodeTransform",
+      "label": "GCF Encode",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst Buffer = { from: (v, enc) => { const bytes = enc === 'base64' ? Uint8Array.from(atob(String(v)), (c) => c.charCodeAt(0)) : new TextEncoder().encode(String(v)); return { toString: (e) => (e === 'base64' ? btoa(String.fromCharCode(...bytes)) : new TextDecoder().decode(bytes)), length: bytes.length, bytes }; } };\n// gcf encode: object → base64 JSON (lossless payload bag).\nconst __src = $json?.[\"payload\"] ?? $json;\nconst __b64 = Buffer.from(JSON.stringify(__src ?? null), 'utf8').toString('base64');\nreturn { ...$json, [\"data\"]: __b64 };"
+      }
+    },
+    {
+      "nodeId": "node_7ec18b6630",
+      "actorId": "actor_7ec18b6630",
+      "type": "NodeTransform",
+      "label": "GCF Decode (lossless)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst Buffer = { from: (v, enc) => { const bytes = enc === 'base64' ? Uint8Array.from(atob(String(v)), (c) => c.charCodeAt(0)) : new TextEncoder().encode(String(v)); return { toString: (e) => (e === 'base64' ? btoa(String.fromCharCode(...bytes)) : new TextDecoder().decode(bytes)), length: bytes.length, bytes }; } };\n// gcf decode: base64 JSON → object.\nconst __raw = $json?.[\"data\"] ?? $json?.data ?? $json;\nconst __text = typeof __raw === 'string' ? __raw : String(__raw ?? '');\nlet __decoded;\ntry { __decoded = JSON.parse(Buffer.from(__text, 'base64').toString('utf8')); } catch { __decoded = __text; }\nreturn { ...$json, [\"decoded\"]: __decoded };"
+      }
+    },
+    {
+      "nodeId": "node_6444d347dd",
+      "actorId": "actor_6444d347dd",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_d28f439d0e",
+      "actorId": "actor_d28f439d0e",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "githubToken": {
+            "$workflowSecret": "GITHUB_TOKEN"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_663ee44a73",
+      "target": "node_aeb1588c3c",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_aeb1588c3c",
+      "target": "node_7bd4a23687",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_aeb1588c3c",
+      "target": "node_7bd4a23687",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7bd4a23687",
+      "target": "node_450c4d67f1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7bd4a23687",
+      "target": "node_450c4d67f1",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_450c4d67f1",
+      "target": "node_7ec18b6630",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_450c4d67f1",
+      "target": "node_7ec18b6630",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7ec18b6630",
+      "target": "node_6444d347dd",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "AI/DevOps/Optimization",
+    "connectors": [],
+    "setupSecrets": [
+      {
+        "key": "GITHUB_TOKEN",
+        "label": "GitHub token",
+        "host": "api.github.com",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "githubToken",
+        "usedBy": [
+          "GET /contributors (100 records)"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 5,
+      "yantraSteps": 5,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/GCF Token Optimization for LLM Tool Responses.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "GCF Token Optimization - Encode API Data, Decode Losslessly"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "hard-approximation",
+        "node": "GCF Decode (lossless)",
+        "detail": "gcf.decode -> NodeTransform"
+      },
+      {
+        "code": "hard-approximation",
+        "node": "GCF Encode",
+        "detail": "gcf.encode -> NodeTransform"
+      }
+    ],
+    "setup": [
+      "\"GCF Decode (lossless)\" (gcf.decode) only approximates the original; review it before relying on the result.",
+      "\"GCF Encode\" (gcf.encode) only approximates the original; review it before relying on the result.",
+      "Workflow secret GITHUB_TOKEN: GitHub token for api.github.com (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "GCF Encode",
+          "n8n": "gcf.encode",
+          "action": "NodeTransform"
+        },
+        {
+          "node": "GCF Decode (lossless)",
+          "n8n": "gcf.decode",
+          "action": "NodeTransform"
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking 'Execute workflow'",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"GCF Encode\" (gcf.encode): GCF encode/decode approximated as base64 JSON Transform (no native GCF runtime).",
+        "\"GCF Decode (lossless)\" (gcf.decode): GCF encode/decode approximated as base64 JSON Transform (no native GCF runtime).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_663ee44a73": {
+        "n8n": "When clicking 'Execute workflow'",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_aeb1588c3c": {
+        "n8n": "GET /contributors (100 records)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_7bd4a23687": {
+        "n8n": "Batch into Array",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_450c4d67f1": {
+        "n8n": "GCF Encode",
+        "n8nType": "n8n-nodes-gcf.gcf"
+      },
+      "node_7ec18b6630": {
+        "n8n": "GCF Decode (lossless)",
+        "n8nType": "n8n-nodes-gcf.gcf"
+      },
+      "node_6444d347dd": {
+        "n8n": "__end:GCF Decode (lossless)",
+        "n8nType": "synthetic"
+      },
+      "node_d28f439d0e": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

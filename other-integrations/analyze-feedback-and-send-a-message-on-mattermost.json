@@ -1,0 +1,624 @@
+{
+  "name": "Analyze feedback and send a message on Mattermost",
+  "workflowSlug": "analyze-feedback-and-send-a-message-on-mattermost",
+  "description": "Analyzes user feedback and sends notifications to Mattermost channels.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_e30ac7a9ab",
+      "actorId": "actor_e30ac7a9ab",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_42d5ae560b",
+      "actorId": "actor_42d5ae560b",
+      "type": "NodeLlmChain",
+      "label": "Google Cloud Natural Language",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "sentiment": {
+              "type": "string",
+              "enum": [
+                "Positive",
+                "Neutral",
+                "Negative"
+              ],
+              "description": "One of: Positive, Neutral, Negative"
+            }
+          },
+          "required": [
+            "sentiment"
+          ],
+          "additionalProperties": false
+        },
+        "system": "Classify the input into exactly one sentiment.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_4b9322b19d",
+      "actorId": "actor_4b9322b19d",
+      "type": "NodeTransform",
+      "label": "Prompt: Google Cloud Natural Language",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst $node = new Proxy({}, { get: () => ({ json: source, parameter: {} }) });\n// Prompt: Google Cloud Natural Language.\nconst __promptValue = ($node[\"Typeform Trigger\"].json[\"What did you think about the event?\"]);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_3c1d5ab01b",
+      "actorId": "actor_3c1d5ab01b",
+      "type": "NodeTransform",
+      "label": "Google Cloud Natural Language: sentiment = Positive",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.sentiment ?? '') === \"Positive\";"
+      }
+    },
+    {
+      "nodeId": "node_a4127be783",
+      "actorId": "actor_a4127be783",
+      "type": "NodeBranch",
+      "label": "Google Cloud Natural Language: sentiment = Positive?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_a3b5dc96e1",
+      "actorId": "actor_a3b5dc96e1",
+      "type": "NodeTransform",
+      "label": "Google Cloud Natural Language: sentiment = Neutral",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.sentiment ?? '') === \"Neutral\";"
+      }
+    },
+    {
+      "nodeId": "node_152f7bf5b3",
+      "actorId": "actor_152f7bf5b3",
+      "type": "NodeBranch",
+      "label": "Google Cloud Natural Language: sentiment = Neutral?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_b27fe11d85",
+      "actorId": "actor_b27fe11d85",
+      "type": "NodeTransform",
+      "label": "Google Cloud Natural Language: sentiment = Negative",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.sentiment ?? '') === \"Negative\";"
+      }
+    },
+    {
+      "nodeId": "node_fe5067fe5e",
+      "actorId": "actor_fe5067fe5e",
+      "type": "NodeBranch",
+      "label": "Google Cloud Natural Language: sentiment = Negative?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_89d74a9e4d",
+      "actorId": "actor_89d74a9e4d",
+      "type": "NodeTransform",
+      "label": "IF: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst $node = new Proxy({}, { get: () => ({ json: source, parameter: {} }) });\nreturn Boolean((Number(($node[\"Google Cloud Natural Language\"].json[\"documentSentiment\"][\"score\"])) === Number(null)));"
+      }
+    },
+    {
+      "nodeId": "node_8ba0657ea9",
+      "actorId": "actor_8ba0657ea9",
+      "type": "NodeBranch",
+      "label": "IF: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_a00d65ac85",
+      "actorId": "actor_a00d65ac85",
+      "type": "NodeTransform",
+      "label": "Params: Mattermost",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst $node = new Proxy({}, { get: () => ({ json: source, parameter: {} }) });\n// Params for mattermost/MATTERMOST_CREATE_POST (n8n node \"Mattermost\").\nreturn {\n  \"channel_id\": \"4h1bz64cyifwxnzojkzh8hxh4a\",\n  \"message\": `You got a new feedback with a score of ${$node[\"Google Cloud Natural Language\"].json[\"documentSentiment\"][\"score\"]}. Here is what it says:${$node[\"Typeform Trigger\"].json[\"What did you think about the event?\"]}`,\n  \"props\": [],\n};"
+      }
+    },
+    {
+      "nodeId": "node_4d03e7e699",
+      "actorId": "actor_4d03e7e699",
+      "type": "NodeCdeConnector",
+      "label": "mattermost/MATTERMOST_CREATE_POST",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "mattermost",
+        "connectorLabel": "Mattermost",
+        "action": "MATTERMOST_CREATE_POST"
+      }
+    },
+    {
+      "nodeId": "node_b5af7784d5",
+      "actorId": "actor_b5af7784d5",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_3f9caf77e2",
+      "actorId": "actor_3f9caf77e2",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "event": {}
+        }
+      }
+    },
+    {
+      "nodeId": "node_22326c36f8",
+      "actorId": "actor_22326c36f8",
+      "type": "NodeChatModel",
+      "label": "Google Cloud Natural Language: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_4b9322b19d",
+      "target": "node_42d5ae560b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_42d5ae560b",
+      "target": "node_3c1d5ab01b",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_42d5ae560b",
+      "target": "node_3c1d5ab01b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3c1d5ab01b",
+      "target": "node_a4127be783",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_3c1d5ab01b",
+      "target": "node_a4127be783",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_42d5ae560b",
+      "target": "node_a3b5dc96e1",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a4127be783",
+      "target": "node_a3b5dc96e1",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a3b5dc96e1",
+      "target": "node_152f7bf5b3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_a3b5dc96e1",
+      "target": "node_152f7bf5b3",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_42d5ae560b",
+      "target": "node_b27fe11d85",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_152f7bf5b3",
+      "target": "node_b27fe11d85",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b27fe11d85",
+      "target": "node_fe5067fe5e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_b27fe11d85",
+      "target": "node_fe5067fe5e",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_89d74a9e4d",
+      "target": "node_8ba0657ea9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_89d74a9e4d",
+      "target": "node_8ba0657ea9",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_a00d65ac85",
+      "target": "node_4d03e7e699",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_a00d65ac85",
+      "target": "node_4d03e7e699",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_e30ac7a9ab",
+      "target": "node_4b9322b19d",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a4127be783",
+      "target": "node_89d74a9e4d",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8ba0657ea9",
+      "target": "node_a00d65ac85",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4d03e7e699",
+      "target": "node_b5af7784d5",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_22326c36f8",
+      "target": "node_42d5ae560b",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "other-integrations",
+    "categoryLabel": "Other Integrations and Use Cases",
+    "department": "Support/Communication",
+    "connectors": [
+      "mattermost",
+      "openai"
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 5,
+      "yantraSteps": 14,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Other_Integrations_and_Use_Cases/Analyze feedback and send a message on Mattermost.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Analyze the sentiment of feedback and send a message on Mattermost"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Typeform Trigger",
+        "detail": "n8n-nodes-base.typeformTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Typeform Trigger\" (typeformTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Connect the mattermost connector (credential).",
+      "Connect the openai connector (credential).",
+      "Provide run inputs: event."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Typeform Trigger",
+          "type": "n8n-nodes-base.typeformTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from typeformTrigger; Yantra has no webhook slug for it, so run on demand, on a schedule (add a NodeCron), or via the workflow API with the event under the run input `event`.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect mattermost: `cdecli credential create -n \"mattermost\" -p mattermost --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_e30ac7a9ab": {
+        "n8n": "Typeform Trigger",
+        "n8nType": "n8n-nodes-base.typeformTrigger"
+      },
+      "node_42d5ae560b": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_4b9322b19d": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_3c1d5ab01b": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_a4127be783": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_a3b5dc96e1": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_152f7bf5b3": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_b27fe11d85": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_fe5067fe5e": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_89d74a9e4d": {
+        "n8n": "IF",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_8ba0657ea9": {
+        "n8n": "IF",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_a00d65ac85": {
+        "n8n": "Mattermost",
+        "n8nType": "n8n-nodes-base.mattermost"
+      },
+      "node_4d03e7e699": {
+        "n8n": "Mattermost",
+        "n8nType": "n8n-nodes-base.mattermost"
+      },
+      "node_b5af7784d5": {
+        "n8n": "__end:Mattermost",
+        "n8nType": "synthetic"
+      },
+      "node_3f9caf77e2": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_22326c36f8": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

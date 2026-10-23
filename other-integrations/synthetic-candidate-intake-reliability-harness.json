@@ -1,0 +1,198 @@
+{
+  "name": "Synthetic Candidate Intake Reliability Harness",
+  "workflowSlug": "synthetic-candidate-intake-reliability-harness",
+  "description": "Runs six credential-free synthetic tests for candidate-intake deduplication, idempotency, partial-failure resume, invalid-input quarantine, and bounded 429 retry behavior.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_2618edd65e",
+      "actorId": "actor_2618edd65e",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_df0e9ce561",
+      "actorId": "actor_df0e9ce561",
+      "type": "NodeTransform",
+      "label": "Synthetic fixtures",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// Ported from n8n Code node \"Synthetic fixtures\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const fixtures = [\n    { test: 'AT-01 first submit', submissionId: 'FORM-001', phone: '+91 98765 43210', consent: true, role: 'Cashier', location: 'Mumbai', seen: [] },\n    { test: 'AT-01 duplicate replay', submissionId: 'FORM-001', phone: '+91 98765 43210', consent: true, role: 'Cashier', location: 'Mumbai', seen: ['FORM-001'] },\n    { test: 'AT-02 resume after message timeout', submissionId: 'FORM-002', phone: '+91 91234 56789', consent: true, role: 'Delivery', location: 'Mumbai', seen: [], crmCommitted: true, messageAttempt: 2 },\n    { test: 'AT-03 missing consent', submissionId: 'FORM-003', phone: '+91 90000 00000', consent: false, role: 'Sales', location: 'Pune', seen: [] },\n    { test: 'AT-03 ambiguous phone', submissionId: 'FORM-004', phone: '555-0100', consent: true, role: 'Helper', location: 'Unknown', seen: [] },\n    { test: 'AT-04 rate limited', submissionId: 'FORM-005', phone: '+91 99887 76655', consent: true, role: 'Supervisor', location: 'Mumbai', seen: [], statusCode: 429, retryAfterSeconds: 30 }\n  ];\n  return fixtures.map((json, index) => ({ json, pairedItem: { item: index } }));\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_d3228f7192",
+      "actorId": "actor_d3228f7192",
+      "type": "NodeTransform",
+      "label": "Normalize and assert contracts",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Normalize and assert contracts\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  function normalizePhone(value) {\n    const raw = String(value || '').trim();\n    if (!raw.startsWith('+')) return null;\n    const digits = raw.replace(/\\D/g, '');\n    return digits.length >= 10 && digits.length <= 15 ? '+' + digits : null;\n  }\n  const results = $input.all().map((item, index) => {\n    const x = item.json;\n    const phone = normalizePhone(x.phone);\n    const errors = [];\n    if (!x.consent) errors.push('consent_required');\n    if (!phone) errors.push('unambiguous_e164_phone_required');\n    if (!x.role) errors.push('role_required');\n    if (!x.location || x.location === 'Unknown') errors.push('location_required');\n    const duplicate = Array.isArray(x.seen) && x.seen.includes(x.submissionId);\n    const retry = x.statusCode === 429 ? { action: 'bounded_backoff', delaySeconds: Math.max(1, Math.min(Number(x.retryAfterSeconds || 30), 300)) } : null;\n    const messageAction = errors.length ? 'none' : duplicate ? 'suppress_duplicate' : x.crmCommitted ? 'resume_message_only' : 'enqueue_once';\n    return { json: { test: x.test, pass: true, candidateKey: phone, idempotencyKey: phone ? 'candidate:' + phone + ':submission:' + x.submissionId : null, route: errors.length ? 'quarantine' : duplicate ? 'duplicate_event_only' : 'upsert_candidate', messageAction, retry, errors }, pairedItem: { item: index } };\n  });\n  const byTest = Object.fromEntries(results.map(r => [r.json.test, r.json]));\n  const checks = [\n    byTest['AT-01 first submit'].route === 'upsert_candidate' && byTest['AT-01 first submit'].messageAction === 'enqueue_once',\n    byTest['AT-01 duplicate replay'].route === 'duplicate_event_only' && byTest['AT-01 duplicate replay'].messageAction === 'suppress_duplicate',\n    byTest['AT-02 resume after message timeout'].messageAction === 'resume_message_only',\n    byTest['AT-03 missing consent'].route === 'quarantine' && byTest['AT-03 missing consent'].errors.includes('consent_required'),\n    byTest['AT-03 ambiguous phone'].route === 'quarantine' && byTest['AT-03 ambiguous phone'].candidateKey === null,\n    byTest['AT-04 rate limited'].retry.action === 'bounded_backoff' && byTest['AT-04 rate limited'].retry.delaySeconds === 30\n  ];\n  if (checks.some(v => !v)) throw new Error('Reliability harness failed: ' + JSON.stringify(checks));\n  return [{ json: { synthetic: true, productionReady: false, passed: checks.length, failed: 0, results: results.map(r => r.json), nextStep: 'Map these contracts to your own credentialed Airtable and WhatsApp nodes only after review.' } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_ec41c79f65",
+      "actorId": "actor_ec41c79f65",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_abe83eb82c",
+      "actorId": "actor_abe83eb82c",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": ""
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_2618edd65e",
+      "target": "node_df0e9ce561",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_df0e9ce561",
+      "target": "node_d3228f7192",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_df0e9ce561",
+      "target": "node_d3228f7192",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d3228f7192",
+      "target": "node_ec41c79f65",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "other-integrations",
+    "categoryLabel": "Other Integrations and Use Cases",
+    "department": "HR/QA/Workflow Reliability",
+    "connectors": [],
+    "nodeTypes": [
+      "NodeEnd",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 3,
+      "yantraSteps": 3,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Other_Integrations_and_Use_Cases/Synthetic Candidate Intake Reliability Harness.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Synthetic Candidate Intake Reliability Harness"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Run synthetic tests",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_2618edd65e": {
+        "n8n": "Run synthetic tests",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_df0e9ce561": {
+        "n8n": "Synthetic fixtures",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_d3228f7192": {
+        "n8n": "Normalize and assert contracts",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_ec41c79f65": {
+        "n8n": "__end:Normalize and assert contracts",
+        "n8nType": "synthetic"
+      },
+      "node_abe83eb82c": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

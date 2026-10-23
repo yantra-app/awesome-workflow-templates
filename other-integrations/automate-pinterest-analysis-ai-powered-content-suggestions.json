@@ -1,0 +1,517 @@
+{
+  "name": "Automate Pinterest Analysis & AI-Powered Content Suggestions",
+  "workflowSlug": "automate-pinterest-analysis-ai-powered-content-suggestions",
+  "description": "Analyzes Pinterest data and provides AI-powered content suggestions.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_0a0f8c140e",
+      "actorId": "actor_0a0f8c140e",
+      "type": "NodeCron",
+      "label": "8:00am Morning Scheduled Trigger",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 8 */7 * *"
+      }
+    },
+    {
+      "nodeId": "node_e57a6213fb",
+      "actorId": "actor_e57a6213fb",
+      "type": "NodeHttpRequest",
+      "label": "Pull List of Pinterest Pins From Account",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://api.pinterest.com/v5/pins",
+        "headers": {
+          "Authorization": "Bearer {{pinterestAccessToken}}"
+        },
+        "body": {}
+      }
+    },
+    {
+      "nodeId": "node_418ecaff3b",
+      "actorId": "actor_418ecaff3b",
+      "type": "NodeTransform",
+      "label": "Update Data Field To Include Organic",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Update Data Field To Include Organic\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Initialize an array to hold the output formatted for Airtable\n  const outputItems = [];\n  \n  for (const item of $input.all()) {\n   if (item.json.items && Array.isArray(item.json.items)) {\n   for (const subItem of item.json.items) {\n   // Construct an object with only the required fields for Airtable\n   outputItems.push({\n   id: subItem.id || null,\n   created_at: subItem.created_at || null,\n   title: subItem.title || null,\n   description: subItem.description || null,\n   link: subItem.link || null,\n   type: \"Organic\" // Assign the value \"Organic\" to the 'Type' field\n   });\n   }\n   }\n  }\n  \n  // Return the structured output\n  return outputItems;\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_b937a76ec0",
+      "actorId": "actor_b937a76ec0",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_CREATE_RECORD",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_CREATE_RECORD",
+        "params": {
+          "baseId": "{{airtableBaseId}}",
+          "tableIdOrName": "{{airtableTableId}}",
+          "fields": {
+            "link": "{{last.transformed.link}}",
+            "type": "{{last.transformed.type}}",
+            "title": "{{last.transformed.title}}",
+            "pin_id": "{{last.transformed.id}}",
+            "created_at": "{{last.transformed.created_at}}",
+            "description": "{{last.transformed.description}}"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_eaf4689ab5",
+      "actorId": "actor_eaf4689ab5",
+      "type": "NodeCdecliAgent",
+      "label": "Pinterest Analysis AI Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "gpt-4o-mini",
+        "sessionId": "",
+        "message": "You are a data analysis expert. You will pull data from the table and provide any information in regards to trends in the data. \n\nYour output should be suggestions of new pins that we can post to reach the target audiences. \n\nAnalyze the data and just summary of the pin suggestions that the team should build. "
+      }
+    },
+    {
+      "nodeId": "node_ea6dd1404f",
+      "actorId": "actor_ea6dd1404f",
+      "type": "NodeLlmChain",
+      "label": "Pinterest Data Analysis Summary LLM",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "Write a concise summary of the following:\n\n\n\"{{last.text}}\"\n\n\nCONCISE SUMMARY:",
+        "prompt": "{{last.text}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_033c97af4a",
+      "actorId": "actor_033c97af4a",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_SEND_EMAIL",
+        "params": {
+          "recipient_email": "{{recipientEmail}}",
+          "subject": "Pinterest Trends & Suggestions",
+          "body": "{{last.text}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_307a89fafb",
+      "actorId": "actor_307a89fafb",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_4e4b223d2e",
+      "actorId": "actor_4e4b223d2e",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_052387c4cc",
+      "actorId": "actor_052387c4cc",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "airtableBaseId": "",
+          "airtableTableId": "",
+          "recipientEmail": "",
+          "pinterestAccessToken": {
+            "$workflowSecret": "PINTEREST_ACCESS_TOKEN"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_4ca52022ec",
+      "actorId": "actor_4ca52022ec",
+      "type": "NodeChatModel",
+      "label": "Pinterest Data Analysis Summary LLM: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2740,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_0a0f8c140e",
+      "target": "node_e57a6213fb",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_e57a6213fb",
+      "target": "node_418ecaff3b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e57a6213fb",
+      "target": "node_418ecaff3b",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_418ecaff3b",
+      "target": "node_b937a76ec0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_418ecaff3b",
+      "target": "node_eaf4689ab5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_ea6dd1404f",
+      "target": "node_033c97af4a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_b937a76ec0",
+      "target": "node_307a89fafb",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_033c97af4a",
+      "target": "node_4e4b223d2e",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_4ca52022ec",
+      "target": "node_ea6dd1404f",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_eaf4689ab5",
+      "target": "node_ea6dd1404f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "other-integrations",
+    "categoryLabel": "Other Integrations and Use Cases",
+    "department": "Marketing/AI",
+    "connectors": [
+      "airtable",
+      "googlesuper",
+      "openai"
+    ],
+    "setupVars": [
+      {
+        "key": "airtableBaseId",
+        "label": "Airtable base id",
+        "type": "id",
+        "example": "appXXXX (from the base URL)",
+        "usedBy": [
+          "Create Record Within Pinterest Data Table"
+        ]
+      },
+      {
+        "key": "airtableTableId",
+        "label": "Airtable table id",
+        "type": "id",
+        "example": "tblXXXX (from the table URL)",
+        "usedBy": [
+          "Create Record Within Pinterest Data Table"
+        ]
+      },
+      {
+        "key": "recipientEmail",
+        "label": "Recipient email address",
+        "type": "email",
+        "example": "you@example.com",
+        "usedBy": [
+          "Send Marketing Trends & Pinterest Analysis To Marketing Manager"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "PINTEREST_ACCESS_TOKEN",
+        "label": "Pinterest access token",
+        "host": "api.pinterest.com",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "pinterestAccessToken",
+        "usedBy": [
+          "Pull List of Pinterest Pins From Account"
+        ],
+        "oauth": true
+      }
+    ],
+    "activation": "cdecli cron activate automate-pinterest-analysis-ai-powered-content-suggestions",
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 10,
+      "yantraSteps": 8,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "Airtable2",
+        "OpenAI Chat Model1"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Other_Integrations_and_Use_Cases/Automate Pinterest Analysis & AI-Powered Content Suggestions With Pinterest API.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Automate Pinterest Analysis & AI-Powered Content Suggestions With Pinterest API"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Setup value airtableBaseId: Airtable base id (for example appXXXX (from the base URL)). Write it into the Workflow Configs initialContext before import.",
+      "Setup value airtableTableId: Airtable table id (for example tblXXXX (from the table URL)). Write it into the Workflow Configs initialContext before import.",
+      "Setup value recipientEmail: Recipient email address (for example you@example.com). Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret PINTEREST_ACCESS_TOKEN: Pinterest access token for api.pinterest.com (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the airtable connector (credential).",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "After import, start the schedule: cdecli cron activate automate-pinterest-analysis-ai-powered-content-suggestions."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Create Record Within Pinterest Data Table",
+          "n8n": "record.upsert",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Pinterest Analysis AI Agent",
+          "model": "gpt-4o-mini"
+        },
+        {
+          "node": "Airtable2",
+          "type": "n8n-nodes-base.airtableTool",
+          "into": "Pinterest Analysis AI Agent",
+          "as": "ai_tool"
+        },
+        {
+          "node": "OpenAI Chat Model1",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Pinterest Data Analysis Summary LLM",
+          "model": "gpt-4o-mini"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "8:00am Morning Scheduled Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "\"Create Record Within Pinterest Data Table\" (record.upsert): Airtable upsert without id → CREATE_RECORD (no match-key upsert).",
+        "\"Pinterest Analysis AI Agent\" used agent tools in the original: Airtable2 (airtableTool). The cdecli agent calls connectors directly; connect credentials for the services those tools reached. Prefer connectors: airtable.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect airtable: `cdecli credential create -n \"airtable\" -p airtable --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "Scheduled trigger at 8:00am to start the workflow. \n\nThis can be updated to your schedule preference as an email with marketing trends can be sent to best fit one's schedule.",
+      "Scheduled trigger begin process to gather Pinterest Pin data and store them within Airtable. This data can be referenced or analyzed accordingly. \n\n*If you would like to bring in Pinterest Ads data, the data is already labeled as Organic.\n\nThis is perfect for those who are creating content calendars to understand content scheduling.",
+      "AI Agent will go through Pinterest Pins and analyze any data and trends to be able to reach target audience. The data is then summarized within the Summary LLM.\n\nThe summarized results are then sent to the Marketing Manager within an email to help lead content creation efforts."
+    ],
+    "nodes": {
+      "node_0a0f8c140e": {
+        "n8n": "8:00am Morning Scheduled Trigger",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_e57a6213fb": {
+        "n8n": "Pull List of Pinterest Pins From Account",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_418ecaff3b": {
+        "n8n": "Update Data Field To Include Organic",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_b937a76ec0": {
+        "n8n": "Create Record Within Pinterest Data Table",
+        "n8nType": "n8n-nodes-base.airtable",
+        "approximate": true
+      },
+      "node_eaf4689ab5": {
+        "n8n": "Pinterest Analysis AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_ea6dd1404f": {
+        "n8n": "Pinterest Data Analysis Summary LLM",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainSummarization"
+      },
+      "node_033c97af4a": {
+        "n8n": "Send Marketing Trends & Pinterest Analysis To Marketing Manager",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_307a89fafb": {
+        "n8n": "__end:Create Record Within Pinterest Data Table",
+        "n8nType": "synthetic"
+      },
+      "node_4e4b223d2e": {
+        "n8n": "__end:Send Marketing Trends & Pinterest Analysis To Marketing Manager",
+        "n8nType": "synthetic"
+      },
+      "node_052387c4cc": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_4ca52022ec": {
+        "n8n": "Pinterest Data Analysis Summary LLM",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

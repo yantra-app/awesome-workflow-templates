@@ -1,0 +1,1173 @@
+{
+  "name": "Sentiment Analysis Tracking on Support Issues with Linear and Slack",
+  "workflowSlug": "sentiment-analysis-tracking-on-support-issues-with-linear-and-slack",
+  "description": "Tracks sentiment on support issues by integrating with Linear and Slack, performing sentiment analysis using OpenAI on Linear comments, and notifying relevant Slack channels.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_dd6a7a916c",
+      "actorId": "actor_dd6a7a916c",
+      "type": "NodeCdeWebhookTrigger",
+      "label": "Webhook: airtable/AIRTABLE_VIEW_CREATED_TRIGGER",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "connector": "airtable",
+        "webhookEndpointId": "",
+        "triggerSlug": "AIRTABLE_VIEW_CREATED_TRIGGER",
+        "connectedAccountId": "",
+        "config": {},
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "nodeId": "node_c57977719b",
+      "actorId": "actor_c57977719b",
+      "type": "NodeCron",
+      "label": "Schedule Trigger",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "*/30 * * * *"
+      }
+    },
+    {
+      "nodeId": "node_bfe4a0ac59",
+      "actorId": "actor_bfe4a0ac59",
+      "type": "NodeTransform",
+      "label": "Sentiment Transition: NON-NEGATIVE to NEGATIVE",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.fields[\"Previous Sentiment\"] !== 'Negative' && $json.fields[\"Current Sentiment\"] === 'Negative')) === true || (($json.fields[\"Previous Sentiment\"] !== 'Negative' && $json.fields[\"Current Sentiment\"] === 'Negative')) === 'true'));"
+      }
+    },
+    {
+      "nodeId": "node_bd245ae5b8",
+      "actorId": "actor_bd245ae5b8",
+      "type": "NodeBranch",
+      "label": "Sentiment Transition: NON-NEGATIVE to NEGATIVE?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_fb519b3a86",
+      "actorId": "actor_fb519b3a86",
+      "type": "NodeHttpRequest",
+      "label": "Fetch Active Linear Issues",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://api.linear.app/graphql",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "{{linearApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_b58144406d",
+      "actorId": "actor_b58144406d",
+      "type": "NodeTransform",
+      "label": "Body: Fetch Active Linear Issues",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Request body for \"Fetch Active Linear Issues\".\nconst __body = { \"query\": `query (\n $filter: IssueFilter\n) {\n issues(\n filter: $filter\n ) {\n nodes {\n id\n identifier\n title\n description\n url\n createdAt\n updatedAt\n assignee {\n name\n }\n comments {\n nodes {\n id\n createdAt\n user {\n displayName\n }\n body\n }\n }\n }\n }\n}`, \"variables\": ({\n \"filter\": {\n updatedAt: { gte: $now.minus(30, 'minutes').toISO() }\n }\n}) };\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_cbd706329d",
+      "actorId": "actor_cbd706329d",
+      "type": "NodeTransform",
+      "label": "Deduplicate Notifications",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst __seen = new Set();\nreturn __items.filter((i) => { const k = JSON.stringify(i); if (__seen.has(k)) return false; __seen.add(k); return true; });"
+      }
+    },
+    {
+      "nodeId": "node_614a133467",
+      "actorId": "actor_614a133467",
+      "type": "NodeTransform",
+      "label": "Issues to List",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"data.issues.nodes\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"data.issues.nodes\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"data.issues.nodes\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_485d788845",
+      "actorId": "actor_485d788845",
+      "type": "NodeTransform",
+      "label": "Params: Report Issue Negative Transition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Deduplicate Notifications\": {{steps.xf_cbd706329d.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for slack/SLACK_CHAT_POST_MESSAGE (n8n node \"Report Issue Negative Transition\").\nreturn {\n  \"channel\": \"{{slackChannel}}\",\n  \"text\": `${$('Deduplicate Notifications').all().length} Issues have transitions to Negative Sentiment`,\n  \"blocks\": ({\n \"blocks\": [\n {\n \"type\": \"section\",\n \"text\": {\n \"type\": \"mrkdwn\",\n \"text\": \":rotating_light: The following Issues transitioned to Negative Sentiment\"\n }\n },\n {\n \"type\": \"divider\"\n },\n ...($('Deduplicate Notifications').all().map(item => (\n {\n \"type\": \"section\",\n \"text\": {\n \"type\": \"mrkdwn\",\n \"text\": `*[\"https://linear.app/myOrg/issue/${$json.fields['Issue ID']}|${$json.fields['Issue ID']} ${$json.fields['Issue Title']}\"]*\\n${$json.fields.Summary}`\n }\n }\n )))\n ]\n}\n),\n};"
+      }
+    },
+    {
+      "nodeId": "node_54086b7f3d",
+      "actorId": "actor_54086b7f3d",
+      "type": "NodeCdeConnector",
+      "label": "slack/SLACK_CHAT_POST_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "slack",
+        "connectorLabel": "Slack",
+        "action": "SLACK_CHAT_POST_MESSAGE"
+      }
+    },
+    {
+      "nodeId": "node_a795a74f30",
+      "actorId": "actor_a795a74f30",
+      "type": "NodeLlmChain",
+      "label": "Sentiment over Issue Comments",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "sentiment": {
+              "type": "string",
+              "description": "One of positive, negative or neutral"
+            },
+            "sentimentSummary": {
+              "type": "string",
+              "description": "Describe the sentiment of the conversation"
+            }
+          },
+          "required": [
+            "sentiment"
+          ],
+          "additionalProperties": false
+        },
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_0248d68d41",
+      "actorId": "actor_0248d68d41",
+      "type": "NodeTransform",
+      "label": "Prompt: Sentiment over Issue Comments",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Sentiment over Issue Comments.\nconst __promptValue = ($json.comments.nodes.map(node => [\n `${node.user.displayName} commented on ${node.createdAt}:`,\n node.body\n].join('\\n')).join('---\\n'));\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_60f09cfc27",
+      "actorId": "actor_60f09cfc27",
+      "type": "NodeTransform",
+      "label": "Combine Sentiment Analysis",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Issues to List\": {{steps.xf_614a133467.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields from JSON (n8n Set node, JSON mode): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const __raw = ({\n ...$('Issues to List').item.json,\n ...$json\n});\n  let __obj;\n  try { __obj = typeof __raw === 'string' ? JSON.parse(__raw) : __raw; } catch (e) { throw new Error('Set node JSON is not valid JSON: ' + e.message); }\n  return __obj;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_abe9c5a208",
+      "actorId": "actor_abe9c5a208",
+      "type": "NodeTransform",
+      "label": "Items: For Each Issue...",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_73419b7633",
+      "actorId": "actor_73419b7633",
+      "type": "NodeLoop",
+      "label": "For Each Issue...",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_408ee8403c",
+      "actorId": "actor_408ee8403c",
+      "type": "NodeTransform",
+      "label": "Item: For Each Issue...",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_a01837ca2b",
+      "actorId": "actor_a01837ca2b",
+      "type": "NodeTransform",
+      "label": "Results: For Each Issue...",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_6d6cde399b",
+      "actorId": "actor_6d6cde399b",
+      "type": "NodeTransform",
+      "label": "Copy of Issue",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields from JSON (n8n Set node, JSON mode): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const __raw = ($json);\n  let __obj;\n  try { __obj = typeof __raw === 'string' ? JSON.parse(__raw) : __raw; } catch (e) { throw new Error('Set node JSON is not valid JSON: ' + e.message); }\n  return __obj;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_5ebd2517fe",
+      "actorId": "actor_5ebd2517fe",
+      "type": "NodeTransform",
+      "label": "Params: Get Existing Sentiment",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for airtable/AIRTABLE_LIST_RECORDS (n8n node \"Get Existing Sentiment\").\nreturn {\n  \"baseId\": \"{{airtableBaseId}}\",\n  \"tableIdOrName\": \"{{airtableTableId}}\",\n  \"filterByFormula\": `{Issue ID} = '${$json.identifier || 'XYZ'}'`,\n};"
+      }
+    },
+    {
+      "nodeId": "node_5cd4a0dd9e",
+      "actorId": "actor_5cd4a0dd9e",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_LIST_RECORDS",
+      "color": "#6366F1",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_LIST_RECORDS"
+      }
+    },
+    {
+      "nodeId": "node_2b609f1958",
+      "actorId": "actor_2b609f1958",
+      "type": "NodeTransform",
+      "label": "Params: Update Row",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Copy of Issue\": {{steps.xf_6d6cde399b.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(String.prototype, { toSentenceCase() { return this.charAt(0).toUpperCase() + this.slice(1).toLowerCase(); }, isEmpty() { return this.trim().length === 0; } });\n__def(Array.prototype, { isEmpty() { return this.length === 0; } });\n__def(Object.prototype, { isEmpty() { return Object.keys(this).length === 0; } });\n// Params for airtable/AIRTABLE_CREATE_RECORD (n8n node \"Update Row\").\nreturn {\n  \"baseId\": \"{{airtableBaseId}}\",\n  \"tableIdOrName\": \"{{airtableTableId}}\",\n  \"fields\": { \"Summary\": ($('Copy of Issue').item.json.sentimentSummary || ''), \"Assigned\": ($('Copy of Issue').item.json.assignee.name), \"Issue ID\": ($('Copy of Issue').item.json.identifier), \"Issue Title\": ($('Copy of Issue').item.json.title), \"Issue Created\": ($('Copy of Issue').item.json.createdAt), \"Issue Updated\": ($('Copy of Issue').item.json.updatedAt), \"Current Sentiment\": ($('Copy of Issue').item.json.sentiment.toSentenceCase()), \"Previous Sentiment\": (!$json.isEmpty() ? $json['Current Sentiment'] : 'N/A') },\n};"
+      }
+    },
+    {
+      "nodeId": "node_d961af20be",
+      "actorId": "actor_d961af20be",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_CREATE_RECORD",
+      "color": "#6366F1",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_CREATE_RECORD"
+      }
+    },
+    {
+      "nodeId": "node_ec247d8e79",
+      "actorId": "actor_ec247d8e79",
+      "type": "NodeTransform",
+      "label": "Return: Update Row",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_6dbdb94bd6",
+      "actorId": "actor_6dbdb94bd6",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_eecebc71f9",
+      "actorId": "actor_eecebc71f9",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 3880,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_cbc11705d4",
+      "actorId": "actor_cbc11705d4",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "slackChannel": "",
+          "airtableBaseId": "",
+          "airtableTableId": "",
+          "linearApiKey": {
+            "$workflowSecret": "LINEAR_API_KEY"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_c13690d079",
+      "actorId": "actor_c13690d079",
+      "type": "NodeChatModel",
+      "label": "Sentiment over Issue Comments: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 680
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_bfe4a0ac59",
+      "target": "node_bd245ae5b8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_bfe4a0ac59",
+      "target": "node_bd245ae5b8",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_b58144406d",
+      "target": "node_fb519b3a86",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_b58144406d",
+      "target": "node_fb519b3a86",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_485d788845",
+      "target": "node_54086b7f3d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_485d788845",
+      "target": "node_54086b7f3d",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_0248d68d41",
+      "target": "node_a795a74f30",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_abe9c5a208",
+      "target": "node_73419b7633",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_abe9c5a208",
+      "target": "node_73419b7633",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_73419b7633",
+      "target": "node_408ee8403c",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_73419b7633",
+      "target": "node_408ee8403c",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_73419b7633",
+      "target": "node_a01837ca2b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_73419b7633",
+      "target": "node_a01837ca2b",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5ebd2517fe",
+      "target": "node_5cd4a0dd9e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_5ebd2517fe",
+      "target": "node_5cd4a0dd9e",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_2b609f1958",
+      "target": "node_d961af20be",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_2b609f1958",
+      "target": "node_d961af20be",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_614a133467",
+      "target": "node_0248d68d41",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_614a133467",
+      "target": "node_0248d68d41",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_60f09cfc27",
+      "target": "node_abe9c5a208",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_60f09cfc27",
+      "target": "node_abe9c5a208",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a795a74f30",
+      "target": "node_60f09cfc27",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a795a74f30",
+      "target": "node_60f09cfc27",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6d6cde399b",
+      "target": "node_5ebd2517fe",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6d6cde399b",
+      "target": "node_5ebd2517fe",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_408ee8403c",
+      "target": "node_6d6cde399b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_408ee8403c",
+      "target": "node_6d6cde399b",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5cd4a0dd9e",
+      "target": "node_2b609f1958",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5cd4a0dd9e",
+      "target": "node_2b609f1958",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dd6a7a916c",
+      "target": "node_bfe4a0ac59",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dd6a7a916c",
+      "target": "node_bfe4a0ac59",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bd245ae5b8",
+      "target": "node_cbd706329d",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dd6a7a916c",
+      "target": "node_cbd706329d",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fb519b3a86",
+      "target": "node_614a133467",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fb519b3a86",
+      "target": "node_614a133467",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c57977719b",
+      "target": "node_b58144406d",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c57977719b",
+      "target": "node_b58144406d",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cbd706329d",
+      "target": "node_485d788845",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cbd706329d",
+      "target": "node_485d788845",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d961af20be",
+      "target": "node_ec247d8e79",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d961af20be",
+      "target": "node_ec247d8e79",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ec247d8e79",
+      "target": "node_73419b7633",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_ec247d8e79",
+      "target": "node_73419b7633",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_54086b7f3d",
+      "target": "node_6dbdb94bd6",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_a01837ca2b",
+      "target": "node_eecebc71f9",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_c13690d079",
+      "target": "node_a795a74f30",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "slack",
+    "categoryLabel": "Slack",
+    "department": "Support",
+    "connectors": [
+      "airtable",
+      "openai",
+      "slack"
+    ],
+    "setupVars": [
+      {
+        "key": "slackChannel",
+        "label": "Slack channel (name or id)",
+        "type": "channel",
+        "example": "#general",
+        "usedBy": [
+          "Report Issue Negative Transition"
+        ]
+      },
+      {
+        "key": "airtableBaseId",
+        "label": "Airtable base id",
+        "type": "id",
+        "example": "appXXXX (from the base URL)",
+        "usedBy": [
+          "Get Existing Sentiment",
+          "Update Row"
+        ]
+      },
+      {
+        "key": "airtableTableId",
+        "label": "Airtable table id",
+        "type": "id",
+        "example": "tblXXXX (from the table URL)",
+        "usedBy": [
+          "Get Existing Sentiment",
+          "Update Row"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "LINEAR_API_KEY",
+        "label": "Linear API key",
+        "host": "api.linear.app",
+        "headerFormat": "Authorization: <secret>",
+        "contextKey": "linearApiKey",
+        "usedBy": [
+          "Fetch Active Linear Issues"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate sentiment-analysis-tracking-on-support-issues-with-linear-and-slack",
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeCdeWebhookTrigger",
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeLoop",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 14,
+      "yantraSteps": 24,
+      "foldedHelpers": [
+        "OpenAI Chat Model"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Slack/Sentiment Analysis Tracking on Support Issues with Linear and Slack.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "webhook-registration",
+        "node": "Airtable Trigger",
+        "detail": "webhook trigger airtable/AIRTABLE_VIEW_CREATED_TRIGGER needs webhookEndpointId, connectedAccountId"
+      }
+    ],
+    "setup": [
+      "\"Airtable Trigger\": after import, register the airtable webhook (`cdecli webhook endpoint create -c airtable`, then `cdecli trigger instance upsert --slug AIRTABLE_VIEW_CREATED_TRIGGER`) and set webhookEndpointId, connectedAccountId on the trigger node.",
+      "Setup value slackChannel: Slack channel (name or id) (for example #general). Write it into the Workflow Configs initialContext before import.",
+      "Setup value airtableBaseId: Airtable base id (for example appXXXX (from the base URL)). Write it into the Workflow Configs initialContext before import.",
+      "Setup value airtableTableId: Airtable table id (for example tblXXXX (from the table URL)). Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret LINEAR_API_KEY: Linear API key for api.linear.app (Authorization: <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the airtable connector (credential).",
+      "Connect the openai connector (credential).",
+      "Connect the slack connector (credential).",
+      "After import, start the schedule: cdecli cron activate sentiment-analysis-tracking-on-support-issues-with-linear-and-slack."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Update Row",
+          "n8n": "record.upsert",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Sentiment over Issue Comments"
+        }
+      ],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "Airtable Trigger",
+          "type": "n8n-nodes-base.airtableTrigger",
+          "as": "NodeCdeWebhookTrigger"
+        },
+        {
+          "node": "Schedule Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "\"Airtable Trigger\" is a provider webhook (airtable/AIRTABLE_VIEW_CREATED_TRIGGER). Create the endpoint and trigger instance, then paste the we_… id and connected account into this node before the first run: `cdecli webhook endpoint create -c airtable --client-id <id>`, `cdecli webhook endpoint set-data <we_id> --signing-secret <secret>`, `cdecli trigger instance upsert --slug AIRTABLE_VIEW_CREATED_TRIGGER --account <connectedAccountId>`.",
+        "\"For Each Issue...\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "\"Update Row\" (record.upsert): Airtable upsert without id → CREATE_RECORD (no match-key upsert).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect airtable: `cdecli credential create -n \"airtable\" -p airtable --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect slack: `cdecli credential create -n \"slack\" -p slack --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## 1. Continuously Monitor Active Linear Issues\n[Learn more about the GraphQL node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.graphql)\n\nTo keep up with the latest changes in our active Linear tickets, we'll need to use Linear's GraphQL endpoint because filtering is currently unavailable in the official Linear.app node.\n\nFor this demonstration, we'll check for updated tickets every 30mins.",
+      "## 2. Sentiment Analysis on Current Issue Activity\n[Learn more about the Information Extractor node](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.information-extractor)\n\nWith our recently updated posts, we can use our AI to perform a quick sentiment analysis on the ongoing conversation to check the overall mood of the support issue. This is a great way to check how things are generally going in the support queue; positive should be normal but negative could indicate some uncomfortableness or even frustration.",
+      "## 3. Capture and Track Results in Airtable\n[Learn more about the Airtable node](https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.airtable)\n\nNext, we can capture this analysis in our insights database as means for human review. When the issue is new, we can create a new row but if the issue exists, we will update it's existing row instead.\n\nWhen updating an existing row, we move its previous \"current sentiment\" value into the \"previous sentiment\" column and replace with our new current sentiment. This gives us a \"sentiment transition\" which will be useful in the next step.\n\nCheck out the Airtable here: https://airtable.com/[id removed]/shrq6HgeYzpW6uwXL",
+      "## 4. Get Notified when Sentiment becomes Negative\n[Learn more about the Slack node](https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.slack/)\n\nA good use-case for tracking sentiment transitions could be to be alerted if ever an issue moves from a non-negative sentiment to a negative one. This could be a signal of issue handling troubles which may require attention before it escalates.\n\nIn this demonstration, we use the Airtable trigger to catch rows which have their sentiment column updated and check for the non-negative-to-negative sentiment transition using the switch node. For those matching rows, we combine add send a notification via slack. A cool trick is to use the \"remove duplication\" node to prevent repeat notifications for the same updates - here we combine the Linear issue key and the row's last modified date.",
+      "## Try It Out!\n### This n8n template performs continous monitoring on Linear Issue conversations performing sentiment analysis and alerting when the sentiment becomes negative.\nThis is helpful to quickly identify difficult customer support situations early and prioritising them before they get out of hand.\n\n## How it works\n* A scheduled trigger is used to fetch recently updated issues in Linear using the GraphQL node.\n* Each issue's comments thread is passed into a simple Information Extractor node to identify the overall sentiment.\n* The resulting sentiment analysis combined with the some issue details are uploaded to Airtable for review.\n* When the template is re-run at a later date, each issue is re-analysed for sentiment\n* Each issue's new sentiment state is saved to the airtable whilst its previous state is moved to the \"previous sentiment\" column.\n* An Airtable trigger is used to watch for recently updated rows\n* Each matching Airtable row is filtered to check if it has a previous non-negative state but now has a negative state in its current sentiment.\n* The results are sent via notification to a team slack channel for priority.\n\n**Check out the sample Airtable here**: https://airtable.com/[id removed]/shrq6HgeYzpW6uwXL\n\n## How to use\n* Modify the GraphQL filter to fetch issues to a relevant issue type, team or person.\n* Update the Slack channel to ensure messages are sent to the correct location.\n\n### Need Help?\nJoin the [Discord](https://discord.com/invite/XPKeKXeB7d) or ask in the [Forum](https://community.n8n.io/)!\n\nHappy Hacking!"
+    ],
+    "nodes": {
+      "node_dd6a7a916c": {
+        "n8n": "Airtable Trigger",
+        "n8nType": "n8n-nodes-base.airtableTrigger"
+      },
+      "node_c57977719b": {
+        "n8n": "Schedule Trigger",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_bfe4a0ac59": {
+        "n8n": "Sentiment Transition",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_bd245ae5b8": {
+        "n8n": "Sentiment Transition",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_fb519b3a86": {
+        "n8n": "Fetch Active Linear Issues",
+        "n8nType": "n8n-nodes-base.graphql",
+        "auth": "headerAuth"
+      },
+      "node_b58144406d": {
+        "n8n": "Fetch Active Linear Issues",
+        "n8nType": "n8n-nodes-base.graphql"
+      },
+      "node_cbd706329d": {
+        "n8n": "Deduplicate Notifications",
+        "n8nType": "n8n-nodes-base.removeDuplicates"
+      },
+      "node_614a133467": {
+        "n8n": "Issues to List",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_485d788845": {
+        "n8n": "Report Issue Negative Transition",
+        "n8nType": "n8n-nodes-base.slack"
+      },
+      "node_54086b7f3d": {
+        "n8n": "Report Issue Negative Transition",
+        "n8nType": "n8n-nodes-base.slack"
+      },
+      "node_a795a74f30": {
+        "n8n": "Sentiment over Issue Comments",
+        "n8nType": "@n8n/n8n-nodes-langchain.informationExtractor"
+      },
+      "node_0248d68d41": {
+        "n8n": "Sentiment over Issue Comments",
+        "n8nType": "@n8n/n8n-nodes-langchain.informationExtractor"
+      },
+      "node_60f09cfc27": {
+        "n8n": "Combine Sentiment Analysis",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_abe9c5a208": {
+        "n8n": "For Each Issue...",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_73419b7633": {
+        "n8n": "For Each Issue...",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_408ee8403c": {
+        "n8n": "For Each Issue...",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_a01837ca2b": {
+        "n8n": "For Each Issue...",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_6d6cde399b": {
+        "n8n": "Copy of Issue",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_5ebd2517fe": {
+        "n8n": "Get Existing Sentiment",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_5cd4a0dd9e": {
+        "n8n": "Get Existing Sentiment",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_2b609f1958": {
+        "n8n": "Update Row",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_d961af20be": {
+        "n8n": "Update Row",
+        "n8nType": "n8n-nodes-base.airtable",
+        "approximate": true
+      },
+      "node_ec247d8e79": {
+        "n8n": "Update Row",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_6dbdb94bd6": {
+        "n8n": "__end:Report Issue Negative Transition",
+        "n8nType": "synthetic"
+      },
+      "node_eecebc71f9": {
+        "n8n": "__end:For Each Issue...",
+        "n8nType": "synthetic"
+      },
+      "node_cbc11705d4": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_c13690d079": {
+        "n8n": "Sentiment over Issue Comments",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

@@ -1,0 +1,2175 @@
+{
+  "name": "WordPress - AI Chatbot to enhance user experience - with Supabase and OpenAI",
+  "workflowSlug": "wordpress-ai-chatbot-to-enhance-user-experience-with-supabase-and-open",
+  "description": "This workflow integrates an AI chatbot into WordPress using Supabase and OpenAI to enhance user experience by providing intelligent interactions.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_5ae489cc07",
+      "actorId": "actor_5ae489cc07",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_3e4ae8951b",
+      "actorId": "actor_3e4ae8951b",
+      "type": "NodeCron",
+      "label": "Every 30 seconds",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "interval": 60
+      }
+    },
+    {
+      "nodeId": "node_16b410000f",
+      "actorId": "actor_16b410000f",
+      "type": "NodeCdeConnector",
+      "label": "supabase/SUPABASE_BETA_RUN_SQL_QUERY",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "supabase",
+        "connectorLabel": "Postgres (via Supabase)",
+        "action": "SUPABASE_BETA_RUN_SQL_QUERY",
+        "params": {
+          "query": "-- Enable the pgvector extension to work with embedding vectors\nCREATE EXTENSION vector;\n\n-- Create a table to store your documents with default RLS\nCREATE TABLE\n documents (\n id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,\n CONTENT TEXT, -- corresponds to Document.pageContent\n metadata jsonb, -- corresponds to Document.metadata\n embedding vector (1536) -- 1536 works for OpenAI embeddings, change if needed\n );\n\n-- Enable Row Level Security on the documents table\nALTER TABLE documents ENABLE ROW LEVEL SECURITY;\n\n-- Create a function to search for documents\nCREATE FUNCTION match_documents (\n query_embedding vector (1536),\n match_count INT DEFAULT NULL,\n FILTER jsonb DEFAULT '{}'\n) RETURNS TABLE (\n id BIGINT,\n CONTENT TEXT,\n metadata jsonb,\n similarity FLOAT\n) LANGUAGE plpgsql AS $$\n#variable_conflict use_column\nBEGIN\n RETURN QUERY\n SELECT\n id,\n content,\n metadata,\n 1 - (documents.embedding <=> query_embedding) AS similarity\n FROM documents\n WHERE metadata @> filter\n ORDER BY documents.embedding <=> query_embedding\n LIMIT match_count;\nEND;\n$$;",
+          "ref": "{{supabaseProjectRef}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_8178b4ef72",
+      "actorId": "actor_8178b4ef72",
+      "type": "NodeCdeConnector",
+      "label": "wordpress/WORDPRESS_GETALL_POST",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "wordpress",
+        "connectorLabel": "WordPress",
+        "action": "WORDPRESS_GETALL_POST",
+        "params": {}
+      }
+    },
+    {
+      "nodeId": "node_041b69004f",
+      "actorId": "actor_041b69004f",
+      "type": "NodeCdeConnector",
+      "label": "wordpress/WORDPRESS_GETALL_PAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "wordpress",
+        "connectorLabel": "WordPress",
+        "action": "WORDPRESS_GETALL_PAGE",
+        "params": {}
+      }
+    },
+    {
+      "nodeId": "node_e8a9a1ec5f",
+      "actorId": "actor_e8a9a1ec5f",
+      "type": "NodeCdeConnector",
+      "label": "supabase/SUPABASE_BETA_RUN_SQL_QUERY",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "supabase",
+        "connectorLabel": "Postgres (via Supabase)",
+        "action": "SUPABASE_BETA_RUN_SQL_QUERY",
+        "params": {
+          "query": "select max(created_at) as last_workflow_execution from n8n_website_embedding_histories",
+          "ref": "{{supabaseProjectRef}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_9ec2e5db76",
+      "actorId": "actor_9ec2e5db76",
+      "type": "NodeCdeConnector",
+      "label": "supabase/SUPABASE_BETA_RUN_SQL_QUERY",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "supabase",
+        "connectorLabel": "Postgres (via Supabase)",
+        "action": "SUPABASE_BETA_RUN_SQL_QUERY",
+        "params": {
+          "query": "CREATE TABLE\n n8n_website_embedding_histories (\n id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,\n created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()\n );",
+          "ref": "{{supabaseProjectRef}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_fa7a3fbfc3",
+      "actorId": "actor_fa7a3fbfc3",
+      "type": "NodeTransform",
+      "label": "Params: Supabase - Retrieve documents from chatinput",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 1140
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for supabase/SUPABASE_SEARCH_ROWS (n8n node \"Supabase - Retrieve documents from chatinput\").\nreturn {\n  \"table\": \"documents\",\n  \"embedding\": ($json.embedding || $json.vector || $json.query),\n  \"limit\": 4,\n  \"ref\": \"{{supabaseProjectRef}}\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_af4a407e4b",
+      "actorId": "actor_af4a407e4b",
+      "type": "NodeCdeConnector",
+      "label": "supabase/SUPABASE_SEARCH_ROWS",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "supabase",
+        "connectorLabel": "Supabase",
+        "action": "SUPABASE_SEARCH_ROWS"
+      }
+    },
+    {
+      "nodeId": "node_902107b41b",
+      "actorId": "actor_902107b41b",
+      "type": "NodeSync",
+      "label": "Merge Wordpress Posts and Pages",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_a804cfeff7",
+      "actorId": "actor_a804cfeff7",
+      "type": "NodeHttpRequest",
+      "label": "Wordpress - Get posts modified after last workflow execution",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://mydomain.com/wp-json/wp/v2/posts?modified_after={{last.result.last_workflow_execution}}",
+        "headers": {
+          "Authorization": "Basic {{mydomainBasicAuth}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_9d330fac1e",
+      "actorId": "actor_9d330fac1e",
+      "type": "NodeHttpRequest",
+      "label": "Wordpress - Get posts modified after last workflow execution 2",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 1140
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://mydomain.com/wp-json/wp/v2/pages?modified_after={{last.result.last_workflow_execution}}",
+        "headers": {
+          "Authorization": "Basic {{mydomainBasicAuth}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_4a210ce5a3",
+      "actorId": "actor_4a210ce5a3",
+      "type": "NodeTransform",
+      "label": "Aggregate documents",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\nreturn {\n  \"documents\": __items.map((i) => __get(i, \"document\")),\n};"
+      }
+    },
+    {
+      "nodeId": "node_4a6fb57c8a",
+      "actorId": "actor_4a6fb57c8a",
+      "type": "NodeTransform",
+      "label": "Set fields1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"publication_date\"] = ($json.date);\n  out[\"modification_date\"] = ($json.modified);\n  out[\"content_type\"] = ($json.type);\n  out[\"title\"] = ($json.title.rendered);\n  out[\"url\"] = ($json.link);\n  out[\"content\"] = ($json.content.rendered);\n  out[\"protected\"] = ((v) => v === true || v === 'true')(($json.excerpt.protected));\n  out[\"status\"] = ($json.status);\n  out[\"id\"] = Number(($json.id));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_98787d92c9",
+      "actorId": "actor_98787d92c9",
+      "type": "NodeSync",
+      "label": "Merge retrieved WordPress posts and pages",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_acda2bf25b",
+      "actorId": "actor_acda2bf25b",
+      "type": "NodeTransform",
+      "label": "Set fields",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When chat message received\": {{ctx}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"documents\"] = (JSON.stringify(\n $json.documents.map(doc => ({\n metadata: \n 'URL: ' + doc.metadata.url.replaceAll('&rsquo;', \"'\").replaceAll(/[\"]/g, '') + '\\n' +\n 'Publication Date: ' + doc.metadata.publication_date.replaceAll(/[\"]/g, '') + '\\n' +\n 'Modification Date: ' + doc.metadata.modification_date.replaceAll(/[\"]/g, '') + '\\n' +\n 'Content Type: ' + doc.metadata.content_type.replaceAll(/[\"]/g, '') + '\\n' +\n 'Title: ' + doc.metadata.title.replaceAll('&rsquo;', \"'\").replaceAll(/[\"]/g, '') + '\\n',\n \n page_content: doc.pageContent\n }))\n ).replaceAll(/[\\[\\]{}]/g, ''));\n  out[\"sessionId\"] = ($('When chat message received').item.json.sessionId);\n  out[\"chatInput\"] = ($('When chat message received').item.json.chatInput);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_35dc235eb8",
+      "actorId": "actor_35dc235eb8",
+      "type": "NodeTransform",
+      "label": "Filter - Only published & unprotected content",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn __items.filter(($json) => Boolean(((($json.protected)) === false || (($json.protected)) === 'false') && (String(($json.status) ?? '') === String(\"publish\" ?? ''))));"
+      }
+    },
+    {
+      "nodeId": "node_4ba998d3d6",
+      "actorId": "actor_4ba998d3d6",
+      "type": "NodeTransform",
+      "label": "Set fields2",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"publication_date\"] = ($json.date);\n  out[\"modification_date\"] = ($json.modified);\n  out[\"content_type\"] = ($json.type);\n  out[\"title\"] = ($json.title.rendered);\n  out[\"url\"] = ($json.link);\n  out[\"content\"] = ($json.content.rendered);\n  out[\"protected\"] = ((v) => v === true || v === 'true')(($json.content.protected));\n  out[\"status\"] = ($json.status);\n  out[\"id\"] = Number(($json.id));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_f01f3da5b1",
+      "actorId": "actor_f01f3da5b1",
+      "type": "NodeCdecliAgent",
+      "label": "AI Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "gpt-4o-mini",
+        "sessionId": "{{sessionId}}",
+        "system": "You are an assistant tasked with answering questions from visitors to the website {{your_website_url}}.\n\nInput:\nVisitor's question: The question posed by the visitor.\nDocuments found: A selection of documents from the vector database that match the visitor's question. These documents are accompanied by the following metadata:\nurl: The URL of the page or blog post found.\ncontent_type: The type of content (e.g., page or blog article).\npublication_date: The publication date of the document.\nmodification_date: The last modification date of the document.\nObjective:\nProvide a helpful answer using the relevant information from the documents found.\nIMPORTANT : You must always include all metadata (url, content_type, publication_date, and modification_date) directly in the main answer to the visitor to indicate the source of the information. These should not be separated from the main answer, and must be naturally integrated into the response.\nIf multiple documents are used in your response, mention each one with its respective metadata.\nIf no relevant documents are found, or if the documents are insufficient, clearly indicate this in your response.\nImportant: Respond in the language used by the visitor who asked the question.\nExample of forced metadata integration:\n\"The cost of a home charging station for an electric vehicle varies depending on several factors. According to [title of the page](https://example.com/charging-point-price), published on April 8, 2021, and updated on July 24, 2022, the price for a 7kW station is €777.57 including VAT. This page provides further details about the price range and installation considerations.\"",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_f1d9fe0dd9",
+      "actorId": "actor_f1d9fe0dd9",
+      "type": "NodeTransform",
+      "label": "Prompt: AI Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: AI Agent.\nconst __promptValue = `Visitor's question : ${$json.chatInput}\nDocuments found: ${$json.documents}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_4b9111cc39",
+      "actorId": "actor_4b9111cc39",
+      "type": "NodeTransform",
+      "label": "HTML To Markdown",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst __md = String(null ?? '');\nconst __html = __md.replace(/^### (.*)$/gm, '<h3>$1</h3>').replace(/^## (.*)$/gm, '<h2>$1</h2>').replace(/^# (.*)$/gm, '<h1>$1</h1>').replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>').replace(/\\*(.+?)\\*/g, '<em>$1</em>').replace(/\\[(.+?)\\]\\((.+?)\\)/g, '<a href=\"$2\">$1</a>').replace(/\\n{2,}/g, '</p><p>');\nreturn { ...$json, \"data\": '<p>' + __html + '</p>' };"
+      }
+    },
+    {
+      "nodeId": "node_63598818e7",
+      "actorId": "actor_63598818e7",
+      "type": "NodeTransform",
+      "label": "Filter - Only published and unprotected content",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn __items.filter(($json) => Boolean(((($json.protected)) === false || (($json.protected)) === 'false') && (String(($json.status) ?? '') === String(\"publish\" ?? ''))));"
+      }
+    },
+    {
+      "nodeId": "node_d878bb2af0",
+      "actorId": "actor_d878bb2af0",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_ea0a7ddedc",
+      "actorId": "actor_ea0a7ddedc",
+      "type": "NodeTransform",
+      "label": "Params: Supabase Vector Store",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for supabase/SUPABASE_INSERT_ROW (n8n node \"Supabase Vector Store\").\nreturn {\n  \"table\": \"documents\",\n  \"fields\": { \"content\": ($json.pageContent ?? $json.content ?? $json.text), \"embedding\": ($json.embedding), \"metadata\": ($json.metadata) },\n  \"ref\": \"{{supabaseProjectRef}}\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_7e117863ef",
+      "actorId": "actor_7e117863ef",
+      "type": "NodeCdeConnector",
+      "label": "supabase/SUPABASE_INSERT_ROW",
+      "color": "#6366F1",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "supabase",
+        "connectorLabel": "Supabase",
+        "action": "SUPABASE_INSERT_ROW"
+      }
+    },
+    {
+      "nodeId": "node_783a70ff67",
+      "actorId": "actor_783a70ff67",
+      "type": "NodeTransform",
+      "label": "Items: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_da499d3f51",
+      "actorId": "actor_da499d3f51",
+      "type": "NodeLoop",
+      "label": "Loop Over Items",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2740,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_b8dd8d88da",
+      "actorId": "actor_b8dd8d88da",
+      "type": "NodeTransform",
+      "label": "Item: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_460e7f7a55",
+      "actorId": "actor_460e7f7a55",
+      "type": "NodeTransform",
+      "label": "Results: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_e93ff915ac",
+      "actorId": "actor_e93ff915ac",
+      "type": "NodeTransform",
+      "label": "Aggregate",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nreturn { \"data\": __items };"
+      }
+    },
+    {
+      "nodeId": "node_fd9ad1930e",
+      "actorId": "actor_fd9ad1930e",
+      "type": "NodeTransform",
+      "label": "Markdown1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst __md = String(null ?? '');\nconst __html = __md.replace(/^### (.*)$/gm, '<h3>$1</h3>').replace(/^## (.*)$/gm, '<h2>$1</h2>').replace(/^# (.*)$/gm, '<h1>$1</h1>').replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>').replace(/\\*(.+?)\\*/g, '<em>$1</em>').replace(/\\[(.+?)\\]\\((.+?)\\)/g, '<a href=\"$2\">$1</a>').replace(/\\n{2,}/g, '</p><p>');\nreturn { ...$json, \"data\": '<p>' + __html + '</p>' };"
+      }
+    },
+    {
+      "nodeId": "node_d28cfa71f0",
+      "actorId": "actor_d28cfa71f0",
+      "type": "NodeCdeConnector",
+      "label": "supabase/SUPABASE_BETA_RUN_SQL_QUERY",
+      "color": "#6366F1",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "supabase",
+        "connectorLabel": "Postgres (via Supabase)",
+        "action": "SUPABASE_BETA_RUN_SQL_QUERY",
+        "params": {
+          "query": "SELECT *\nFROM documents\nWHERE (metadata->>'id')::integer = {{ $json.id }};\n",
+          "ref": "{{supabaseProjectRef}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_bc7f9da616",
+      "actorId": "actor_bc7f9da616",
+      "type": "NodeTransform",
+      "label": "Params: Supabase - Store workflow execution",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst $workflow = { id: '', name: '', active: true }; const $execution = { id: '', mode: 'manual', resumeUrl: '' }; const $executionId = $execution.id;\nconst $runIndex = 0; const $itemIndex = 0; const $binary = {}; const $prevNode = { name: '', outputIndex: 0, runIndex: 0 }; const $parameter = {}; const $position = 0;\n// Params for supabase/SUPABASE_INSERT_ROW (n8n node \"Supabase - Store workflow execution\").\nreturn {\n  \"table\": \"n8n_website_embedding_histories\",\n  \"fields\": { \"id\": ($executionId) },\n  \"ref\": \"{{supabaseProjectRef}}\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_82b08cdaf5",
+      "actorId": "actor_82b08cdaf5",
+      "type": "NodeCdeConnector",
+      "label": "supabase/SUPABASE_INSERT_ROW",
+      "color": "#6366F1",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "supabase",
+        "connectorLabel": "Supabase",
+        "action": "SUPABASE_INSERT_ROW"
+      }
+    },
+    {
+      "nodeId": "node_5538bf4e3f",
+      "actorId": "actor_5538bf4e3f",
+      "type": "NodeTransform",
+      "label": "Params: Store documents on Supabase",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for supabase/SUPABASE_INSERT_ROW (n8n node \"Store documents on Supabase\").\nreturn {\n  \"table\": \"documents\",\n  \"fields\": { \"content\": ($json.pageContent ?? $json.content ?? $json.text), \"embedding\": ($json.embedding), \"metadata\": ($json.metadata) },\n  \"ref\": \"{{supabaseProjectRef}}\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_250d2d9e0c",
+      "actorId": "actor_250d2d9e0c",
+      "type": "NodeCdeConnector",
+      "label": "supabase/SUPABASE_INSERT_ROW",
+      "color": "#6366F1",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "supabase",
+        "connectorLabel": "Supabase",
+        "action": "SUPABASE_INSERT_ROW"
+      }
+    },
+    {
+      "nodeId": "node_635f196d2d",
+      "actorId": "actor_635f196d2d",
+      "type": "NodeTransform",
+      "label": "Switch: existing_documents",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.metadata.id)) != null));"
+      }
+    },
+    {
+      "nodeId": "node_5a1d78f0ec",
+      "actorId": "actor_5a1d78f0ec",
+      "type": "NodeBranch",
+      "label": "Switch: existing_documents?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_25ea158844",
+      "actorId": "actor_25ea158844",
+      "type": "NodeTransform",
+      "label": "Switch: new_documents",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.metadata.id)) == null));"
+      }
+    },
+    {
+      "nodeId": "node_c2d6add0fb",
+      "actorId": "actor_c2d6add0fb",
+      "type": "NodeBranch",
+      "label": "Switch: new_documents?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_0f82da24fb",
+      "actorId": "actor_0f82da24fb",
+      "type": "NodeTransform",
+      "label": "Aggregate1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nreturn { \"data\": __items };"
+      }
+    },
+    {
+      "nodeId": "node_e5518ac189",
+      "actorId": "actor_e5518ac189",
+      "type": "NodeCdeConnector",
+      "label": "supabase/SUPABASE_DELETE_ROW",
+      "color": "#6366F1",
+      "position": {
+        "x": 4640,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "supabase",
+        "connectorLabel": "Supabase",
+        "action": "SUPABASE_DELETE_ROW",
+        "params": {
+          "table": "documents",
+          "filters": "metadata->>id=like.{{last.result.metadata.id}}",
+          "ref": "{{supabaseProjectRef}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_50e4811c77",
+      "actorId": "actor_50e4811c77",
+      "type": "NodeTransform",
+      "label": "Set fields4",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Loop Over Items\": __namedCtx.steps?.[\"Item: Loop Over Items\"]?.[\"transformed\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"publication_date\"] = ($('Loop Over Items').item.json.publication_date);\n  out[\"modification_date\"] = ($('Loop Over Items').item.json.modification_date);\n  out[\"content_type\"] = ($('Loop Over Items').item.json.content_type);\n  out[\"title\"] = ($('Loop Over Items').item.json.title);\n  out[\"url\"] = ($('Loop Over Items').item.json.url);\n  out[\"content\"] = ($('Loop Over Items').item.json.content);\n  out[\"protected\"] = ((v) => v === true || v === 'true')(($('Loop Over Items').item.json.protected));\n  out[\"status\"] = ($('Loop Over Items').item.json.status);\n  out[\"id\"] = Number(($('Loop Over Items').item.json.id));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_32c689841a",
+      "actorId": "actor_32c689841a",
+      "type": "NodeCdeConnector",
+      "label": "supabase/SUPABASE_INSERT_ROW",
+      "color": "#6366F1",
+      "position": {
+        "x": 5020,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "supabase",
+        "connectorLabel": "Supabase",
+        "action": "SUPABASE_INSERT_ROW",
+        "params": {
+          "table": "n8n_website_embedding_histories",
+          "ref": "{{supabaseProjectRef}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_0eaa1ebcc0",
+      "actorId": "actor_0eaa1ebcc0",
+      "type": "NodeTransform",
+      "label": "Aggregate2",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\nreturn {\n  \"id\": __items.map((i) => __get(i, \"metadata.id\")),\n};"
+      }
+    },
+    {
+      "nodeId": "node_1a130a0959",
+      "actorId": "actor_1a130a0959",
+      "type": "NodeTransform",
+      "label": "Set fields3",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Loop Over Items\": __namedCtx.steps?.[\"Item: Loop Over Items\"]?.[\"transformed\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"publication_date\"] = ($('Loop Over Items').item.json.publication_date);\n  out[\"modification_date\"] = ($('Loop Over Items').item.json.modification_date);\n  out[\"content_type\"] = ($('Loop Over Items').item.json.content_type);\n  out[\"title\"] = ($('Loop Over Items').item.json.title);\n  out[\"url\"] = ($('Loop Over Items').item.json.url);\n  out[\"content\"] = ($('Loop Over Items').item.json.content);\n  out[\"protected\"] = ((v) => v === true || v === 'true')(($('Loop Over Items').item.json.protected));\n  out[\"status\"] = ($('Loop Over Items').item.json.status);\n  out[\"id\"] = Number(($('Loop Over Items').item.json.id));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_ee1cfcc103",
+      "actorId": "actor_ee1cfcc103",
+      "type": "NodeTransform",
+      "label": "Return: Set fields3",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_e6b5b35855",
+      "actorId": "actor_e6b5b35855",
+      "type": "NodeTransform",
+      "label": "Return: Set fields4",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_a20771d08a",
+      "actorId": "actor_a20771d08a",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 1220,
+        "y": 880
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_7ac8250939",
+      "actorId": "actor_7ac8250939",
+      "type": "NodeEnd",
+      "label": "End 2 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 4260,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_a2aee4ae9e",
+      "actorId": "actor_a2aee4ae9e",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 5400,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f0fd2bf72a",
+      "actorId": "actor_f0fd2bf72a",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 1400
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "chatInput": "",
+          "sessionId": "",
+          "supabaseProjectRef": "",
+          "mydomainBasicAuth": {
+            "$workflowSecret": "MYDOMAIN_BASIC_AUTH"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_fa7a3fbfc3",
+      "target": "node_af4a407e4b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_fa7a3fbfc3",
+      "target": "node_af4a407e4b",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_f1d9fe0dd9",
+      "target": "node_f01f3da5b1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_ea0a7ddedc",
+      "target": "node_7e117863ef",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ea0a7ddedc",
+      "target": "node_7e117863ef",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_783a70ff67",
+      "target": "node_da499d3f51",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_783a70ff67",
+      "target": "node_da499d3f51",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_da499d3f51",
+      "target": "node_b8dd8d88da",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_da499d3f51",
+      "target": "node_b8dd8d88da",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_da499d3f51",
+      "target": "node_460e7f7a55",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_da499d3f51",
+      "target": "node_460e7f7a55",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bc7f9da616",
+      "target": "node_82b08cdaf5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_bc7f9da616",
+      "target": "node_82b08cdaf5",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_5538bf4e3f",
+      "target": "node_250d2d9e0c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_5538bf4e3f",
+      "target": "node_250d2d9e0c",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_635f196d2d",
+      "target": "node_5a1d78f0ec",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_635f196d2d",
+      "target": "node_5a1d78f0ec",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_5a1d78f0ec",
+      "target": "node_25ea158844",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_25ea158844",
+      "target": "node_c2d6add0fb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_25ea158844",
+      "target": "node_c2d6add0fb",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_5ae489cc07",
+      "target": "node_8178b4ef72",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_5ae489cc07",
+      "target": "node_041b69004f",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_acda2bf25b",
+      "target": "node_f1d9fe0dd9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_acda2bf25b",
+      "target": "node_f1d9fe0dd9",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fd9ad1930e",
+      "target": "node_5538bf4e3f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fd9ad1930e",
+      "target": "node_5538bf4e3f",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e8a9a1ec5f",
+      "target": "node_a804cfeff7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_e8a9a1ec5f",
+      "target": "node_9d330fac1e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_e93ff915ac",
+      "target": "node_bc7f9da616",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e93ff915ac",
+      "target": "node_bc7f9da616",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0f82da24fb",
+      "target": "node_32c689841a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_0eaa1ebcc0",
+      "target": "node_1a130a0959",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0eaa1ebcc0",
+      "target": "node_1a130a0959",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8178b4ef72",
+      "target": "node_902107b41b",
+      "sourceOutput": "result",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_041b69004f",
+      "target": "node_902107b41b",
+      "sourceOutput": "result",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_4a6fb57c8a",
+      "target": "node_35dc235eb8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4a6fb57c8a",
+      "target": "node_35dc235eb8",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_35dc235eb8",
+      "target": "node_4b9111cc39",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_35dc235eb8",
+      "target": "node_4b9111cc39",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4b9111cc39",
+      "target": "node_ea0a7ddedc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4b9111cc39",
+      "target": "node_ea0a7ddedc",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3e4ae8951b",
+      "target": "node_e8a9a1ec5f",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_a804cfeff7",
+      "target": "node_98787d92c9",
+      "sourceOutput": "body",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_9d330fac1e",
+      "target": "node_98787d92c9",
+      "sourceOutput": "body",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_4ba998d3d6",
+      "target": "node_63598818e7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4ba998d3d6",
+      "target": "node_63598818e7",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_63598818e7",
+      "target": "node_783a70ff67",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_63598818e7",
+      "target": "node_783a70ff67",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_460e7f7a55",
+      "target": "node_fd9ad1930e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_460e7f7a55",
+      "target": "node_fd9ad1930e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b8dd8d88da",
+      "target": "node_d28cfa71f0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_250d2d9e0c",
+      "target": "node_0f82da24fb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_250d2d9e0c",
+      "target": "node_0f82da24fb",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4a210ce5a3",
+      "target": "node_acda2bf25b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4a210ce5a3",
+      "target": "node_acda2bf25b",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_16b410000f",
+      "target": "node_9ec2e5db76",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_902107b41b",
+      "target": "node_4a6fb57c8a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_902107b41b",
+      "target": "node_4a6fb57c8a",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_98787d92c9",
+      "target": "node_4ba998d3d6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_98787d92c9",
+      "target": "node_4ba998d3d6",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d28cfa71f0",
+      "target": "node_635f196d2d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d28cfa71f0",
+      "target": "node_635f196d2d",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d28cfa71f0",
+      "target": "node_25ea158844",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e5518ac189",
+      "target": "node_0eaa1ebcc0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e5518ac189",
+      "target": "node_0eaa1ebcc0",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5a1d78f0ec",
+      "target": "node_e5518ac189",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_c2d6add0fb",
+      "target": "node_50e4811c77",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d28cfa71f0",
+      "target": "node_50e4811c77",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5ae489cc07",
+      "target": "node_fa7a3fbfc3",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_af4a407e4b",
+      "target": "node_4a210ce5a3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_af4a407e4b",
+      "target": "node_4a210ce5a3",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f01f3da5b1",
+      "target": "node_d878bb2af0",
+      "sourceOutput": "text",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_7e117863ef",
+      "target": "node_e93ff915ac",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7e117863ef",
+      "target": "node_e93ff915ac",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1a130a0959",
+      "target": "node_ee1cfcc103",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1a130a0959",
+      "target": "node_ee1cfcc103",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ee1cfcc103",
+      "target": "node_da499d3f51",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_ee1cfcc103",
+      "target": "node_da499d3f51",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_50e4811c77",
+      "target": "node_e6b5b35855",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_50e4811c77",
+      "target": "node_e6b5b35855",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e6b5b35855",
+      "target": "node_da499d3f51",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_e6b5b35855",
+      "target": "node_da499d3f51",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_5ae489cc07",
+      "target": "node_16b410000f",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_9ec2e5db76",
+      "target": "node_a20771d08a",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_82b08cdaf5",
+      "target": "node_7ac8250939",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_32c689841a",
+      "target": "node_a2aee4ae9e",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "wordpress",
+    "categoryLabel": "WordPress",
+    "department": "Customer Support/Marketing",
+    "connectors": [
+      "supabase",
+      "wordpress"
+    ],
+    "setupVars": [
+      {
+        "key": "supabaseProjectRef",
+        "label": "Supabase project ref (Settings > General)",
+        "type": "id",
+        "example": "abcdefghijklmnopqrst",
+        "usedBy": [
+          "Postgres",
+          "Postgres - Create documents table",
+          "Postgres - Create workflow execution history table",
+          "Postgres - Filter on existing documents",
+          "Store documents on Supabase",
+          "Store workflow execution id and timestamptz",
+          "Supabase - Delete row if documents exists",
+          "Supabase - Retrieve documents from chatinput",
+          "Supabase - Store workflow execution",
+          "Supabase Vector Store"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "MYDOMAIN_BASIC_AUTH",
+        "label": "mydomain.com WordPress application password as Basic auth (base64 of \"user:app-password\")",
+        "host": "mydomain.com",
+        "headerFormat": "Authorization: Basic <secret>",
+        "contextKey": "mydomainBasicAuth",
+        "usedBy": [
+          "Wordpress - Get posts modified after last workflow execution",
+          "Wordpress - Get posts modified after last workflow execution1"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate wordpress-ai-chatbot-to-enhance-user-experience-with-supabase-and-open",
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeCron",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLoop",
+      "NodeStart",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 45,
+      "yantraSteps": 47,
+      "foldedHelpers": [
+        "Embeddings OpenAI1",
+        "OpenAI Chat Model",
+        "Postgres Chat Memory",
+        "Embeddings OpenAI",
+        "Default Data Loader",
+        "Embeddings OpenAI2",
+        "Default Data Loader1"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "WordPress/WordPress - AI Chatbot to enhance user experience - with Supabase and OpenAI.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "RAG & GenAI App With WordPress Content"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "missing-required-param",
+        "node": "Store workflow execution id and timestamptz",
+        "detail": "supabase/SUPABASE_INSERT_ROW needs fields"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "When chat message received",
+        "detail": "@n8n/n8n-nodes-langchain.chatTrigger became the Start node"
+      },
+      {
+        "code": "hard-approximation",
+        "node": "Store workflow execution id and timestamptz",
+        "detail": "row.create -> supabase/SUPABASE_INSERT_ROW"
+      }
+    ],
+    "setup": [
+      "\"Store workflow execution id and timestamptz\": set fields on supabase/SUPABASE_INSERT_ROW.",
+      "\"When chat message received\" (chatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Store workflow execution id and timestamptz\" (row.create) only approximates the original; review it before relying on the result.",
+      "Setup value supabaseProjectRef: Supabase project ref (Settings > General) (for example abcdefghijklmnopqrst). Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret MYDOMAIN_BASIC_AUTH: mydomain.com WordPress application password as Basic auth (base64 of \"user:app-password\") for mydomain.com (Authorization: Basic <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the supabase connector (credential).",
+      "Connect the wordpress connector (credential).",
+      "After import, start the schedule: cdecli cron activate wordpress-ai-chatbot-to-enhance-user-experience-with-supabase-and-open.",
+      "Provide run inputs: chatInput, sessionId, $json, your_website_url."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Postgres - Create documents table",
+          "n8n": "database.executeQuery",
+          "action": "supabase/SUPABASE_BETA_RUN_SQL_QUERY",
+          "soft": true
+        },
+        {
+          "node": "Postgres",
+          "n8n": "database.executeQuery",
+          "action": "supabase/SUPABASE_BETA_RUN_SQL_QUERY",
+          "soft": true
+        },
+        {
+          "node": "Postgres - Create workflow execution history table",
+          "n8n": "database.executeQuery",
+          "action": "supabase/SUPABASE_BETA_RUN_SQL_QUERY",
+          "soft": true
+        },
+        {
+          "node": "HTML To Markdown",
+          "n8n": "markdown.markdownToHtml",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Markdown1",
+          "n8n": "markdown.markdownToHtml",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Postgres - Filter on existing documents",
+          "n8n": "database.executeQuery",
+          "action": "supabase/SUPABASE_BETA_RUN_SQL_QUERY",
+          "soft": true
+        },
+        {
+          "node": "Store workflow execution id and timestamptz",
+          "n8n": "row.create",
+          "action": "supabase/SUPABASE_INSERT_ROW"
+        }
+      ],
+      "folded": [
+        {
+          "node": "Embeddings OpenAI1",
+          "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+          "into": "Supabase - Retrieve documents from chatinput",
+          "as": "ai_embedding"
+        },
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "AI Agent",
+          "model": "gpt-4o-mini"
+        },
+        {
+          "node": "Postgres Chat Memory",
+          "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+          "into": "AI Agent",
+          "as": "ai_memory"
+        },
+        {
+          "node": "Embeddings OpenAI",
+          "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+          "into": "Supabase Vector Store",
+          "as": "ai_embedding"
+        },
+        {
+          "node": "Default Data Loader",
+          "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+          "into": "Supabase Vector Store",
+          "as": "ai_document"
+        },
+        {
+          "node": "Embeddings OpenAI2",
+          "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+          "into": "Store documents on Supabase",
+          "as": "ai_embedding"
+        },
+        {
+          "node": "Default Data Loader1",
+          "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+          "into": "Store documents on Supabase",
+          "as": "ai_document"
+        }
+      ],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Every 30 seconds",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        },
+        {
+          "node": "When chat message received",
+          "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Postgres - Create documents table\": the original ran on a Postgres credential; on Yantra the SQL runs through the Supabase connector. Set the project ref.",
+        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
+        "\"Postgres\": the original ran on a Postgres credential; on Yantra the SQL runs through the Supabase connector. Set the project ref.",
+        "\"Postgres - Create workflow execution history table\": the original ran on a Postgres credential; on Yantra the SQL runs through the Supabase connector. Set the project ref.",
+        "\"Supabase - Retrieve documents from chatinput\": set the Supabase project ref on SUPABASE_SEARCH_ROWS. The query embedding comes from the upstream item.",
+        "\"Merge Wordpress Posts and Pages\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was append).",
+        "\"Wordpress - Get posts modified after last workflow execution\" authenticated with wordpressApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Wordpress - Get posts modified after last workflow execution1\" authenticated with wordpressApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Merge retrieved WordPress posts and pages\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was append).",
+        "\"AI Agent\" kept conversation memory (memoryPostgresChat); sessionId is set to the run-input sessionId.",
+        "\"HTML To Markdown\" (markdown.markdownToHtml): Markdown to HTML is a minimal converter on Yantra.",
+        "\"HTML To Markdown\": Markdown to HTML is a minimal converter on Yantra; swap in a connector if you need full fidelity.",
+        "\"Supabase Vector Store\" folded a document (documentDefaultDataLoader); retrieved text is expected on the upstream payload as context/documents.",
+        "\"Supabase Vector Store\": set the Supabase project ref on SUPABASE_INSERT_ROW. content, embedding, and metadata come from the upstream item.",
+        "\"Loop Over Items\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "\"Markdown1\" (markdown.markdownToHtml): Markdown to HTML is a minimal converter on Yantra.",
+        "\"Markdown1\": Markdown to HTML is a minimal converter on Yantra; swap in a connector if you need full fidelity.",
+        "\"Postgres - Filter on existing documents\": the original ran on a Postgres credential; on Yantra the SQL runs through the Supabase connector. Set the project ref.",
+        "\"Supabase - Store workflow execution\": set the Supabase project ref (Management API) on SUPABASE_INSERT_ROW.",
+        "\"Store documents on Supabase\" folded a document (documentDefaultDataLoader); retrieved text is expected on the upstream payload as context/documents.",
+        "\"Store documents on Supabase\": set the Supabase project ref on SUPABASE_INSERT_ROW. content, embedding, and metadata come from the upstream item.",
+        "\"Supabase - Delete row if documents exists\": set the Supabase project ref (Management API) on SUPABASE_DELETE_ROW.",
+        "\"Store workflow execution id and timestamptz\": Supabase create needs a table and fields before it can run.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect supabase: `cdecli credential create -n \"supabase\" -p supabase --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect wordpress: `cdecli credential create -n \"wordpress\" -p wordpress --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "# Workflow 1 : Initial Embedding \n## Use this workflow to create the initial embedding for your WordPress website content",
+      "# Workflow 2 : Upsert\n## Use this workflow to upsert embeddings for documents stored in the Supabase vector table",
+      "# Workflow 3 : Use this workflow to enable chat functionality with your website content. The chat can be embedded into your website to enhance user experience",
+      "## Use filters to create embeddings only for content that you want to include in your GenAI application",
+      "## Run these two nodes if the \"documents\" table on Supabase and the \"n8n_website_embedding_histories\" table do not exist",
+      "## Set this node to match the frequency of publishing and updating on your website",
+      "## Retrieve documents from Supabase immediately after chat input to send metadata to OpenAI",
+      "## Switch:\n- **If the document exists and has been updated:** delete rows and insert new embedding\n- **If it’s a new document:** insert embedding"
+    ],
+    "nodes": {
+      "node_5ae489cc07": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger",
+        "also": [
+          "When chat message received"
+        ]
+      },
+      "node_3e4ae8951b": {
+        "n8n": "Every 30 seconds",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_16b410000f": {
+        "n8n": "Postgres - Create documents table",
+        "n8nType": "n8n-nodes-base.postgres",
+        "approximate": true
+      },
+      "node_8178b4ef72": {
+        "n8n": "Wordpress - Get all posts",
+        "n8nType": "n8n-nodes-base.wordpress"
+      },
+      "node_041b69004f": {
+        "n8n": "Wordpress - Get all pages",
+        "n8nType": "n8n-nodes-base.wordpress"
+      },
+      "node_e8a9a1ec5f": {
+        "n8n": "Postgres",
+        "n8nType": "n8n-nodes-base.postgres",
+        "approximate": true
+      },
+      "node_9ec2e5db76": {
+        "n8n": "Postgres - Create workflow execution history table",
+        "n8nType": "n8n-nodes-base.postgres",
+        "approximate": true
+      },
+      "node_fa7a3fbfc3": {
+        "n8n": "Supabase - Retrieve documents from chatinput",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreSupabase"
+      },
+      "node_af4a407e4b": {
+        "n8n": "Supabase - Retrieve documents from chatinput",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreSupabase"
+      },
+      "node_902107b41b": {
+        "n8n": "Merge Wordpress Posts and Pages",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_a804cfeff7": {
+        "n8n": "Wordpress - Get posts modified after last workflow execution",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "wordpressApi"
+      },
+      "node_9d330fac1e": {
+        "n8n": "Wordpress - Get posts modified after last workflow execution1",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "wordpressApi"
+      },
+      "node_4a210ce5a3": {
+        "n8n": "Aggregate documents",
+        "n8nType": "n8n-nodes-base.aggregate"
+      },
+      "node_4a6fb57c8a": {
+        "n8n": "Set fields1",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_98787d92c9": {
+        "n8n": "Merge retrieved WordPress posts and pages",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_acda2bf25b": {
+        "n8n": "Set fields",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_35dc235eb8": {
+        "n8n": "Filter - Only published & unprotected content",
+        "n8nType": "n8n-nodes-base.filter"
+      },
+      "node_4ba998d3d6": {
+        "n8n": "Set fields2",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_f01f3da5b1": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_f1d9fe0dd9": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_4b9111cc39": {
+        "n8n": "HTML To Markdown",
+        "n8nType": "n8n-nodes-base.markdown"
+      },
+      "node_63598818e7": {
+        "n8n": "Filter - Only published and unprotected content",
+        "n8nType": "n8n-nodes-base.filter"
+      },
+      "node_d878bb2af0": {
+        "n8n": "Respond to Webhook",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_ea0a7ddedc": {
+        "n8n": "Supabase Vector Store",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreSupabase"
+      },
+      "node_7e117863ef": {
+        "n8n": "Supabase Vector Store",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreSupabase"
+      },
+      "node_783a70ff67": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_da499d3f51": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_b8dd8d88da": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_460e7f7a55": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_e93ff915ac": {
+        "n8n": "Aggregate",
+        "n8nType": "n8n-nodes-base.aggregate"
+      },
+      "node_fd9ad1930e": {
+        "n8n": "Markdown1",
+        "n8nType": "n8n-nodes-base.markdown"
+      },
+      "node_d28cfa71f0": {
+        "n8n": "Postgres - Filter on existing documents",
+        "n8nType": "n8n-nodes-base.postgres",
+        "approximate": true
+      },
+      "node_bc7f9da616": {
+        "n8n": "Supabase - Store workflow execution",
+        "n8nType": "n8n-nodes-base.supabase"
+      },
+      "node_82b08cdaf5": {
+        "n8n": "Supabase - Store workflow execution",
+        "n8nType": "n8n-nodes-base.supabase"
+      },
+      "node_5538bf4e3f": {
+        "n8n": "Store documents on Supabase",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreSupabase"
+      },
+      "node_250d2d9e0c": {
+        "n8n": "Store documents on Supabase",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreSupabase"
+      },
+      "node_635f196d2d": {
+        "n8n": "Switch",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_5a1d78f0ec": {
+        "n8n": "Switch",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_25ea158844": {
+        "n8n": "Switch",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_c2d6add0fb": {
+        "n8n": "Switch",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_0f82da24fb": {
+        "n8n": "Aggregate1",
+        "n8nType": "n8n-nodes-base.aggregate"
+      },
+      "node_e5518ac189": {
+        "n8n": "Supabase - Delete row if documents exists",
+        "n8nType": "n8n-nodes-base.supabase"
+      },
+      "node_50e4811c77": {
+        "n8n": "Set fields4",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_32c689841a": {
+        "n8n": "Store workflow execution id and timestamptz",
+        "n8nType": "n8n-nodes-base.supabase",
+        "approximate": true
+      },
+      "node_0eaa1ebcc0": {
+        "n8n": "Aggregate2",
+        "n8nType": "n8n-nodes-base.aggregate"
+      },
+      "node_1a130a0959": {
+        "n8n": "Set fields3",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_ee1cfcc103": {
+        "n8n": "Set fields3",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_e6b5b35855": {
+        "n8n": "Set fields4",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_a20771d08a": {
+        "n8n": "__end:Postgres - Create workflow execution history table",
+        "n8nType": "synthetic"
+      },
+      "node_7ac8250939": {
+        "n8n": "__end:Supabase - Store workflow execution",
+        "n8nType": "synthetic"
+      },
+      "node_a2aee4ae9e": {
+        "n8n": "__end:Store workflow execution id and timestamptz",
+        "n8nType": "synthetic"
+      },
+      "node_f0fd2bf72a": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

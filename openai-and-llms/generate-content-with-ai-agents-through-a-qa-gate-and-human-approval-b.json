@@ -1,0 +1,1369 @@
+{
+  "name": "Generate content with AI agents through a QA gate and human approval before publishing",
+  "workflowSlug": "generate-content-with-ai-agents-through-a-qa-gate-and-human-approval-b",
+  "description": "Takes a list of topics by webhook or weekly schedule, researches, outlines and drafts each with AI, runs the draft through a QA gate in code (length, required sections, sources, banned claims), and sends passing drafts to human approval before they reach Google Docs or the CMS as drafts.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_b12fb782e2",
+      "actorId": "actor_b12fb782e2",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_7f8e4d55ba",
+      "actorId": "actor_7f8e4d55ba",
+      "type": "NodeTransform",
+      "label": "Config",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"base\"] = \"{{companyBaseUrl}}\";\n  out[\"auto_approve_in_test\"] = ((v) => v === true || v === 'true')(true);\n  out[\"min_words\"] = Number(120);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_8abcd1d8e5",
+      "actorId": "actor_8abcd1d8e5",
+      "type": "NodeTransform",
+      "label": "Config (errors)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"base\"] = \"{{companyBaseUrl}}\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_45c7db663a",
+      "actorId": "actor_45c7db663a",
+      "type": "NodeTransform",
+      "label": "One item per topic",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"auto_approve_in_test\":true,\"min_words\":120} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Ported from n8n Code node \"One item per topic\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const body = $input.first().json.body || $input.first().json;\n  const topics = Array.isArray(body.topics) ? body.topics : String(body.topics || '').split(',').map(s => s.trim()).filter(Boolean);\n  if (!topics.length) throw new Error('No topics supplied');\n  const cfg = $('Config').first().json;\n  return topics.map(t => ({ json: { topic: t, run_id: body.run_id || ('run-' + Date.now()), base: cfg.base, auto_approve: cfg.auto_approve_in_test, min_words: cfg.min_words } }));\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_434fe06952",
+      "actorId": "actor_434fe06952",
+      "type": "NodeHttpRequest",
+      "label": "Alert ops",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_8abcd1d8e5.result.base}}/alerts",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_455eceb6b3",
+      "actorId": "actor_455eceb6b3",
+      "type": "NodeTransform",
+      "label": "Body: Alert ops",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Alert ops\".\nconst __body = (JSON.stringify({ channel: '#ops-alerts', text: 'Content pipeline failed: ' + ($json.execution?.error?.message || 'unknown') }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_c8de0847c8",
+      "actorId": "actor_c8de0847c8",
+      "type": "NodeTransform",
+      "label": "Items: Loop topics",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_ac80b63484",
+      "actorId": "actor_ac80b63484",
+      "type": "NodeLoop",
+      "label": "Loop topics",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_50d6e2a60d",
+      "actorId": "actor_50d6e2a60d",
+      "type": "NodeTransform",
+      "label": "Item: Loop topics",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_3258fc2ebb",
+      "actorId": "actor_3258fc2ebb",
+      "type": "NodeTransform",
+      "label": "Results: Loop topics",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_82fc8643a5",
+      "actorId": "actor_82fc8643a5",
+      "type": "NodeTransform",
+      "label": "Run summary (respond)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Run summary (respond)\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const rows = $input.all().map(i => i.json);\n  return [{ json: { run_id: rows[0]?.run_id, topics: rows.length, published: rows.filter(r => r.published_url).length, failed_qa: rows.filter(r => !r.qa_pass).map(r => ({ title: r.title, issues: r.issues })), est_cost_usd: +rows.reduce((a,r)=>a+(r.est_cost_usd||0),0).toFixed(4), results: rows } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_138ce271d6",
+      "actorId": "actor_138ce271d6",
+      "type": "NodeHttpRequest",
+      "label": "Agent 1 · Research (search API)",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{last.transformed.base}}/search",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_9c84703b55",
+      "actorId": "actor_9c84703b55",
+      "type": "NodeTransform",
+      "label": "Body: Agent 1 · Research (search API)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Agent 1 · Research (search API)\".\nconst __body = (JSON.stringify({ query: $json.topic, recency_days: 90 }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_e5cbbd9a91",
+      "actorId": "actor_e5cbbd9a91",
+      "type": "NodeHttpRequest",
+      "label": "Agent 2 · Outline (LLM)",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_4a04a48b44",
+      "actorId": "actor_4a04a48b44",
+      "type": "NodeTransform",
+      "label": "URL: Agent 2 · Outline (LLM)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Loop topics\": __namedCtx.steps?.[\"Item: Loop topics\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"Agent 2 · Outline (LLM)\".\nreturn `${$('Loop topics').item.json.base}/llm/complete`;"
+      }
+    },
+    {
+      "nodeId": "node_f15903f60a",
+      "actorId": "actor_f15903f60a",
+      "type": "NodeTransform",
+      "label": "Body: Agent 2 · Outline (LLM)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Loop topics\": __namedCtx.steps?.[\"Item: Loop topics\"]?.[\"transformed\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Agent 2 · Outline (LLM)\".\nconst __body = (JSON.stringify({ task: 'outline', input: { topic: $('Loop topics').item.json.topic, sources: $json.results } }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_edc9561fe0",
+      "actorId": "actor_edc9561fe0",
+      "type": "NodeHttpRequest",
+      "label": "Agent 3 · Draft (LLM)",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_c00909fc04",
+      "actorId": "actor_c00909fc04",
+      "type": "NodeTransform",
+      "label": "URL: Agent 3 · Draft (LLM)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Loop topics\": __namedCtx.steps?.[\"Item: Loop topics\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"Agent 3 · Draft (LLM)\".\nreturn `${$('Loop topics').item.json.base}/llm/complete`;"
+      }
+    },
+    {
+      "nodeId": "node_2030023838",
+      "actorId": "actor_2030023838",
+      "type": "NodeTransform",
+      "label": "Body: Agent 3 · Draft (LLM)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Loop topics\": __namedCtx.steps?.[\"Item: Loop topics\"]?.[\"transformed\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Agent 3 · Draft (LLM)\".\nconst __body = (JSON.stringify({ task: 'draft', input: { topic: $('Loop topics').item.json.topic, title: $json.output.title, sections: $json.output.sections, sources: $('Agent 1 · Research (search API)').item.json.results } }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_58ee78b852",
+      "actorId": "actor_58ee78b852",
+      "type": "NodeTransform",
+      "label": "Agent 4 · QA gate (deterministic checks)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Loop topics\": __namedCtx.steps?.[\"Item: Loop topics\"]?.[\"transformed\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Agent 4 · QA gate (deterministic checks)\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Deterministic QA gate, the model writes, code checks. Never publish on the model's say-so alone.\n  const d = $input.first().json.output;\n  const cfg = $('Loop topics').item.json;\n  const body = d.body || '';\n  const issues = [];\n  const words = body.split(/\\s+/).filter(Boolean).length;\n  if (words < cfg.min_words) issues.push(`too short (${words} < ${cfg.min_words})`);\n  if (!/Sources:/.test(body)) issues.push('no sources section');\n  for (const bad of ['guaranteed', 'risk-free', '100%', 'best in the world']) if (body.toLowerCase().includes(bad)) issues.push('banned claim: ' + bad);\n  const required = ['Why it matters now', 'What to do this quarter'];\n  for (const r of required) if (!body.includes('## ' + r)) issues.push('missing section: ' + r);\n  const srcCount = (body.match(/https?:\\/\\//g) || []).length;\n  if (srcCount < 2) issues.push('fewer than 2 source links');\n  const usage = [$('Agent 2 · Outline (LLM)').item.json.usage, $input.first().json.usage].reduce((a,u)=>({input_tokens:a.input_tokens+(u?.input_tokens||0), output_tokens:a.output_tokens+(u?.output_tokens||0)}), {input_tokens:0, output_tokens:0});\n  return [{ json: { topic: cfg.topic, run_id: cfg.run_id, title: d.title, body, words, qa_pass: issues.length === 0, issues, usage, est_cost_usd: +((usage.input_tokens*3 + usage.output_tokens*15)/1e6).toFixed(4), base: cfg.base, auto_approve: cfg.auto_approve } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_01ac1bc817",
+      "actorId": "actor_01ac1bc817",
+      "type": "NodeTransform",
+      "label": "QA passed?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.qa_pass)) === true || (($json.qa_pass)) === 'true'));"
+      }
+    },
+    {
+      "nodeId": "node_d1dfdc03fc",
+      "actorId": "actor_d1dfdc03fc",
+      "type": "NodeBranch",
+      "label": "QA passed?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_c9b8e6cdc6",
+      "actorId": "actor_c9b8e6cdc6",
+      "type": "NodeHttpRequest",
+      "label": "Human approval (Slack)",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{last.transformed.base}}/alerts",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_3f7e06ab11",
+      "actorId": "actor_3f7e06ab11",
+      "type": "NodeTransform",
+      "label": "Body: Human approval (Slack)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Human approval (Slack)\".\nconst __body = (JSON.stringify({ channel: '#content-approvals', text: 'APPROVE? ' + $json.title + ' (' + $json.words + ' words, est. $' + $json.est_cost_usd + ')', approval: $json.auto_approve ? 'auto-approved' : 'awaiting human' }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_22b3d124bd",
+      "actorId": "actor_22b3d124bd",
+      "type": "NodeHttpRequest",
+      "label": "Send back with reasons (no publish)",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6920,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{last.transformed.base}}/alerts",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_81f5590841",
+      "actorId": "actor_81f5590841",
+      "type": "NodeTransform",
+      "label": "Body: Send back with reasons (no publish)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Send back with reasons (no publish)\".\nconst __body = (JSON.stringify({ channel: '#content-qa-failed', text: 'QA FAILED: ' + $json.title + ', ' + $json.issues.join('; ') }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_d3bb252395",
+      "actorId": "actor_d3bb252395",
+      "type": "NodeHttpRequest",
+      "label": "Publish as draft (Google Docs / CMS)",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 7680,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_58ee78b852.result.base}}/publish/doc",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_19de0362b6",
+      "actorId": "actor_19de0362b6",
+      "type": "NodeTransform",
+      "label": "Body: Publish as draft (Google Docs / CMS)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Agent 4 · QA gate (deterministic checks)\": {{steps.xf_58ee78b852.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Publish as draft (Google Docs / CMS)\".\nconst __body = (JSON.stringify({ title: $('Agent 4 · QA gate (deterministic checks)').item.json.title, body: $('Agent 4 · QA gate (deterministic checks)').item.json.body, status: 'draft' }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_2ecbfcbc83",
+      "actorId": "actor_2ecbfcbc83",
+      "type": "NodeTransform",
+      "label": "Run log row",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8060,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Agent 4 · QA gate (deterministic checks)\": {{steps.xf_58ee78b852.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Run log row\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const q = $('Agent 4 · QA gate (deterministic checks)').item.json;\n  const pub = $input.first().json;\n  return [{ json: { topic: q.topic, title: q.title, words: q.words, qa_pass: q.qa_pass, issues: q.issues, published_url: pub.url || null, est_cost_usd: q.est_cost_usd, tokens: q.usage } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_2525b18962",
+      "actorId": "actor_2525b18962",
+      "type": "NodeTransform",
+      "label": "Return: Run log row",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8440,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_ee49f23b79",
+      "actorId": "actor_ee49f23b79",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_973ebedb22",
+      "actorId": "actor_973ebedb22",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_6cab360f25",
+      "actorId": "actor_6cab360f25",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {},
+          "event": {},
+          "companyBaseUrl": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_455eceb6b3",
+      "target": "node_434fe06952",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_455eceb6b3",
+      "target": "node_434fe06952",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_c8de0847c8",
+      "target": "node_ac80b63484",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_c8de0847c8",
+      "target": "node_ac80b63484",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_ac80b63484",
+      "target": "node_50d6e2a60d",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ac80b63484",
+      "target": "node_50d6e2a60d",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ac80b63484",
+      "target": "node_3258fc2ebb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ac80b63484",
+      "target": "node_3258fc2ebb",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9c84703b55",
+      "target": "node_138ce271d6",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_9c84703b55",
+      "target": "node_138ce271d6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_4a04a48b44",
+      "target": "node_e5cbbd9a91",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_4a04a48b44",
+      "target": "node_f15903f60a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f15903f60a",
+      "target": "node_e5cbbd9a91",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_f15903f60a",
+      "target": "node_e5cbbd9a91",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_c00909fc04",
+      "target": "node_edc9561fe0",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_c00909fc04",
+      "target": "node_2030023838",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2030023838",
+      "target": "node_edc9561fe0",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_2030023838",
+      "target": "node_edc9561fe0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_01ac1bc817",
+      "target": "node_d1dfdc03fc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_01ac1bc817",
+      "target": "node_d1dfdc03fc",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_3f7e06ab11",
+      "target": "node_c9b8e6cdc6",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_3f7e06ab11",
+      "target": "node_c9b8e6cdc6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_81f5590841",
+      "target": "node_22b3d124bd",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_81f5590841",
+      "target": "node_22b3d124bd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_19de0362b6",
+      "target": "node_d3bb252395",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_19de0362b6",
+      "target": "node_d3bb252395",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_b12fb782e2",
+      "target": "node_7f8e4d55ba",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7f8e4d55ba",
+      "target": "node_45c7db663a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7f8e4d55ba",
+      "target": "node_45c7db663a",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_45c7db663a",
+      "target": "node_c8de0847c8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_45c7db663a",
+      "target": "node_c8de0847c8",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3258fc2ebb",
+      "target": "node_82fc8643a5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3258fc2ebb",
+      "target": "node_82fc8643a5",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_50d6e2a60d",
+      "target": "node_9c84703b55",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_50d6e2a60d",
+      "target": "node_9c84703b55",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_138ce271d6",
+      "target": "node_4a04a48b44",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_138ce271d6",
+      "target": "node_4a04a48b44",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e5cbbd9a91",
+      "target": "node_c00909fc04",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e5cbbd9a91",
+      "target": "node_c00909fc04",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_edc9561fe0",
+      "target": "node_58ee78b852",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_edc9561fe0",
+      "target": "node_58ee78b852",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_58ee78b852",
+      "target": "node_01ac1bc817",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_58ee78b852",
+      "target": "node_01ac1bc817",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d1dfdc03fc",
+      "target": "node_3f7e06ab11",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_58ee78b852",
+      "target": "node_3f7e06ab11",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d1dfdc03fc",
+      "target": "node_81f5590841",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_58ee78b852",
+      "target": "node_81f5590841",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c9b8e6cdc6",
+      "target": "node_19de0362b6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c9b8e6cdc6",
+      "target": "node_19de0362b6",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d3bb252395",
+      "target": "node_2ecbfcbc83",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d3bb252395",
+      "target": "node_2ecbfcbc83",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_22b3d124bd",
+      "target": "node_2ecbfcbc83",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_22b3d124bd",
+      "target": "node_2ecbfcbc83",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b12fb782e2",
+      "target": "node_8abcd1d8e5",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8abcd1d8e5",
+      "target": "node_455eceb6b3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8abcd1d8e5",
+      "target": "node_455eceb6b3",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2ecbfcbc83",
+      "target": "node_2525b18962",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2ecbfcbc83",
+      "target": "node_2525b18962",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2525b18962",
+      "target": "node_ac80b63484",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_2525b18962",
+      "target": "node_ac80b63484",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_434fe06952",
+      "target": "node_ee49f23b79",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_82fc8643a5",
+      "target": "node_973ebedb22",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "Marketing/AI",
+    "connectors": [],
+    "setupVars": [
+      {
+        "key": "companyBaseUrl",
+        "label": "Company Base Url",
+        "type": "url",
+        "example": "https://api.your-company.com",
+        "usedBy": [
+          "Config",
+          "Config (errors)",
+          "One item per topic"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLoop",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 17,
+      "yantraSteps": 30,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/Generate content with AI agents through a QA gate and human approval before publishing.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Generate content with AI agents through a QA gate and human approval before publishing"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Error trigger",
+        "detail": "n8n-nodes-base.errorTrigger became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Webhook / weekly schedule: topics",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Error trigger\" (errorTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Webhook / weekly schedule: topics\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value companyBaseUrl: Company Base Url (for example https://api.your-company.com). Write it into the Workflow Configs initialContext before import.",
+      "Provide run inputs: body, query, headers, event."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "Webhook / weekly schedule: topics",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Error trigger",
+          "type": "n8n-nodes-base.errorTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /content-run). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "The original started from errorTrigger; Yantra has no webhook slug for it, so run on demand, on a schedule (add a NodeCron), or via the workflow API with the event under the run input `event`.",
+        "\"Loop topics\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "\"Agent 2 · Outline (LLM)\": a request field used $('OtherNode'); on Yantra $() resolves via the named upstream map when that node ran earlier, else the immediate upstream - check that expression.",
+        "\"Agent 3 · Draft (LLM)\": a request field used $('OtherNode'); on Yantra $() resolves via the named upstream map when that node ran earlier, else the immediate upstream - check that expression.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "## Generate content with AI agents through a QA gate and human approval before publishing\n\n**Who it is for.** Marketing teams that want drafts produced on a schedule but never published without a human and a quality gate.\n\n**What it does**\n- Webhook or weekly schedule with a list of topics.\n- Per topic: research (search API), outline, draft, then a QA gate in code: minimum length, required sections, a sources section with two or more links, banned marketing claims.\n- Passing drafts go to human approval and are published as drafts to Google Docs or the CMS; failing drafts go back with the reasons, never published.\n- Token usage and cost are accounted per run.\n\n**Setup**\n1. Set base in Config or swap the HTTP Request nodes for your search API, Slack and Google Docs or CMS nodes.\n2. Set the AI credential on the research, outline and draft steps. Edit the banned phrases and minimum length in the QA gate Code node.\n3. Activate.\n\nAll external systems are reached through HTTP Request nodes against `base` in the Config node, so the whole flow imports and runs against any REST backend; swap any of them for the native n8n node of your system. Built and tested on sample data by Finamatik: https://finamatik.com/work/content-pipeline-qa-gate\n\n**Requirements.** n8n 1.100 or later; for the AI steps, a model endpoint at `base`/llm/complete or the OpenAI or Anthropic node in its place; your own systems reachable over HTTPS.\n\n**How to customise.** Every rule lives in one Code or Config node and is named for what it decides; change the thresholds there, not in the branches.",
+      "## Setup in three steps\n\n1. Open **Config** and set `base` and the publishing endpoint, or swap the HTTP Request node for your CMS node.\n2. Point the agent steps at your model endpoint (`base`/llm/complete) or swap them for the OpenAI or Anthropic node.\n3. Activate and send a brief to the Webhook URL. Nothing publishes until a human approves.\n\nRun one brief end to end and read the QA report before trusting it."
+    ],
+    "nodes": {
+      "node_b12fb782e2": {
+        "n8n": "Webhook / weekly schedule: topics",
+        "n8nType": "n8n-nodes-base.webhook",
+        "also": [
+          "Error trigger"
+        ]
+      },
+      "node_7f8e4d55ba": {
+        "n8n": "Config",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_8abcd1d8e5": {
+        "n8n": "Config (errors)",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_45c7db663a": {
+        "n8n": "One item per topic",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_434fe06952": {
+        "n8n": "Alert ops",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_455eceb6b3": {
+        "n8n": "Alert ops",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_c8de0847c8": {
+        "n8n": "Loop topics",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_ac80b63484": {
+        "n8n": "Loop topics",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_50d6e2a60d": {
+        "n8n": "Loop topics",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_3258fc2ebb": {
+        "n8n": "Loop topics",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_82fc8643a5": {
+        "n8n": "Run summary (respond)",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_138ce271d6": {
+        "n8n": "Agent 1 · Research (search API)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_9c84703b55": {
+        "n8n": "Agent 1 · Research (search API)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_e5cbbd9a91": {
+        "n8n": "Agent 2 · Outline (LLM)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_4a04a48b44": {
+        "n8n": "Agent 2 · Outline (LLM)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_f15903f60a": {
+        "n8n": "Agent 2 · Outline (LLM)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_edc9561fe0": {
+        "n8n": "Agent 3 · Draft (LLM)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_c00909fc04": {
+        "n8n": "Agent 3 · Draft (LLM)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_2030023838": {
+        "n8n": "Agent 3 · Draft (LLM)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_58ee78b852": {
+        "n8n": "Agent 4 · QA gate (deterministic checks)",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_01ac1bc817": {
+        "n8n": "QA passed?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_d1dfdc03fc": {
+        "n8n": "QA passed?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_c9b8e6cdc6": {
+        "n8n": "Human approval (Slack)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_3f7e06ab11": {
+        "n8n": "Human approval (Slack)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_22b3d124bd": {
+        "n8n": "Send back with reasons (no publish)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_81f5590841": {
+        "n8n": "Send back with reasons (no publish)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_d3bb252395": {
+        "n8n": "Publish as draft (Google Docs / CMS)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_19de0362b6": {
+        "n8n": "Publish as draft (Google Docs / CMS)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_2ecbfcbc83": {
+        "n8n": "Run log row",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_2525b18962": {
+        "n8n": "Run log row",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_ee49f23b79": {
+        "n8n": "__end:Alert ops",
+        "n8nType": "synthetic"
+      },
+      "node_973ebedb22": {
+        "n8n": "__end:Run summary (respond)",
+        "n8nType": "synthetic"
+      },
+      "node_6cab360f25": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

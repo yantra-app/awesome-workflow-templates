@@ -1,0 +1,81 @@
+{
+ "name": "fixture-whisper-http",
+ "nodes": [
+  {
+   "name": "Start",
+   "type": "n8n-nodes-base.manualTrigger",
+   "typeVersion": 1,
+   "position": [
+    0,
+    0
+   ],
+   "parameters": {}
+  },
+  {
+   "name": "Download MP3",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 1,
+   "position": [
+    220,
+    0
+   ],
+   "parameters": {
+    "url": "={{ $json.mp3 }}",
+    "options": {}
+   }
+  },
+  {
+   "name": "Whisper",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 1,
+   "position": [
+    440,
+    0
+   ],
+   "parameters": {
+    "method": "POST",
+    "url": "https://api.openai.com/v1/audio/transcriptions",
+    "sendBody": true,
+    "contentType": "multipart-form-data",
+    "bodyParameters": {
+     "parameters": [
+      {
+       "parameterType": "formBinaryData",
+       "name": "file",
+       "inputDataFieldName": "data"
+      },
+      {
+       "name": "model",
+       "value": "whisper-1"
+      }
+     ]
+    },
+    "options": {}
+   }
+  }
+ ],
+ "connections": {
+  "Start": {
+   "main": [
+    [
+     {
+      "node": "Download MP3",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Download MP3": {
+   "main": [
+    [
+     {
+      "node": "Whisper",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ }
+}

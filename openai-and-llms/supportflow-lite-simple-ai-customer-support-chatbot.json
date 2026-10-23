@@ -1,0 +1,548 @@
+{
+  "name": "SupportFlow Lite - Simple AI Customer Support Chatbot",
+  "workflowSlug": "supportflow-lite-simple-ai-customer-support-chatbot",
+  "description": "A lightweight AI chatbot that answers customer questions using company info and OpenAI gpt-4o-mini. Easy single-workflow setup with Google Sheets knowledge base.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_a49b1b1024",
+      "actorId": "actor_a49b1b1024",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_5ad34f7182",
+      "actorId": "actor_5ad34f7182",
+      "type": "NodeTransform",
+      "label": "Validate Input",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Validate Input\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const body = $input.first().json.body || $input.first().json;\n  const message = body.message || body.text || '';\n  const sessionId = body.session_id || undefined.randomUUID();\n  const customerName = body.customer_name || 'Customer';\n  \n  if (!message || message.trim().length < 2) {\n    throw new Error('Message is required.');\n  }\n  \n  return [{ json: { message: message.trim(), sessionId, customerName, receivedAt: new Date().toISOString(), messageId: undefined.randomUUID() } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_556546ec40",
+      "actorId": "actor_556546ec40",
+      "type": "NodeLlmChain",
+      "label": "AI: Generate Response",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{llm_system_aae36c0f78}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_aae36c0f78",
+      "actorId": "actor_aae36c0f78",
+      "type": "NodeTransform",
+      "label": "System: AI: Generate Response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\n// n8n $env values come from the Workflow Configs initialContext (setup values and workflow secrets).\nconst __envCtx = {{ctx}};\nconst $env = { \"SUPPORTFLOW_COMPANY_INFO\": __envCtx[\"supportflowCompanyInfo\"], \"SUPPORTFLOW_COMPANY_NAME\": __envCtx[\"supportflowCompanyName\"] };\n// System: AI: Generate Response.\nconst __promptValue = `You are a helpful customer support assistant for ${$env.SUPPORTFLOW_COMPANY_NAME || 'our company'}.\n\nCompany info:\n${$env.SUPPORTFLOW_COMPANY_INFO || 'We are a technology company focused on providing excellent customer service.'}\n\nRules:\n1. Be friendly, professional, and concise\n2. Answer based on the company info provided\n3. If you don't know the answer, say: 'I don't have that information. Let me connect you with our team at [support email].'\n4. Keep responses under 150 words\n5. Never make up product features, prices, or policies\n\nRespond in JSON: { \"answer\": \"...\", \"confidence\": 0.0-1.0, \"category\": \"faq|billing|technical|complaint|other\" }`;\nreturn { \"llm_system_aae36c0f78\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_facba29915",
+      "actorId": "actor_facba29915",
+      "type": "NodeUpdateContext",
+      "label": "Save System: AI: Generate Response",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_2e08360421",
+      "actorId": "actor_2e08360421",
+      "type": "NodeTransform",
+      "label": "Prompt: AI: Generate Response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: AI: Generate Response.\nconst __promptValue = `Customer ${$json.customerName} asks:\n${$json.message}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_ef9e1ef4d2",
+      "actorId": "actor_ef9e1ef4d2",
+      "type": "NodeTransform",
+      "label": "Merge Response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Receive Message\": {{ctx}}, \"Validate Input\": {{steps.xf_5ad34f7182.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Merge Response\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const original = $('Validate Input').first().json;\n  const aiRaw = $input.first().json;\n  let ai;\n  try {\n    ai = JSON.parse(aiRaw.message?.content || aiRaw.content || '{}');\n  } catch (e) {\n    ai = { answer: 'Sorry, I had trouble processing that. Please try again.', confidence: 0, category: 'other' };\n  }\n  \n  return [{ json: { ...original, answer: ai.answer || '', confidence: ai.confidence || 0, category: ai.category || 'other', respondedAt: new Date().toISOString() } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_30b630a691",
+      "actorId": "actor_30b630a691",
+      "type": "NodeTransform",
+      "label": "Params: Log to Sheets",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// n8n $env values come from the Workflow Configs initialContext (setup values and workflow secrets).\nconst __envCtx = {{ctx}};\nconst $env = { \"SUPPORTFLOW_SHEET_ID\": __envCtx[\"supportflowSheetId\"] };\n// Params for googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND (n8n node \"Log to Sheets\").\nreturn {\n  \"spreadsheetId\": ($env.SUPPORTFLOW_SHEET_ID),\n  \"range\": \"Lite Conversations\",\n  \"values\": [[($json.messageId), ($json.sessionId), ($json.customerName), ($json.message), ($json.answer), ($json.confidence), ($json.category), ($json.receivedAt), ($json.respondedAt)]],\n  \"valueInputOption\": \"USER_ENTERED\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_b52c7c1822",
+      "actorId": "actor_b52c7c1822",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_SPREADSHEETS_VALUES_APPEND"
+      }
+    },
+    {
+      "nodeId": "node_6db93d8e5c",
+      "actorId": "actor_6db93d8e5c",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_03277a05c1",
+      "actorId": "actor_03277a05c1",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_87be9d1b1c",
+      "actorId": "actor_87be9d1b1c",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {},
+          "supportflowCompanyInfo": "",
+          "supportflowCompanyName": "",
+          "supportflowSheetId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_689467497f",
+      "actorId": "actor_689467497f",
+      "type": "NodeChatModel",
+      "label": "AI: Generate Response: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_aae36c0f78",
+      "target": "node_facba29915",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_aae36c0f78",
+      "target": "node_facba29915",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_facba29915",
+      "target": "node_2e08360421",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2e08360421",
+      "target": "node_556546ec40",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_30b630a691",
+      "target": "node_b52c7c1822",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_30b630a691",
+      "target": "node_b52c7c1822",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_a49b1b1024",
+      "target": "node_5ad34f7182",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5ad34f7182",
+      "target": "node_aae36c0f78",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5ad34f7182",
+      "target": "node_aae36c0f78",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5ad34f7182",
+      "target": "node_2e08360421",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_556546ec40",
+      "target": "node_ef9e1ef4d2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_556546ec40",
+      "target": "node_ef9e1ef4d2",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ef9e1ef4d2",
+      "target": "node_30b630a691",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ef9e1ef4d2",
+      "target": "node_30b630a691",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ef9e1ef4d2",
+      "target": "node_6db93d8e5c",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_b52c7c1822",
+      "target": "node_03277a05c1",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_689467497f",
+      "target": "node_556546ec40",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "Customer Support/AI",
+    "connectors": [
+      "googlesuper",
+      "openai"
+    ],
+    "setupVars": [
+      {
+        "key": "supportflowCompanyInfo",
+        "label": "supportflow company info (was the n8n environment variable SUPPORTFLOW_COMPANY_INFO)",
+        "type": "text",
+        "usedBy": [
+          "AI: Generate Response"
+        ]
+      },
+      {
+        "key": "supportflowCompanyName",
+        "label": "supportflow company name (was the n8n environment variable SUPPORTFLOW_COMPANY_NAME)",
+        "type": "text",
+        "usedBy": [
+          "AI: Generate Response"
+        ]
+      },
+      {
+        "key": "supportflowSheetId",
+        "label": "supportflow sheet id (was the n8n environment variable SUPPORTFLOW_SHEET_ID)",
+        "type": "id",
+        "usedBy": [
+          "Log to Sheets"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 6,
+      "yantraSteps": 10,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/SupportFlow Lite - Simple AI Customer Support Chatbot.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "SupportFlow Lite - Simple AI Support Bot (No RAG)"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Receive Message",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Receive Message\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value supportflowCompanyInfo: supportflow company info (was the n8n environment variable SUPPORTFLOW_COMPANY_INFO). Write it into the Workflow Configs initialContext before import.",
+      "Setup value supportflowCompanyName: supportflow company name (was the n8n environment variable SUPPORTFLOW_COMPANY_NAME). Write it into the Workflow Configs initialContext before import.",
+      "Setup value supportflowSheetId: supportflow sheet id (was the n8n environment variable SUPPORTFLOW_SHEET_ID). Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "Provide run inputs: body, query, headers, llm_system_aae36c0f78."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Validate Input",
+          "n8n": "code.require",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Receive Message",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /supportflow-lite). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "\"Validate Input\" (code.require): Allowlisted require() calls were rewritten or dropped for Transform (no module system).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## SupportFlow Lite - Simple AI Bot\n\nNo vector database needed.\nUses company info from environment variable.\n\nBest for: Small businesses, MVPs, testing.\nSetup: 2 minutes (just OpenAI + Sheets).\n\nUpgrade to Main workflow when you\nneed RAG-powered knowledge base."
+    ],
+    "nodes": {
+      "node_a49b1b1024": {
+        "n8n": "Receive Message",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_5ad34f7182": {
+        "n8n": "Validate Input",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_556546ec40": {
+        "n8n": "AI: Generate Response",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_aae36c0f78": {
+        "n8n": "AI: Generate Response",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_facba29915": {
+        "n8n": "AI: Generate Response",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_2e08360421": {
+        "n8n": "AI: Generate Response",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_ef9e1ef4d2": {
+        "n8n": "Merge Response",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_30b630a691": {
+        "n8n": "Log to Sheets",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_b52c7c1822": {
+        "n8n": "Log to Sheets",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_6db93d8e5c": {
+        "n8n": "Respond to Customer",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_03277a05c1": {
+        "n8n": "__end:Log to Sheets",
+        "n8nType": "synthetic"
+      },
+      "node_87be9d1b1c": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_689467497f": {
+        "n8n": "AI: Generate Response",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

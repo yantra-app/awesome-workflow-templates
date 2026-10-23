@@ -1,0 +1,373 @@
+{
+  "name": "Animate a product photo with Magic Hour",
+  "workflowSlug": "animate-a-product-photo-with-magic-hour",
+  "description": "Animate a product photo into a short video, require completion, and download MP4 binary data. Requires the Magic Hour community node and API credits.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_0f3061fdcd",
+      "actorId": "actor_0f3061fdcd",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_364cd500a5",
+      "actorId": "actor_364cd500a5",
+      "type": "NodeHttpRequest",
+      "label": "Magic Hour",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://api.magichour.ai/v1/video-projects/image-to-video",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{magicHourApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_5c1a6b726d",
+      "actorId": "actor_5c1a6b726d",
+      "type": "NodeTransform",
+      "label": "Body: Magic Hour",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Magic Hour\".\nconst __body = { \"prompt\": null, \"image_url\": ($json.image_url || $json.url) };\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_dff6916914",
+      "actorId": "actor_dff6916914",
+      "type": "NodeTransform",
+      "label": "Require complete: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.status) ?? '') === String(\"complete\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_f73818203f",
+      "actorId": "actor_f73818203f",
+      "type": "NodeBranch",
+      "label": "Require complete: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_3e1a922514",
+      "actorId": "actor_3e1a922514",
+      "type": "NodeHttpRequest",
+      "label": "Download result",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "{{last.body.downloads.0.url}}"
+      }
+    },
+    {
+      "nodeId": "node_c761a8fed0",
+      "actorId": "actor_c761a8fed0",
+      "type": "NodeEnd",
+      "label": "Stop: Stop incomplete job",
+      "color": "#EF4444",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_a80d57657d",
+      "actorId": "actor_a80d57657d",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_5e08c239a1",
+      "actorId": "actor_5e08c239a1",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "magicHourApiKey": {
+            "$workflowSecret": "MAGIC_HOUR_API_KEY"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_5c1a6b726d",
+      "target": "node_364cd500a5",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_5c1a6b726d",
+      "target": "node_364cd500a5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_dff6916914",
+      "target": "node_f73818203f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_dff6916914",
+      "target": "node_f73818203f",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_0f3061fdcd",
+      "target": "node_5c1a6b726d",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_364cd500a5",
+      "target": "node_dff6916914",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_364cd500a5",
+      "target": "node_dff6916914",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f73818203f",
+      "target": "node_3e1a922514",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_364cd500a5",
+      "target": "node_c761a8fed0",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_3e1a922514",
+      "target": "node_a80d57657d",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "other-integrations",
+    "categoryLabel": "Other Integrations and Use Cases",
+    "department": "Marketing/Creative",
+    "connectors": [],
+    "setupSecrets": [
+      {
+        "key": "MAGIC_HOUR_API_KEY",
+        "label": "Magic Hour API key",
+        "host": "api.magichour.ai",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "magicHourApiKey",
+        "usedBy": [
+          "Magic Hour"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 5,
+      "yantraSteps": 6,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Other_Integrations_and_Use_Cases/Animate a product photo with Magic Hour.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Animate a product photo with Magic Hour"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "hard-approximation",
+        "node": "Magic Hour",
+        "detail": "magicHour.video.imageToVideo -> NodeTransform"
+      }
+    ],
+    "setup": [
+      "\"Magic Hour\" (magicHour.video.imageToVideo) only approximates the original; review it before relying on the result.",
+      "Workflow secret MAGIC_HOUR_API_KEY: Magic Hour API key for api.magichour.ai (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Magic Hour",
+          "n8n": "magicHour.video.imageToVideo",
+          "action": "NodeTransform"
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Run manually",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Magic Hour\" (magicHour.video.imageToVideo): Magic Hour REST stand-in; the paths and body are a best guess at the current API, so confirm them before relying on it.",
+        "\"Magic Hour\": verify https://api.magichour.ai paths for video.imageToVideo.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "## Setup\nSelect your API credential and replace the image field with a direct URL or uploaded file_path. A Drive share page is not an image URL.\nThis one-second ltx-2.3 example uses credits. The result is binary `data`, ready for a storage connector.\nKeep the returned project ID if execution stops; use the recovery template rather than regenerating.\n\nUse a self-hosted n8n instance that allows community nodes. Cloud eligibility is unverified. Tested with n8n 2.37.10 and @gladiator1st/n8n-nodes-magichour 1.0.3. Magic Hour AI source: MIT; see docs/Magic Hour workflow license.txt."
+    ],
+    "nodes": {
+      "node_0f3061fdcd": {
+        "n8n": "Run manually",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_364cd500a5": {
+        "n8n": "Magic Hour",
+        "n8nType": "@gladiator1st/n8n-nodes-magichour.magicHour",
+        "auth": "magicHourApi"
+      },
+      "node_5c1a6b726d": {
+        "n8n": "Magic Hour",
+        "n8nType": "@gladiator1st/n8n-nodes-magichour.magicHour"
+      },
+      "node_dff6916914": {
+        "n8n": "Require complete",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_f73818203f": {
+        "n8n": "Require complete",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_3e1a922514": {
+        "n8n": "Download result",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_c761a8fed0": {
+        "n8n": "Stop incomplete job",
+        "n8nType": "n8n-nodes-base.stopAndError"
+      },
+      "node_a80d57657d": {
+        "n8n": "__end:Download result",
+        "n8nType": "synthetic"
+      },
+      "node_5e08c239a1": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "fixture-setup-lift",
+  "nodes": [
+    { "name": "Start", "type": "n8n-nodes-base.manualTrigger", "typeVersion": 1, "position": [0, 0], "parameters": {} },
+    { "name": "Read Sheet", "type": "n8n-nodes-base.googleSheets", "typeVersion": 4, "position": [220, 0], "parameters": { "operation": "read", "documentId": { "__rl": true, "mode": "list", "value": "1D6tfsAK81ZE6VA0-sd_syuyI_rloNYjgWOhwgszPIZw" }, "sheetName": { "__rl": true, "mode": "list", "value": "gid=0" } } },
+    { "name": "Config", "type": "n8n-nodes-base.set", "typeVersion": 3.4, "position": [440, 0], "parameters": { "assignments": { "assignments": [{ "name": "base", "type": "string", "value": "https://api.your-company.example" }, { "name": "api_key", "type": "string", "value": "" }] } } },
+    { "name": "Mail Owner", "type": "n8n-nodes-base.gmail", "typeVersion": 2.1, "position": [660, 0], "parameters": { "sendTo": "jane.doe@acme-corp.io", "subject": "Report", "message": "={{ $json.base }}" } },
+    { "name": "Post to Supabase", "type": "n8n-nodes-base.supabase", "typeVersion": 1, "position": [880, 0], "parameters": { "tableId": "reports", "dataToSend": "autoMapInputData" } }
+  ],
+  "connections": {
+    "Start": { "main": [[{ "node": "Read Sheet", "type": "main", "index": 0 }]] },
+    "Read Sheet": { "main": [[{ "node": "Config", "type": "main", "index": 0 }]] },
+    "Config": { "main": [[{ "node": "Mail Owner", "type": "main", "index": 0 }]] },
+    "Mail Owner": { "main": [[{ "node": "Post to Supabase", "type": "main", "index": 0 }]] }
+  }
+}

@@ -1,0 +1,711 @@
+{
+  "name": "Generating Image Embeddings via Textual Summarisation",
+  "workflowSlug": "generating-image-embeddings-via-textual-summarisation",
+  "description": "Converted from the n8n template \"Generating Image Embeddings via Textual Summarisation\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_d2f7ace138",
+      "actorId": "actor_d2f7ace138",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_cda74a5d27",
+      "actorId": "actor_cda74a5d27",
+      "type": "NodeCdeConnector",
+      "label": "pinecone/PINECONE_SEARCH_RECORDS_NAMESPACE",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "pinecone",
+        "connectorLabel": "Pinecone",
+        "action": "PINECONE_SEARCH_RECORDS_NAMESPACE",
+        "params": {
+          "index_host": "{{pineconeIndexHost}}",
+          "namespace": "image_embeddings",
+          "query": {
+            "top_k": 4,
+            "inputs": {
+              "text": "student having fun"
+            }
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_994debb679",
+      "actorId": "actor_994debb679",
+      "type": "NodeTransform",
+      "label": "Search for Image: documents",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// Pinecone hits as n8n vector-store documents.\nconst __res = source?.data ?? source;\nconst __hits = __res?.result?.hits ?? __res?.hits ?? [];\nreturn __hits.map((h) => ({ document: { pageContent: String(h.fields?.text ?? ''), metadata: h.fields ?? {} }, score: h._score }));"
+      }
+    },
+    {
+      "nodeId": "node_737293c376",
+      "actorId": "actor_737293c376",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_DOWNLOAD_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive",
+        "action": "GOOGLESUPER_DOWNLOAD_FILE",
+        "params": {
+          "file_id": "{{driveFileId}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_6f32901309",
+      "actorId": "actor_6f32901309",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-editing/YANTRA_IMAGE_EDIT_CONVERT",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-editing",
+        "connectorLabel": "Image editing",
+        "action": "YANTRA_IMAGE_EDIT_CONVERT",
+        "params": {}
+      }
+    },
+    {
+      "nodeId": "node_a3d805c66b",
+      "actorId": "actor_a3d805c66b",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-editing/YANTRA_IMAGE_EDIT_RESIZE",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-editing",
+        "connectorLabel": "Image editing",
+        "action": "YANTRA_IMAGE_EDIT_RESIZE",
+        "params": {
+          "width": 512,
+          "height": 512,
+          "fit": "onlyIfLarger"
+        }
+      }
+    },
+    {
+      "nodeId": "node_77bda59962",
+      "actorId": "actor_77bda59962",
+      "type": "NodeTransform",
+      "label": "Params: Get Image Keywords",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for openai/OPENAI_CREATE_RESPONSE (n8n node \"Get Image Keywords\").\nreturn {\n  \"model\": \"gpt-4o-mini\",\n  \"input\": [{ \"role\": \"user\", \"content\": [{ \"type\": \"input_text\", \"text\": \"Extract all possible semantic keywords which describe the image. Be comprehensive and be sure to identify subjects (if applicable) such as biological and non-biological objects, lightning, mood, tone, color, special effects, camera and/or techniques used if known. Respond with a comma-separated list.\" }, { \"type\": \"input_image\", \"image_url\": ('data:' + ($json.mimeType || $json.mime_type || 'image/jpeg') + ';base64,' + ($json.data ?? $json.base64 ?? '')), \"detail\": \"high\" }] }],\n};"
+      }
+    },
+    {
+      "nodeId": "node_84d5c5f776",
+      "actorId": "actor_84d5c5f776",
+      "type": "NodeCdeConnector",
+      "label": "openai/OPENAI_CREATE_RESPONSE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "openai",
+        "connectorLabel": "OpenAI",
+        "action": "OPENAI_CREATE_RESPONSE"
+      }
+    },
+    {
+      "nodeId": "node_21b9477c48",
+      "actorId": "actor_21b9477c48",
+      "type": "NodeTransform",
+      "label": "Get Image Keywords: answer",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The Responses API answer as the n8n image-analysis output ({ content }).\nconst __r = source?.data ?? source;\nconst __text = __r?.output_text ?? (__r?.output || []).flatMap((o) => o?.content || []).map((c) => c?.text || '').join('');\nreturn { content: __text, text: __text };"
+      }
+    },
+    {
+      "nodeId": "node_d99b257805",
+      "actorId": "actor_d99b257805",
+      "type": "NodeSync",
+      "label": "Combine Image Analysis",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_eea7b0ee5f",
+      "actorId": "actor_eea7b0ee5f",
+      "type": "NodeTransform",
+      "label": "Document for Embedding",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\nconst $workflow = { id: '', name: '', active: true }; const $execution = { id: '', mode: 'manual', resumeUrl: '' }; const $executionId = $execution.id;\nconst $runIndex = 0; const $itemIndex = 0; const $binary = {}; const $prevNode = { name: '', outputIndex: 0, runIndex: 0 }; const $parameter = {}; const $position = 0;\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"data\"] = `## keywords\\\\n\n${$json.content}\\\\n\n## color information:\\\\n\n${JSON.stringify($json[\"Channel Statistics\"])}`;\n  out[\"metadata\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(`{ \"format\": \"${$json.format}\", \"backgroundColor\": \"${$json[\"Background Color\"]}\", \"source\": \"${$binary.data.fileName}\" } `);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_871b34db39",
+      "actorId": "actor_871b34db39",
+      "type": "NodeTransform",
+      "label": "Params: In-Memory Vector Store",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Params for pinecone/PINECONE_UPSERT_RECORDS_NAMESPACE (n8n node \"In-Memory Vector Store\").\nreturn {\n  \"index_host\": \"{{pineconeIndexHost}}\",\n  \"namespace\": \"image_embeddings\",\n  \"records\": (() => {\n  const __docs = __items.flatMap((d) => (Array.isArray(d) ? d : [d]));\n  return __docs.map((d) => {\n    const text = typeof d === 'string' ? d : d?.pageContent ?? d?.text ?? d?.content ?? d?.chunk ?? JSON.stringify(d);\n    const meta = d && typeof d === 'object' ? (d.metadata && typeof d.metadata === 'object' ? d.metadata : d) : {};\n    const flat = {};\n    for (const [k, v] of Object.entries(meta)) if (!['pageContent', 'text', '_id'].includes(k) && ['string', 'number', 'boolean'].includes(typeof v)) flat[k] = v;\n    return { ...flat, _id: String(d?.id ?? meta.id ?? crypto.randomUUID()), text: String(text) };\n  });\n})(),\n};"
+      }
+    },
+    {
+      "nodeId": "node_380efd3469",
+      "actorId": "actor_380efd3469",
+      "type": "NodeCdeConnector",
+      "label": "pinecone/PINECONE_UPSERT_RECORDS_NAMESPACE",
+      "color": "#6366F1",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "pinecone",
+        "connectorLabel": "Pinecone",
+        "action": "PINECONE_UPSERT_RECORDS_NAMESPACE"
+      }
+    },
+    {
+      "nodeId": "node_f827a544e7",
+      "actorId": "actor_f827a544e7",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_9d5366d1a0",
+      "actorId": "actor_9d5366d1a0",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f503a14914",
+      "actorId": "actor_f503a14914",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "pineconeIndexHost": "",
+          "driveFileId": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_cda74a5d27",
+      "target": "node_994debb679",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cda74a5d27",
+      "target": "node_994debb679",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_77bda59962",
+      "target": "node_84d5c5f776",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_77bda59962",
+      "target": "node_84d5c5f776",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_84d5c5f776",
+      "target": "node_21b9477c48",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_84d5c5f776",
+      "target": "node_21b9477c48",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_871b34db39",
+      "target": "node_380efd3469",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_871b34db39",
+      "target": "node_380efd3469",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d2f7ace138",
+      "target": "node_737293c376",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_737293c376",
+      "target": "node_6f32901309",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_737293c376",
+      "target": "node_a3d805c66b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_6f32901309",
+      "target": "node_d99b257805",
+      "sourceOutput": "result",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_a3d805c66b",
+      "target": "node_77bda59962",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a3d805c66b",
+      "target": "node_77bda59962",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d99b257805",
+      "target": "node_eea7b0ee5f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d99b257805",
+      "target": "node_eea7b0ee5f",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_eea7b0ee5f",
+      "target": "node_871b34db39",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_eea7b0ee5f",
+      "target": "node_871b34db39",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_21b9477c48",
+      "target": "node_d99b257805",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_d2f7ace138",
+      "target": "node_cda74a5d27",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_994debb679",
+      "target": "node_f827a544e7",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_380efd3469",
+      "target": "node_9d5366d1a0",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "",
+    "connectors": [
+      "googlesuper",
+      "openai",
+      "pinecone",
+      "yantra-image-editing"
+    ],
+    "setupVars": [
+      {
+        "key": "pineconeIndexHost",
+        "label": "Pinecone index host (create the index with integrated embedding and field map text=text)",
+        "type": "url",
+        "example": "my-index-abc123.svc.aped-4627-b74a.pinecone.io",
+        "usedBy": [
+          "In-Memory Vector Store",
+          "Search for Image"
+        ]
+      },
+      {
+        "key": "driveFileId",
+        "label": "Drive File id",
+        "type": "id",
+        "example": "1AbC...xyz",
+        "usedBy": [
+          "Google Drive"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeEnd",
+      "NodeStart",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 13,
+      "yantraSteps": 13,
+      "foldedHelpers": [
+        "Embeddings OpenAI1",
+        "Embeddings OpenAI",
+        "Default Data Loader"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/Generating Image Embeddings via Textual Summarisation.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Setup value pineconeIndexHost: Pinecone index host (create the index with integrated embedding and field map text=text) (for example my-index-abc123.svc.aped-4627-b74a.pinecone.io). Write it into the Workflow Configs initialContext before import.",
+      "Setup value driveFileId: Drive File id (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "Connect the pinecone connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Search for Image",
+          "n8n": "vectorStoreInMemory.load",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Get Image Keywords",
+          "n8n": "image.analyze",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "In-Memory Vector Store",
+          "n8n": "vectorStoreInMemory.insert",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "Embeddings OpenAI1",
+          "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+          "into": "Search for Image",
+          "as": "ai_embedding"
+        },
+        {
+          "node": "Embeddings OpenAI",
+          "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+          "into": "In-Memory Vector Store",
+          "as": "ai_embedding"
+        },
+        {
+          "node": "Default Data Loader",
+          "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+          "into": "In-Memory Vector Store",
+          "as": "ai_document"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking \"Test workflow\"",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Search for Image\" (vectorStoreInMemory.load): The original used an in-memory vector store; here the default vector store is a Pinecone index with integrated embedding (search records by text), so Pinecone embeds the text itself.",
+        "\"Search for Image\": create a Pinecone index with integrated embedding (for example llama-text-embed-v2, field map text=text) and set pineconeIndexHost; the store uses the namespace \"image_embeddings\".",
+        "\"Get Image Keywords\" (image.analyze): Vision call through OpenAI Responses (input_image as a data: URL); the previous step must hand over the image as base64 in `data`.",
+        "\"Combine Image Analysis\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "\"In-Memory Vector Store\" folded a document (documentDefaultDataLoader); retrieved text is expected on the upstream payload as context/documents.",
+        "\"In-Memory Vector Store\" (vectorStoreInMemory.insert): The original used an in-memory vector store; here the default vector store is a Pinecone index with integrated embedding (upsert records), so Pinecone embeds the text itself.",
+        "\"In-Memory Vector Store\": create a Pinecone index with integrated embedding (for example llama-text-embed-v2, field map text=text) and set pineconeIndexHost; the store uses the namespace \"image_embeddings\".",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect openai: `cdecli credential create -n \"openai\" -p openai --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect pinecone: `cdecli credential create -n \"pinecone\" -p pinecone --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "### Get Color Channels\n[Source: https://www.pinecone.io/learn/series/image-search/color-histograms/](https://www.pinecone.io/learn/series/image-search/color-histograms/)",
+      "### Generate Image Keywords\n[Source: https://www.pinecone.io/learn/series/image-search/bag-of-visual-words/](https://www.pinecone.io/learn/series/image-search/bag-of-visual-words/)\n\nNote, OpenAI Image models work best when image is resized to 512x512.",
+      "⚠️ **Multimodal embedding is not designed analyze medical images for diagnostic features or disease patterns.** Please do not use Multimodal embedding for medical purposes.",
+      "## 1. Get the Source Image\nIn this demo, we just need an image file. We'll pull an image from google drive but you can use all input trigger or source you prefer.",
+      "## 2. Image Embedding Methods\n[Read more about working with images in n8n](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.editimage)\n\nThere are a [myriad of image embedding techniques](https://www.pinecone.io/learn/series/image-search/) some which involve specialised models and some which do a simplified image-to-text representation.\nIn this demo, we'll use the simplified text representation methods: collecting color channel information and using Multimodal LLMs to produce keywords for the image. Together, these will form the document we'll embed to represent our image for search.",
+      "## 3. Generate Embedding Doc\nIt is important to define your metadata for later filtering and retrieval purposes.",
+      "## 3. Store in Vector Store\n[Read more about vector stores](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.vectorstoreinmemory)\n\nOnce our document is ready, we can just insert into any vector store to make it ready for searching. When searching, be sure to defined the same vector store index used here!\nNote: Metadata is defined in the document loader which must be mapped manually.",
+      "## 4. Try it out!\n[Read more about vector stores](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.vectorstoreinmemory)\n\nHere's a quick test to use a simple text prompt to search for the image. Next step would be to implement image-to-image search by using the \"Embedding Doc\" to search rather to store in the vector database.",
+      "## Try It Out!\n### This workflow does the following:\n* Downloads a selected image from Google Drive.\n* Extracts colour channel information from the image.\n* Generates semantic keywords of the iamge using OpenAI vision model.\n* Combines extracted and generated data to create an embedding document for the image.\n* Inserts this document into a vector store to allow for vector search on the original image. \n\n### Need Help?\nJoin the [Discord](https://discord.com/invite/XPKeKXeB7d) or ask in the [Forum](https://community.n8n.io/)!\n\nHappy Hacking!"
+    ],
+    "nodes": {
+      "node_d2f7ace138": {
+        "n8n": "When clicking \"Test workflow\"",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_cda74a5d27": {
+        "n8n": "Search for Image",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreInMemory"
+      },
+      "node_994debb679": {
+        "n8n": "Search for Image",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreInMemory"
+      },
+      "node_737293c376": {
+        "n8n": "Google Drive",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_6f32901309": {
+        "n8n": "Get Color Information",
+        "n8nType": "n8n-nodes-base.editImage"
+      },
+      "node_a3d805c66b": {
+        "n8n": "Resize Image",
+        "n8nType": "n8n-nodes-base.editImage"
+      },
+      "node_77bda59962": {
+        "n8n": "Get Image Keywords",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_84d5c5f776": {
+        "n8n": "Get Image Keywords",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_21b9477c48": {
+        "n8n": "Get Image Keywords",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_d99b257805": {
+        "n8n": "Combine Image Analysis",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_eea7b0ee5f": {
+        "n8n": "Document for Embedding",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_871b34db39": {
+        "n8n": "In-Memory Vector Store",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreInMemory"
+      },
+      "node_380efd3469": {
+        "n8n": "In-Memory Vector Store",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreInMemory"
+      },
+      "node_f827a544e7": {
+        "n8n": "__end:Search for Image",
+        "n8nType": "synthetic"
+      },
+      "node_9d5366d1a0": {
+        "n8n": "__end:In-Memory Vector Store",
+        "n8nType": "synthetic"
+      },
+      "node_f503a14914": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

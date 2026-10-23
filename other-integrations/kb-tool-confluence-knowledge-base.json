@@ -1,0 +1,237 @@
+{
+  "name": "KB Tool - Confluence Knowledge Base",
+  "workflowSlug": "kb-tool-confluence-knowledge-base",
+  "description": "Integrates with Confluence for knowledge base management.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_ff88a13864",
+      "actorId": "actor_ff88a13864",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_af7a772431",
+      "actorId": "actor_af7a772431",
+      "type": "NodeHttpRequest",
+      "label": "Query Confluence",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://n8n-labs.atlassian.net/wiki/rest/api/search?cql=text ~ \"{{query}}\"",
+        "headers": {
+          "accept": "application/json",
+          "Authorization": "Basic {{atlassianBasicAuth}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_d7814e58d7",
+      "actorId": "actor_d7814e58d7",
+      "type": "NodeTransform",
+      "label": "Return Tool Response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"response\"] = `\"Title\": \"${$json.results[0].content.title}\"\n\"Link\": \"${$json._links.base}${$json.results[0].content._links.webui}\"\n\"Content\": ${$json[\"results\"][0][\"excerpt\"]}\nWhen users request the password, make sure to send them the link above to reset it in markdown. `;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_c325baaa57",
+      "actorId": "actor_c325baaa57",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_4d9ff5e018",
+      "actorId": "actor_4d9ff5e018",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "atlassianBasicAuth": {
+            "$workflowSecret": "ATLASSIAN_BASIC_AUTH"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_ff88a13864",
+      "target": "node_af7a772431",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_af7a772431",
+      "target": "node_d7814e58d7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_af7a772431",
+      "target": "node_d7814e58d7",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d7814e58d7",
+      "target": "node_c325baaa57",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "other-integrations",
+    "categoryLabel": "Other Integrations and Use Cases",
+    "department": "Documentation/IT",
+    "connectors": [],
+    "setupSecrets": [
+      {
+        "key": "ATLASSIAN_BASIC_AUTH",
+        "label": "n8n-labs.atlassian.net Basic auth credentials (base64 of \"user:password\")",
+        "host": "n8n-labs.atlassian.net",
+        "headerFormat": "Authorization: Basic <secret>",
+        "contextKey": "atlassianBasicAuth",
+        "usedBy": [
+          "Query Confluence"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 3,
+      "yantraSteps": 3,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Other_Integrations_and_Use_Cases/KB Tool - Confluence Knowledge Base.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Execute Workflow Trigger",
+        "detail": "n8n-nodes-base.executeWorkflowTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Execute Workflow Trigger\" (executeWorkflowTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Workflow secret ATLASSIAN_BASIC_AUTH: n8n-labs.atlassian.net Basic auth credentials (base64 of \"user:password\") for n8n-labs.atlassian.net (Authorization: Basic <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Provide run inputs: query."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Execute Workflow Trigger",
+          "type": "n8n-nodes-base.executeWorkflowTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original was a sub-workflow called by another workflow; pass its inputs as run inputs.",
+        "\"Query Confluence\" authenticated with httpBasicAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "![n8n](https://i.imgur.com/lKnBNnH.png)\n## Receive Query from Parent Workflow\nThis node receives input from the AI Agent in the top level workflow where it passes just the Slack Message directly to this workflow.",
+      "![confluence](https://i.imgur.com/rM48yHY.png)\n## Search Confluence\nThe newly created prompt is then sent into Confluence's API as a search string. \n\nTo replace this with your own KB tool, find the Endpoint that allows search, and replace this HTTP Request node with your own HTTP Request or Built in n8n node and pass the search variable into the search input.",
+      "![n8n](https://i.imgur.com/lKnBNnH.png)\n## Respond to Parent Workflow with Confluence Results\nThe final output is then sent to the Parent workflow to be used in the final AI Agent API call to the LLM of your choice as part of the final output. Here is the prompt output: \n```\n\"Title\": \"Title of content so AI Agent will know the name of the content\"\n\"Link\": \"Link to URL of KB article. Great for giving back to user to self help\"\n\"Content\": Truncated output of content so that the large language model will have more context in it's final response. \nWhen users request the password, make sure to send them the link above to reset it in markdown. \n```",
+      "![n8n](https://i.imgur.com/qXWqiOd.png)\n## Enhance Query Resolution with the Knowledge Base Tool!\n\nOur **Knowledge Base Tool** is crafted to seamlessly integrate into the IT Department Q&A Workflow, enhancing the IT support process by enabling sophisticated search and response capabilities via Slack.\n\n**Workflow Functionality:**\n- **Receive Queries**: Directly accepts user queries from the main workflow, initiating a dynamic search process.\n- **AI-Powered Query Transformation**: Utilizes OpenAI's GPT-4 to refine user queries into searchable keywords that are most likely to retrieve relevant information from the Knowledge Base.\n- **Confluence Integration**: Executes searches within Confluence using the refined keywords to find the most applicable articles and information.\n- **Deliver Accurate Responses**: Gathers essential details from the Confluence results, including article titles, links, and summaries, preparing them to be sent back to the parent workflow for final user response.\n\n\n**Quick Setup Guide:**\n- Ensure correct configurations are set for OpenAI and Confluence API integrations.\n- Customize query transformation logic as per your specific Knowledge Base structure to improve search accuracy.\n\n\n**Need Help?**\n- Dive into our [Documentation](https://docs.n8n.io) or get support from the [Community Forum](https://community.n8n.io)!\n\n\nDeploy this tool to provide precise and informative responses, significantly boosting the efficiency and reliability of your IT support workflow."
+    ],
+    "nodes": {
+      "node_ff88a13864": {
+        "n8n": "Execute Workflow Trigger",
+        "n8nType": "n8n-nodes-base.executeWorkflowTrigger"
+      },
+      "node_af7a772431": {
+        "n8n": "Query Confluence",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpBasicAuth"
+      },
+      "node_d7814e58d7": {
+        "n8n": "Return Tool Response",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_c325baaa57": {
+        "n8n": "__end:Return Tool Response",
+        "n8nType": "synthetic"
+      },
+      "node_4d9ff5e018": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

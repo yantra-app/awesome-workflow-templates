@@ -1,0 +1,353 @@
+{
+  "name": "Publish one video natively to TikTok Instagram and YouTube with PostWire",
+  "workflowSlug": "publish-one-video-natively-to-tiktok-instagram-and-youtube-with-postwi",
+  "description": "Takes one idea and one video URL, writes a native caption per network (length, hashtags and format per platform) and publishes to every connected account in a single call.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_72e868c509",
+      "actorId": "actor_72e868c509",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_65ae001b59",
+      "actorId": "actor_65ae001b59",
+      "type": "NodeTransform",
+      "label": "Your idea, video and platforms",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"idea\"] = \"Announce that our AI meal planner now builds a full week of recipes from one photo of your fridge. Friendly, build-in-public tone.\";\n  out[\"video_url\"] = \"https://example.com/your-vertical-video.mp4\";\n  out[\"platforms\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(([\"tiktok\", \"instagram\", \"youtube\"]));\n  out[\"brand_voice\"] = \"Plain language, first person, no hype, at most one emoji.\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_7817969136",
+      "actorId": "actor_7817969136",
+      "type": "NodeHttpRequest",
+      "label": "Write a native caption per platform",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://postwire.io/api/generate",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "{{postwireApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_cf86a5a184",
+      "actorId": "actor_cf86a5a184",
+      "type": "NodeTransform",
+      "label": "Body: Write a native caption per platform",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Write a native caption per platform\".\nconst __body = (JSON.stringify({ prompt: $json.idea, platforms: $json.platforms, media_url: $json.video_url, brand_voice: $json.brand_voice }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_bba88da7e8",
+      "actorId": "actor_bba88da7e8",
+      "type": "NodeHttpRequest",
+      "label": "Publish to every connected account",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://postwire.io/api/post",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "{{postwireApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_323305c39d",
+      "actorId": "actor_323305c39d",
+      "type": "NodeTransform",
+      "label": "Body: Publish to every connected account",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When you click Test workflow\": {{ctx}}, \"Your idea, video and platforms\": {\"idea\":\"Announce that our AI meal planner now builds a full week of recipes from one photo of your fridge. Friendly, build-in-public tone.\",\"video_url\":\"https://example.com/your-vertical-video.mp4\",\"brand_voice\":\"Plain language, first person, no hype, at most one emoji.\"} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Publish to every connected account\".\nconst __body = (JSON.stringify({ platforms: $('Your idea, video and platforms').item.json.platforms, video_url: $('Your idea, video and platforms').item.json.video_url, per_platform: $json.drafts, options: { tiktok: { privacy_level: 'SELF_ONLY' } } }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_4c5d5524e8",
+      "actorId": "actor_4c5d5524e8",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_a67f1f9e01",
+      "actorId": "actor_a67f1f9e01",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "postwireApiKey": {
+            "$workflowSecret": "POSTWIRE_API_KEY"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_cf86a5a184",
+      "target": "node_7817969136",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_cf86a5a184",
+      "target": "node_7817969136",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_323305c39d",
+      "target": "node_bba88da7e8",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_323305c39d",
+      "target": "node_bba88da7e8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_72e868c509",
+      "target": "node_65ae001b59",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_65ae001b59",
+      "target": "node_cf86a5a184",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_65ae001b59",
+      "target": "node_cf86a5a184",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7817969136",
+      "target": "node_323305c39d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7817969136",
+      "target": "node_323305c39d",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bba88da7e8",
+      "target": "node_4c5d5524e8",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "social-media",
+    "categoryLabel": "Instagram, X and Social Media",
+    "department": "Marketing/Social Media/AI",
+    "connectors": [],
+    "setupSecrets": [
+      {
+        "key": "POSTWIRE_API_KEY",
+        "label": "postwire.io API credential header value (for example \"Bearer <key>\"; rename the header if the API expects another one)",
+        "host": "postwire.io",
+        "headerFormat": "Authorization: <secret>",
+        "contextKey": "postwireApiKey",
+        "usedBy": [
+          "Publish to every connected account",
+          "Write a native caption per platform"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 4,
+      "yantraSteps": 6,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Instagram_Twitter_Social_Media/Publish one video natively to TikTok Instagram and YouTube with PostWire.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Turn one video into native TikTok, Instagram and YouTube posts with PostWire"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Workflow secret POSTWIRE_API_KEY: postwire.io API credential header value (for example \"Bearer <key>\"; rename the header if the API expects another one) for postwire.io (Authorization: <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When you click Test workflow",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Write a native caption per platform\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Publish to every connected account\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "## Turn one video into native TikTok, Instagram and YouTube posts\n\n### Who's it for\nCreators, solo founders and small agencies who publish the same video to several networks and are tired of rewriting the caption three times - or of pasting the identical text everywhere and watching it underperform.\n\n### What it does\nYou give it one idea and one video URL. PostWire's Smart Distribute writes a **native caption for each network** - the right length, hashtags, SEO and format per platform - and then publishes the video to every connected account in a single call. TikTok, Instagram, YouTube, Facebook, LinkedIn, X, Bluesky, Mastodon, Telegram, Discord and Reddit are supported.\n\n### How to set up\n1. Create a free PostWire account at https://postwire.io/dashboard.html (1 brand, 30 posts/month, no card) and connect your social accounts there with OAuth.\n2. Copy your API key from the dashboard.\n3. In n8n, create a **Header Auth** credential: name `Authorization`, value `Bearer pw_live_your_key`.\n4. Select that credential on both HTTP Request nodes.\n5. Edit the **Your idea, video and platforms** node with your own idea, video URL and networks.\n\n### Requirements\n- A PostWire API key (free tier works).\n- A publicly reachable video URL (MP4). TikTok and YouTube reject text-only or photo posts.\n\n### How to customize\n- Change `platforms` to any mix of the supported networks.\n- Swap the manual trigger for a Schedule, RSS or Google Sheets trigger to run it unattended.\n- To queue a post for later instead of publishing now, call `POST /api/schedule` with a `run_at` timestamp.\n- `brand_voice` is free text and steers every caption at once.",
+      "### 1. Your input\nThe only node you need to edit.\n\n`video_url` must be a public MP4 link - TikTok and YouTube will not accept a photo or text-only post.",
+      "### 2. One idea → a caption per network\nSmart Distribute returns a `drafts` object keyed by platform, each with the text (and title and tags for YouTube) written for that network's rules.",
+      "### 3. Publish everywhere at once\nReturns one result per network, each with the post URL or the exact error.\n\nTikTok starts as `SELF_ONLY` so your first test run stays private - change it to `PUBLIC_TO_EVERYONE` when you are happy."
+    ],
+    "nodes": {
+      "node_72e868c509": {
+        "n8n": "When you click Test workflow",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_65ae001b59": {
+        "n8n": "Your idea, video and platforms",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_7817969136": {
+        "n8n": "Write a native caption per platform",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_cf86a5a184": {
+        "n8n": "Write a native caption per platform",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_bba88da7e8": {
+        "n8n": "Publish to every connected account",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_323305c39d": {
+        "n8n": "Publish to every connected account",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_4c5d5524e8": {
+        "n8n": "__end:Publish to every connected account",
+        "n8nType": "synthetic"
+      },
+      "node_a67f1f9e01": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

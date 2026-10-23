@@ -1,0 +1,122 @@
+{
+  "name": "fixture-default-ops-gmail",
+  "nodes": [
+    {
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "name": "Get all labels",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "parameters": {
+        "resource": "label",
+        "returnAll": true
+      },
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "name": "Get threads with label",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "parameters": {
+        "resource": "thread",
+        "filters": {
+          "labelIds": [
+            "Label_1"
+          ]
+        }
+      },
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "name": "Gmail - Create Draft",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "parameters": {
+        "resource": "draft",
+        "subject": "Hello",
+        "message": "Body",
+        "options": {
+          "sendTo": "={{ $json.to }}"
+        }
+      },
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "name": "Send Message",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "Hi",
+        "message": "Text"
+      },
+      "position": [
+        880,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Get all labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get all labels": {
+      "main": [
+        [
+          {
+            "node": "Get threads with label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get threads with label": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Create Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail - Create Draft": {
+      "main": [
+        [
+          {
+            "node": "Send Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

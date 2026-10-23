@@ -1,0 +1,2209 @@
+{
+  "name": "Breakdown Documents into Study Notes using Templating MistralAI and Qdrant",
+  "workflowSlug": "breakdown-documents-into-study-notes-using-templating-mistralai-and-qd",
+  "description": "This workflow triggers on new files, processes documents with MistralAI embeddings, and stores data in Qdrant vector store for study note generation.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_fc074b3869",
+      "actorId": "actor_fc074b3869",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_ee3fcaa760",
+      "actorId": "actor_ee3fcaa760",
+      "type": "NodeTransform",
+      "label": "Settings",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Array.prototype, { last() { return this[this.length - 1]; } });\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"project\"] = ($json.path.split('/').slice(0, 4)[3]);\n  out[\"path\"] = ($json.path);\n  out[\"filename\"] = ($json.path.split('/').last());\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_ee9f2f90e8",
+      "actorId": "actor_ee9f2f90e8",
+      "type": "NodeTransform",
+      "label": "Import File",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// Read file: expect file content on the previous step (text or base64).\nconst __file = typeof source === 'string' ? source : source?.data ?? source?.content ?? source?.body ?? source;\nconst __text = typeof __file === 'string' ? __file : JSON.stringify(__file ?? '');\nreturn { data: __text, fileName: \"file\", mimeType: 'application/octet-stream' };"
+      }
+    },
+    {
+      "nodeId": "node_1b3d2616f3",
+      "actorId": "actor_1b3d2616f3",
+      "type": "NodeTransform",
+      "label": "Get FileType: pdf",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.fileType) ?? '') === String(\"pdf\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_5d351c0a9b",
+      "actorId": "actor_5d351c0a9b",
+      "type": "NodeBranch",
+      "label": "Get FileType: pdf?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_96dc92558b",
+      "actorId": "actor_96dc92558b",
+      "type": "NodeTransform",
+      "label": "Get FileType: docx",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.fileType) ?? '') === String(\"docx\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_d6886e8045",
+      "actorId": "actor_d6886e8045",
+      "type": "NodeBranch",
+      "label": "Get FileType: docx?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_215c3f17bc",
+      "actorId": "actor_215c3f17bc",
+      "type": "NodeTransform",
+      "label": "Get FileType: everything else",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json)) != null));"
+      }
+    },
+    {
+      "nodeId": "node_1ed6ef4286",
+      "actorId": "actor_1ed6ef4286",
+      "type": "NodeBranch",
+      "label": "Get FileType: everything else?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_7261cfc390",
+      "actorId": "actor_7261cfc390",
+      "type": "NodeTransform",
+      "label": "Params: Extract from PDF",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for googlesuper/GOOGLESUPER_PARSE_FILE (n8n node \"Extract from PDF\").\nreturn {\n  \"file_id\": ($json.id ?? $json.file_id ?? $json.fileId),\n  \"mime_type\": \"application/pdf\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_cd69c23b66",
+      "actorId": "actor_cd69c23b66",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_PARSE_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive parse",
+        "action": "GOOGLESUPER_PARSE_FILE"
+      }
+    },
+    {
+      "nodeId": "node_6a6a5a5afe",
+      "actorId": "actor_6a6a5a5afe",
+      "type": "NodeTransform",
+      "label": "Params: Extract from DOCX",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for googlesuper/GOOGLESUPER_PARSE_FILE (n8n node \"Extract from DOCX\").\nreturn {\n  \"file_id\": ($json.id ?? $json.file_id ?? $json.fileId),\n  \"mime_type\": \"application/vnd.oasis.opendocument.spreadsheet\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_1612c21d7a",
+      "actorId": "actor_1612c21d7a",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_PARSE_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive parse",
+        "action": "GOOGLESUPER_PARSE_FILE"
+      }
+    },
+    {
+      "nodeId": "node_9e475e7939",
+      "actorId": "actor_9e475e7939",
+      "type": "NodeTransform",
+      "label": "Extract from TEXT",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// Read the file content as text.\nconst __file = typeof source === 'string' ? source : source?.data ?? source?.content ?? source?.body ?? source;\nconst __text = typeof __file === 'string' ? __file : JSON.stringify(__file ?? '');\nreturn { \"data\": __text };"
+      }
+    },
+    {
+      "nodeId": "node_d07b1dace5",
+      "actorId": "actor_d07b1dace5",
+      "type": "NodeTransform",
+      "label": "Prep Incoming Doc",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"data\"] = ($json.text);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_7884c3a7d3",
+      "actorId": "actor_7884c3a7d3",
+      "type": "NodeTransform",
+      "label": "Params: Qdrant Vector Store",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Params for pinecone/PINECONE_UPSERT_RECORDS_NAMESPACE (n8n node \"Qdrant Vector Store\").\nreturn {\n  \"index_host\": \"{{pineconeIndexHost}}\",\n  \"namespace\": \"storynotes\",\n  \"records\": (() => {\n  const __docs = __items.flatMap((d) => (Array.isArray(d) ? d : [d]));\n  return __docs.map((d) => {\n    const text = typeof d === 'string' ? d : d?.pageContent ?? d?.text ?? d?.content ?? d?.chunk ?? JSON.stringify(d);\n    const meta = d && typeof d === 'object' ? (d.metadata && typeof d.metadata === 'object' ? d.metadata : d) : {};\n    const flat = {};\n    for (const [k, v] of Object.entries(meta)) if (!['pageContent', 'text', '_id'].includes(k) && ['string', 'number', 'boolean'].includes(typeof v)) flat[k] = v;\n    return { ...flat, _id: String(d?.id ?? meta.id ?? crypto.randomUUID()), text: String(text) };\n  });\n})(),\n};"
+      }
+    },
+    {
+      "nodeId": "node_9ee9c9bd23",
+      "actorId": "actor_9ee9c9bd23",
+      "type": "NodeCdeConnector",
+      "label": "pinecone/PINECONE_UPSERT_RECORDS_NAMESPACE",
+      "color": "#6366F1",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "pinecone",
+        "connectorLabel": "Pinecone",
+        "action": "PINECONE_UPSERT_RECORDS_NAMESPACE"
+      }
+    },
+    {
+      "nodeId": "node_c122289be2",
+      "actorId": "actor_c122289be2",
+      "type": "NodeLlmChain",
+      "label": "Summarization Chain",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "Write a concise summary of the following content. Keep every important fact and name.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_cd24b56b14",
+      "actorId": "actor_cd24b56b14",
+      "type": "NodeTransform",
+      "label": "Prompt: Summarization Chain",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Summarization Chain.\nconst __promptValue = ($json);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_7acdf029cd",
+      "actorId": "actor_7acdf029cd",
+      "type": "NodeSync",
+      "label": "Merge",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_ce9341fe6d",
+      "actorId": "actor_ce9341fe6d",
+      "type": "NodeTransform",
+      "label": "Prep For AI",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Settings\": {{steps.xf_ee3fcaa760.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(String.prototype, { hash() { throw new Error('String.hash() needs a crypto digest, which the Yantra Transform runtime does not provide'); } });\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"id\"] = ($('Settings').first().json.filename.hash());\n  out[\"project\"] = ($('Settings').first().json.project);\n  out[\"path\"] = ($('Settings').first().json.path);\n  out[\"name\"] = ($('Settings').first().json.filename);\n  out[\"summary\"] = ($('Summarization Chain').first().json.response.text);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_bfdae94fd3",
+      "actorId": "actor_bfdae94fd3",
+      "type": "NodeTransform",
+      "label": "Get Doc Types",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields from JSON (n8n Set node, JSON mode): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const __raw = \"{\\n \\\"docs\\\": [\\n {\\n \\\"filename\\\": \\\"study_guide.md\\\",\\n \\\"title\\\": \\\"Study Guide\\\",\\n \\\"description\\\": \\\"A Study Guide is a consolidated resource designed to aid learning. This guide includes three key elements: * A short answer quiz accompanied by an answer key to test comprehension. * A curated list of long-form essay questions to encourage deeper analysis and synthesis of the material. * A glossary of key terms to reinforce understanding of important concepts.\\\"\\n },\\n {\\n \\\"filename\\\": \\\"timeline.md\\\",\\n \\\"title\\\": \\\"Timeline\\\",\\n \\\"description\\\": \\\"A Timeline organizes all significant events described in the sources you have uploaded in chronological order. This ordered list makes it easier to understand the sequence of events and their connection to the broader context of your sources. In addition to the list of events, the Timeline also provides a “cast of characters,” which comprises short biographical sketches of all the important people mentioned in your uploaded sources. These short biographies can help you quickly grasp the roles of various individuals involved in the events described by the Timeline.\\\"\\n },\\n {\\n \\\"filename\\\": \\\"briefing_doc.md\\\",\\n \\\"title\\\": \\\"Briefing Doc\\\",\\n \\\"description\\\": \\\"A Briefing Doc identifies and presents the most important facts and insights from the sources in an easy-to-understand outline format. This format is designed to provide a concise overview of the key takeaways from the uploaded materials.\\\"\\n }\\n ]\\n}\\n\";\n  let __obj;\n  try { __obj = typeof __raw === 'string' ? JSON.parse(__raw) : __raw; } catch (e) { throw new Error('Set node JSON is not valid JSON: ' + e.message); }\n  return __obj;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_6b73a88bca",
+      "actorId": "actor_6b73a88bca",
+      "type": "NodeTransform",
+      "label": "Split Out Doc Types",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"docs\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"docs\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"docs\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_0aac1330e9",
+      "actorId": "actor_0aac1330e9",
+      "type": "NodeTransform",
+      "label": "Items: For Each Doc Type...",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_bbca9707b1",
+      "actorId": "actor_bbca9707b1",
+      "type": "NodeLoop",
+      "label": "For Each Doc Type...",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_6afbeb6cdd",
+      "actorId": "actor_6afbeb6cdd",
+      "type": "NodeTransform",
+      "label": "Item: For Each Doc Type...",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_269a9c6af1",
+      "actorId": "actor_269a9c6af1",
+      "type": "NodeTransform",
+      "label": "Results: For Each Doc Type...",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_ff88ee93f8",
+      "actorId": "actor_ff88ee93f8",
+      "type": "NodeTransform",
+      "label": "Get Generated Documents",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7680,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Prep For AI\": {{steps.xf_ce9341fe6d.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"data\"] = ($json.text);\n  out[\"path\"] = ($('Prep For AI').item.json.path);\n  out[\"filename\"] = ($('Prep For AI').item.json.name);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_9f8101ae0a",
+      "actorId": "actor_9f8101ae0a",
+      "type": "NodeLlmChain",
+      "label": "Interview",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 8820,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{llm_system_f08f3568ed}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_f08f3568ed",
+      "actorId": "actor_f08f3568ed",
+      "type": "NodeTransform",
+      "label": "System: Interview",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7680,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"For Each Doc Type...\": __namedCtx.steps?.[\"Item: For Each Doc Type...\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// System: Interview.\nconst __promptValue = `Given the following document summary, what questions would you ask to create a ${$('For Each Doc Type...').item.json.title} for the document? Generate 5 questions.`;\nreturn { \"llm_system_f08f3568ed\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_b9c139c61e",
+      "actorId": "actor_b9c139c61e",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Interview",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 8060,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_e99df332a7",
+      "actorId": "actor_e99df332a7",
+      "type": "NodeTransform",
+      "label": "Prompt: Interview",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8440,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Prep For AI\": __namedCtx.steps?.[\"Prep For AI\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Interview.\nconst __promptValue = `## document summary\n ${$('Prep For AI').item.json.summary}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_a0d3e6688d",
+      "actorId": "actor_a0d3e6688d",
+      "type": "NodeTransform",
+      "label": "To Binary",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8060,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Text file from a field.\nconst __v = ($json.data);\nreturn { data: typeof __v === 'string' ? __v : JSON.stringify(__v, null, 2), fileName: \"file.txt\", mimeType: \"text/plain\" };"
+      }
+    },
+    {
+      "nodeId": "node_7f745afbc3",
+      "actorId": "actor_7f745afbc3",
+      "type": "NodeTransform",
+      "label": "Split Out",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9200,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"response\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"response\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"response\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_4101a125f7",
+      "actorId": "actor_4101a125f7",
+      "type": "NodeTransform",
+      "label": "Export to Folder",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8440,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Split Out Doc Types\": {{steps.xf_6b73a88bca.result}}, \"Get Generated Documents\": {{steps.xf_ff88ee93f8.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Array.prototype, { last() { return this[this.length - 1]; } });\n// Write file: emit a Yantra file object (no host filesystem).\nconst __file = typeof source === 'string' ? source : source?.data ?? source?.content ?? source?.body ?? source;\nconst __text = typeof __file === 'string' ? __file : JSON.stringify(__file ?? '');\nreturn { data: __text, fileName: \"={{\\n $('Get Generated Documents').item.json.path.replace(\\n $('Get Generated Documents').item.json.path.split('/').last(),\\n $('Get Generated Documents').item.json.filename.substring(0,21) + '...' + $('Split Out Doc Types').item.json.title + '.md'\\n )\\n}}\", mimeType: 'application/octet-stream' };"
+      }
+    },
+    {
+      "nodeId": "node_e5bece7b66",
+      "actorId": "actor_e5bece7b66",
+      "type": "NodeLlmChain",
+      "label": "Discover",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 10720,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{llm_system_7aaf6c1a63}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_7aaf6c1a63",
+      "actorId": "actor_7aaf6c1a63",
+      "type": "NodeTransform",
+      "label": "System: Discover",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9580,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: Discover.\nconst __promptValue = `Answer the question using only the provided context. If the context is empty, say you do not know.\n\nContext:\n${$json.context || $json.documents || $json.text || ''}`;\nreturn { \"llm_system_7aaf6c1a63\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_9691e0ed5f",
+      "actorId": "actor_9691e0ed5f",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Discover",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 9960,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_941fc2f8fd",
+      "actorId": "actor_941fc2f8fd",
+      "type": "NodeTransform",
+      "label": "Prompt: Discover",
+      "color": "#F59E0B",
+      "position": {
+        "x": 10340,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Discover.\nconst __promptValue = ($json.response);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_b99ad4fa78",
+      "actorId": "actor_b99ad4fa78",
+      "type": "NodeTransform",
+      "label": "Aggregate",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11100,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\nreturn {\n  \"text\": __items.map((i) => __get(i, \"response.text\")),\n};"
+      }
+    },
+    {
+      "nodeId": "node_28ecf559a0",
+      "actorId": "actor_28ecf559a0",
+      "type": "NodeLlmChain",
+      "label": "Generate",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 12620,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{llm_system_77d6874bac}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_77d6874bac",
+      "actorId": "actor_77d6874bac",
+      "type": "NodeTransform",
+      "label": "System: Generate",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11480,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"For Each Doc Type...\": __namedCtx.steps?.[\"Item: For Each Doc Type...\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// System: Generate.\nconst __promptValue = `Your job is to create a ${$('For Each Doc Type...').item.json.title} for the given document. ${$('For Each Doc Type...').item.json.description}\n\nGenerate a ${$('For Each Doc Type...').item.json.title} for the given document. If questions are generated, generate the answers alongside them. Format your response in markdown; use \"#\" to format headings, use \"*\" to format lists.`;\nreturn { \"llm_system_77d6874bac\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_13bf7b5cec",
+      "actorId": "actor_13bf7b5cec",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Generate",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 11860,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_82061cd06a",
+      "actorId": "actor_82061cd06a",
+      "type": "NodeTransform",
+      "label": "Prompt: Generate",
+      "color": "#F59E0B",
+      "position": {
+        "x": 12240,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Generate.\nconst __promptValue = `## Document\n${$json.text.join('\\n')}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_83ddd0566c",
+      "actorId": "actor_83ddd0566c",
+      "type": "NodeTransform",
+      "label": "2secs",
+      "color": "#F59E0B",
+      "position": {
+        "x": 13000,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The original waited here (1 seconds).\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_a138165fda",
+      "actorId": "actor_a138165fda",
+      "type": "NodeTransform",
+      "label": "Return: 2secs",
+      "color": "#F59E0B",
+      "position": {
+        "x": 13380,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_8645d1fe89",
+      "actorId": "actor_8645d1fe89",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 8820,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f37da810ab",
+      "actorId": "actor_f37da810ab",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "event": {},
+          "pineconeIndexHost": "",
+          "llmModel_e5bece7b66": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_6c6aec1fc3",
+      "actorId": "actor_6c6aec1fc3",
+      "type": "NodeChatModel",
+      "label": "Summarization Chain: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4640,
+        "y": 680
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "mistral",
+        "model": "open-mixtral-8x7b"
+      }
+    },
+    {
+      "nodeId": "node_4caf4d6f2a",
+      "actorId": "actor_4caf4d6f2a",
+      "type": "NodeChatModel",
+      "label": "Interview: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 8820,
+        "y": 720
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "mistral",
+        "model": "open-mixtral-8x7b"
+      }
+    },
+    {
+      "nodeId": "node_2d419c7aa9",
+      "actorId": "actor_2d419c7aa9",
+      "type": "NodeChatModel",
+      "label": "Discover: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 10720,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "mistral",
+        "model": "{{llmModel_e5bece7b66}}"
+      }
+    },
+    {
+      "nodeId": "node_041fb7cb2b",
+      "actorId": "actor_041fb7cb2b",
+      "type": "NodeChatModel",
+      "label": "Generate: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 12620,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "mistral",
+        "model": "open-mixtral-8x7b"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_1b3d2616f3",
+      "target": "node_5d351c0a9b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_1b3d2616f3",
+      "target": "node_5d351c0a9b",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_5d351c0a9b",
+      "target": "node_96dc92558b",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_96dc92558b",
+      "target": "node_d6886e8045",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_96dc92558b",
+      "target": "node_d6886e8045",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_d6886e8045",
+      "target": "node_215c3f17bc",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_215c3f17bc",
+      "target": "node_1ed6ef4286",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_215c3f17bc",
+      "target": "node_1ed6ef4286",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_7261cfc390",
+      "target": "node_cd69c23b66",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_7261cfc390",
+      "target": "node_cd69c23b66",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_6a6a5a5afe",
+      "target": "node_1612c21d7a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_6a6a5a5afe",
+      "target": "node_1612c21d7a",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_7884c3a7d3",
+      "target": "node_9ee9c9bd23",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_7884c3a7d3",
+      "target": "node_9ee9c9bd23",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_cd24b56b14",
+      "target": "node_c122289be2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_0aac1330e9",
+      "target": "node_bbca9707b1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_0aac1330e9",
+      "target": "node_bbca9707b1",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_bbca9707b1",
+      "target": "node_6afbeb6cdd",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bbca9707b1",
+      "target": "node_6afbeb6cdd",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bbca9707b1",
+      "target": "node_269a9c6af1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bbca9707b1",
+      "target": "node_269a9c6af1",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f08f3568ed",
+      "target": "node_b9c139c61e",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_f08f3568ed",
+      "target": "node_b9c139c61e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_b9c139c61e",
+      "target": "node_e99df332a7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e99df332a7",
+      "target": "node_9f8101ae0a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_7aaf6c1a63",
+      "target": "node_9691e0ed5f",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_7aaf6c1a63",
+      "target": "node_9691e0ed5f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_9691e0ed5f",
+      "target": "node_941fc2f8fd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_941fc2f8fd",
+      "target": "node_e5bece7b66",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_77d6874bac",
+      "target": "node_13bf7b5cec",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_77d6874bac",
+      "target": "node_13bf7b5cec",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_13bf7b5cec",
+      "target": "node_82061cd06a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_82061cd06a",
+      "target": "node_28ecf559a0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_fc074b3869",
+      "target": "node_ee3fcaa760",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d07b1dace5",
+      "target": "node_7884c3a7d3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d07b1dace5",
+      "target": "node_7884c3a7d3",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d07b1dace5",
+      "target": "node_cd24b56b14",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d07b1dace5",
+      "target": "node_cd24b56b14",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ee3fcaa760",
+      "target": "node_ee9f2f90e8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ee3fcaa760",
+      "target": "node_ee9f2f90e8",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7acdf029cd",
+      "target": "node_ce9341fe6d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7acdf029cd",
+      "target": "node_ce9341fe6d",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bfdae94fd3",
+      "target": "node_6b73a88bca",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bfdae94fd3",
+      "target": "node_6b73a88bca",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6b73a88bca",
+      "target": "node_0aac1330e9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6b73a88bca",
+      "target": "node_0aac1330e9",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_269a9c6af1",
+      "target": "node_ff88ee93f8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_269a9c6af1",
+      "target": "node_ff88ee93f8",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6afbeb6cdd",
+      "target": "node_f08f3568ed",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6afbeb6cdd",
+      "target": "node_f08f3568ed",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6afbeb6cdd",
+      "target": "node_e99df332a7",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7f745afbc3",
+      "target": "node_7aaf6c1a63",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7f745afbc3",
+      "target": "node_7aaf6c1a63",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7f745afbc3",
+      "target": "node_941fc2f8fd",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b99ad4fa78",
+      "target": "node_77d6874bac",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b99ad4fa78",
+      "target": "node_77d6874bac",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b99ad4fa78",
+      "target": "node_82061cd06a",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e5bece7b66",
+      "target": "node_b99ad4fa78",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e5bece7b66",
+      "target": "node_b99ad4fa78",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ff88ee93f8",
+      "target": "node_a0d3e6688d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ff88ee93f8",
+      "target": "node_a0d3e6688d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_28ecf559a0",
+      "target": "node_83ddd0566c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_28ecf559a0",
+      "target": "node_83ddd0566c",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ce9341fe6d",
+      "target": "node_bfdae94fd3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ce9341fe6d",
+      "target": "node_bfdae94fd3",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a0d3e6688d",
+      "target": "node_4101a125f7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a0d3e6688d",
+      "target": "node_4101a125f7",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5d351c0a9b",
+      "target": "node_7261cfc390",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ee9f2f90e8",
+      "target": "node_7261cfc390",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d6886e8045",
+      "target": "node_6a6a5a5afe",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ee9f2f90e8",
+      "target": "node_6a6a5a5afe",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1ed6ef4286",
+      "target": "node_9e475e7939",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ee9f2f90e8",
+      "target": "node_9e475e7939",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ee9f2f90e8",
+      "target": "node_1b3d2616f3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ee9f2f90e8",
+      "target": "node_1b3d2616f3",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ee9f2f90e8",
+      "target": "node_96dc92558b",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ee9f2f90e8",
+      "target": "node_215c3f17bc",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cd69c23b66",
+      "target": "node_d07b1dace5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cd69c23b66",
+      "target": "node_d07b1dace5",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1612c21d7a",
+      "target": "node_d07b1dace5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1612c21d7a",
+      "target": "node_d07b1dace5",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9e475e7939",
+      "target": "node_d07b1dace5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9e475e7939",
+      "target": "node_d07b1dace5",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c122289be2",
+      "target": "node_7acdf029cd",
+      "sourceOutput": "text",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_9ee9c9bd23",
+      "target": "node_7acdf029cd",
+      "sourceOutput": "result",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_9f8101ae0a",
+      "target": "node_7f745afbc3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9f8101ae0a",
+      "target": "node_7f745afbc3",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_83ddd0566c",
+      "target": "node_a138165fda",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_83ddd0566c",
+      "target": "node_a138165fda",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a138165fda",
+      "target": "node_bbca9707b1",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_a138165fda",
+      "target": "node_bbca9707b1",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_4101a125f7",
+      "target": "node_8645d1fe89",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_6c6aec1fc3",
+      "target": "node_c122289be2",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_4caf4d6f2a",
+      "target": "node_9f8101ae0a",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_2d419c7aa9",
+      "target": "node_e5bece7b66",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_041fb7cb2b",
+      "target": "node_28ecf559a0",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "pdf-and-documents",
+    "categoryLabel": "PDF and Document Processing",
+    "department": "Education/Knowledge Management",
+    "connectors": [
+      "googlesuper",
+      "mistral",
+      "pinecone"
+    ],
+    "setupVars": [
+      {
+        "key": "pineconeIndexHost",
+        "label": "Pinecone index host (create the index with integrated embedding and field map text=text)",
+        "type": "url",
+        "example": "my-index-abc123.svc.aped-4627-b74a.pinecone.io",
+        "usedBy": [
+          "Qdrant Vector Store"
+        ]
+      },
+      {
+        "key": "llmModel_e5bece7b66",
+        "label": "mistral model ID for Discover (not recorded by the original conversion)",
+        "type": "text",
+        "usedBy": [
+          "Discover"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeLoop",
+      "NodeStart",
+      "NodeSync",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 35,
+      "yantraSteps": 50,
+      "foldedHelpers": [
+        "Default Data Loader",
+        "Embeddings Mistral Cloud",
+        "Mistral Cloud Chat Model1",
+        "Mistral Cloud Chat Model",
+        "Item List Output Parser",
+        "Mistral Cloud Chat Model2",
+        "Vector Store Retriever",
+        "Mistral Cloud Chat Model3"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "PDF_and_Document_Processing/Breakdown Documents into Study Notes using Templating MistralAI and Qdrant.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "missing-required-param",
+        "node": "Discover",
+        "detail": "Chat Model provider mistral is not supported by the current node catalog"
+      },
+      {
+        "code": "missing-required-param",
+        "node": "Generate",
+        "detail": "Chat Model provider mistral is not supported by the current node catalog"
+      },
+      {
+        "code": "missing-required-param",
+        "node": "Interview",
+        "detail": "Chat Model provider mistral is not supported by the current node catalog"
+      },
+      {
+        "code": "missing-required-param",
+        "node": "Summarization Chain",
+        "detail": "Chat Model provider mistral is not supported by the current node catalog"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Local File Trigger",
+        "detail": "n8n-nodes-base.localFileTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Discover\": the original provider \"mistral\" and model are preserved. Select a supported Chat Model provider and matching model, or add its adapter in Yantra before running.",
+      "\"Generate\": the original provider \"mistral\" and model are preserved. Select a supported Chat Model provider and matching model, or add its adapter in Yantra before running.",
+      "\"Interview\": the original provider \"mistral\" and model are preserved. Select a supported Chat Model provider and matching model, or add its adapter in Yantra before running.",
+      "\"Summarization Chain\": the original provider \"mistral\" and model are preserved. Select a supported Chat Model provider and matching model, or add its adapter in Yantra before running.",
+      "\"Local File Trigger\" (localFileTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value pineconeIndexHost: Pinecone index host (create the index with integrated embedding and field map text=text) (for example my-index-abc123.svc.aped-4627-b74a.pinecone.io). Write it into the Workflow Configs initialContext before import.",
+      "Setup value llmModel_e5bece7b66: mistral model ID for Discover (not recorded by the original conversion). Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the mistral connector (credential).",
+      "Connect the pinecone connector (credential).",
+      "Provide run inputs: event, llm_system_77d6874bac, llm_system_7aaf6c1a63, llm_system_f08f3568ed."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Import File",
+          "n8n": "readWriteFile",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Extract from PDF",
+          "n8n": "extractFromFile.pdf",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Extract from DOCX",
+          "n8n": "extractFromFile.ods",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Extract from TEXT",
+          "n8n": "extractFromFile.text",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Qdrant Vector Store",
+          "n8n": "vectorStoreQdrant.insert",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "To Binary",
+          "n8n": "convertToFile.toText",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Export to Folder",
+          "n8n": "readWriteFile",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Discover",
+          "n8n": "chainRetrievalQa",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "2secs",
+          "n8n": "wait",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "Default Data Loader",
+          "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+          "into": "Qdrant Vector Store",
+          "as": "ai_document"
+        },
+        {
+          "node": "Embeddings Mistral Cloud",
+          "type": "@n8n/n8n-nodes-langchain.embeddingsMistralCloud",
+          "into": "Qdrant Vector Store",
+          "as": "ai_embedding"
+        },
+        {
+          "node": "Mistral Cloud Chat Model1",
+          "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+          "into": "Summarization Chain",
+          "model": "open-mixtral-8x7b"
+        },
+        {
+          "node": "Mistral Cloud Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+          "into": "Interview",
+          "model": "open-mixtral-8x7b"
+        },
+        {
+          "node": "Item List Output Parser",
+          "type": "@n8n/n8n-nodes-langchain.outputParserItemList",
+          "into": "Interview",
+          "as": "ai_outputParser"
+        },
+        {
+          "node": "Mistral Cloud Chat Model2",
+          "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+          "into": "Discover"
+        },
+        {
+          "node": "Vector Store Retriever",
+          "type": "@n8n/n8n-nodes-langchain.retrieverVectorStore",
+          "into": "Discover",
+          "as": "ai_retriever"
+        },
+        {
+          "node": "Mistral Cloud Chat Model3",
+          "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+          "into": "Generate",
+          "model": "open-mixtral-8x7b"
+        }
+      ],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "Local File Trigger",
+          "type": "n8n-nodes-base.localFileTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from localFileTrigger; Yantra has no webhook slug for it, so run on demand, on a schedule (add a NodeCron), or via the workflow API with the event under the run input `event`.",
+        "\"Import File\" (readWriteFile): Local filesystem / binary helpers become `{ data, fileName, mimeType }` fields on Yantra; there is no host disk.",
+        "\"Import File\": Yantra steps exchange file content as text or base64 fields, not paths on disk. Point this at the upstream file payload.",
+        "\"Extract from PDF\" (extractFromFile.pdf): Parsed via googlesuper/GOOGLESUPER_PARSE_FILE; the file must live on Google Drive (upload first if the previous step only has bytes/base64).",
+        "\"Extract from PDF\": GOOGLESUPER_PARSE_FILE needs a Drive file_id (and googlesuper credential). If the upstream step only has file bytes, upload with GOOGLESUPER_CREATE_FILE_FROM_TEXT / Drive upload first, then parse.",
+        "\"Extract from DOCX\" (extractFromFile.ods): Parsed via googlesuper/GOOGLESUPER_PARSE_FILE; the file must live on Google Drive (upload first if the previous step only has bytes/base64).",
+        "\"Extract from DOCX\": GOOGLESUPER_PARSE_FILE needs a Drive file_id (and googlesuper credential). If the upstream step only has file bytes, upload with GOOGLESUPER_CREATE_FILE_FROM_TEXT / Drive upload first, then parse.",
+        "\"Extract from TEXT\" (extractFromFile.text): Files flow as text or base64 fields on Yantra, not binary attachments; check the previous step hands over the file content.",
+        "\"Qdrant Vector Store\" folded a document (documentDefaultDataLoader); retrieved text is expected on the upstream payload as context/documents.",
+        "\"Qdrant Vector Store\" (vectorStoreQdrant.insert): The original used a Qdrant collection; here the default vector store is a Pinecone index with integrated embedding (upsert records), so Pinecone embeds the text itself.",
+        "\"Qdrant Vector Store\": create a Pinecone index with integrated embedding (for example llama-text-embed-v2, field map text=text) and set pineconeIndexHost; the Qdrant collection became the namespace \"storynotes\".",
+        "\"Merge\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was chooseBranch).",
+        "\"For Each Doc Type...\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "\"To Binary\" (convertToFile.toText): The file is a `{ data, fileName, mimeType }` object (text, or base64 for toBinary); point the next step at `data`.",
+        "\"Export to Folder\" (readWriteFile): Local filesystem / binary helpers become `{ data, fileName, mimeType }` fields on Yantra; there is no host disk.",
+        "\"Export to Folder\": Yantra steps exchange file content as text or base64 fields, not paths on disk. Point this at the upstream file payload.",
+        "\"Discover\" folded a retriever (retrieverVectorStore); retrieved text is expected on the upstream payload as context/documents.",
+        "\"Discover\" (chainRetrievalQa): Retriever output should arrive as context/documents/text on the upstream payload.",
+        "\"2secs\" paused the original (1 seconds); Yantra has no delay node, so this step passes data straight through.",
+        "\"2secs\" (wait): Wait/delay is a soft passthrough; add a schedule or external delay if timing matters.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect pinecone: `cdecli credential create -n \"pinecone\" -p pinecone --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Step 1. Watch Folder and Import New Documents\n[Read more about Local File Trigger](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.localfiletrigger)\n\nWith n8n's local file trigger, we're able to trigger the workflow when files are created in our target folder. We still have to import them however as the trigger will only give the file's path. The \"Extract From\" node is used to get at the file's contents.",
+      "## Step 2. Summarise and Vectorise Document Contents\n[Learn more about using the Qdrant VectorStore](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.vectorstoreqdrant)\n\nCapturing the document into our vector store is intended for a technique we'll use later known as Retrieval Augumented Generation or \"RAG\" for short. For our scenario, this allows our LLM to retrieve context more efficiently which produces better respsonses.",
+      "## Step 3. Loop through Templates\n\nWe'll ask the LLM to help us generate 3 types of notes from the imported source document. These notes are intended to breakdown the content for faster study. Our templates for this demo are:\n(1) **Study guide**\n(2) **Briefing document**\n(3) **Timeline**",
+      "## Step 4. Use AI Agents to Query and Generate Template Documents\n[Read more about using the Question & Answer Retrieval Chain](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.chainretrievalqa)\n\nn8n allows us to easily use a chain of LLMs as agents which can work together to handle any task!\nHere the agents generate questions to explore the content of the source document and use the answers to generate the template.",
+      "## Step 5. Export Generated Templates To Folder\n[Learn more about writing to the local filesystem](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.filesreadwrite)\n\nFinally, the AI generated documents can now be exported to disk. This workflow makes it easy to generate any kind of document from various source material and can be used for training and sales.",
+      "## Try It Out! \n\n### This workflow automates generating notes from a source document.\n* It watches a target folder to pick up new files.\n* When a new file is detected, it saves the contents of the file in a vectorstore.\n* multiple AI agents guided by a templates list, generate the predetermined notes.\n* These notes are then export alongside the original source file for the user.\n\n\n### Need Help?\nJoin the [Discord](https://discord.com/invite/XPKeKXeB7d) or ask in the [Forum](https://community.n8n.io/)!\n\nHappy Hacking!",
+      "### 💡Add your own templates here!"
+    ],
+    "nodes": {
+      "node_fc074b3869": {
+        "n8n": "Local File Trigger",
+        "n8nType": "n8n-nodes-base.localFileTrigger"
+      },
+      "node_ee3fcaa760": {
+        "n8n": "Settings",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_ee9f2f90e8": {
+        "n8n": "Import File",
+        "n8nType": "n8n-nodes-base.readWriteFile"
+      },
+      "node_1b3d2616f3": {
+        "n8n": "Get FileType",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_5d351c0a9b": {
+        "n8n": "Get FileType",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_96dc92558b": {
+        "n8n": "Get FileType",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_d6886e8045": {
+        "n8n": "Get FileType",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_215c3f17bc": {
+        "n8n": "Get FileType",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_1ed6ef4286": {
+        "n8n": "Get FileType",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_7261cfc390": {
+        "n8n": "Extract from PDF",
+        "n8nType": "n8n-nodes-base.extractFromFile"
+      },
+      "node_cd69c23b66": {
+        "n8n": "Extract from PDF",
+        "n8nType": "n8n-nodes-base.extractFromFile"
+      },
+      "node_6a6a5a5afe": {
+        "n8n": "Extract from DOCX",
+        "n8nType": "n8n-nodes-base.extractFromFile"
+      },
+      "node_1612c21d7a": {
+        "n8n": "Extract from DOCX",
+        "n8nType": "n8n-nodes-base.extractFromFile"
+      },
+      "node_9e475e7939": {
+        "n8n": "Extract from TEXT",
+        "n8nType": "n8n-nodes-base.extractFromFile"
+      },
+      "node_d07b1dace5": {
+        "n8n": "Prep Incoming Doc",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_7884c3a7d3": {
+        "n8n": "Qdrant Vector Store",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreQdrant"
+      },
+      "node_9ee9c9bd23": {
+        "n8n": "Qdrant Vector Store",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreQdrant"
+      },
+      "node_c122289be2": {
+        "n8n": "Summarization Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainSummarization"
+      },
+      "node_cd24b56b14": {
+        "n8n": "Summarization Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainSummarization"
+      },
+      "node_7acdf029cd": {
+        "n8n": "Merge",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_ce9341fe6d": {
+        "n8n": "Prep For AI",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_bfdae94fd3": {
+        "n8n": "Get Doc Types",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_6b73a88bca": {
+        "n8n": "Split Out Doc Types",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_0aac1330e9": {
+        "n8n": "For Each Doc Type...",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_bbca9707b1": {
+        "n8n": "For Each Doc Type...",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_6afbeb6cdd": {
+        "n8n": "For Each Doc Type...",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_269a9c6af1": {
+        "n8n": "For Each Doc Type...",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_ff88ee93f8": {
+        "n8n": "Get Generated Documents",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_9f8101ae0a": {
+        "n8n": "Interview",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_f08f3568ed": {
+        "n8n": "Interview",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_b9c139c61e": {
+        "n8n": "Interview",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_e99df332a7": {
+        "n8n": "Interview",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_a0d3e6688d": {
+        "n8n": "To Binary",
+        "n8nType": "n8n-nodes-base.convertToFile"
+      },
+      "node_7f745afbc3": {
+        "n8n": "Split Out",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_4101a125f7": {
+        "n8n": "Export to Folder",
+        "n8nType": "n8n-nodes-base.readWriteFile"
+      },
+      "node_e5bece7b66": {
+        "n8n": "Discover",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainRetrievalQa"
+      },
+      "node_7aaf6c1a63": {
+        "n8n": "Discover",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainRetrievalQa"
+      },
+      "node_9691e0ed5f": {
+        "n8n": "Discover",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainRetrievalQa"
+      },
+      "node_941fc2f8fd": {
+        "n8n": "Discover",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainRetrievalQa"
+      },
+      "node_b99ad4fa78": {
+        "n8n": "Aggregate",
+        "n8nType": "n8n-nodes-base.aggregate"
+      },
+      "node_28ecf559a0": {
+        "n8n": "Generate",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_77d6874bac": {
+        "n8n": "Generate",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_13bf7b5cec": {
+        "n8n": "Generate",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_82061cd06a": {
+        "n8n": "Generate",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_83ddd0566c": {
+        "n8n": "2secs",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_a138165fda": {
+        "n8n": "2secs",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_8645d1fe89": {
+        "n8n": "__end:Export to Folder",
+        "n8nType": "synthetic"
+      },
+      "node_f37da810ab": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_6c6aec1fc3": {
+        "n8n": "Summarization Chain",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_4caf4d6f2a": {
+        "n8n": "Interview",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_2d419c7aa9": {
+        "n8n": "Discover",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_041fb7cb2b": {
+        "n8n": "Generate",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

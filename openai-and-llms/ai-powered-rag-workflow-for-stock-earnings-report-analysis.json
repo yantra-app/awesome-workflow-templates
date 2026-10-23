@@ -1,0 +1,732 @@
+{
+  "name": "AI-Powered RAG Workflow For Stock Earnings Report Analysis",
+  "workflowSlug": "ai-powered-rag-workflow-for-stock-earnings-report-analysis",
+  "description": "Stock earnings report analysis with RAG.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_2517eda183",
+      "actorId": "actor_2517eda183",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_1e40b2d9be",
+      "actorId": "actor_1e40b2d9be",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_BATCH_GET",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_BATCH_GET",
+        "params": {
+          "spreadsheet_id": "{{spreadsheetId}}",
+          "ranges": [
+            "GOOG"
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_19feca42a3",
+      "actorId": "actor_19feca42a3",
+      "type": "NodeCdecliAgent",
+      "label": "AI Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "sessionId": "",
+        "system": "You are a highly skilled financial analyst specializing in analyzing Google's (Alphabet Inc.) financial performance. You have access to two powerful tools:\n\n1. **Vector Store Tool:** This tool allows you to retrieve relevant information from the past three quarters of Google's earnings reports (PDF documents). The documents have been processed and stored as embeddings in a vector database, enabling semantic search. Use this tool to find specific information related to revenue, expenses, profits, losses, growth, key metrics, management commentary, and any other relevant financial data.\n2. **Google Docs Tool:** This tool allows you to create, edit, and format Google Docs. Use this tool to save your findings into a Google Doc.\n\nYour task is to answer user queries related to Google's financial performance based on the last three quarters' earnings reports. When a user asks a question:\n\n1. **Understand the User's Intent:** Carefully analyze the user's query to determine what specific financial information they are seeking. Identify keywords, timeframes (e.g., \"previous quarter\"), and the type of analysis requested (e.g., trend analysis, comparison, explanation).\n2. **Retrieve Relevant Information:** Use the Vector Store Tool to search for and retrieve the most relevant text passages from the earnings reports that address the user's query. Retrieve multiple, diverse chunks to ensure comprehensive coverage.\n3. **Synthesize and Analyze:** Analyze the information from the retrieved text chunks. Identify key trends, patterns, and insights related to the user's query.\n4. **Generate Report in Google Docs:** Use the Google Docs Tool to create a new Google Doc (or append to an existing one, if specified by the user). Structure the report with clear headings, bullet points, and concise paragraphs. Include the following in your report as appropriate:\n * **Executive Summary:** A brief overview of the key findings.\n * **Revenue Analysis:** Report on revenue figures, growth rates, and key revenue drivers.\n * **Expense Analysis:** Report on major expense categories and their impact on profitability.\n * **Profitability Analysis:** Discuss net income, profit margins, and earnings per share (EPS).\n * **Key Metrics:** Include other relevant financial metrics mentioned in the reports (e.g., operating income, cash flow, segment performance).\n * **Management Commentary:** Summarize any relevant insights or explanations provided by Google's management in the earnings calls or reports.\n * **Trend Analysis:** Compare the current quarter's performance to the previous two quarters, highlighting significant changes or trends.\n * **Visualizations:** If possible, use the Google Docs tool to insert basic charts or tables to visually represent the data. (You might need to guide the user on how to do this if the tool has limitations.)\n5. **Cite Sources:** Clearly indicate the source of your information (e.g., \"Q2 2023 Earnings Report\") for each data point or analysis.\n6. **Maintain a Professional Tone:** Write in a clear, concise, and objective tone, as expected of a financial analyst. Avoid speculation or making unsubstantiated claims.\n\nYour ultimate goal is to provide the user with a well-structured, informative, and accurate financial report based on the data available in the last three quarters of Google's earnings reports.\nSave the report in as a Google Doc using the available tool!",
+        "message": "Give me a report on Google's last 3 quarter earnings. Format it in markdown. Focus on the differences and trends. Spot any outliers."
+      }
+    },
+    {
+      "nodeId": "node_5f025d8116",
+      "actorId": "actor_5f025d8116",
+      "type": "NodeTransform",
+      "label": "Items: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_35144c8f53",
+      "actorId": "actor_35144c8f53",
+      "type": "NodeLoop",
+      "label": "Loop Over Items",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_fe0b63e7db",
+      "actorId": "actor_fe0b63e7db",
+      "type": "NodeTransform",
+      "label": "Item: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_faf0ecda85",
+      "actorId": "actor_faf0ecda85",
+      "type": "NodeTransform",
+      "label": "Results: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_0d561b16d0",
+      "actorId": "actor_0d561b16d0",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_INSERT_TEXT_ACTION",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Docs",
+        "action": "GOOGLESUPER_INSERT_TEXT_ACTION",
+        "params": {
+          "document_id": "{{documentId}}",
+          "text_to_insert": "{{last.text}}",
+          "insertion_index": 1
+        }
+      }
+    },
+    {
+      "nodeId": "node_42a385cb20",
+      "actorId": "actor_42a385cb20",
+      "type": "NodeTransform",
+      "label": "Params: Download File From Google Drive",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"List Of Files To Load (Google Sheets)\": {{steps.GOOGLESUPER_BATCH_GET.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_DOWNLOAD_FILE (n8n node \"Download File From Google Drive\").\nreturn {\n  \"file_id\": ($('List Of Files To Load (Google Sheets)').item.json['File URL']),\n};"
+      }
+    },
+    {
+      "nodeId": "node_2ed44a6641",
+      "actorId": "actor_2ed44a6641",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_DOWNLOAD_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive",
+        "action": "GOOGLESUPER_DOWNLOAD_FILE"
+      }
+    },
+    {
+      "nodeId": "node_699626c9a8",
+      "actorId": "actor_699626c9a8",
+      "type": "NodeTransform",
+      "label": "Params: Pinecone Vector Store",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Params for pinecone/PINECONE_UPSERT_RECORDS_NAMESPACE (n8n node \"Pinecone Vector Store\").\nreturn {\n  \"index_host\": \"{{pineconeIndexHost}}\",\n  \"namespace\": \"{{pineconeNamespace}}\",\n  \"records\": (() => {\n  const __docs = __items.flatMap((d) => (Array.isArray(d) ? d : [d]));\n  return __docs.map((d) => {\n    const text = typeof d === 'string' ? d : d?.pageContent ?? d?.text ?? d?.content ?? d?.chunk ?? JSON.stringify(d);\n    const meta = d && typeof d === 'object' ? (d.metadata && typeof d.metadata === 'object' ? d.metadata : d) : {};\n    const flat = {};\n    for (const [k, v] of Object.entries(meta)) if (!['pageContent', 'text', '_id'].includes(k) && ['string', 'number', 'boolean'].includes(typeof v)) flat[k] = v;\n    return { ...flat, _id: String(d?.id ?? meta.id ?? crypto.randomUUID()), text: String(text) };\n  });\n})(),\n};"
+      }
+    },
+    {
+      "nodeId": "node_c8049a0f87",
+      "actorId": "actor_c8049a0f87",
+      "type": "NodeCdeConnector",
+      "label": "pinecone/PINECONE_UPSERT_RECORDS_NAMESPACE",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "pinecone",
+        "connectorLabel": "Pinecone",
+        "action": "PINECONE_UPSERT_RECORDS_NAMESPACE"
+      }
+    },
+    {
+      "nodeId": "node_849515e391",
+      "actorId": "actor_849515e391",
+      "type": "NodeTransform",
+      "label": "Return: Pinecone Vector Store",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_e3d052d2ad",
+      "actorId": "actor_e3d052d2ad",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_63053f63d4",
+      "actorId": "actor_63053f63d4",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_62a94fed76",
+      "actorId": "actor_62a94fed76",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "pineconeNamespace": "",
+          "pineconeIndexHost": "",
+          "spreadsheetId": "",
+          "documentId": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_5f025d8116",
+      "target": "node_35144c8f53",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_5f025d8116",
+      "target": "node_35144c8f53",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_35144c8f53",
+      "target": "node_fe0b63e7db",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_35144c8f53",
+      "target": "node_fe0b63e7db",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_35144c8f53",
+      "target": "node_faf0ecda85",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_35144c8f53",
+      "target": "node_faf0ecda85",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_42a385cb20",
+      "target": "node_2ed44a6641",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_42a385cb20",
+      "target": "node_2ed44a6641",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_699626c9a8",
+      "target": "node_c8049a0f87",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_699626c9a8",
+      "target": "node_c8049a0f87",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_fe0b63e7db",
+      "target": "node_42a385cb20",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fe0b63e7db",
+      "target": "node_42a385cb20",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2517eda183",
+      "target": "node_19feca42a3",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_19feca42a3",
+      "target": "node_0d561b16d0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_1e40b2d9be",
+      "target": "node_5f025d8116",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1e40b2d9be",
+      "target": "node_5f025d8116",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2ed44a6641",
+      "target": "node_699626c9a8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2ed44a6641",
+      "target": "node_699626c9a8",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c8049a0f87",
+      "target": "node_849515e391",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c8049a0f87",
+      "target": "node_849515e391",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_849515e391",
+      "target": "node_35144c8f53",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_849515e391",
+      "target": "node_35144c8f53",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_2517eda183",
+      "target": "node_1e40b2d9be",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_faf0ecda85",
+      "target": "node_e3d052d2ad",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_0d561b16d0",
+      "target": "node_63053f63d4",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "Finance/AI/Data Analysis",
+    "connectors": [
+      "googlesuper",
+      "pinecone"
+    ],
+    "setupVars": [
+      {
+        "key": "pineconeNamespace",
+        "label": "Pinecone namespace for this collection",
+        "type": "text",
+        "example": "documents",
+        "usedBy": [
+          "Pinecone Vector Store"
+        ]
+      },
+      {
+        "key": "pineconeIndexHost",
+        "label": "Pinecone index host (create the index with integrated embedding and field map text=text)",
+        "type": "url",
+        "example": "my-index-abc123.svc.aped-4627-b74a.pinecone.io",
+        "usedBy": [
+          "Pinecone Vector Store"
+        ]
+      },
+      {
+        "key": "spreadsheetId",
+        "label": "Spreadsheet id",
+        "type": "id",
+        "example": "1AbC...xyz",
+        "usedBy": [
+          "List Of Files To Load (Google Sheets)"
+        ]
+      },
+      {
+        "key": "documentId",
+        "label": "Document id",
+        "type": "id",
+        "example": "1AbC...xyz",
+        "usedBy": [
+          "Save Report to Google Docs"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeLoop",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 15,
+      "yantraSteps": 13,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "Vector Store Tool",
+        "Default Data Loader",
+        "Embeddings Google Gemini"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/AI-Powered RAG Workflow For Stock Earnings Report Analysis.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "RAG Workflow For Stock Earnings Report Analysis"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Setup value pineconeNamespace: Pinecone namespace for this collection (for example documents). Write it into the Workflow Configs initialContext before import.",
+      "Setup value pineconeIndexHost: Pinecone index host (create the index with integrated embedding and field map text=text) (for example my-index-abc123.svc.aped-4627-b74a.pinecone.io). Write it into the Workflow Configs initialContext before import.",
+      "Setup value spreadsheetId: Spreadsheet id (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
+      "Setup value documentId: Document id (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the pinecone connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Pinecone Vector Store",
+          "n8n": "vectorStorePinecone.insert",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "AI Agent"
+        },
+        {
+          "node": "Vector Store Tool",
+          "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+          "into": "AI Agent",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Default Data Loader",
+          "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+          "into": "Pinecone Vector Store",
+          "as": "ai_document"
+        },
+        {
+          "node": "Embeddings Google Gemini",
+          "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+          "into": "Pinecone Vector Store",
+          "as": "ai_embedding"
+        }
+      ],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"AI Agent\" used agent tools in the original: Vector Store Tool (toolVectorStore). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
+        "\"Loop Over Items\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "\"Pinecone Vector Store\" folded a document (documentDefaultDataLoader); retrieved text is expected on the upstream payload as context/documents.",
+        "\"Pinecone Vector Store\" (vectorStorePinecone.insert): The original used a Pinecone index with a separate embeddings node; here the default vector store is a Pinecone index with integrated embedding (upsert records), so Pinecone embeds the text itself.",
+        "\"Pinecone Vector Store\": create a Pinecone index with integrated embedding (for example llama-text-embed-v2, field map text=text) and set pineconeIndexHost; the store uses the namespace \"{{pineconeNamespace}}\".",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect pinecone: `cdecli credential create -n \"pinecone\" -p pinecone --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Set up steps\n1. Google Cloud Project & Vertex AI API:\n\t* Create a Google Cloud project.\n\t* Enable the Vertex AI API for your project.\n2. Google AI API key:\n\t* Obtain a Google AI API key from Google AI Studio.\n3. Pinecone account and API key:\n\t* Create a free account on the Pinecone website.\n\t* Obtain your API key from your Pinecone dashboard.\n\t* Create an index named company-earnings in your Pinecone project.\n4. Google Drive - download and save financial documents:\n\t* Go to a company you want to analize and download their quarterly earnings PDFs\n\t* Save the PDFs in Google Drive\n\t* Create a Google Sheet that stores a list of file URLs pointing to the PDFs you downloaded and saved to Google Drive\n5. Configure credentials in your n8n environment for:\n\t* Google Sheets OAuth2\n\t* Google Drive OAuth2\n\t* Google Docs OAuth2\n\t* Google Gemini(PaLM) Api (using your Google AI API key)\n\t* Pinecone API (using your Pinecone API key)\n6. Import and configure the workflow:\n\t* Import this workflow into your n8n instance.\n\t* Update the List Of Files To Load (Google Sheets) node to point to your Google Sheet.\n\t* Update the Download File From Google Drive to point to the column where the file URLs are\n\t* Update the Save Report to Google Docs node to point to your Google Doc where you want the report saved.",
+      "## Loading data to Pinecone vector store",
+      "## AI Agent Report Generation using RAG"
+    ],
+    "nodes": {
+      "node_2517eda183": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_1e40b2d9be": {
+        "n8n": "List Of Files To Load (Google Sheets)",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_19feca42a3": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_5f025d8116": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_35144c8f53": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_fe0b63e7db": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_faf0ecda85": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_0d561b16d0": {
+        "n8n": "Save Report to Google Docs",
+        "n8nType": "n8n-nodes-base.googleDocs"
+      },
+      "node_42a385cb20": {
+        "n8n": "Download File From Google Drive",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_2ed44a6641": {
+        "n8n": "Download File From Google Drive",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_699626c9a8": {
+        "n8n": "Pinecone Vector Store",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStorePinecone"
+      },
+      "node_c8049a0f87": {
+        "n8n": "Pinecone Vector Store",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStorePinecone"
+      },
+      "node_849515e391": {
+        "n8n": "Pinecone Vector Store",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStorePinecone"
+      },
+      "node_e3d052d2ad": {
+        "n8n": "__end:Loop Over Items",
+        "n8nType": "synthetic"
+      },
+      "node_63053f63d4": {
+        "n8n": "__end:Save Report to Google Docs",
+        "n8nType": "synthetic"
+      },
+      "node_62a94fed76": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

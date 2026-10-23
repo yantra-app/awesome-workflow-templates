@@ -1,0 +1,399 @@
+{
+  "name": "Transform Image to Lego Style Using Line and Dall-E",
+  "workflowSlug": "transform-image-to-lego-style-using-line-and-dall-e",
+  "description": "Converted from the n8n template \"Transform Image to Lego Style Using Line and Dall-E\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_5ddac60cd9",
+      "actorId": "actor_5ddac60cd9",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_c8e5dc1455",
+      "actorId": "actor_c8e5dc1455",
+      "type": "NodeHttpRequest",
+      "label": "Receive Line Messages",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://api-data.line.me/v2/bot/message/{{body.events.0.message.id}}/content",
+        "headers": {
+          "Authorization": "Bearer {{lineChannelAccessToken}}",
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_d3e86e0609",
+      "actorId": "actor_d3e86e0609",
+      "type": "NodeTransform",
+      "label": "Params: Creating a Prompt for Dall-E (Lego Style)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for openai/OPENAI_CREATE_RESPONSE (n8n node \"Creating a Prompt for Dall-E (Lego Style)\").\nreturn {\n  \"model\": \"gpt-4o-mini\",\n  \"input\": [{ \"role\": \"user\", \"content\": [{ \"type\": \"input_text\", \"text\": \"Creating the DALL·E 3 prompt to transform this kind of image into a isometric LEGO image (Only provide me with a prompt).\" }, { \"type\": \"input_image\", \"image_url\": ('data:' + ($json.mimeType || $json.mime_type || 'image/jpeg') + ';base64,' + ($json.data ?? $json.base64 ?? '')) }] }],\n};"
+      }
+    },
+    {
+      "nodeId": "node_89445a1ab6",
+      "actorId": "actor_89445a1ab6",
+      "type": "NodeCdeConnector",
+      "label": "openai/OPENAI_CREATE_RESPONSE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "openai",
+        "connectorLabel": "OpenAI",
+        "action": "OPENAI_CREATE_RESPONSE"
+      }
+    },
+    {
+      "nodeId": "node_2ac9d6d3dd",
+      "actorId": "actor_2ac9d6d3dd",
+      "type": "NodeTransform",
+      "label": "Creating a Prompt for Dall-E (Lego Style): answer",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The Responses API answer as the n8n image-analysis output ({ content }).\nconst __r = source?.data ?? source;\nconst __text = __r?.output_text ?? (__r?.output || []).flatMap((o) => o?.content || []).map((c) => c?.text || '').join('');\nreturn { content: __text, text: __text };"
+      }
+    },
+    {
+      "nodeId": "node_2336295cb1",
+      "actorId": "actor_2336295cb1",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-generation/YANTRA_GEMINI_IMAGE_GENERATE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-generation",
+        "connectorLabel": "Image generation",
+        "action": "YANTRA_GEMINI_IMAGE_GENERATE",
+        "params": {
+          "prompt": "{{last.transformed.content}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_d991f8981a",
+      "actorId": "actor_d991f8981a",
+      "type": "NodeHttpRequest",
+      "label": "Send Back an Image through Line",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/reply",
+        "headers": {
+          "Authorization": "Bearer {{lineChannelAccessToken}}",
+          "Content-Type": "application/json"
+        },
+        "body": "{\n \"replyToken\": \"{{body.events.0.replyToken}}\",\n \"messages\": [\n {\n \"type\": \"image\",\n \"originalContentUrl\": \"{{last.result.url}}\",\n \"previewImageUrl\": \"{{last.result.url}}\"\n }\n ]\n}"
+      }
+    },
+    {
+      "nodeId": "node_c43051488f",
+      "actorId": "actor_c43051488f",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_1e8690452e",
+      "actorId": "actor_1e8690452e",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {},
+          "lineChannelAccessToken": {
+            "$workflowSecret": "LINE_CHANNEL_ACCESS_TOKEN"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_d3e86e0609",
+      "target": "node_89445a1ab6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d3e86e0609",
+      "target": "node_89445a1ab6",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_89445a1ab6",
+      "target": "node_2ac9d6d3dd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_89445a1ab6",
+      "target": "node_2ac9d6d3dd",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5ddac60cd9",
+      "target": "node_c8e5dc1455",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_c8e5dc1455",
+      "target": "node_d3e86e0609",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c8e5dc1455",
+      "target": "node_d3e86e0609",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2336295cb1",
+      "target": "node_d991f8981a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_2ac9d6d3dd",
+      "target": "node_2336295cb1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d991f8981a",
+      "target": "node_c43051488f",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "",
+    "connectors": [
+      "openai",
+      "yantra-image-generation"
+    ],
+    "setupSecrets": [
+      {
+        "key": "LINE_CHANNEL_ACCESS_TOKEN",
+        "label": "LINE channel access token",
+        "host": "api-data.line.me",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "lineChannelAccessToken",
+        "usedBy": [
+          "Receive Line Messages",
+          "Send Back an Image through Line"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 5,
+      "yantraSteps": 7,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/Transform Image to Lego Style Using Line and Dall-E.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Transform Image to Lego Style Using Line and Dall-E"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Receive a Line Webhook",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Receive a Line Webhook\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Workflow secret LINE_CHANNEL_ACCESS_TOKEN: LINE channel access token for api-data.line.me (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the openai connector (credential).",
+      "Provide run inputs: body, query, headers."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Creating a Prompt for Dall-E (Lego Style)",
+          "n8n": "image.analyze",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Receive a Line Webhook",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /lineimage). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "\"Creating a Prompt for Dall-E (Lego Style)\" (image.analyze): Vision call through OpenAI Responses (input_image as a data: URL); the previous step must hand over the image as base64 in `data`.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect openai: `cdecli credential create -n \"openai\" -p openai --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_5ddac60cd9": {
+        "n8n": "Receive a Line Webhook",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_c8e5dc1455": {
+        "n8n": "Receive Line Messages",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_d3e86e0609": {
+        "n8n": "Creating a Prompt for Dall-E (Lego Style)",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_89445a1ab6": {
+        "n8n": "Creating a Prompt for Dall-E (Lego Style)",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_2ac9d6d3dd": {
+        "n8n": "Creating a Prompt for Dall-E (Lego Style)",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_2336295cb1": {
+        "n8n": "Creating an Image using Dall-E",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_d991f8981a": {
+        "n8n": "Send Back an Image through Line",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_c43051488f": {
+        "n8n": "__end:Send Back an Image through Line",
+        "n8nType": "synthetic"
+      },
+      "node_1e8690452e": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

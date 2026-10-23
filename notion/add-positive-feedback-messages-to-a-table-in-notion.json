@@ -1,0 +1,777 @@
+{
+  "name": "Add positive feedback messages to a table in Notion",
+  "workflowSlug": "add-positive-feedback-messages-to-a-table-in-notion",
+  "description": "Captures positive feedback from Typeform, analyzes sentiment with Google Cloud Natural Language, and adds it to a Notion table, with Slack notifications for high-scoring feedback.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_0bbcc4e287",
+      "actorId": "actor_0bbcc4e287",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_dd7227fa38",
+      "actorId": "actor_dd7227fa38",
+      "type": "NodeLlmChain",
+      "label": "Google Cloud Natural Language",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "sentiment": {
+              "type": "string",
+              "enum": [
+                "Positive",
+                "Neutral",
+                "Negative"
+              ],
+              "description": "One of: Positive, Neutral, Negative"
+            }
+          },
+          "required": [
+            "sentiment"
+          ],
+          "additionalProperties": false
+        },
+        "system": "Classify the input into exactly one sentiment.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_21a85918a1",
+      "actorId": "actor_21a85918a1",
+      "type": "NodeTransform",
+      "label": "Prompt: Google Cloud Natural Language",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Google Cloud Natural Language.\nconst __promptValue = ($json[\"Any suggestions for us? \"]);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_908bbcc6b0",
+      "actorId": "actor_908bbcc6b0",
+      "type": "NodeTransform",
+      "label": "Google Cloud Natural Language: sentiment = Positive",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.sentiment ?? '') === \"Positive\";"
+      }
+    },
+    {
+      "nodeId": "node_4935e67055",
+      "actorId": "actor_4935e67055",
+      "type": "NodeBranch",
+      "label": "Google Cloud Natural Language: sentiment = Positive?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_58ed37331f",
+      "actorId": "actor_58ed37331f",
+      "type": "NodeTransform",
+      "label": "Google Cloud Natural Language: sentiment = Neutral",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.sentiment ?? '') === \"Neutral\";"
+      }
+    },
+    {
+      "nodeId": "node_82047c7503",
+      "actorId": "actor_82047c7503",
+      "type": "NodeBranch",
+      "label": "Google Cloud Natural Language: sentiment = Neutral?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_74059de4be",
+      "actorId": "actor_74059de4be",
+      "type": "NodeTransform",
+      "label": "Google Cloud Natural Language: sentiment = Negative",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.sentiment ?? '') === \"Negative\";"
+      }
+    },
+    {
+      "nodeId": "node_6a86ef4dfe",
+      "actorId": "actor_6a86ef4dfe",
+      "type": "NodeBranch",
+      "label": "Google Cloud Natural Language: sentiment = Negative?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_53e6bba2d5",
+      "actorId": "actor_53e6bba2d5",
+      "type": "NodeTransform",
+      "label": "IF: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst $node = new Proxy({}, { get: () => ({ json: source, parameter: {} }) });\nreturn Boolean((Number(($node[\"Google Cloud Natural Language\"].json[\"documentSentiment\"][\"score\"])) > Number(null)));"
+      }
+    },
+    {
+      "nodeId": "node_bc868e5903",
+      "actorId": "actor_bc868e5903",
+      "type": "NodeBranch",
+      "label": "IF: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_adeb98d3dd",
+      "actorId": "actor_adeb98d3dd",
+      "type": "NodeTransform",
+      "label": "Params: Notion",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst $node = new Proxy({}, { get: () => ({ json: source, parameter: {} }) });\n// Params for notion/NOTION_INSERT_ROW_DATABASE (n8n node \"Notion\").\nreturn {\n  \"database_id\": \"{{notionDatabaseId}}\",\n  \"properties\": { \"propertyValues\": [{ \"key\": \"Name|title\", \"title\": ($node[\"Typeform Trigger\"].json[\"Name\"]) }, { \"key\": \"Feedback|rich_text\", \"textContent\": ($node[\"Typeform Trigger\"].json[\"Any suggestions for us? \"]) }] },\n};"
+      }
+    },
+    {
+      "nodeId": "node_b8fb3b9aeb",
+      "actorId": "actor_b8fb3b9aeb",
+      "type": "NodeCdeConnector",
+      "label": "notion/NOTION_INSERT_ROW_DATABASE",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "notion",
+        "connectorLabel": "Notion",
+        "action": "NOTION_INSERT_ROW_DATABASE"
+      }
+    },
+    {
+      "nodeId": "node_6ca361e1ed",
+      "actorId": "actor_6ca361e1ed",
+      "type": "NodeTransform",
+      "label": "Params: Trello",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $node = new Proxy({}, { get: () => ({ json: source, parameter: {} }) });\n// Params for trello/TRELLO_ADD_CARDS (n8n node \"Trello\").\nreturn {\n  \"idList\": \"5fbb9e2eb1d5cc0a8a7ab8ac\",\n  \"name\": `Score: ${$json[\"documentSentiment\"][\"score\"]}`,\n  \"desc\": `Score: ${$json[\"documentSentiment\"][\"score\"]}\nFeedback: ${$node[\"Typeform Trigger\"].json[\"Any suggestions for us? \"]}\nUser: ${$node[\"Typeform Trigger\"].json[\"Name\"]}`,\n};"
+      }
+    },
+    {
+      "nodeId": "node_287a3ba4ee",
+      "actorId": "actor_287a3ba4ee",
+      "type": "NodeCdeConnector",
+      "label": "trello/TRELLO_ADD_CARDS",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "trello",
+        "connectorLabel": "Trello",
+        "action": "TRELLO_ADD_CARDS"
+      }
+    },
+    {
+      "nodeId": "node_48c13dde2a",
+      "actorId": "actor_48c13dde2a",
+      "type": "NodeCdeConnector",
+      "label": "slack/SLACK_CHAT_POST_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "slack",
+        "connectorLabel": "Slack",
+        "action": "SLACK_CHAT_POST_MESSAGE",
+        "params": {
+          "channel": "general",
+          "blocks": {
+            "blocksValues": []
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_8bfe8894e3",
+      "actorId": "actor_8bfe8894e3",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_133a084b1a",
+      "actorId": "actor_133a084b1a",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_4528db2003",
+      "actorId": "actor_4528db2003",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "event": {},
+          "notionDatabaseId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_b240ff844e",
+      "actorId": "actor_b240ff844e",
+      "type": "NodeChatModel",
+      "label": "Google Cloud Natural Language: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_21a85918a1",
+      "target": "node_dd7227fa38",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_dd7227fa38",
+      "target": "node_908bbcc6b0",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dd7227fa38",
+      "target": "node_908bbcc6b0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_908bbcc6b0",
+      "target": "node_4935e67055",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_908bbcc6b0",
+      "target": "node_4935e67055",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_dd7227fa38",
+      "target": "node_58ed37331f",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4935e67055",
+      "target": "node_58ed37331f",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_58ed37331f",
+      "target": "node_82047c7503",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_58ed37331f",
+      "target": "node_82047c7503",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_dd7227fa38",
+      "target": "node_74059de4be",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_82047c7503",
+      "target": "node_74059de4be",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_74059de4be",
+      "target": "node_6a86ef4dfe",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_74059de4be",
+      "target": "node_6a86ef4dfe",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_53e6bba2d5",
+      "target": "node_bc868e5903",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_53e6bba2d5",
+      "target": "node_bc868e5903",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_adeb98d3dd",
+      "target": "node_b8fb3b9aeb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_adeb98d3dd",
+      "target": "node_b8fb3b9aeb",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_6ca361e1ed",
+      "target": "node_287a3ba4ee",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_6ca361e1ed",
+      "target": "node_287a3ba4ee",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_0bbcc4e287",
+      "target": "node_21a85918a1",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4935e67055",
+      "target": "node_53e6bba2d5",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bc868e5903",
+      "target": "node_adeb98d3dd",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bc868e5903",
+      "target": "node_6ca361e1ed",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b8fb3b9aeb",
+      "target": "node_48c13dde2a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_287a3ba4ee",
+      "target": "node_8bfe8894e3",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_48c13dde2a",
+      "target": "node_133a084b1a",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_b240ff844e",
+      "target": "node_dd7227fa38",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "notion",
+    "categoryLabel": "Notion",
+    "department": "Support",
+    "connectors": [
+      "notion",
+      "openai",
+      "slack",
+      "trello"
+    ],
+    "setupVars": [
+      {
+        "key": "notionDatabaseId",
+        "label": "Notion database id",
+        "type": "id",
+        "usedBy": [
+          "Notion"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 6,
+      "yantraSteps": 17,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Notion/Add positive feedback messages to a table in Notion.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Typeform Trigger",
+        "detail": "n8n-nodes-base.typeformTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Typeform Trigger\" (typeformTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value notionDatabaseId: Notion database id. Write it into the Workflow Configs initialContext before import.",
+      "Connect the notion connector (credential).",
+      "Connect the openai connector (credential).",
+      "Connect the slack connector (credential).",
+      "Connect the trello connector (credential).",
+      "Provide run inputs: event."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Typeform Trigger",
+          "type": "n8n-nodes-base.typeformTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from typeformTrigger; Yantra has no webhook slug for it, so run on demand, on a schedule (add a NodeCron), or via the workflow API with the event under the run input `event`.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect notion: `cdecli credential create -n \"notion\" -p notion --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect slack: `cdecli credential create -n \"slack\" -p slack --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect trello: `cdecli credential create -n \"trello\" -p trello --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_0bbcc4e287": {
+        "n8n": "Typeform Trigger",
+        "n8nType": "n8n-nodes-base.typeformTrigger"
+      },
+      "node_dd7227fa38": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_21a85918a1": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_908bbcc6b0": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_4935e67055": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_58ed37331f": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_82047c7503": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_74059de4be": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_6a86ef4dfe": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_53e6bba2d5": {
+        "n8n": "IF",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_bc868e5903": {
+        "n8n": "IF",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_adeb98d3dd": {
+        "n8n": "Notion",
+        "n8nType": "n8n-nodes-base.notion"
+      },
+      "node_b8fb3b9aeb": {
+        "n8n": "Notion",
+        "n8nType": "n8n-nodes-base.notion"
+      },
+      "node_6ca361e1ed": {
+        "n8n": "Trello",
+        "n8nType": "n8n-nodes-base.trello"
+      },
+      "node_287a3ba4ee": {
+        "n8n": "Trello",
+        "n8nType": "n8n-nodes-base.trello"
+      },
+      "node_48c13dde2a": {
+        "n8n": "Slack",
+        "n8nType": "n8n-nodes-base.slack"
+      },
+      "node_8bfe8894e3": {
+        "n8n": "__end:Trello",
+        "n8nType": "synthetic"
+      },
+      "node_133a084b1a": {
+        "n8n": "__end:Slack",
+        "n8nType": "synthetic"
+      },
+      "node_4528db2003": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_b240ff844e": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

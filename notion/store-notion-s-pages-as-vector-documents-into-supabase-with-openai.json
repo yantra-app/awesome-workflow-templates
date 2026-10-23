@@ -1,0 +1,380 @@
+{
+  "name": "Store Notion's Pages as Vector Documents into Supabase with OpenAI",
+  "workflowSlug": "store-notion-s-pages-as-vector-documents-into-supabase-with-openai",
+  "description": "Automates storing Notion pages as vector documents in a Supabase database, using OpenAI to generate embeddings for the content.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_ace140e314",
+      "actorId": "actor_ace140e314",
+      "type": "NodeCdeWebhookTrigger",
+      "label": "Webhook: notion/NOTION_PAGE_ADDED_TO_DATABASE",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "connector": "notion",
+        "webhookEndpointId": "",
+        "triggerSlug": "NOTION_PAGE_ADDED_TO_DATABASE",
+        "connectedAccountId": "",
+        "config": {},
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "nodeId": "node_2bf925ab00",
+      "actorId": "actor_2bf925ab00",
+      "type": "NodeCdeConnector",
+      "label": "notion/NOTION_FETCH_BLOCK_CONTENTS",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "notion",
+        "connectorLabel": "Notion",
+        "action": "NOTION_FETCH_BLOCK_CONTENTS",
+        "params": {
+          "block_id": "{{last.payload.url}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_3f033c7ccb",
+      "actorId": "actor_3f033c7ccb",
+      "type": "NodeTransform",
+      "label": "Filter Non-Text Content",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn __items.filter(($json) => Boolean((String(($json.type) ?? '') !== String(\"image\" ?? '')) && (String(($json.type) ?? '') !== String(\"video\" ?? ''))));"
+      }
+    },
+    {
+      "nodeId": "node_fc7c630021",
+      "actorId": "actor_fc7c630021",
+      "type": "NodeTransform",
+      "label": "Summarize - Concatenate Notion's blocks content",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Object.prototype, { values() { return Object.values(this); } });\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Summarize (n8n Summarize node): concatenate of content.\nconst __fields = [{ field: \"content\", aggregation: \"concatenate\", separateBy: \"\\n\" }];\nconst __splitBy = [];\nconst __summarize = (rows) => {\n  const out = {};\n  for (const f of __fields) {\n    const vals = rows.map((r) => __get(r, f.field)).filter((v) => v !== undefined && v !== null && v !== '');\n    const nums = vals.map(Number).filter((n) => !Number.isNaN(n));\n    const key = (f.aggregation === 'concatenate' ? 'concatenated' : f.aggregation) + '_' + f.field;\n    switch (f.aggregation) {\n      case 'count': out[key] = vals.length; break;\n      case 'countUnique': out[key] = new Set(vals.map((v) => JSON.stringify(v))).size; break;\n      case 'sum': out[key] = nums.reduce((a, b) => a + b, 0); break;\n      case 'average': out[key] = nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null; break;\n      case 'min': out[key] = nums.length ? Math.min(...nums) : null; break;\n      case 'max': out[key] = nums.length ? Math.max(...nums) : null; break;\n      case 'append': out[key] = vals; break;\n      case 'concatenate': out[key] = vals.join(f.separateBy); break;\n      default: out[key] = vals;\n    }\n  }\n  return out;\n};\nif (!__splitBy.length) return [__summarize(__items)];\nconst __groups = new Map();\nfor (const r of __items) {\n  const k = __splitBy.map((f) => JSON.stringify(__get(r, f))).join('|');\n  if (!__groups.has(k)) __groups.set(k, []);\n  __groups.get(k).push(r);\n}\nreturn [...__groups.values()].map((rows) => ({ ...Object.fromEntries(__splitBy.map((f) => [f, __get(rows[0], f)])), ...__summarize(rows) }));"
+      }
+    },
+    {
+      "nodeId": "node_72f230d923",
+      "actorId": "actor_72f230d923",
+      "type": "NodeTransform",
+      "label": "Params: Supabase Vector Store",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for supabase/SUPABASE_INSERT_ROW (n8n node \"Supabase Vector Store\").\nreturn {\n  \"table\": \"documents\",\n  \"fields\": { \"content\": ($json.pageContent ?? $json.content ?? $json.text), \"embedding\": ($json.embedding), \"metadata\": ($json.metadata) },\n  \"ref\": \"{{supabaseProjectRef}}\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_9c4a55384b",
+      "actorId": "actor_9c4a55384b",
+      "type": "NodeCdeConnector",
+      "label": "supabase/SUPABASE_INSERT_ROW",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "supabase",
+        "connectorLabel": "Supabase",
+        "action": "SUPABASE_INSERT_ROW"
+      }
+    },
+    {
+      "nodeId": "node_b69869cfd3",
+      "actorId": "actor_b69869cfd3",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_2d86fec6bf",
+      "actorId": "actor_2d86fec6bf",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "supabaseProjectRef": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_72f230d923",
+      "target": "node_9c4a55384b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_72f230d923",
+      "target": "node_9c4a55384b",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ace140e314",
+      "target": "node_2bf925ab00",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_2bf925ab00",
+      "target": "node_3f033c7ccb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2bf925ab00",
+      "target": "node_3f033c7ccb",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3f033c7ccb",
+      "target": "node_fc7c630021",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3f033c7ccb",
+      "target": "node_fc7c630021",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fc7c630021",
+      "target": "node_72f230d923",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fc7c630021",
+      "target": "node_72f230d923",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9c4a55384b",
+      "target": "node_b69869cfd3",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "notion",
+    "categoryLabel": "Notion",
+    "department": "Engineering",
+    "connectors": [
+      "notion",
+      "supabase"
+    ],
+    "setupVars": [
+      {
+        "key": "supabaseProjectRef",
+        "label": "Supabase project ref (Settings > General)",
+        "type": "id",
+        "example": "abcdefghijklmnopqrst",
+        "usedBy": [
+          "Supabase Vector Store"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeCdeWebhookTrigger",
+      "NodeEnd",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 8,
+      "yantraSteps": 6,
+      "foldedHelpers": [
+        "Embeddings OpenAI",
+        "Create metadata and load content"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Notion/Store Notion_s Pages as Vector Documents into Supabase with OpenAI.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Store Notion's Pages as Vector Documents into Supabase with OpenAI"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "webhook-registration",
+        "node": "Notion - Page Added Trigger",
+        "detail": "webhook trigger notion/NOTION_PAGE_ADDED_TO_DATABASE needs webhookEndpointId, connectedAccountId"
+      }
+    ],
+    "setup": [
+      "\"Notion - Page Added Trigger\": after import, register the notion webhook (`cdecli webhook endpoint create -c notion`, then `cdecli trigger instance upsert --slug NOTION_PAGE_ADDED_TO_DATABASE`) and set webhookEndpointId, connectedAccountId on the trigger node.",
+      "Setup value supabaseProjectRef: Supabase project ref (Settings > General) (for example abcdefghijklmnopqrst). Write it into the Workflow Configs initialContext before import.",
+      "Connect the notion connector (credential).",
+      "Connect the supabase connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [
+        {
+          "node": "Embeddings OpenAI",
+          "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+          "into": "Supabase Vector Store",
+          "as": "ai_embedding"
+        },
+        {
+          "node": "Create metadata and load content",
+          "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+          "into": "Supabase Vector Store",
+          "as": "ai_document"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Notion - Page Added Trigger",
+          "type": "n8n-nodes-base.notionTrigger",
+          "as": "NodeCdeWebhookTrigger"
+        }
+      ],
+      "hints": [
+        "\"Notion - Page Added Trigger\" is a provider webhook (notion/NOTION_PAGE_ADDED_TO_DATABASE). Create the endpoint and trigger instance, then paste the we_… id and connected account into this node before the first run: `cdecli webhook endpoint create -c notion --client-id <id>`, `cdecli webhook endpoint set-data <we_id> --signing-secret <secret>`, `cdecli trigger instance upsert --slug NOTION_PAGE_ADDED_TO_DATABASE --account <connectedAccountId>`.",
+        "\"Supabase Vector Store\" folded a document (documentDefaultDataLoader); retrieved text is expected on the upstream payload as context/documents.",
+        "\"Supabase Vector Store\": set the Supabase project ref on SUPABASE_INSERT_ROW. content, embedding, and metadata come from the upstream item.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect notion: `cdecli credential create -n \"notion\" -p notion --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect supabase: `cdecli credential create -n \"supabase\" -p supabase --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Store Notion's Pages as Vector Documents into Supabase\n\n**This workflow assumes you have a Supabase project with a table that has a vector column. If you don't have it, follow the instructions here:** [Supabase Vector Columns Guide](https://supabase.com/docs/guides/ai/vector-columns)\n\n## Workflow Description\n\nThis workflow automates the process of storing Notion pages as vector documents in a Supabase database with a vector column. The steps are as follows:\n\n1. **Notion Page Added Trigger**:\n - Monitors a specified Notion database for newly added pages. You can create a specific Notion database where you copy the pages you want to store in Supabase.\n - Node: `Page Added in Notion Database`\n\n2. **Retrieve Page Content**:\n - Fetches all block content from the newly added Notion page.\n - Node: `Get Blocks Content`\n\n3. **Filter Non-Text Content**:\n - Excludes blocks of type \"image\" and \"video\" to focus on textual content.\n - Node: `Filter - Exclude Media Content`\n\n4. **Summarize Content**:\n - Concatenates the Notion blocks content to create a single text for embedding.\n - Node: `Summarize - Concatenate Notion's blocks content`\n\n5. **Store in Supabase**:\n - Stores the processed documents and their embeddings into a Supabase table with a vector column.\n - Node: `Store Documents in Supabase`\n\n6. **Generate Embeddings**:\n - Utilizes OpenAI's API to generate embeddings for the textual content.\n - Node: `Generate Text Embeddings`\n\n\n7. **Create Metadata and Load Content**:\n - Loads the block content and creates associated metadata, such as page ID and block ID.\n - Node: `Load Block Content & Create Metadata`\n\n8. **Split Content into Chunks**:\n - Divides the text into smaller chunks for easier processing and embedding generation.\n - Node: `Token Splitter`"
+    ],
+    "nodes": {
+      "node_ace140e314": {
+        "n8n": "Notion - Page Added Trigger",
+        "n8nType": "n8n-nodes-base.notionTrigger"
+      },
+      "node_2bf925ab00": {
+        "n8n": "Notion - Retrieve Page Content",
+        "n8nType": "n8n-nodes-base.notion"
+      },
+      "node_3f033c7ccb": {
+        "n8n": "Filter Non-Text Content",
+        "n8nType": "n8n-nodes-base.filter"
+      },
+      "node_fc7c630021": {
+        "n8n": "Summarize - Concatenate Notion's blocks content",
+        "n8nType": "n8n-nodes-base.summarize"
+      },
+      "node_72f230d923": {
+        "n8n": "Supabase Vector Store",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreSupabase"
+      },
+      "node_9c4a55384b": {
+        "n8n": "Supabase Vector Store",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreSupabase"
+      },
+      "node_b69869cfd3": {
+        "n8n": "__end:Supabase Vector Store",
+        "n8nType": "synthetic"
+      },
+      "node_2d86fec6bf": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

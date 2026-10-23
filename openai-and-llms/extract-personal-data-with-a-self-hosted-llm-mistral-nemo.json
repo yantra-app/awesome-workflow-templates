@@ -1,0 +1,345 @@
+{
+  "name": "Extract personal data with a self-hosted LLM Mistral NeMo",
+  "workflowSlug": "extract-personal-data-with-a-self-hosted-llm-mistral-nemo",
+  "description": "Converted from the n8n template \"Extract personal data with a self-hosted LLM Mistral NeMo\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_52d9951e65",
+      "actorId": "actor_52d9951e65",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_7d23dcfb61",
+      "actorId": "actor_7d23dcfb61",
+      "type": "NodeLlmChain",
+      "label": "Basic LLM Chain",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Name of the user"
+            },
+            "surname": {
+              "type": "string",
+              "description": "Surname of the user"
+            },
+            "commtype": {
+              "type": "string",
+              "enum": [
+                "email",
+                "phone",
+                "other"
+              ],
+              "description": "Method of communication"
+            },
+            "contacts": {
+              "type": "string",
+              "description": "Contact details. ONLY IF PROVIDED"
+            },
+            "timestamp": {
+              "type": "string",
+              "description": "When the communication occurred Format: date-time.",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}[Tt]\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:[Zz]|[+-]\\d{2}:\\d{2})$"
+            },
+            "subject": {
+              "type": "string",
+              "description": "Brief description of the communication topic"
+            }
+          },
+          "required": [
+            "name",
+            "commtype"
+          ]
+        },
+        "prompt": "{{chatInput}}",
+        "system": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_f716fc7ccb",
+      "actorId": "actor_f716fc7ccb",
+      "type": "NodeTransform",
+      "label": "System: Basic LLM Chain",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// System: Basic LLM Chain.\nconst __promptValue = `Please analyse the incoming user request. Extract information according to the JSON schema. Today is: \"${$now.toISO()}\"`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_609d7663d6",
+      "actorId": "actor_609d7663d6",
+      "type": "NodeTransform",
+      "label": "Extract JSON Output",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields from JSON (n8n Set node, JSON mode): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const __raw = `${$json}\n`;\n  let __obj;\n  try { __obj = typeof __raw === 'string' ? JSON.parse(__raw) : __raw; } catch (e) { throw new Error('Set node JSON is not valid JSON: ' + e.message); }\n  return __obj;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_044a22ce87",
+      "actorId": "actor_044a22ce87",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_fb4a648af1",
+      "actorId": "actor_fb4a648af1",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "chatInput": "",
+          "sessionId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_039d1f3533",
+      "actorId": "actor_039d1f3533",
+      "type": "NodeChatModel",
+      "label": "Basic LLM Chain: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "ollama",
+        "model": "mistral-nemo:latest"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_f716fc7ccb",
+      "target": "node_7d23dcfb61",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_52d9951e65",
+      "target": "node_f716fc7ccb",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7d23dcfb61",
+      "target": "node_609d7663d6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7d23dcfb61",
+      "target": "node_609d7663d6",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_609d7663d6",
+      "target": "node_044a22ce87",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_039d1f3533",
+      "target": "node_7d23dcfb61",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "",
+    "connectors": [
+      "ollama"
+    ],
+    "nodeTypes": [
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 7,
+      "yantraSteps": 5,
+      "foldedHelpers": [
+        "Ollama Chat Model",
+        "Auto-fixing Output Parser"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/Extract personal data with self-hosted LLM Mistral NeMo.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Extract personal data with a self-hosted LLM Mistral NeMo"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "When chat message received",
+        "detail": "@n8n/n8n-nodes-langchain.chatTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"When chat message received\" (chatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Connect the ollama connector (credential).",
+      "Provide run inputs: chatInput, sessionId."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [
+        {
+          "node": "Ollama Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+          "into": "Basic LLM Chain",
+          "model": "mistral-nemo:latest"
+        },
+        {
+          "node": "Auto-fixing Output Parser",
+          "type": "@n8n/n8n-nodes-langchain.outputParserAutofixing",
+          "into": "Basic LLM Chain",
+          "as": "ai_outputParser"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When chat message received",
+          "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "\"Basic LLM Chain\": normalized the legacy output schema for LLMChain's strict parser (shorthand/examples become JSON Schema; email/date formats use syntax patterns). Review the schema before running."
+      ]
+    },
+    "notes": [
+      "## Update data source\nWhen you change the data source, remember to update the `Prompt Source (User Message)` setting in the **Basic LLM Chain node**.",
+      "## Configure local LLM\nOllama offers additional settings \nto optimize model performance\nor memory usage.",
+      "## Define JSON Schema",
+      "If the LLM response does not pass \nthe **Structured Output Parser** checks,\n**Auto-Fixer** will call the model again with a different \nprompt to correct the original response.",
+      "The same LLM connects to both **Basic LLM Chain** and to the **Auto-fixing Output Parser**.",
+      "When the LLM model responds, the output is checked in the **Structured Output Parser**"
+    ],
+    "nodes": {
+      "node_52d9951e65": {
+        "n8n": "When chat message received",
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
+      },
+      "node_7d23dcfb61": {
+        "n8n": "Basic LLM Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_f716fc7ccb": {
+        "n8n": "Basic LLM Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_609d7663d6": {
+        "n8n": "Extract JSON Output",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_044a22ce87": {
+        "n8n": "__end:Extract JSON Output",
+        "n8nType": "synthetic"
+      },
+      "node_fb4a648af1": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_039d1f3533": {
+        "n8n": "Basic LLM Chain",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

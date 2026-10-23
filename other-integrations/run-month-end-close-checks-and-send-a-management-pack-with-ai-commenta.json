@@ -1,0 +1,1151 @@
+{
+  "name": "Run month end close checks and send a management pack with AI commentary",
+  "workflowSlug": "run-month-end-close-checks-and-send-a-management-pack-with-ai-commenta",
+  "description": "Pulls this month's and last month's trial balance, runs seven close checks against a materiality figure, builds the P&L against last month, drafts the commentary with an AI step and distributes the management pack, or blocks the close and sends the failed checks instead.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_3fbd5765af",
+      "actorId": "actor_3fbd5765af",
+      "type": "NodeCron",
+      "label": "Schedule: 2nd working day 08:00",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 8 2 * *"
+      }
+    },
+    {
+      "nodeId": "node_415b313cde",
+      "actorId": "actor_415b313cde",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_8511c45478",
+      "actorId": "actor_8511c45478",
+      "type": "NodeTransform",
+      "label": "Config",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"base\"] = \"{{companyBaseUrl}}\";\n  out[\"period\"] = \"2026-08\";\n  out[\"finance_channel\"] = \"#finance-close\";\n  out[\"owner_email\"] = \"owner@example.com\";\n  out[\"materiality_aed\"] = \"5000\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_4d5f25f2f3",
+      "actorId": "actor_4d5f25f2f3",
+      "type": "NodeTransform",
+      "label": "Config (errors)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"base\"] = \"{{companyBaseUrl}}\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_b4b7c34cd7",
+      "actorId": "actor_b4b7c34cd7",
+      "type": "NodeHttpRequest",
+      "label": "Accounting: trial balance",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "{{steps.xf_8511c45478.result.base}}/accounting/trial_balance?period={{last.transformed.period}}"
+      }
+    },
+    {
+      "nodeId": "node_aeed97753f",
+      "actorId": "actor_aeed97753f",
+      "type": "NodeHttpRequest",
+      "label": "Accounting: prior period",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "{{steps.xf_8511c45478.result.base}}/accounting/prior_period"
+      }
+    },
+    {
+      "nodeId": "node_5467402614",
+      "actorId": "actor_5467402614",
+      "type": "NodeHttpRequest",
+      "label": "Accounting: close checks",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "{{steps.xf_8511c45478.result.base}}/accounting/close_checks?period={{last.transformed.period}}"
+      }
+    },
+    {
+      "nodeId": "node_89dbf1d438",
+      "actorId": "actor_89dbf1d438",
+      "type": "NodeHttpRequest",
+      "label": "Alert ops (Slack)",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_4d5f25f2f3.result.base}}/alerts",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_876aa1efc3",
+      "actorId": "actor_876aa1efc3",
+      "type": "NodeTransform",
+      "label": "Body: Alert ops (Slack)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Alert ops (Slack)\".\nconst __body = (JSON.stringify({ channel: \"#ops-alerts\", text: \"Close workflow failed: \" + ($json.execution?.error?.message || \"unknown\") }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_f8b95f5a45",
+      "actorId": "actor_f8b95f5a45",
+      "type": "NodeSync",
+      "label": "Merge sources",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_d3accd483c",
+      "actorId": "actor_d3accd483c",
+      "type": "NodeTransform",
+      "label": "Run close checks",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: run close now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"period\":\"2026-08\",\"finance_channel\":\"#finance-close\",\"owner_email\":\"owner@example.com\",\"materiality_aed\":\"5000\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Accounting: trial balance\": {{steps.http_b4b7c34cd7.result}}, \"Accounting: prior period\": {{steps.http_aeed97753f.result}}, \"Accounting: close checks\": {{steps.http_5467402614.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst items = __items.map((json) => ({ json }));\n// Ported from n8n Code node \"Run close checks\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  \n  // Everything a close reviewer would tick off by hand, decided by rule. Materiality from Config.\n  const cfg = $('Config').first().json;\n  const mat = Number(cfg.materiality_aed);\n  const tb = $('Accounting: trial balance').first().json.rows;\n  const prior = $('Accounting: prior period').first().json.rows;\n  const chk = $('Accounting: close checks').first().json;\n  const num = v => Number(String(v || '0').replace(/,/g, ''));\n  const checks = [];\n  const dr = tb.reduce((s, r) => s + num(r.debit), 0), cr = tb.reduce((s, r) => s + num(r.credit), 0);\n  checks.push({ check: 'Trial balance balances', result: Math.abs(dr - cr) < 1 ? 'PASS' : 'FAIL', detail: `Dr ${dr.toFixed(0)} / Cr ${cr.toFixed(0)}` });\n  const bu = chk.bank_unreconciled || [];\n  const oldBank = bu.filter(x => num(x.days_open) > 5);\n  checks.push({ check: 'Bank reconciled', result: oldBank.length ? 'FAIL' : bu.length ? 'WARN' : 'PASS', detail: `${bu.length} open items, ${oldBank.length} older than 5 days` });\n  const up = chk.unposted_invoices || [];\n  const upTotal = up.reduce((s, x) => s + num(x.amount), 0);\n  checks.push({ check: 'Supplier invoices posted', result: upTotal > mat ? 'FAIL' : up.length ? 'WARN' : 'PASS', detail: `${up.length} unposted, AED ${upTotal.toFixed(0)}` });\n  checks.push({ check: 'Suspense cleared', result: num(chk.suspense_balance) === 0 ? 'PASS' : num(chk.suspense_balance) > mat ? 'FAIL' : 'WARN', detail: `AED ${num(chk.suspense_balance).toFixed(0)} in suspense` });\n  const vat = chk.vat_control || {};\n  checks.push({ check: 'VAT control agrees to return', result: vat.return_filed ? 'PASS' : 'WARN', detail: `Output ${num(vat.output_vat).toFixed(0)}, input ${num(vat.input_vat).toFixed(0)}, net ${(num(vat.output_vat) - num(vat.input_vat)).toFixed(0)}; return ${vat.return_filed ? 'filed' : 'not yet filed'}` });\n  checks.push({ check: 'Fixed asset register agrees to GL', result: num(chk.fixed_asset_register_total) === num(chk.gl_fixed_assets) ? 'PASS' : 'FAIL', detail: `Register ${num(chk.fixed_asset_register_total).toFixed(0)} vs GL ${num(chk.gl_fixed_assets).toFixed(0)}` });\n  const ar90 = chk.aged_receivables_over_90 || [];\n  const ar90Total = ar90.reduce((s, x) => s + num(x.amount), 0);\n  checks.push({ check: 'Receivables over 90 days reviewed', result: ar90Total > mat ? 'WARN' : 'PASS', detail: `${ar90.length} invoices, AED ${ar90Total.toFixed(0)} over 90 days` });\n  // P&L lines, this month vs prior, from the two trial balances (credits negative)\n  const bal = rows => { const m = {}; for (const r of rows) { const k = r.account.slice(0, 1); const v = num(r.debit) - num(r.credit); m[r.name] = (m[r.name] || 0) + v; } return m; };\n  const cur = bal(tb), prv = bal(prior);\n  const plNames = tb.filter(r => /^[4-8]/.test(r.account)).map(r => r.name).filter((v, i, a) => a.indexOf(v) === i);\n  const pl = plNames.map(n => { const c = -(cur[n] || 0), p = -(prv[n] || 0); const isRev = /revenue/i.test(n); const cc = isRev ? c : -c, pp = isRev ? p : -p; return { line: n, current: Math.round(cc), prior: Math.round(pp), change: Math.round(cc - pp), change_pct: pp ? Math.round(1000 * (cc - pp) / Math.abs(pp)) / 10 : null }; });\n  const revenue = pl.find(x => /revenue/i.test(x.line)) || { current: 0, prior: 0 };\n  const costs = pl.filter(x => !/revenue/i.test(x.line)).reduce((s, x) => s + x.current, 0);\n  const costsPrior = pl.filter(x => !/revenue/i.test(x.line)).reduce((s, x) => s + x.prior, 0);\n  const fails = checks.filter(c => c.result === 'FAIL').length, warns = checks.filter(c => c.result === 'WARN').length;\n  return [{ json: { period: cfg.period, checks, pl, fails, warns, revenue: revenue.current, revenue_prior: revenue.prior, costs, costs_prior: costsPrior,\n    profit: revenue.current - costs, profit_prior: revenue.prior - costsPrior, status: fails ? 'BLOCKED' : warns ? 'READY WITH NOTES' : 'READY' } }];\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_c9e4a77017",
+      "actorId": "actor_c9e4a77017",
+      "type": "NodeHttpRequest",
+      "label": "AI: draft commentary",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_8511c45478.result.base}}/llm/complete",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_99dead24b6",
+      "actorId": "actor_99dead24b6",
+      "type": "NodeTransform",
+      "label": "Body: AI: draft commentary",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"AI: draft commentary\".\nconst __body = (JSON.stringify({ task: \"close_commentary\", input: { period: $json.period, revenue: $json.revenue, revenue_prior: $json.revenue_prior, costs: $json.costs, costs_prior: $json.costs_prior, profit: $json.profit, profit_prior: $json.profit_prior, pl: $json.pl, checks: $json.checks } }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_ed689ca689",
+      "actorId": "actor_ed689ca689",
+      "type": "NodeTransform",
+      "label": "Assemble pack",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: run close now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"period\":\"2026-08\",\"finance_channel\":\"#finance-close\",\"owner_email\":\"owner@example.com\",\"materiality_aed\":\"5000\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Accounting: trial balance\": {{steps.http_b4b7c34cd7.result}}, \"Accounting: prior period\": {{steps.http_aeed97753f.result}}, \"Accounting: close checks\": {{steps.http_5467402614.result}}, \"Run close checks\": {{steps.xf_d3accd483c.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Assemble pack\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  \n  const r = $('Run close checks').first().json;\n  const ai = $json.output || {};\n  const lines = Array.isArray(ai.commentary) ? ai.commentary : (typeof ai === 'string' ? ai.split('\\n') : [\n    `Revenue AED ${r.revenue.toLocaleString()} against AED ${r.revenue_prior.toLocaleString()} last month.`,\n    `Operating costs AED ${r.costs.toLocaleString()} (prior AED ${r.costs_prior.toLocaleString()}).`,\n    `Profit AED ${r.profit.toLocaleString()} (prior AED ${r.profit_prior.toLocaleString()}).`]);\n  const biggest = [...r.pl].filter(x => x.change_pct !== null).sort((a, b) => Math.abs(b.change) - Math.abs(a.change)).slice(0, 3)\n    .map(x => `${x.line}: ${x.change >= 0 ? 'up' : 'down'} AED ${Math.abs(x.change).toLocaleString()} (${x.change_pct}%) on last month`);\n  return [{ json: { period: r.period, status: r.status, fails: r.fails, warns: r.warns, checks: r.checks, pl: r.pl,\n    commentary: [...lines, 'Largest movements:', ...biggest, 'Every figure above is traceable to the trial balance export attached to this run.'] } }];\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_e247c11cff",
+      "actorId": "actor_e247c11cff",
+      "type": "NodeHttpRequest",
+      "label": "Render management pack (xlsx)",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_8511c45478.result.base}}/reports/pack",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_b61e12bf43",
+      "actorId": "actor_b61e12bf43",
+      "type": "NodeTransform",
+      "label": "Body: Render management pack (xlsx)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Render management pack (xlsx)\".\nconst __body = (JSON.stringify($json));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_7dddaf3bce",
+      "actorId": "actor_7dddaf3bce",
+      "type": "NodeTransform",
+      "label": "Any check failed?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: run close now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"period\":\"2026-08\",\"finance_channel\":\"#finance-close\",\"owner_email\":\"owner@example.com\",\"materiality_aed\":\"5000\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Accounting: trial balance\": {{steps.http_b4b7c34cd7.result}}, \"Accounting: prior period\": {{steps.http_aeed97753f.result}}, \"Accounting: close checks\": {{steps.http_5467402614.result}}, \"Run close checks\": {{steps.xf_d3accd483c.result}}, \"Assemble pack\": {{steps.xf_ed689ca689.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((Number(($('Assemble pack').first().json.fails)) > Number(0)));"
+      }
+    },
+    {
+      "nodeId": "node_72ba1ab75e",
+      "actorId": "actor_72ba1ab75e",
+      "type": "NodeBranch",
+      "label": "Any check failed?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_08dab0ab71",
+      "actorId": "actor_08dab0ab71",
+      "type": "NodeHttpRequest",
+      "label": "Slack: close blocked, owners tagged",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_8511c45478.result.base}}/alerts",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_36591dcd47",
+      "actorId": "actor_36591dcd47",
+      "type": "NodeTransform",
+      "label": "Body: Slack: close blocked, owners tagged",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: run close now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"period\":\"2026-08\",\"finance_channel\":\"#finance-close\",\"owner_email\":\"owner@example.com\",\"materiality_aed\":\"5000\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Accounting: trial balance\": {{steps.http_b4b7c34cd7.result}}, \"Accounting: prior period\": {{steps.http_aeed97753f.result}}, \"Accounting: close checks\": {{steps.http_5467402614.result}}, \"Run close checks\": {{steps.xf_d3accd483c.result}}, \"Assemble pack\": {{steps.xf_ed689ca689.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Slack: close blocked, owners tagged\".\nconst __body = (JSON.stringify({ channel: $(\"Config\").first().json.finance_channel, text: \"Close \" + $(\"Assemble pack\").first().json.period + \" BLOCKED: \" + $(\"Assemble pack\").first().json.checks.filter(c => c.result === \"FAIL\").map(c => c.check + \" (\" + c.detail + \")\").join(\"; \") + \". Draft pack: \" + $json.url }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_dce300de28",
+      "actorId": "actor_dce300de28",
+      "type": "NodeHttpRequest",
+      "label": "Slack: pack ready",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5020,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_8511c45478.result.base}}/alerts",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_f5fb712a71",
+      "actorId": "actor_f5fb712a71",
+      "type": "NodeTransform",
+      "label": "Body: Slack: pack ready",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: run close now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"period\":\"2026-08\",\"finance_channel\":\"#finance-close\",\"owner_email\":\"owner@example.com\",\"materiality_aed\":\"5000\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Accounting: trial balance\": {{steps.http_b4b7c34cd7.result}}, \"Accounting: prior period\": {{steps.http_aeed97753f.result}}, \"Accounting: close checks\": {{steps.http_5467402614.result}}, \"Run close checks\": {{steps.xf_d3accd483c.result}}, \"Assemble pack\": {{steps.xf_ed689ca689.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Slack: pack ready\".\nconst __body = (JSON.stringify({ channel: $(\"Config\").first().json.finance_channel, text: \"Close \" + $(\"Assemble pack\").first().json.period + \" \" + $(\"Assemble pack\").first().json.status + \". Pack: \" + $json.url + \". Notes: \" + $(\"Assemble pack\").first().json.checks.filter(c => c.result === \"WARN\").map(c => c.check).join(\", \") }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_dfd1218fc1",
+      "actorId": "actor_dfd1218fc1",
+      "type": "NodeHttpRequest",
+      "label": "Email pack to owner",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_8511c45478.result.base}}/messages/send",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_a83d860495",
+      "actorId": "actor_a83d860495",
+      "type": "NodeTransform",
+      "label": "Body: Email pack to owner",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: run close now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"period\":\"2026-08\",\"finance_channel\":\"#finance-close\",\"owner_email\":\"owner@example.com\",\"materiality_aed\":\"5000\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Accounting: trial balance\": {{steps.http_b4b7c34cd7.result}}, \"Accounting: prior period\": {{steps.http_aeed97753f.result}}, \"Accounting: close checks\": {{steps.http_5467402614.result}}, \"Run close checks\": {{steps.xf_d3accd483c.result}}, \"Assemble pack\": {{steps.xf_ed689ca689.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Email pack to owner\".\nconst __body = (JSON.stringify({ channel: \"email\", to: $(\"Config\").first().json.owner_email, body: \"Management pack \" + $(\"Assemble pack\").first().json.period + \" attached. \" + $(\"Assemble pack\").first().json.commentary.join(\" \"), attachment: $(\"Render management pack (xlsx)\").first().json.url }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_4d6452bed4",
+      "actorId": "actor_4d6452bed4",
+      "type": "NodeTransform",
+      "label": "Run summary",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: run close now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"period\":\"2026-08\",\"finance_channel\":\"#finance-close\",\"owner_email\":\"owner@example.com\",\"materiality_aed\":\"5000\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Accounting: trial balance\": {{steps.http_b4b7c34cd7.result}}, \"Accounting: prior period\": {{steps.http_aeed97753f.result}}, \"Accounting: close checks\": {{steps.http_5467402614.result}}, \"Run close checks\": {{steps.xf_d3accd483c.result}}, \"Assemble pack\": {{steps.xf_ed689ca689.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Run summary\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  \n  const a = $('Assemble pack').first().json; const pack = $('Render management pack (xlsx)').first().json;\n  return [{ json: { period: a.period, status: a.status, checks: a.checks.map(c => c.check + ': ' + c.result), pack_url: pack.url, pack_sheets: pack.sheets } }];\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_3fbc2f6752",
+      "actorId": "actor_3fbc2f6752",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_bcaf519e43",
+      "actorId": "actor_bcaf519e43",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_10b6668eb1",
+      "actorId": "actor_10b6668eb1",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 1140
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {},
+          "event": {},
+          "companyBaseUrl": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_876aa1efc3",
+      "target": "node_89dbf1d438",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_876aa1efc3",
+      "target": "node_89dbf1d438",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_99dead24b6",
+      "target": "node_c9e4a77017",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_99dead24b6",
+      "target": "node_c9e4a77017",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_b61e12bf43",
+      "target": "node_e247c11cff",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_b61e12bf43",
+      "target": "node_e247c11cff",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_7dddaf3bce",
+      "target": "node_72ba1ab75e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_7dddaf3bce",
+      "target": "node_72ba1ab75e",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_36591dcd47",
+      "target": "node_08dab0ab71",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_36591dcd47",
+      "target": "node_08dab0ab71",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_f5fb712a71",
+      "target": "node_dce300de28",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_f5fb712a71",
+      "target": "node_dce300de28",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_a83d860495",
+      "target": "node_dfd1218fc1",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_a83d860495",
+      "target": "node_dfd1218fc1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_3fbd5765af",
+      "target": "node_8511c45478",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3fbd5765af",
+      "target": "node_8511c45478",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_415b313cde",
+      "target": "node_8511c45478",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8511c45478",
+      "target": "node_b4b7c34cd7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_8511c45478",
+      "target": "node_aeed97753f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_8511c45478",
+      "target": "node_5467402614",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_b4b7c34cd7",
+      "target": "node_f8b95f5a45",
+      "sourceOutput": "body",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_aeed97753f",
+      "target": "node_f8b95f5a45",
+      "sourceOutput": "body",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_5467402614",
+      "target": "node_f8b95f5a45",
+      "sourceOutput": "body",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_f8b95f5a45",
+      "target": "node_d3accd483c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f8b95f5a45",
+      "target": "node_d3accd483c",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d3accd483c",
+      "target": "node_99dead24b6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d3accd483c",
+      "target": "node_99dead24b6",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c9e4a77017",
+      "target": "node_ed689ca689",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c9e4a77017",
+      "target": "node_ed689ca689",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ed689ca689",
+      "target": "node_b61e12bf43",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ed689ca689",
+      "target": "node_b61e12bf43",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e247c11cff",
+      "target": "node_7dddaf3bce",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e247c11cff",
+      "target": "node_7dddaf3bce",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_72ba1ab75e",
+      "target": "node_36591dcd47",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e247c11cff",
+      "target": "node_36591dcd47",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_72ba1ab75e",
+      "target": "node_f5fb712a71",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e247c11cff",
+      "target": "node_f5fb712a71",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_08dab0ab71",
+      "target": "node_4d6452bed4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_08dab0ab71",
+      "target": "node_4d6452bed4",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dce300de28",
+      "target": "node_a83d860495",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dce300de28",
+      "target": "node_a83d860495",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dfd1218fc1",
+      "target": "node_4d6452bed4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dfd1218fc1",
+      "target": "node_4d6452bed4",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4d6452bed4",
+      "target": "node_3fbc2f6752",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_415b313cde",
+      "target": "node_4d5f25f2f3",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4d5f25f2f3",
+      "target": "node_876aa1efc3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4d5f25f2f3",
+      "target": "node_876aa1efc3",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_89dbf1d438",
+      "target": "node_bcaf519e43",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "other-integrations",
+    "categoryLabel": "Other Integrations and Use Cases",
+    "department": "Finance/AI",
+    "connectors": [],
+    "setupVars": [
+      {
+        "key": "companyBaseUrl",
+        "label": "Company Base Url",
+        "type": "url",
+        "example": "https://api.your-company.com",
+        "usedBy": [
+          "Any check failed?",
+          "Assemble pack",
+          "Config",
+          "Config (errors)",
+          "Email pack to owner",
+          "Run close checks",
+          "Run summary",
+          "Slack: close blocked, owners tagged",
+          "Slack: pack ready"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate run-month-end-close-checks-and-send-a-management-pack-with-ai-commenta",
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCron",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 20,
+      "yantraSteps": 25,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Other_Integrations_and_Use_Cases/Run month end close checks and send a management pack with AI commentary.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Run month end close checks and send a management pack with AI commentary"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Error trigger",
+        "detail": "n8n-nodes-base.errorTrigger became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Webhook: run close now",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Error trigger\" (errorTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Webhook: run close now\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value companyBaseUrl: Company Base Url (for example https://api.your-company.com). Write it into the Workflow Configs initialContext before import.",
+      "After import, start the schedule: cdecli cron activate run-month-end-close-checks-and-send-a-management-pack-with-ai-commenta.",
+      "Provide run inputs: body, query, headers, event."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Schedule: 2nd working day 08:00",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        },
+        {
+          "node": "Webhook: run close now",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Error trigger",
+          "type": "n8n-nodes-base.errorTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /close-run). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "The original started from errorTrigger; Yantra has no webhook slug for it, so run on demand, on a schedule (add a NodeCron), or via the workflow API with the event under the run input `event`.",
+        "\"Merge sources\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was append).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "## Run month end close checks and send a management pack with AI commentary\n\n**Who it is for.** Finance teams closing the month by hand from a trial balance and a checklist.\n\n**What it does**\n- Runs on the second working day or on demand. Pulls this month's and last month's trial balance and the close data.\n- Seven checks against a materiality figure: trial balance balances, bank reconciled, invoices posted, suspense cleared, VAT control agrees, fixed asset register agrees, receivables over 90 days reviewed.\n- Builds the P&L against last month with the change on every line; an AI step drafts the commentary from the figures and the check results.\n- Renders the management pack and distributes it, or BLOCKS the close and sends the failed checks instead.\n\n**Setup**\n1. Set base, period and materiality in Config, or replace the HTTP Request nodes with your accounting system (Zoho Books, QuickBooks Online, Xero) nodes.\n2. Set the AI credential on the commentary step. Point distribution at your email or Slack node.\n3. Activate; the schedule runs on the second working day.\n\nAll external systems are reached through HTTP Request nodes against `base` in the Config node, so the whole flow imports and runs against any REST backend; swap any of them for the native n8n node of your system. Built and tested on sample data by Finamatik: https://finamatik.com/work/month-end-close-pack\n\n**Requirements.** n8n 1.100 or later; for the AI steps, a model endpoint at `base`/llm/complete or the OpenAI or Anthropic node in its place; your own systems reachable over HTTPS.\n\n**How to customise.** Every rule lives in one Code or Config node and is named for what it decides; change the thresholds there, not in the branches.",
+      "## Setup in three steps\n\n1. Open **Config** and set `base` and the ledger, AR and AP endpoints, or swap the HTTP Request nodes for your accounting system's nodes.\n2. Point the commentary step at your model endpoint (`base`/llm/complete) or swap it for the OpenAI or Anthropic node.\n3. Set the schedule to your close day and activate.\n\nRun it once on last month's data and compare the pack with the one you produced by hand."
+    ],
+    "nodes": {
+      "node_3fbd5765af": {
+        "n8n": "Schedule: 2nd working day 08:00",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_415b313cde": {
+        "n8n": "Webhook: run close now",
+        "n8nType": "n8n-nodes-base.webhook",
+        "also": [
+          "Error trigger"
+        ]
+      },
+      "node_8511c45478": {
+        "n8n": "Config",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_4d5f25f2f3": {
+        "n8n": "Config (errors)",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_b4b7c34cd7": {
+        "n8n": "Accounting: trial balance",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_aeed97753f": {
+        "n8n": "Accounting: prior period",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_5467402614": {
+        "n8n": "Accounting: close checks",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_89dbf1d438": {
+        "n8n": "Alert ops (Slack)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_876aa1efc3": {
+        "n8n": "Alert ops (Slack)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_f8b95f5a45": {
+        "n8n": "Merge sources",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_d3accd483c": {
+        "n8n": "Run close checks",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_c9e4a77017": {
+        "n8n": "AI: draft commentary",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_99dead24b6": {
+        "n8n": "AI: draft commentary",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_ed689ca689": {
+        "n8n": "Assemble pack",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_e247c11cff": {
+        "n8n": "Render management pack (xlsx)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_b61e12bf43": {
+        "n8n": "Render management pack (xlsx)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_7dddaf3bce": {
+        "n8n": "Any check failed?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_72ba1ab75e": {
+        "n8n": "Any check failed?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_08dab0ab71": {
+        "n8n": "Slack: close blocked, owners tagged",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_36591dcd47": {
+        "n8n": "Slack: close blocked, owners tagged",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_dce300de28": {
+        "n8n": "Slack: pack ready",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_f5fb712a71": {
+        "n8n": "Slack: pack ready",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_dfd1218fc1": {
+        "n8n": "Email pack to owner",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_a83d860495": {
+        "n8n": "Email pack to owner",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_4d6452bed4": {
+        "n8n": "Run summary",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_3fbc2f6752": {
+        "n8n": "Respond 200 (close run)",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_bcaf519e43": {
+        "n8n": "__end:Alert ops (Slack)",
+        "n8nType": "synthetic"
+      },
+      "node_10b6668eb1": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

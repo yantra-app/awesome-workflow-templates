@@ -1,0 +1,376 @@
+{
+  "name": "Watch competitor hiring across four ATS job boards",
+  "workflowSlug": "watch-competitor-hiring-across-four-ats-job-boards",
+  "description": "Reads the Greenhouse, Lever, Ashby and SmartRecruiters boards of the companies you list every morning and reports only the adverts that are new since the previous run. Uses the verified Apify node, so it works on n8n Cloud.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_c110fc1413",
+      "actorId": "actor_c110fc1413",
+      "type": "NodeCron",
+      "label": "Every morning at eight",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 8 * * *"
+      }
+    },
+    {
+      "nodeId": "node_44502fa602",
+      "actorId": "actor_44502fa602",
+      "type": "NodeTransform",
+      "label": "Companies to watch",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"companies\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(([\"https://boards.greenhouse.io/stripe\", \"lever:leverdemo\", \"ramp\"]\n));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_e9a288d998",
+      "actorId": "actor_e9a288d998",
+      "type": "NodeTransform",
+      "label": "Params: Read every board",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for apify/APIFY_RUN_ACTOR_SYNC_GET_DATASET_ITEMS (n8n node \"Read every board\").\nreturn {\n  \"actorId\": \"gubidonius~company-jobs-scraper\",\n  \"body\": (JSON.stringify({ companies: $json.companies, includeDescription: false, onlyRemote: false, maxJobsPerCompany: 1000 })),\n};"
+      }
+    },
+    {
+      "nodeId": "node_74e71e9f9f",
+      "actorId": "actor_74e71e9f9f",
+      "type": "NodeCdeConnector",
+      "label": "apify/APIFY_RUN_ACTOR_SYNC_GET_DATASET_ITEMS",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "apify",
+        "connectorLabel": "Apify",
+        "action": "APIFY_RUN_ACTOR_SYNC_GET_DATASET_ITEMS"
+      }
+    },
+    {
+      "nodeId": "node_1d294574b9",
+      "actorId": "actor_1d294574b9",
+      "type": "NodeTransform",
+      "label": "Only the ones I have not seen",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst __seen = new Set();\nreturn __items.filter((i) => { const k = JSON.stringify(i); if (__seen.has(k)) return false; __seen.add(k); return true; });"
+      }
+    },
+    {
+      "nodeId": "node_ecf15a2cea",
+      "actorId": "actor_ecf15a2cea",
+      "type": "NodeTransform",
+      "label": "Keep what is worth reading",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"company\"] = ($json.company || $json.companySlug);\n  out[\"title\"] = ($json.title);\n  out[\"location\"] = ($json.location);\n  out[\"department\"] = ($json.department);\n  out[\"remote\"] = ((v) => v === true || v === 'true')(($json.isRemote));\n  out[\"postedAt\"] = ($json.postedAt);\n  out[\"applyUrl\"] = ($json.applyUrl);\n  out[\"board\"] = ($json.platform);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_6fb6185784",
+      "actorId": "actor_6fb6185784",
+      "type": "NodeCdeConnector",
+      "label": "slack/SLACK_CHAT_POST_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "slack",
+        "connectorLabel": "Slack",
+        "action": "SLACK_CHAT_POST_MESSAGE",
+        "params": {
+          "channel": "hiring-watch",
+          "text": "{{last.transformed.company}} is hiring: {{last.transformed.title}} ({{last.transformed.location}}) {{last.transformed.applyUrl}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_82852c3ffb",
+      "actorId": "actor_82852c3ffb",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_9afac6247e",
+      "actorId": "actor_9afac6247e",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": ""
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_e9a288d998",
+      "target": "node_74e71e9f9f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_e9a288d998",
+      "target": "node_74e71e9f9f",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_c110fc1413",
+      "target": "node_44502fa602",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c110fc1413",
+      "target": "node_44502fa602",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_44502fa602",
+      "target": "node_e9a288d998",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_44502fa602",
+      "target": "node_e9a288d998",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_74e71e9f9f",
+      "target": "node_1d294574b9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_74e71e9f9f",
+      "target": "node_1d294574b9",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1d294574b9",
+      "target": "node_ecf15a2cea",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1d294574b9",
+      "target": "node_ecf15a2cea",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ecf15a2cea",
+      "target": "node_6fb6185784",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_6fb6185784",
+      "target": "node_82852c3ffb",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "other-integrations",
+    "categoryLabel": "Other Integrations and Use Cases",
+    "department": "Sales/HR",
+    "connectors": [
+      "apify",
+      "slack"
+    ],
+    "activation": "cdecli cron activate watch-competitor-hiring-across-four-ats-job-boards",
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeCron",
+      "NodeEnd",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 6,
+      "yantraSteps": 7,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Other_Integrations_and_Use_Cases/Watch competitor hiring across four ATS job boards.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Watch competitor hiring across four ATS job boards"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Connect the apify connector (credential).",
+      "Connect the slack connector (credential).",
+      "After import, start the schedule: cdecli cron activate watch-competitor-hiring-across-four-ats-job-boards."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Every morning at eight",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect apify: `cdecli credential create -n \"apify\" -p apify --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect slack: `cdecli credential create -n \"slack\" -p slack --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## What this does\n\nEvery morning it reads the career boards of the companies you list and tells you only the\nadverts that are new since yesterday. Nothing else is repeated, so the message is short\nenough to actually read.\n\nGreenhouse, Lever, Ashby and SmartRecruiters are covered. Give a board URL, a\n\"platform:slug\" like lever:leverdemo, or just the company slug and all four are tried.\n\nNew job adverts are the earliest public sign of what a company is building, which team is\ngrowing, and which office is being staffed. Sales teams watch them for a reason to call.\n\n## Setup\n\n1. Install the Apify node. It is verified by n8n, so it works on Cloud and on self-hosted.\n2. Add your Apify API key in the node credentials. A free Apify account is enough to start.\n3. Put your companies in the \"Companies to watch\" node.\n4. Point the Slack node at a channel, or delete it and connect whatever you use instead.\n\nThe Actor is gubidonius/company-jobs-scraper. These are the boards' own public JSON\nendpoints, so there is no login and no proxy to configure."
+    ],
+    "nodes": {
+      "node_c110fc1413": {
+        "n8n": "Every morning at eight",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_44502fa602": {
+        "n8n": "Companies to watch",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_e9a288d998": {
+        "n8n": "Read every board",
+        "n8nType": "@apify/n8n-nodes-apify.apify"
+      },
+      "node_74e71e9f9f": {
+        "n8n": "Read every board",
+        "n8nType": "@apify/n8n-nodes-apify.apify"
+      },
+      "node_1d294574b9": {
+        "n8n": "Only the ones I have not seen",
+        "n8nType": "n8n-nodes-base.removeDuplicates"
+      },
+      "node_ecf15a2cea": {
+        "n8n": "Keep what is worth reading",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_6fb6185784": {
+        "n8n": "Tell the channel",
+        "n8nType": "n8n-nodes-base.slack"
+      },
+      "node_82852c3ffb": {
+        "n8n": "__end:Tell the channel",
+        "n8nType": "synthetic"
+      },
+      "node_9afac6247e": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

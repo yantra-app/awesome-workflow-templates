@@ -1,0 +1,831 @@
+{
+  "name": "Compose reply draft in Gmail with OpenAI Assistant",
+  "workflowSlug": "compose-reply-draft-in-gmail-with-openai-assistant",
+  "description": "Generates draft replies in Gmail using OpenAI. Triggers on new emails, extracts content, and creates a suggested reply draft to streamline responses.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_974de1440f",
+      "actorId": "actor_974de1440f",
+      "type": "NodeCron",
+      "label": "Schedule trigger (1 min)",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "*/1 * * * *"
+      }
+    },
+    {
+      "nodeId": "node_58c4092fcf",
+      "actorId": "actor_58c4092fcf",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_LIST_THREADS",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_LIST_THREADS",
+        "params": {}
+      }
+    },
+    {
+      "nodeId": "node_768043f946",
+      "actorId": "actor_768043f946",
+      "type": "NodeTransform",
+      "label": "Items: Loop over threads",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_f705e57810",
+      "actorId": "actor_f705e57810",
+      "type": "NodeLoop",
+      "label": "Loop over threads",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_6fb180dd54",
+      "actorId": "actor_6fb180dd54",
+      "type": "NodeTransform",
+      "label": "Item: Loop over threads",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_65f5b2cf05",
+      "actorId": "actor_65f5b2cf05",
+      "type": "NodeTransform",
+      "label": "Results: Loop over threads",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_2198d04703",
+      "actorId": "actor_2198d04703",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_FETCH_MESSAGE_BY_MESSAGE_ID",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_FETCH_MESSAGE_BY_MESSAGE_ID",
+        "params": {
+          "message_id": "{{last.transformed.id}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_fb5419c4af",
+      "actorId": "actor_fb5419c4af",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_FETCH_MESSAGE_BY_THREAD_ID",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_FETCH_MESSAGE_BY_THREAD_ID",
+        "params": {
+          "thread_id": "{{last.transformed.id}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_33bdab8506",
+      "actorId": "actor_33bdab8506",
+      "type": "NodeCdecliAgent",
+      "label": "Ask OpenAI Assistant",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "sessionId": "",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_137fd1f206",
+      "actorId": "actor_137fd1f206",
+      "type": "NodeTransform",
+      "label": "Prompt: Ask OpenAI Assistant",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Ask OpenAI Assistant.\nconst __promptValue = ($json.text);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_f82ee381ca",
+      "actorId": "actor_f82ee381ca",
+      "type": "NodeTransform",
+      "label": "Return last message in thread",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nreturn __items.slice(-1);"
+      }
+    },
+    {
+      "nodeId": "node_79c651b617",
+      "actorId": "actor_79c651b617",
+      "type": "NodeTransform",
+      "label": "Map fields for further processing",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Get threads with specific labels\": {{steps.GOOGLESUPER_LIST_THREADS.result}}, \"Get single message content\": {{steps.GOOGLESUPER_FETCH_MESSAGE_BY_MESSAGE_ID.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"response\"] = ($json);\n  out[\"threadId\"] = ($('Get single message content').item.json[\"threadId\"]);\n  out[\"to\"] = ($('Get single message content').item.json[\"from\"][\"text\"]);\n  out[\"subject\"] = ($('Get single message content').item.json[\"subject\"]);\n  out[\"messageId\"] = ($('Get threads with specific labels').item.json[\"id\"]);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_1b710a8887",
+      "actorId": "actor_1b710a8887",
+      "type": "NodeTransform",
+      "label": "Convert response to HTML",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst __md = String(($json.response) ?? '');\nconst __html = __md.replace(/^### (.*)$/gm, '<h3>$1</h3>').replace(/^## (.*)$/gm, '<h2>$1</h2>').replace(/^# (.*)$/gm, '<h1>$1</h1>').replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>').replace(/\\*(.+?)\\*/g, '<em>$1</em>').replace(/\\[(.+?)\\]\\((.+?)\\)/g, '<a href=\"$2\">$1</a>').replace(/\\n{2,}/g, '</p><p>');\nreturn { ...$json, \"response\": '<p>' + __html + '</p>' };"
+      }
+    },
+    {
+      "nodeId": "node_97379e40e7",
+      "actorId": "actor_97379e40e7",
+      "type": "NodeTransform",
+      "label": "Build email raw",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"raw\"] = `To: ${$json.to}\nSubject: ${$json.subject}\nContent-Type: text/html; charset=\"utf-8\"\n\n${$json.response}`;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_88ab5ac22b",
+      "actorId": "actor_88ab5ac22b",
+      "type": "NodeTransform",
+      "label": "Convert raw to base64",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\nconst Buffer = { from: (v, enc) => { const bytes = enc === 'base64' ? Uint8Array.from(atob(String(v)), (c) => c.charCodeAt(0)) : new TextEncoder().encode(String(v)); return { toString: (e) => (e === 'base64' ? btoa(String.fromCharCode(...bytes)) : new TextDecoder().decode(bytes)), length: bytes.length, bytes }; } };\n// Ported from n8n Code node \"Convert raw to base64\" (run once for each item).\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __results = __items.map((__item) => {\n  const $json = __item;\n  const item = { json: __item };\n  const $input = { item: { json: __item }, first: () => ({ json: __item }), all: () => [{ json: __item }] };\n  return (() => {\n  const encoded = Buffer.from($json.raw).toString('base64');\n  \n  return { encoded };\n  })();\n});\nreturn __single(__results.map(__unwrap));"
+      }
+    },
+    {
+      "nodeId": "node_c91ba4210c",
+      "actorId": "actor_c91ba4210c",
+      "type": "NodeHttpRequest",
+      "label": "Add email draft to thread",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/gmail/v1/users/me/drafts",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{googleOauthToken}}"
+        },
+        "body": "{\"message\":{\"raw\":\"{{last.transformed.encoded}}\", \"threadId\": \"{{steps.xf_79c651b617.result.threadId}}\"}}"
+      }
+    },
+    {
+      "nodeId": "node_38dab19560",
+      "actorId": "actor_38dab19560",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_MODIFY_THREAD_LABELS",
+      "color": "#6366F1",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_MODIFY_THREAD_LABELS",
+        "params": {
+          "thread_id": "{{steps.xf_79c651b617.result.threadId}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_44462ba641",
+      "actorId": "actor_44462ba641",
+      "type": "NodeTransform",
+      "label": "Return: Return last message in thread",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_292c46ae71",
+      "actorId": "actor_292c46ae71",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_19c09ab049",
+      "actorId": "actor_19c09ab049",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "googleOauthToken": {
+            "$workflowSecret": "GOOGLE_OAUTH_TOKEN"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_768043f946",
+      "target": "node_f705e57810",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_768043f946",
+      "target": "node_f705e57810",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_f705e57810",
+      "target": "node_6fb180dd54",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f705e57810",
+      "target": "node_6fb180dd54",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f705e57810",
+      "target": "node_65f5b2cf05",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f705e57810",
+      "target": "node_65f5b2cf05",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_137fd1f206",
+      "target": "node_33bdab8506",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_88ab5ac22b",
+      "target": "node_c91ba4210c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_c91ba4210c",
+      "target": "node_38dab19560",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_974de1440f",
+      "target": "node_58c4092fcf",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_79c651b617",
+      "target": "node_1b710a8887",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_79c651b617",
+      "target": "node_1b710a8887",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1b710a8887",
+      "target": "node_97379e40e7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1b710a8887",
+      "target": "node_97379e40e7",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_97379e40e7",
+      "target": "node_88ab5ac22b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_97379e40e7",
+      "target": "node_88ab5ac22b",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_58c4092fcf",
+      "target": "node_768043f946",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_58c4092fcf",
+      "target": "node_768043f946",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_33bdab8506",
+      "target": "node_79c651b617",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_33bdab8506",
+      "target": "node_79c651b617",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_65f5b2cf05",
+      "target": "node_2198d04703",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_6fb180dd54",
+      "target": "node_fb5419c4af",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_fb5419c4af",
+      "target": "node_f82ee381ca",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fb5419c4af",
+      "target": "node_f82ee381ca",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2198d04703",
+      "target": "node_137fd1f206",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2198d04703",
+      "target": "node_137fd1f206",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f82ee381ca",
+      "target": "node_44462ba641",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f82ee381ca",
+      "target": "node_44462ba641",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_44462ba641",
+      "target": "node_f705e57810",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_44462ba641",
+      "target": "node_f705e57810",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_38dab19560",
+      "target": "node_292c46ae71",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "gmail-and-email",
+    "categoryLabel": "Gmail and Email Automation",
+    "department": "Executive",
+    "connectors": [
+      "googlesuper"
+    ],
+    "setupSecrets": [
+      {
+        "key": "GOOGLE_OAUTH_TOKEN",
+        "label": "Google OAuth access token",
+        "host": "www.googleapis.com",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "googleOauthToken",
+        "usedBy": [
+          "Add email draft to thread"
+        ],
+        "oauth": true
+      }
+    ],
+    "activation": "cdecli cron activate compose-reply-draft-in-gmail-with-openai-assistant",
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeCron",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLoop",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 13,
+      "yantraSteps": 18,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Gmail_and_Email_Automation/Compose reply draft in Gmail with OpenAI Assistant.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Workflow secret GOOGLE_OAUTH_TOKEN: Google OAuth access token for www.googleapis.com (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the googlesuper connector (credential).",
+      "After import, start the schedule: cdecli cron activate compose-reply-draft-in-gmail-with-openai-assistant."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Convert response to HTML",
+          "n8n": "markdown.markdownToHtml",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "Schedule trigger (1 min)",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "\"Loop over threads\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "\"Convert response to HTML\" (markdown.markdownToHtml): Markdown to HTML is a minimal converter on Yantra.",
+        "\"Convert response to HTML\": Markdown to HTML is a minimal converter on Yantra; swap in a connector if you need full fidelity.",
+        "\"Add email draft to thread\" authenticated with gmailOAuth2 in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Add email draft to thread\": Google OAuth access token expires; refresh the workflow secret GOOGLE_OAUTH_TOKEN when calls start failing, or move this step onto the service's connector.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Reply draft with OpenAI Assistant\nThis workflow automatically transfers content of incoming email messages with specific labels into OpenAI Assitant and returns reply draft. After draft is composed, trigger label is deleted from the thread.\n\n**Please remember to configure your OpenAI Assistant first.**",
+      "### Schedule trigger and get emails\nRun the workflow in equal intervals and check for threads with specific labels (trigger labels).",
+      "## ⚠️ Note\n\n1. Complete video guide for this workflow is available [on my YouTube](https://youtu.be/a8Dhj3Zh9vQ). \n2. Remember to add your credentials and configure nodes (covered in the video guide).\n3. If you like this workflow, please subscribe to [my YouTube channel](https://www.youtube.com/@workfloows) and/or [my newsletter](https://workfloows.com/).\n\n**Thank you for your support!**",
+      "### Generate reply\nTransfer email content to OpenAI Assitant and return AI-generated reply.",
+      "### Create HTML message\nConvert incoming Markdown from OpenAI Assistant into HTML content.",
+      "### Build and encode message\nCreate raw message in RFC standard and encode it into base64 string (please see [Gmail API reference](https://developers.google.com/gmail/api/reference/rest/v1/users.drafts/create) for more details).",
+      "### Insert reply draft\nAdd reply draft from OpenAI Assistant to specific Gmail thread.",
+      "### Remove label\nDelete trigger label from the Gmail thread.",
+      "### Return message content\nRetrieve content of the last message in the thread.",
+      "### Get last message from thread\nReturn all messages for a single thread and pass for further processing only the last one."
+    ],
+    "nodes": {
+      "node_974de1440f": {
+        "n8n": "Schedule trigger (1 min)",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_58c4092fcf": {
+        "n8n": "Get threads with specific labels",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_768043f946": {
+        "n8n": "Loop over threads",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_f705e57810": {
+        "n8n": "Loop over threads",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_6fb180dd54": {
+        "n8n": "Loop over threads",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_65f5b2cf05": {
+        "n8n": "Loop over threads",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_2198d04703": {
+        "n8n": "Get single message content",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_fb5419c4af": {
+        "n8n": "Get thread messages",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_33bdab8506": {
+        "n8n": "Ask OpenAI Assistant",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_137fd1f206": {
+        "n8n": "Ask OpenAI Assistant",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_f82ee381ca": {
+        "n8n": "Return last message in thread",
+        "n8nType": "n8n-nodes-base.limit"
+      },
+      "node_79c651b617": {
+        "n8n": "Map fields for further processing",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_1b710a8887": {
+        "n8n": "Convert response to HTML",
+        "n8nType": "n8n-nodes-base.markdown"
+      },
+      "node_97379e40e7": {
+        "n8n": "Build email raw",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_88ab5ac22b": {
+        "n8n": "Convert raw to base64",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_c91ba4210c": {
+        "n8n": "Add email draft to thread",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "gmailOAuth2"
+      },
+      "node_38dab19560": {
+        "n8n": "Remove AI label from email",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_44462ba641": {
+        "n8n": "Return last message in thread",
+        "n8nType": "n8n-nodes-base.limit"
+      },
+      "node_292c46ae71": {
+        "n8n": "__end:Remove AI label from email",
+        "n8nType": "synthetic"
+      },
+      "node_19c09ab049": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

@@ -1,0 +1,1672 @@
+{
+  "name": "Extract data from resume and create PDF with Gotenberg",
+  "workflowSlug": "extract-data-from-resume-and-create-pdf-with-gotenberg",
+  "description": "This workflow extracts structured data from resumes using AI, converts it into HTML, and then generates a well-formatted PDF using Gotenberg.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_bf8e19e181",
+      "actorId": "actor_bf8e19e181",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_82fb371327",
+      "actorId": "actor_82fb371327",
+      "type": "NodeTransform",
+      "label": "Auth: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((Number(($json.message.chat.id)) === Number(0)));"
+      }
+    },
+    {
+      "nodeId": "node_7fe8d51644",
+      "actorId": "actor_7fe8d51644",
+      "type": "NodeBranch",
+      "label": "Auth: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_6e8635bab8",
+      "actorId": "actor_6e8635bab8",
+      "type": "NodeTransform",
+      "label": "Check if start message: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.message.text) ?? '') !== String(\"/start\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_1a42c67afa",
+      "actorId": "actor_1a42c67afa",
+      "type": "NodeBranch",
+      "label": "Check if start message: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_f01a4ff856",
+      "actorId": "actor_f01a4ff856",
+      "type": "NodeHttpRequest",
+      "label": "Get file",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET"
+      }
+    },
+    {
+      "nodeId": "node_0c5d573749",
+      "actorId": "actor_0c5d573749",
+      "type": "NodeTransform",
+      "label": "URL: Get file",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request URL for \"Get file\".\nreturn `https://api.telegram.org/bot{{telegramBotToken}}/getFile?file_id=${$json.message.document.file_id}`;"
+      }
+    },
+    {
+      "nodeId": "node_e5da05bf8b",
+      "actorId": "actor_e5da05bf8b",
+      "type": "NodeTransform",
+      "label": "Params: Extract text from PDF",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for googlesuper/GOOGLESUPER_PARSE_FILE (n8n node \"Extract text from PDF\").\nreturn {\n  \"file_id\": ($json.id ?? $json.file_id ?? $json.fileId),\n  \"mime_type\": \"application/pdf\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_f32b8f2187",
+      "actorId": "actor_f32b8f2187",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_PARSE_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive parse",
+        "action": "GOOGLESUPER_PARSE_FILE"
+      }
+    },
+    {
+      "nodeId": "node_f67c8d375b",
+      "actorId": "actor_f67c8d375b",
+      "type": "NodeLlmChain",
+      "label": "Parse resume data",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "personal_info": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "address": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string",
+                  "description": "Format: email.",
+                  "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+                },
+                "github": {
+                  "type": "string"
+                },
+                "linkedin": {
+                  "type": "string"
+                }
+              }
+            },
+            "employment_history": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "position": {
+                    "type": "string"
+                  },
+                  "company": {
+                    "type": "string"
+                  },
+                  "duration": {
+                    "type": "string"
+                  },
+                  "responsibilities": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "education": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "institution": {
+                    "type": "string"
+                  },
+                  "start_year": {
+                    "type": "integer"
+                  },
+                  "degree": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "projects": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "year": {
+                    "type": "integer"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "technologies": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "volunteering": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "activity": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "type": "string"
+                  },
+                  "date": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "programming_languages": {
+              "type": "object",
+              "properties": {
+                "languages": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "tools": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "methodologies": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "foreign_languages": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "language": {
+                    "type": "string"
+                  },
+                  "level": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "system": "Your task is to extract all necessary data such as first name, last name, experience, known technologies etc. from the provided resume text and return in well-unified JSON format. Do not make things up.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_cb757d8db0",
+      "actorId": "actor_cb757d8db0",
+      "type": "NodeTransform",
+      "label": "Prompt: Parse resume data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Parse resume data.\nconst __promptValue = ($json.text);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_e4b4f3d14c",
+      "actorId": "actor_e4b4f3d14c",
+      "type": "NodeTransform",
+      "label": "Set parsed fileds",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_d37e7da741",
+      "actorId": "actor_d37e7da741",
+      "type": "NodeTransform",
+      "label": "Convert employment history to HTML",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Convert employment history to HTML\" (run once for each item).\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __results = __items.map((__item) => {\n  const $json = __item;\n  const item = { json: __item };\n  const $input = { item: { json: __item }, first: () => ({ json: __item }), all: () => [{ json: __item }] };\n  return (() => {\n  function convertToHTML(list) {\n   let html = '';\n  \n   list.forEach((item, index) => {\n   if (index > 0) {\n   html += '<br />'; // Add a new line if it's not the first item\n   }\n   html += `<b>Position:</b> ${item.position}\n  <b>Company:</b> ${item.company}\n  <br />\n  <b>Duration:</b> ${item.duration}\n  <br />\n  <b>Responsibilities:</b>\n  `;\n  \n   item.responsibilities.forEach((responsibility, i) => {\n   html += `- ${responsibility}`;\n   if (i < item.responsibilities.length - 1 || index < list.length - 1) {\n   html += '<br />'; // Add new line if it's not the last responsibility in the last item\n   }\n   });\n   });\n  \n   return html;\n  }\n  \n  // Assuming payload is already defined\n  const payload = $input.item.json.employment_history;\n  \n  const htmlOutput = convertToHTML(payload);\n  return {\n   htmlOutput\n  };\n  })();\n});\nreturn __single(__results.map(__unwrap));"
+      }
+    },
+    {
+      "nodeId": "node_3111acdab2",
+      "actorId": "actor_3111acdab2",
+      "type": "NodeTransform",
+      "label": "Convert education to HTML",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Convert education to HTML\" (run once for each item).\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __results = __items.map((__item) => {\n  const $json = __item;\n  const item = { json: __item };\n  const $input = { item: { json: __item }, first: () => ({ json: __item }), all: () => [{ json: __item }] };\n  return (() => {\n  function convertToHTML(list) {\n   let html = '';\n  \n   list.forEach((education, index) => {\n   if (index > 0) {\n   html += '<br /><br />'; // Add a new line if it's not the first item\n   }\n   html += `<b>Institution:</b> ${education.institution}<br />\n  <b>Start year:</b> ${education.start_year}<br />\n  <b>Degree:</b> ${education.degree}`;\n   });\n  \n   return html;\n  }\n  \n  // Assuming payload is already defined\n  const payload = $input.item.json.education;\n  \n  const htmlOutput = convertToHTML(payload);\n  return {\n   htmlOutput\n  };\n  })();\n});\nreturn __single(__results.map(__unwrap));"
+      }
+    },
+    {
+      "nodeId": "node_d2aa48ec29",
+      "actorId": "actor_d2aa48ec29",
+      "type": "NodeTransform",
+      "label": "Convert projects to HTML",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Convert projects to HTML\" (run once for each item).\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __results = __items.map((__item) => {\n  const $json = __item;\n  const item = { json: __item };\n  const $input = { item: { json: __item }, first: () => ({ json: __item }), all: () => [{ json: __item }] };\n  return (() => {\n  function convertToHTML(list) {\n   let html = '';\n  \n   list.forEach((project, index) => {\n   if (index > 0) {\n   html += '<br />'; // Add a new line if it's not the first project\n   }\n   html += `<b>Name:</b> ${project.name}<br />\n  <b>Year:</b> ${project.year}<br />\n  <b>Description:</b> ${project.description}<br /><br />\n  <b>Technologies:</b>\n  <br />`;\n  \n   project.technologies.forEach((technology, i) => {\n   html += `- ${technology}`;\n   if (i < project.technologies.length - 1 || index < list.length - 1) {\n   html += '<br />'; // Add new line if it's not the last technology in the last project\n   }\n   });\n   });\n  \n   return html;\n  }\n  \n  // Assuming payload is already defined\n  const payload = $input.item.json.projects;\n  \n  const htmlOutput = convertToHTML(payload);\n  return {\n   htmlOutput\n  };\n  \n  })();\n});\nreturn __single(__results.map(__unwrap));"
+      }
+    },
+    {
+      "nodeId": "node_c173c9593a",
+      "actorId": "actor_c173c9593a",
+      "type": "NodeTransform",
+      "label": "Personal info",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"personal_info\"] = `<b><u>Personal info</u></b>\n<br /><br />\n<b>Name:</b> ${$json.personal_info.name}\n<br />\n<b>Address:</b> ${$json.personal_info.address}\n<br />\n<b>Email:</b> ${$json.personal_info.email}\n<br />\n<b>GitHub:</b> ${$json.personal_info.github}\n<br />`;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_b0b7768c54",
+      "actorId": "actor_b0b7768c54",
+      "type": "NodeTransform",
+      "label": "Convert volunteering to HTML",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 1140
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Convert volunteering to HTML\" (run once for each item).\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __results = __items.map((__item) => {\n  const $json = __item;\n  const item = { json: __item };\n  const $input = { item: { json: __item }, first: () => ({ json: __item }), all: () => [{ json: __item }] };\n  return (() => {\n  function convertToHTML(list) {\n   let html = '';\n  \n   list.forEach((event, index) => {\n   if (index > 0) {\n   html += '<br />'; // Add a new line if it's not the first volunteering event\n   }\n   html += `<b>Activity:</b> ${event.activity}<br />\n  <b>Location:</b> ${event.location}<br />\n  <b>Date:</b> ${event.date}<br />\n  <b>Description:</b> ${event.description}<br />`;\n   });\n  \n   return html;\n  }\n  \n  // Assuming payload is already defined\n  const payload = $input.item.json.volunteering;\n  \n  const htmlOutput = convertToHTML(payload);\n  return {\n   htmlOutput\n  };\n  \n  })();\n});\nreturn __single(__results.map(__unwrap));"
+      }
+    },
+    {
+      "nodeId": "node_d2d33e25ff",
+      "actorId": "actor_d2d33e25ff",
+      "type": "NodeTransform",
+      "label": "Technologies",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 1400
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"technologies\"] = `<b><u>Technologies</u></b>\n<br /><br />\n<b>Programming languages:</b> ${$json.programming_languages.languages.join(', ')}\n<br />\n<b>Tools:</b> ${$json.programming_languages.tools.join(', ')}\n<br />\n<b>Methodologies:</b> ${$json.programming_languages.methodologies.join(', ')}\n<br />`;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_ff73f0c541",
+      "actorId": "actor_ff73f0c541",
+      "type": "NodeTransform",
+      "label": "Employment history",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"employment_history\"] = `<b><u>Employment history</u></b>\n<br /><br />\n${$json[\"htmlOutput\"]}`;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_315d32e801",
+      "actorId": "actor_315d32e801",
+      "type": "NodeTransform",
+      "label": "Education",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"education\"] = `<b><u>Education</u></b>\n<br /><br />\n${$json[\"htmlOutput\"]}`;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_4db5f6f7e5",
+      "actorId": "actor_4db5f6f7e5",
+      "type": "NodeTransform",
+      "label": "Projects",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"projects\"] = `<b><u>Projects</u></b>\n<br /><br />\n${$json[\"htmlOutput\"]}`;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_15113d50bf",
+      "actorId": "actor_15113d50bf",
+      "type": "NodeTransform",
+      "label": "Volunteering",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"volunteering\"] = `<b><u>Volunteering</u></b>\n<br /><br />\n${$json[\"htmlOutput\"]}`;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_95f6ad71a1",
+      "actorId": "actor_95f6ad71a1",
+      "type": "NodeSync",
+      "label": "Merge personal info and technologies",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5020,
+        "y": 1140
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_6e8eba7d89",
+      "actorId": "actor_6e8eba7d89",
+      "type": "NodeSync",
+      "label": "Merge education and employment history",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_b400ce1384",
+      "actorId": "actor_b400ce1384",
+      "type": "NodeSync",
+      "label": "Merge projects and volunteering",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5400,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_277d0c170f",
+      "actorId": "actor_277d0c170f",
+      "type": "NodeSync",
+      "label": "Merge other data",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_60f800fac4",
+      "actorId": "actor_60f800fac4",
+      "type": "NodeSync",
+      "label": "Merge all",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_c843afe671",
+      "actorId": "actor_c843afe671",
+      "type": "NodeTransform",
+      "label": "Set final data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"output\"] = `${$json.personal_info}\n<br /><br />\n${$json.employment_history}\n<br /><br />\n${$json.education}\n<br /><br />\n${$json.projects}\n<br /><br />\n${$json.volunteering}\n<br /><br />\n${$json.technologies}`;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_eb779bc186",
+      "actorId": "actor_eb779bc186",
+      "type": "NodeTransform",
+      "label": "Convert raw to base64",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\nconst Buffer = { from: (v, enc) => { const bytes = enc === 'base64' ? Uint8Array.from(atob(String(v)), (c) => c.charCodeAt(0)) : new TextEncoder().encode(String(v)); return { toString: (e) => (e === 'base64' ? btoa(String.fromCharCode(...bytes)) : new TextDecoder().decode(bytes)), length: bytes.length, bytes }; } };\n// Ported from n8n Code node \"Convert raw to base64\" (run once for each item).\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __results = __items.map((__item) => {\n  const $json = __item;\n  const item = { json: __item };\n  const $input = { item: { json: __item }, first: () => ({ json: __item }), all: () => [{ json: __item }] };\n  return (() => {\n  const encoded = Buffer.from($json.output).toString('base64');\n  \n  return { encoded };\n  })();\n});\nreturn __single(__results.map(__unwrap));"
+      }
+    },
+    {
+      "nodeId": "node_8e245a7352",
+      "actorId": "actor_8e245a7352",
+      "type": "NodeTransform",
+      "label": "Convert to HTML",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// The field already holds base64 file content.\nconst __v = $json?.[\"encoded\"];\nreturn { data: typeof __v === 'string' ? __v : JSON.stringify(__v), fileName: `index.html`, mimeType: \"text/html\", encoding: 'base64' };"
+      }
+    },
+    {
+      "nodeId": "node_65347bcae2",
+      "actorId": "actor_65347bcae2",
+      "type": "NodeTransform",
+      "label": "Params: Generate plain PDF doc",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7680,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The upstream file as { contentBase64 | fileUrl, filename, mimeType }: n8n binary data travels as base64 bytes or a file URL on Yantra.\nconst __b64 = (t) => { const b = new TextEncoder().encode(String(t)); let s = ''; for (let i = 0; i < b.length; i += 1) s += String.fromCharCode(b[i]); return btoa(s); };\nconst __fileRef = (v, prop) => {\n  const s = (x) => (typeof x === 'string' && x !== '' ? x : undefined);\n  let r = Array.isArray(v) ? v[0] : v;\n  const bin = r && typeof r === 'object' && r.binary && typeof r.binary === 'object' ? r.binary[prop] ?? Object.values(r.binary)[0] : undefined;\n  if (bin && s(bin.data)) return { contentBase64: bin.data, filename: s(r.filename) ?? s(bin.fileName) ?? 'file', mimeType: s(bin.mimeType) };\n  if (r && typeof r === 'object' && r.data && typeof r.data === 'object' && !Array.isArray(r.data)) r = { ...r, ...r.data };\n  const dl = r?.downloaded_file_content ?? r?.file;\n  const filename = s(r?.filename) ?? s(r?.fileName) ?? s(dl?.name) ?? s(r?.name) ?? 'file';\n  const mimeType = s(r?.mimeType) ?? s(r?.contentType) ?? s(dl?.mimetype) ?? s(r?.mimetype);\n  if (s(r?.bodyBase64)) return { contentBase64: r.bodyBase64, filename, mimeType };\n  const url = s(dl?.s3url) ?? s(r?.s3url) ?? s(r?.fileUrl) ?? s(r?.imageUrl) ?? s(r?.imageUrls?.[0]) ?? s(r?.audioUrl) ?? s(r?.videoUrl) ?? s(r?.secure_url);\n  if (url) return { fileUrl: url, filename, mimeType };\n  if (s(r?.data)) return { contentBase64: r.encoding !== 'base64' && /^(?:text\\/|application\\/(?:json|xml|javascript|x-tex))|\\+(?:xml|json)$/.test(mimeType ?? '') ? __b64(r.data) : r.data, filename, mimeType };\n  throw new Error('No file on the upstream step: expected file bytes (base64) or a file URL.');\n};\n// Params for yantra-storage/YANTRA_STORAGE_HTTP_SEND (n8n node \"Generate plain PDF doc\").\nreturn { \"url\": \"http://gotenberg:3000/forms/chromium/convert/html\", \"method\": \"POST\", \"bodyType\": \"multipart\", \"files\": [{ \"field\": \"files\", ...__fileRef(source, \"data\") }], \"responseType\": \"base64\" };"
+      }
+    },
+    {
+      "nodeId": "node_e8f8c4df26",
+      "actorId": "actor_e8f8c4df26",
+      "type": "NodeCdeConnector",
+      "label": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 8060,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-storage",
+        "connectorLabel": "Yantra storage",
+        "action": "YANTRA_STORAGE_HTTP_SEND"
+      }
+    },
+    {
+      "nodeId": "node_d53ff3e20d",
+      "actorId": "actor_d53ff3e20d",
+      "type": "NodeTransform",
+      "label": "Generate plain PDF doc: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8440,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The response the way the n8n HTTP node handed it on: the parsed body; a file body is { bodyBase64, filename, mimeType }.\nconst __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' && 'status' in source.data ? source.data : source;\nconst __body = __r?.bodyBase64 !== undefined ? { bodyBase64: __r.bodyBase64, filename: __r.filename, mimeType: __r.contentType, bytes: __r.bytes } : __r?.bodyJson !== undefined ? __r.bodyJson : __r?.bodyText;\nreturn __body;"
+      }
+    },
+    {
+      "nodeId": "node_5f86e2da94",
+      "actorId": "actor_5f86e2da94",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_SEND_DOCUMENT",
+      "color": "#6366F1",
+      "position": {
+        "x": 8820,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_SEND_DOCUMENT",
+        "params": {
+          "chat_id": "{{message.chat.id}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_388a8d8ddc",
+      "actorId": "actor_388a8d8ddc",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 9200,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_76c0b0d7f5",
+      "actorId": "actor_76c0b0d7f5",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 1660
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "event": {},
+          "telegramBotToken": {
+            "$workflowSecret": "TELEGRAM_BOT_TOKEN"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_cb83dcd7bc",
+      "actorId": "actor_cb83dcd7bc",
+      "type": "NodeChatModel",
+      "label": "Parse resume data: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3880,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4-turbo-preview"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_82fb371327",
+      "target": "node_7fe8d51644",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_82fb371327",
+      "target": "node_7fe8d51644",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_6e8635bab8",
+      "target": "node_1a42c67afa",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_6e8635bab8",
+      "target": "node_1a42c67afa",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_0c5d573749",
+      "target": "node_f01a4ff856",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_0c5d573749",
+      "target": "node_f01a4ff856",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_e5da05bf8b",
+      "target": "node_f32b8f2187",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_e5da05bf8b",
+      "target": "node_f32b8f2187",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_cb757d8db0",
+      "target": "node_f67c8d375b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_65347bcae2",
+      "target": "node_e8f8c4df26",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_65347bcae2",
+      "target": "node_e8f8c4df26",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_e8f8c4df26",
+      "target": "node_d53ff3e20d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e8f8c4df26",
+      "target": "node_d53ff3e20d",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3111acdab2",
+      "target": "node_315d32e801",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3111acdab2",
+      "target": "node_315d32e801",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d37e7da741",
+      "target": "node_ff73f0c541",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d37e7da741",
+      "target": "node_ff73f0c541",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d2aa48ec29",
+      "target": "node_4db5f6f7e5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d2aa48ec29",
+      "target": "node_4db5f6f7e5",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b0b7768c54",
+      "target": "node_15113d50bf",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b0b7768c54",
+      "target": "node_15113d50bf",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bf8e19e181",
+      "target": "node_82fb371327",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7fe8d51644",
+      "target": "node_6e8635bab8",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1a42c67afa",
+      "target": "node_0c5d573749",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f01a4ff856",
+      "target": "node_e5da05bf8b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f01a4ff856",
+      "target": "node_e5da05bf8b",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f32b8f2187",
+      "target": "node_cb757d8db0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f32b8f2187",
+      "target": "node_cb757d8db0",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e4b4f3d14c",
+      "target": "node_d37e7da741",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e4b4f3d14c",
+      "target": "node_d37e7da741",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e4b4f3d14c",
+      "target": "node_3111acdab2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e4b4f3d14c",
+      "target": "node_3111acdab2",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e4b4f3d14c",
+      "target": "node_d2aa48ec29",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e4b4f3d14c",
+      "target": "node_d2aa48ec29",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e4b4f3d14c",
+      "target": "node_c173c9593a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e4b4f3d14c",
+      "target": "node_c173c9593a",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e4b4f3d14c",
+      "target": "node_b0b7768c54",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e4b4f3d14c",
+      "target": "node_b0b7768c54",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e4b4f3d14c",
+      "target": "node_d2d33e25ff",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e4b4f3d14c",
+      "target": "node_d2d33e25ff",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c173c9593a",
+      "target": "node_95f6ad71a1",
+      "sourceOutput": "transformed",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_d2d33e25ff",
+      "target": "node_95f6ad71a1",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_ff73f0c541",
+      "target": "node_6e8eba7d89",
+      "sourceOutput": "transformed",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_315d32e801",
+      "target": "node_6e8eba7d89",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_4db5f6f7e5",
+      "target": "node_b400ce1384",
+      "sourceOutput": "transformed",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_15113d50bf",
+      "target": "node_b400ce1384",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_6e8eba7d89",
+      "target": "node_277d0c170f",
+      "sourceOutput": "data1",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_b400ce1384",
+      "target": "node_277d0c170f",
+      "sourceOutput": "data1",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_95f6ad71a1",
+      "target": "node_60f800fac4",
+      "sourceOutput": "data1",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_60f800fac4",
+      "target": "node_c843afe671",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_60f800fac4",
+      "target": "node_c843afe671",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c843afe671",
+      "target": "node_eb779bc186",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c843afe671",
+      "target": "node_eb779bc186",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_eb779bc186",
+      "target": "node_8e245a7352",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_eb779bc186",
+      "target": "node_8e245a7352",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8e245a7352",
+      "target": "node_65347bcae2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8e245a7352",
+      "target": "node_65347bcae2",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d53ff3e20d",
+      "target": "node_5f86e2da94",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_f67c8d375b",
+      "target": "node_e4b4f3d14c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f67c8d375b",
+      "target": "node_e4b4f3d14c",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_277d0c170f",
+      "target": "node_60f800fac4",
+      "sourceOutput": "data1",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_5f86e2da94",
+      "target": "node_388a8d8ddc",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_cb83dcd7bc",
+      "target": "node_f67c8d375b",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "pdf-and-documents",
+    "categoryLabel": "PDF and Document Processing",
+    "department": "HR",
+    "connectors": [
+      "googlesuper",
+      "openai",
+      "telegram",
+      "yantra-storage"
+    ],
+    "setupSecrets": [
+      {
+        "key": "TELEGRAM_BOT_TOKEN",
+        "label": "Telegram bot token (from @BotFather)",
+        "host": "api.telegram.org",
+        "headerFormat": "URL path /bot<secret>/getFile",
+        "contextKey": "telegramBotToken",
+        "usedBy": [
+          "Get file"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 33,
+      "yantraSteps": 35,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "Auto-fixing Output Parser"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "PDF_and_Document_Processing/Extract data from resume and create PDF with Gotenberg.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "missing-required-param",
+        "node": "Send PDF to the user",
+        "detail": "telegram/TELEGRAM_SEND_DOCUMENT needs document | document_base64 | document_file_url"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Telegram trigger",
+        "detail": "n8n-nodes-base.telegramTrigger became the Start node"
+      },
+      {
+        "code": "hard-approximation",
+        "node": "Generate plain PDF doc",
+        "detail": "httpRequest.multipart-form-data -> yantra-storage/YANTRA_STORAGE_HTTP_SEND: the request is a plain-http request (http://gotenberg:3000/forms/chromium/convert/html); yantra-storage HTTP_SEND only reaches public https hosts"
+      },
+      {
+        "code": "hard-approximation",
+        "node": "Send PDF to the user",
+        "detail": "message.sendDocument -> telegram/TELEGRAM_SEND_DOCUMENT: the file comes from \"Generate plain PDF doc\" (httpRequest), which is a plain-http request (http://gotenberg:3000/forms/chromium/convert/html); yantra-storage HTTP_SEND only reaches public https hosts"
+      },
+      {
+        "code": "action-pending-publish",
+        "node": "Generate plain PDF doc",
+        "detail": "yantra-storage/YANTRA_STORAGE_HTTP_SEND waits for the yantra-storage HTTP send and signatures patch (1.4.1) to be published"
+      }
+    ],
+    "setup": [
+      "\"Send PDF to the user\": set document | document_base64 | document_file_url on telegram/TELEGRAM_SEND_DOCUMENT.",
+      "\"Telegram trigger\" (telegramTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Generate plain PDF doc\" (httpRequest.multipart-form-data): the request is a plain-http request (http://gotenberg:3000/forms/chromium/convert/html); yantra-storage HTTP_SEND only reaches public https hosts; review it before relying on the result.",
+      "\"Send PDF to the user\" (message.sendDocument): the file comes from \"Generate plain PDF doc\" (httpRequest), which is a plain-http request (http://gotenberg:3000/forms/chromium/convert/html); yantra-storage HTTP_SEND only reaches public https hosts; review it before relying on the result.",
+      "\"Generate plain PDF doc\": yantra-storage/YANTRA_STORAGE_HTTP_SEND comes from the yantra-storage HTTP send and signatures patch (1.4.1), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
+      "Workflow secret TELEGRAM_BOT_TOKEN: Telegram bot token (from @BotFather) for api.telegram.org (URL path /bot<secret>/getFile). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "Connect the telegram connector (credential).",
+      "Provide run inputs: event, message."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Get file",
+          "n8n": "telegram.file.get",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Extract text from PDF",
+          "n8n": "extractFromFile.pdf",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Convert to HTML",
+          "n8n": "convertToFile.toBinary",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Generate plain PDF doc",
+          "n8n": "httpRequest.multipart-form-data",
+          "action": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+          "reason": "the request is a plain-http request (http://gotenberg:3000/forms/chromium/convert/html); yantra-storage HTTP_SEND only reaches public https hosts"
+        },
+        {
+          "node": "Send PDF to the user",
+          "n8n": "message.sendDocument",
+          "action": "telegram/TELEGRAM_SEND_DOCUMENT",
+          "reason": "the file comes from \"Generate plain PDF doc\" (httpRequest), which is a plain-http request (http://gotenberg:3000/forms/chromium/convert/html); yantra-storage HTTP_SEND only reaches public https hosts"
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Parse resume data",
+          "model": "gpt-4-turbo-preview"
+        },
+        {
+          "node": "Auto-fixing Output Parser",
+          "type": "@n8n/n8n-nodes-langchain.outputParserAutofixing",
+          "into": "Parse resume data",
+          "as": "ai_outputParser"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Telegram trigger",
+          "type": "n8n-nodes-base.telegramTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from telegramTrigger; Yantra has no webhook slug for it, so run on demand, on a schedule (add a NodeCron), or via the workflow API with the event under the run input `event`.",
+        "\"Get file\" (telegram.file.get): Uses the Telegram Bot API getFile HTTP call with the bot token from a workflow secret; download file_path from the JSON result.",
+        "\"Get file\": the file itself is at https://api.telegram.org/file/bot<token>/<file_path>; the token is the TELEGRAM_BOT_TOKEN workflow secret.",
+        "\"Extract text from PDF\" (extractFromFile.pdf): Parsed via googlesuper/GOOGLESUPER_PARSE_FILE; the file must live on Google Drive (upload first if the previous step only has bytes/base64).",
+        "\"Extract text from PDF\": GOOGLESUPER_PARSE_FILE needs a Drive file_id (and googlesuper credential). If the upstream step only has file bytes, upload with GOOGLESUPER_CREATE_FILE_FROM_TEXT / Drive upload first, then parse.",
+        "\"Merge personal info and technologies\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "\"Merge education and employment history\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "\"Merge projects and volunteering\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "\"Merge other data\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "\"Merge all\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "\"Convert to HTML\" (convertToFile.toBinary): The file is a `{ data, fileName, mimeType }` object (text, or base64 for toBinary); point the next step at `data`.",
+        "\"Generate plain PDF doc\" (httpRequest.multipart-form-data): the request is a plain-http request (http://gotenberg:3000/forms/chromium/convert/html); yantra-storage HTTP_SEND only reaches public https hosts.",
+        "\"Send PDF to the user\" (message.sendDocument): the file comes from \"Generate plain PDF doc\" (httpRequest), which is a plain-http request (http://gotenberg:3000/forms/chromium/convert/html); yantra-storage HTTP_SEND only reaches public https hosts; hand the file over as base64 bytes or a public https URL before this step.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect telegram: `cdecli credential create -n \"telegram\" -p telegram --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "\"Parse resume data\": normalized the legacy output schema for LLMChain's strict parser (shorthand/examples become JSON Schema; email/date formats use syntax patterns). Review the schema before running."
+      ]
+    },
+    "notes": [
+      "### Add chat ID\nRemember to set your actual ID to trigger automation from Telegram.",
+      "### Ignore start message\nWorkflow ignores initial`/start` message sent to the bot.",
+      "### Download resume file\nBased on file ID, node performs downloading of the file uploaded by user.",
+      "### Extract text from PDF\nNode extracts readable text form PDF.",
+      "### Parse resume data\nCreate structured data from text extracted from resume. Chain uses OpenAI `gpt-4-turbo-preview` model and JSON response mode. **Adjust JSON schema in output parser to your needs.**",
+      "### Format HTML\nFormat HTML for each resume section (employment history, projects etc.).",
+      "### Create HTML file\nFrom formatted output create `index.html` file in order to run PDF conversion.",
+      "### Convert file to PDF\nForm `index.html` create PDF using [Gotenberg](https://gotenberg.dev/). If you're not familiar with this software, feel free to check out [my tutorial on YouTube](https://youtu.be/bo15xdjXf1Y?si=hFZMTfjzfSOLOLPK).",
+      "### Send PDF file to user\nDeliver converted PDF to Telegram user (based on chat ID).",
+      "## ⚠️ Note\n\nThis is *resume extractor* workflow that I had a pleasure to present during [n8n community hangout](https://youtu.be/eZacuxrhCuo?si=KkJQrgQuvLxj-6FM&t=1701\n) on March 7, 2024.\n\n1. Remember to add your credentials and configure nodes.\n2. This node requires installed [Gotenberg](https://gotenberg.dev/) for PDF generation. If you're not familiar with this software, feel free to check out [my tutorial on YouTube](https://youtu.be/bo15xdjXf1Y?si=hFZMTfjzfSOLOLPK). If you don't want to self-host Gotenberg, you use other PDF generation provider (PDFMonkey, ApiTemplate or similar).\n3. If you like this workflow, please subscribe to [my YouTube channel](https://www.youtube.com/@workfloows) and/or [my newsletter](https://workfloows.com/).\n\n**Thank you for your support!**"
+    ],
+    "nodes": {
+      "node_bf8e19e181": {
+        "n8n": "Telegram trigger",
+        "n8nType": "n8n-nodes-base.telegramTrigger"
+      },
+      "node_82fb371327": {
+        "n8n": "Auth",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_7fe8d51644": {
+        "n8n": "Auth",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_6e8635bab8": {
+        "n8n": "Check if start message",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_1a42c67afa": {
+        "n8n": "Check if start message",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_f01a4ff856": {
+        "n8n": "Get file",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_0c5d573749": {
+        "n8n": "Get file",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_e5da05bf8b": {
+        "n8n": "Extract text from PDF",
+        "n8nType": "n8n-nodes-base.extractFromFile"
+      },
+      "node_f32b8f2187": {
+        "n8n": "Extract text from PDF",
+        "n8nType": "n8n-nodes-base.extractFromFile"
+      },
+      "node_f67c8d375b": {
+        "n8n": "Parse resume data",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_cb757d8db0": {
+        "n8n": "Parse resume data",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_e4b4f3d14c": {
+        "n8n": "Set parsed fileds",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_d37e7da741": {
+        "n8n": "Convert employment history to HTML",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_3111acdab2": {
+        "n8n": "Convert education to HTML",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_d2aa48ec29": {
+        "n8n": "Convert projects to HTML",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_c173c9593a": {
+        "n8n": "Personal info",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_b0b7768c54": {
+        "n8n": "Convert volunteering to HTML",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_d2d33e25ff": {
+        "n8n": "Technologies",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_ff73f0c541": {
+        "n8n": "Employment history",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_315d32e801": {
+        "n8n": "Education",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_4db5f6f7e5": {
+        "n8n": "Projects",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_15113d50bf": {
+        "n8n": "Volunteering",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_95f6ad71a1": {
+        "n8n": "Merge personal info and technologies",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_6e8eba7d89": {
+        "n8n": "Merge education and employment history",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_b400ce1384": {
+        "n8n": "Merge projects and volunteering",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_277d0c170f": {
+        "n8n": "Merge other data",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_60f800fac4": {
+        "n8n": "Merge all",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_c843afe671": {
+        "n8n": "Set final data",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_eb779bc186": {
+        "n8n": "Convert raw to base64",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_8e245a7352": {
+        "n8n": "Convert to HTML",
+        "n8nType": "n8n-nodes-base.convertToFile"
+      },
+      "node_65347bcae2": {
+        "n8n": "Generate plain PDF doc",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_e8f8c4df26": {
+        "n8n": "Generate plain PDF doc",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_d53ff3e20d": {
+        "n8n": "Generate plain PDF doc",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_5f86e2da94": {
+        "n8n": "Send PDF to the user",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_388a8d8ddc": {
+        "n8n": "__end:Send PDF to the user",
+        "n8nType": "synthetic"
+      },
+      "node_76c0b0d7f5": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_cb83dcd7bc": {
+        "n8n": "Parse resume data",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

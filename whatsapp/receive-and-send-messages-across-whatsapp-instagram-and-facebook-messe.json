@@ -1,0 +1,409 @@
+{
+  "name": "Receive and Send Messages Across WhatsApp, Instagram and Facebook Messenger with Fiwano",
+  "workflowSlug": "receive-and-send-messages-across-whatsapp-instagram-and-facebook-messe",
+  "description": "Demonstrates a minimal receive → custom logic → send pattern across three official Meta APIs. Fiwano unifies the channels into one Trigger/Action node set and normalized payload; replace the middle with any routing, CRM, helpdesk, or AI logic.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_6f1878dc79",
+      "actorId": "actor_6f1878dc79",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_0c165e7f9c",
+      "actorId": "actor_0c165e7f9c",
+      "type": "NodeTransform",
+      "label": "Example - route by message type: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.data.type) ?? '') === String(\"text\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_f0842bca30",
+      "actorId": "actor_f0842bca30",
+      "type": "NodeBranch",
+      "label": "Example - route by message type: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_221a13612b",
+      "actorId": "actor_221a13612b",
+      "type": "NodeHttpRequest",
+      "label": "Example - send text reply",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://{{fiwanoHost}}/v1/messages",
+        "headers": {
+          "Authorization": "Bearer {{fiwanoApiKey}}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "channel_id": "{{channel_id}}",
+          "recipient": "{{data.from}}",
+          "text": "You said: \"{{data.text}}\" 👋"
+        }
+      }
+    },
+    {
+      "nodeId": "node_5df5dfbfcc",
+      "actorId": "actor_5df5dfbfcc",
+      "type": "NodeHttpRequest",
+      "label": "Example - send attachment reply",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://{{fiwanoHost}}/v1/messages",
+        "headers": {
+          "Authorization": "Bearer {{fiwanoApiKey}}",
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_ed8a5e3828",
+      "actorId": "actor_ed8a5e3828",
+      "type": "NodeTransform",
+      "label": "Body: Example - send attachment reply",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Example - send attachment reply\".\nconst __body = { \"channel_id\": ($json.channel_id), \"recipient\": ($json.data.from), \"text\": `Got your ${$json.data.type} 📎 - ${($json.data.media || {}).mime_type || 'attachment'}. Thanks!` };\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_a714961d19",
+      "actorId": "actor_a714961d19",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_14050c3863",
+      "actorId": "actor_14050c3863",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_835a11f98d",
+      "actorId": "actor_835a11f98d",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "event": {},
+          "fiwanoHost": "",
+          "fiwanoApiKey": {
+            "$workflowSecret": "FIWANO_API_KEY"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_0c165e7f9c",
+      "target": "node_f0842bca30",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_0c165e7f9c",
+      "target": "node_f0842bca30",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_ed8a5e3828",
+      "target": "node_5df5dfbfcc",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_ed8a5e3828",
+      "target": "node_5df5dfbfcc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_6f1878dc79",
+      "target": "node_0c165e7f9c",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f0842bca30",
+      "target": "node_221a13612b",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_f0842bca30",
+      "target": "node_ed8a5e3828",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_221a13612b",
+      "target": "node_a714961d19",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_5df5dfbfcc",
+      "target": "node_14050c3863",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "whatsapp",
+    "categoryLabel": "WhatsApp",
+    "department": "Customer Service/Development",
+    "connectors": [],
+    "setupVars": [
+      {
+        "key": "fiwanoHost",
+        "label": "Host of your Fiwano workspace API",
+        "type": "url",
+        "example": "api.fiwano.com",
+        "usedBy": [
+          "Example - send attachment reply",
+          "Example - send text reply"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "FIWANO_API_KEY",
+        "label": "Fiwano API key",
+        "host": "your Fiwano workspace",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "fiwanoApiKey",
+        "usedBy": [
+          "Example - send attachment reply",
+          "Example - send text reply"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 4,
+      "yantraSteps": 6,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "WhatsApp/Receive and Send Messages Across WhatsApp, Instagram and Facebook Messenger with Fiwano.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Receive and Send Messages Across WhatsApp, Instagram and Facebook Messenger with Fiwano"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Fiwano Trigger",
+        "detail": "n8n-nodes-fiwano.fiwanoTrigger became the Start node"
+      },
+      {
+        "code": "hard-approximation",
+        "node": "Example - send attachment reply",
+        "detail": "fiwano.send -> NodeTransform"
+      },
+      {
+        "code": "hard-approximation",
+        "node": "Example - send text reply",
+        "detail": "fiwano.send -> NodeTransform"
+      }
+    ],
+    "setup": [
+      "\"Fiwano Trigger\" (fiwanoTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Example - send attachment reply\" (fiwano.send) only approximates the original; review it before relying on the result.",
+      "\"Example - send text reply\" (fiwano.send) only approximates the original; review it before relying on the result.",
+      "Setup value fiwanoHost: Host of your Fiwano workspace API (for example api.fiwano.com). Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret FIWANO_API_KEY: Fiwano API key for your Fiwano workspace (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Provide run inputs: event, channel_id, data."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Example - send text reply",
+          "n8n": "fiwano.send",
+          "action": "NodeTransform"
+        },
+        {
+          "node": "Example - send attachment reply",
+          "n8n": "fiwano.send",
+          "action": "NodeTransform"
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Fiwano Trigger",
+          "type": "n8n-nodes-fiwano.fiwanoTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from fiwanoTrigger; Yantra has no webhook slug for it, so run on demand, on a schedule (add a NodeCron), or via the workflow API with the event under the run input `event`.",
+        "\"Example - send text reply\" (fiwano.send): Fiwano send over HTTP; the send path is a best guess at the Fiwano API, so confirm it before relying on it.",
+        "\"Example - send attachment reply\" (fiwano.send): Fiwano send over HTTP; the send path is a best guess at the Fiwano API, so confirm it before relying on it.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "## Receive → Any Logic → Send\n### WhatsApp · Instagram DM · Facebook Messenger\n\n**One Trigger/Action node set for three channels.** Fiwano normalizes messages received over the official Meta APIs, so the same n8n fields and nodes work across all three channels.\n\nThis workflow is a minimal integration example:\n\n`Fiwano Trigger → your logic → Fiwano Send`\n\nThe included text and attachment branches only demonstrate receiving, reading the normalized payload, and sending a reply. Replace the middle with any routing, CRM, helpdesk, business-rule, database, or AI logic.\n\n### Before you start\nConnect at least one channel through the [Fiwano portal](https://fiwano.com) or Fiwano's channel-connection API. The authorization flow simplifies connecting your own or client channels without creating and reviewing a separate Meta app for the workflow.\n\n### Setup\n1. Install the verified **n8n-nodes-fiwano** community package from the n8n editor.\n2. Add your **Fiwano API** credential to the Trigger and both example send nodes.\n3. *(Recommended)* Set a **Webhook Secret** on that credential so the Trigger can verify incoming signatures.\n4. **Save and activate** the workflow.\n\nThe Trigger uses **Auto-Setup → All Active Channels** to register this workflow for every active channel. Re-activate after connecting another channel. Keep **Event Types** on *Message Received*. n8n must be publicly reachable.\n\n[Fiwano n8n documentation](https://fiwano.com/documentation/n8n)",
+      "### Same inbound shape for all three channels\n\nRead these fields from `$json` on the trigger:\n\n- `channel_id` - connected channel; pass it to the send node\n- `channel_type` - `whatsapp`, `instagram`, or `messenger`\n- `data.from` - sender; pass it as the reply recipient\n- `data.from_name` - sender name when available\n- `data.type` - `text`, `image`, `audio`, `video`, `document`…\n- `data.text` - message text when `type = text`\n- `data.media` - media metadata for attachments\n\nYou normally do not need to branch by `channel_type`. Use it only when your business logic or channel-specific UI requires it."
+    ],
+    "nodes": {
+      "node_6f1878dc79": {
+        "n8n": "Fiwano Trigger",
+        "n8nType": "n8n-nodes-fiwano.fiwanoTrigger"
+      },
+      "node_0c165e7f9c": {
+        "n8n": "Example - route by message type",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_f0842bca30": {
+        "n8n": "Example - route by message type",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_221a13612b": {
+        "n8n": "Example - send text reply",
+        "n8nType": "n8n-nodes-fiwano.fiwano"
+      },
+      "node_5df5dfbfcc": {
+        "n8n": "Example - send attachment reply",
+        "n8nType": "n8n-nodes-fiwano.fiwano"
+      },
+      "node_ed8a5e3828": {
+        "n8n": "Example - send attachment reply",
+        "n8nType": "n8n-nodes-fiwano.fiwano"
+      },
+      "node_a714961d19": {
+        "n8n": "__end:Example - send text reply",
+        "n8nType": "synthetic"
+      },
+      "node_14050c3863": {
+        "n8n": "__end:Example - send attachment reply",
+        "n8nType": "synthetic"
+      },
+      "node_835a11f98d": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

@@ -1,0 +1,304 @@
+{
+  "name": "Query Perplexity AI from your n8n workflows",
+  "workflowSlug": "query-perplexity-ai-from-your-n8n-workflows",
+  "description": "Integrates Perplexity AI into n8n workflows for advanced querying capabilities.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_13148acfcd",
+      "actorId": "actor_13148acfcd",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_50a44b0442",
+      "actorId": "actor_50a44b0442",
+      "type": "NodeTransform",
+      "label": "Set Params",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"system_prompt\"] = \"You are an n8n fanboy.\";\n  out[\"user_prompt\"] = \"What are the differences between n8n and Make?\";\n  out[\"domains\"] = \"n8n.io, make.com\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_69082a7c57",
+      "actorId": "actor_69082a7c57",
+      "type": "NodeHttpRequest",
+      "label": "Perplexity Request",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://api.perplexity.ai/chat/completions",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{perplexityApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_593fd1efa4",
+      "actorId": "actor_593fd1efa4",
+      "type": "NodeTransform",
+      "label": "Body: Perplexity Request",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Perplexity Request\".\nconst __body = `{\n \"model\": \"sonar\",\n \"messages\": [\n {\n \"role\": \"system\",\n \"content\": \"${$json.system_prompt}\"\n },\n {\n \"role\": \"user\",\n \"content\": \"${$json.user_prompt}\"\n }\n ],\n \"temperature\": 0.2,\n \"top_p\": 0.9,\n \"search_domain_filter\": ${(JSON.stringify($json.domains.split(',')))},\n \"return_images\": false,\n \"return_related_questions\": false,\n \"search_recency_filter\": \"month\",\n \"top_k\": 0,\n \"stream\": false,\n \"presence_penalty\": 0,\n \"frequency_penalty\": 1,\n \"response_format\": null\n}`;\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_fd17d2863b",
+      "actorId": "actor_fd17d2863b",
+      "type": "NodeTransform",
+      "label": "Clean Output",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"output\"] = ($json.choices[0].message.content);\n  out[\"citations\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json.citations));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_ce65f568c4",
+      "actorId": "actor_ce65f568c4",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_43bb5a90a8",
+      "actorId": "actor_43bb5a90a8",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "perplexityApiKey": {
+            "$workflowSecret": "PERPLEXITY_API_KEY"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_593fd1efa4",
+      "target": "node_69082a7c57",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_593fd1efa4",
+      "target": "node_69082a7c57",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_13148acfcd",
+      "target": "node_50a44b0442",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_50a44b0442",
+      "target": "node_593fd1efa4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_50a44b0442",
+      "target": "node_593fd1efa4",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_69082a7c57",
+      "target": "node_fd17d2863b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_69082a7c57",
+      "target": "node_fd17d2863b",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fd17d2863b",
+      "target": "node_ce65f568c4",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "ai-research-and-data",
+    "categoryLabel": "AI Research, RAG and Data Analysis",
+    "department": "AI Research, Automation",
+    "connectors": [],
+    "setupSecrets": [
+      {
+        "key": "PERPLEXITY_API_KEY",
+        "label": "Perplexity API key",
+        "host": "api.perplexity.ai",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "perplexityApiKey",
+        "usedBy": [
+          "Perplexity Request"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 4,
+      "yantraSteps": 5,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "AI_Research_RAG_and_Data_Analysis/Query Perplexity AI from your n8n workflows.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Workflow secret PERPLEXITY_API_KEY: Perplexity API key for api.perplexity.ai (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Perplexity Request\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "## Credentials Setup\n\n1/ Go to the perplexity dashboard, purchase some credits and create an API Key\n\nhttps://www.perplexity.ai/settings/api\n\n2/ In the perplexity Request node, use Generic Credentials, Header Auth. \n\nFor the name, use the value \"Authorization\"\nAnd for the value \"Bearer pplx-e4...59ea\" (Your Perplexity Api Key)",
+      "**Sonar Pro** is the current top model used by perplexity. \nIf you want to use a different one, check this page: \n\nhttps://docs.perplexity.ai/guides/model-cards"
+    ],
+    "nodes": {
+      "node_13148acfcd": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_50a44b0442": {
+        "n8n": "Set Params",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_69082a7c57": {
+        "n8n": "Perplexity Request",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_593fd1efa4": {
+        "n8n": "Perplexity Request",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_fd17d2863b": {
+        "n8n": "Clean Output",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_ce65f568c4": {
+        "n8n": "__end:Clean Output",
+        "n8nType": "synthetic"
+      },
+      "node_43bb5a90a8": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

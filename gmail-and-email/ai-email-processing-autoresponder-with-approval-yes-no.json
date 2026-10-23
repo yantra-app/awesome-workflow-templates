@@ -1,0 +1,750 @@
+{
+  "name": "AI Email processing autoresponder with approval (Yes/No)",
+  "workflowSlug": "ai-email-processing-autoresponder-with-approval-yes-no",
+  "description": "Converted from the n8n template \"AI Email processing autoresponder with approval (Yes/No)\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_5806d5bef5",
+      "actorId": "actor_5806d5bef5",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_FETCH_EMAILS",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Mailbox (IMAP original)",
+        "action": "GOOGLESUPER_FETCH_EMAILS",
+        "params": {
+          "query": "is:unread",
+          "max_results": 20
+        }
+      }
+    },
+    {
+      "nodeId": "node_4fd8183471",
+      "actorId": "actor_4fd8183471",
+      "type": "NodeTransform",
+      "label": "Markdown",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst __md = String(null ?? '');\nconst __html = __md.replace(/^### (.*)$/gm, '<h3>$1</h3>').replace(/^## (.*)$/gm, '<h2>$1</h2>').replace(/^# (.*)$/gm, '<h1>$1</h1>').replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>').replace(/\\*(.+?)\\*/g, '<em>$1</em>').replace(/\\[(.+?)\\]\\((.+?)\\)/g, '<a href=\"$2\">$1</a>').replace(/\\n{2,}/g, '</p><p>');\nreturn { ...$json, \"data\": '<p>' + __html + '</p>' };"
+      }
+    },
+    {
+      "nodeId": "node_3e4679d17e",
+      "actorId": "actor_3e4679d17e",
+      "type": "NodeLlmChain",
+      "label": "Email Summarization Chain",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{llm_system_4505fc933f}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_4505fc933f",
+      "actorId": "actor_4505fc933f",
+      "type": "NodeTransform",
+      "label": "System: Email Summarization Chain",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: Email Summarization Chain.\nconst __promptValue = `Write a concise summary of the following in max 100 words :\n\n\"${$json.data}\"\n\nDo not enter the total number of words used.`;\nreturn { \"llm_system_4505fc933f\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_d74896c8bf",
+      "actorId": "actor_d74896c8bf",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Email Summarization Chain",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_a5b49bdbc0",
+      "actorId": "actor_a5b49bdbc0",
+      "type": "NodeTransform",
+      "label": "Prompt: Email Summarization Chain",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Email Summarization Chain.\nconst __promptValue = ($json);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_00652a1c03",
+      "actorId": "actor_00652a1c03",
+      "type": "NodeTransform",
+      "label": "Set Email",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"email\"] = ($json);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_d218bbf346",
+      "actorId": "actor_d218bbf346",
+      "type": "NodeCdecliAgent",
+      "label": "Write email",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "gpt-4o-mini",
+        "sessionId": "",
+        "system": "You are an expert at answering emails. You need to answer them professionally based on the information you have. This is a business email. Be concise and never exceed 100 words. Only the body of the email, not create the subject.\n\nIt must be in HTML format and you can insert (if you think it is appropriate) only HTML characters such as <br>, <b>, <i>, <p> where necessary.",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_1a3d2be213",
+      "actorId": "actor_1a3d2be213",
+      "type": "NodeTransform",
+      "label": "Prompt: Write email",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Email Trigger (IMAP)\": __namedCtx.steps?.[\"GOOGLESUPER_FETCH_EMAILS\"]?.[\"result\"], \"Markdown\": __namedCtx.steps?.[\"Markdown\"]?.[\"transformed\"], \"Email Summarization Chain\": ((text) => ({ text, output: text, content: text, response: { text, output_text: text }, message: { content: text }, choices: [{ message: { content: text }, text }] }))(__namedCtx.steps?.[\"Email Summarization Chain\"]?.[\"text\"]), \"Set Email\": __namedCtx.steps?.[\"Set Email\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Write email.\nconst __promptValue = `Write the text to reply to the following email:\n\n${$('Email Summarization Chain').item.json.response.text}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_831c91e376",
+      "actorId": "actor_831c91e376",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_SEND_EMAIL",
+        "params": {
+          "recipient_email": "YOUR GMAIL ADDRESS",
+          "subject": "[Approval Required] {{steps.GOOGLESUPER_FETCH_EMAILS.result.subject}}",
+          "body": "<h3>MESSAGE</h3>\n{{steps.GOOGLESUPER_FETCH_EMAILS.result.textHtml}}\n\n<h3>AI RESPONSE</h3>\n{{last.text}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_9f453f96e9",
+      "actorId": "actor_9f453f96e9",
+      "type": "NodeTransform",
+      "label": "Approve?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.data.approved)) === true || (($json.data.approved)) === 'true'));"
+      }
+    },
+    {
+      "nodeId": "node_a62e80d652",
+      "actorId": "actor_a62e80d652",
+      "type": "NodeBranch",
+      "label": "Approve?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_ccb9c04f3d",
+      "actorId": "actor_ccb9c04f3d",
+      "type": "NodeTransform",
+      "label": "Params: Send Email",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Email Trigger (IMAP)\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Markdown\": {{steps.xf_4fd8183471.result}}, \"Set Email\": {{steps.xf_00652a1c03.result}}, \"Send Draft\": {{steps.GOOGLESUPER_SEND_EMAIL.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_SEND_EMAIL (n8n node \"Send Email\").\nreturn {\n  \"recipient_email\": ($('Email Trigger (IMAP)').item.json.from),\n  \"subject\": `Re: ${$('Email Trigger (IMAP)').item.json.subject}`,\n  \"body\": ($('Write email').item.json.output),\n  \"is_html\": true,\n};"
+      }
+    },
+    {
+      "nodeId": "node_6dac7cbfbf",
+      "actorId": "actor_6dac7cbfbf",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (SMTP original)",
+        "action": "GOOGLESUPER_SEND_EMAIL"
+      }
+    },
+    {
+      "nodeId": "node_6930cc38ac",
+      "actorId": "actor_6930cc38ac",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_7dd18aad48",
+      "actorId": "actor_7dd18aad48",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_e4902f58f0",
+      "actorId": "actor_e4902f58f0",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": ""
+      }
+    },
+    {
+      "nodeId": "node_2a4bfc6442",
+      "actorId": "actor_2a4bfc6442",
+      "type": "NodeChatModel",
+      "label": "Email Summarization Chain: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2360,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openrouter",
+        "model": "deepseek/deepseek-r1:free"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_4505fc933f",
+      "target": "node_d74896c8bf",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_4505fc933f",
+      "target": "node_d74896c8bf",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_d74896c8bf",
+      "target": "node_a5b49bdbc0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a5b49bdbc0",
+      "target": "node_3e4679d17e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_1a3d2be213",
+      "target": "node_d218bbf346",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_9f453f96e9",
+      "target": "node_a62e80d652",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_9f453f96e9",
+      "target": "node_a62e80d652",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_ccb9c04f3d",
+      "target": "node_6dac7cbfbf",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ccb9c04f3d",
+      "target": "node_6dac7cbfbf",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_5806d5bef5",
+      "target": "node_4fd8183471",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5806d5bef5",
+      "target": "node_4fd8183471",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4fd8183471",
+      "target": "node_4505fc933f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4fd8183471",
+      "target": "node_4505fc933f",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4fd8183471",
+      "target": "node_a5b49bdbc0",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3e4679d17e",
+      "target": "node_00652a1c03",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3e4679d17e",
+      "target": "node_00652a1c03",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d218bbf346",
+      "target": "node_831c91e376",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_00652a1c03",
+      "target": "node_1a3d2be213",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_00652a1c03",
+      "target": "node_1a3d2be213",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a62e80d652",
+      "target": "node_ccb9c04f3d",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_831c91e376",
+      "target": "node_ccb9c04f3d",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_831c91e376",
+      "target": "node_9f453f96e9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_831c91e376",
+      "target": "node_9f453f96e9",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6930cc38ac",
+      "target": "node_5806d5bef5",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_6dac7cbfbf",
+      "target": "node_7dd18aad48",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_2a4bfc6442",
+      "target": "node_3e4679d17e",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "gmail-and-email",
+    "categoryLabel": "Gmail and Email Automation",
+    "department": "",
+    "connectors": [
+      "googlesuper",
+      "openrouter"
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 12,
+      "yantraSteps": 16,
+      "foldedHelpers": [
+        "DeepSeek R1",
+        "OpenAI",
+        "Qdrant Vector Store"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Gmail_and_Email_Automation/AI-powered email processing autoresponder and response approval (Yes_No).json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "AI Email processing autoresponder with approval (Yes/No)"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "loop-flattened",
+        "detail": "loop edges removed: Approve? -> Set Email"
+      }
+    ],
+    "setup": [
+      "The original looped (Approve? -> Set Email); here the whole list flows through once. Check the steps inside the loop handle arrays.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openrouter connector (credential).",
+      "Provide run inputs: llm_system_4505fc933f."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Email Trigger (IMAP)",
+          "n8n": "email.read",
+          "action": "googlesuper/GOOGLESUPER_FETCH_EMAILS",
+          "soft": true
+        },
+        {
+          "node": "Markdown",
+          "n8n": "markdown.markdownToHtml",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "DeepSeek R1",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Email Summarization Chain",
+          "model": "deepseek/deepseek-r1:free"
+        },
+        {
+          "node": "OpenAI",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Write email",
+          "model": "gpt-4o-mini"
+        },
+        {
+          "node": "Qdrant Vector Store",
+          "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+          "into": "Write email",
+          "as": "ai_tool"
+        }
+      ],
+      "removedEdges": [
+        {
+          "from": "Approve?",
+          "to": "Set Email"
+        }
+      ],
+      "loopPolicy": "flattened",
+      "triggers": [],
+      "hints": [
+        "\"Set Email\" remains a conditional-loop conversion candidate: requires a resumable human/form/webhook response before another attempt.",
+        "Unsupported loop edges from the original were removed (loopPolicy=flattened); these paths still run once. Supported item and conditional loops use NodeLoop and NodeRepeatUntil.",
+        "\"Email Trigger (IMAP)\": the original used Mailbox (IMAP original); check the mapped googlesuper/GOOGLESUPER_FETCH_EMAILS params before running.",
+        "\"Markdown\" (markdown.markdownToHtml): Markdown to HTML is a minimal converter on Yantra.",
+        "\"Markdown\": Markdown to HTML is a minimal converter on Yantra; swap in a connector if you need full fidelity.",
+        "\"Write email\" used agent tools in the original: Qdrant Vector Store (vectorStoreQdrant). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "# Main Flow\n\n## Preliminary step:\nCreate a vector database on Qdrant and tokenize the documents useful for generating a response\n\n\n## How it works\nThis workflow is designed to automate the process of handling incoming emails, summarizing their content, generating appropriate responses with RAG, and obtaining approval (YES/NO button) before sending replies.\n\nThis workflow is designed to handle general inquiries that come in via corporate email via IMAP and generate responses using RAG. You can quickly integrate Gmail and Outlook via the appropriate trigger nodes",
+      "Convert email to Markdown format for better understanding of LLM models",
+      "Chain that summarizes the received email",
+      "Agent that retrieves business information from a vector database and processes the response",
+      "## IMPORTANT\n\nFor the \"Send Draft\" node, you need to send the draft email to a Gmail address because it is the only one that allows the \"Send and wait for response\" function."
+    ],
+    "nodes": {
+      "node_5806d5bef5": {
+        "n8n": "Email Trigger (IMAP)",
+        "n8nType": "n8n-nodes-base.emailReadImap",
+        "approximate": true
+      },
+      "node_4fd8183471": {
+        "n8n": "Markdown",
+        "n8nType": "n8n-nodes-base.markdown"
+      },
+      "node_3e4679d17e": {
+        "n8n": "Email Summarization Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainSummarization"
+      },
+      "node_4505fc933f": {
+        "n8n": "Email Summarization Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainSummarization"
+      },
+      "node_d74896c8bf": {
+        "n8n": "Email Summarization Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainSummarization"
+      },
+      "node_a5b49bdbc0": {
+        "n8n": "Email Summarization Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainSummarization"
+      },
+      "node_00652a1c03": {
+        "n8n": "Set Email",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_d218bbf346": {
+        "n8n": "Write email",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_1a3d2be213": {
+        "n8n": "Write email",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_831c91e376": {
+        "n8n": "Send Draft",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_9f453f96e9": {
+        "n8n": "Approve?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_a62e80d652": {
+        "n8n": "Approve?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_ccb9c04f3d": {
+        "n8n": "Send Email",
+        "n8nType": "n8n-nodes-base.emailSend"
+      },
+      "node_6dac7cbfbf": {
+        "n8n": "Send Email",
+        "n8nType": "n8n-nodes-base.emailSend"
+      },
+      "node_6930cc38ac": {
+        "n8n": "__start",
+        "n8nType": "synthetic"
+      },
+      "node_7dd18aad48": {
+        "n8n": "__end:Send Email",
+        "n8nType": "synthetic"
+      },
+      "node_e4902f58f0": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_2a4bfc6442": {
+        "n8n": "Email Summarization Chain",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

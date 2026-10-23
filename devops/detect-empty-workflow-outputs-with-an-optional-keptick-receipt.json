@@ -1,0 +1,459 @@
+{
+  "name": "Detect Empty Workflow Outputs with an Optional Keptick Receipt",
+  "workflowSlug": "detect-empty-workflow-outputs-with-an-optional-keptick-receipt",
+  "description": "Check distinct completed-record IDs, including empty and malformed output. Runs locally without an account; sending a count-only Keptick receipt is optional.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_c6d6e45383",
+      "actorId": "actor_c6d6e45383",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_ec68b4df6b",
+      "actorId": "actor_ec68b4df6b",
+      "type": "NodeTransform",
+      "label": "Configure check",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"demoCase\"] = \"healthy\";\n  out[\"minimumItems\"] = Number(1);\n  out[\"recordIdField\"] = \"recordId\";\n  out[\"sendReceipt\"] = ((v) => v === true || v === 'true')(false);\n  out[\"testReceipt\"] = ((v) => v === true || v === 'true')(true);\n  out[\"receiptUrl\"] = \"https://keptick.aifirm.app/api/v1/ingest/{{privateToken}}\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_3e50e43aeb",
+      "actorId": "actor_3e50e43aeb",
+      "type": "NodeTransform",
+      "label": "Fictional completed outputs",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Run the demo\": {{ctx}}, \"Configure check\": {\"demoCase\":\"healthy\",\"minimumItems\":1,\"recordIdField\":\"recordId\",\"sendReceipt\":false,\"testReceipt\":true,\"receiptUrl\":\"https://keptick.aifirm.app/api/v1/ingest/{{privateToken}}\"} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Fictional completed outputs\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const demo = $('Configure check').first().json.demoCase;\n  if (demo === 'empty') return [];\n  if (demo === 'invalid') return [{json:{unexpectedField:'fictional'}}];\n  if (demo === 'duplicates') return [\n    {json:{recordId:'DEMO-001'}}, {json:{recordId:'DEMO-001'}}, {json:{recordId:'DEMO-002'}}\n  ];\n  if (demo !== 'healthy') throw new Error('Use healthy, empty, invalid, or duplicates for demoCase.');\n  return [1,2,3].map(i => ({json:{recordId:`DEMO-00${i}`}}));\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_edd2bf6302",
+      "actorId": "actor_edd2bf6302",
+      "type": "NodeTransform",
+      "label": "Check completed outputs",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Run the demo\": {{ctx}}, \"Configure check\": {\"demoCase\":\"healthy\",\"minimumItems\":1,\"recordIdField\":\"recordId\",\"sendReceipt\":false,\"testReceipt\":true,\"receiptUrl\":\"https://keptick.aifirm.app/api/v1/ingest/{{privateToken}}\"}, \"Fictional completed outputs\": {{steps.xf_3e50e43aeb.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst $workflow = { id: '', name: '', active: true }; const $execution = { id: '', mode: 'manual', resumeUrl: '' }; const $executionId = $execution.id;\nconst $runIndex = 0; const $itemIndex = 0; const $binary = {}; const $prevNode = { name: '', outputIndex: 0, runIndex: 0 }; const $parameter = {}; const $position = 0;\n// Ported from n8n Code node \"Check completed outputs\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const config = $('Configure check').first().json;\n  const minimum = Number(config.minimumItems);\n  if (!Number.isSafeInteger(minimum) || minimum < 0 || minimum > 1000000000)\n    throw new Error('minimumItems must be a non-negative integer, at most 1000000000.');\n  const field = String(config.recordIdField || '').trim();\n  if (!field) throw new Error('Set recordIdField to the field identifying a completed output.');\n  const rows = $input.all().filter(item => Object.keys(item.json || {}).length > 0);\n  const keys = new Set();\n  let invalidItems = 0;\n  for (const item of rows) {\n    const value = item.json[field];\n    const valid = (typeof value === 'string' && value.trim().length > 0)\n      || (typeof value === 'number' && Number.isFinite(value));\n    if (!valid) { invalidItems++; continue; }\n    keys.add(String(value).trim());\n  }\n  const items = keys.size;\n  const duplicateItems = rows.length - invalidItems - items;\n  const checkPassed = items >= minimum && invalidItems === 0;\n  const checkStatus = invalidItems ? 'invalid_output' : items < minimum ? 'below_minimum' : 'healthy';\n  return [{json:{\n    checkPassed, checkStatus, minimumItems:minimum, items, invalidItems, duplicateItems,\n    receipt:{eventId:`n8n:${$workflow.id}:${$execution.id}:${$runIndex}`, success:checkPassed,\n      items, test:config.testReceipt === true,\n      message:`Output check: ${items} distinct IDs; minimum ${minimum}; ${invalidItems} invalid; ${duplicateItems} duplicates.`}\n  }}];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_3de02a4ca1",
+      "actorId": "actor_3de02a4ca1",
+      "type": "NodeTransform",
+      "label": "Send receipt enabled?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Run the demo\": {{ctx}}, \"Configure check\": {\"demoCase\":\"healthy\",\"minimumItems\":1,\"recordIdField\":\"recordId\",\"sendReceipt\":false,\"testReceipt\":true,\"receiptUrl\":\"https://keptick.aifirm.app/api/v1/ingest/{{privateToken}}\"}, \"Fictional completed outputs\": {{steps.xf_3e50e43aeb.result}}, \"Check completed outputs\": {{steps.xf_edd2bf6302.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean(((($('Configure check').first().json.sendReceipt)) === true || (($('Configure check').first().json.sendReceipt)) === 'true'));"
+      }
+    },
+    {
+      "nodeId": "node_595c339e80",
+      "actorId": "actor_595c339e80",
+      "type": "NodeBranch",
+      "label": "Send receipt enabled?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_d7ed618713",
+      "actorId": "actor_d7ed618713",
+      "type": "NodeHttpRequest",
+      "label": "Send count-only receipt",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_ec68b4df6b.result.receiptUrl}}",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_6d4c8f1c50",
+      "actorId": "actor_6d4c8f1c50",
+      "type": "NodeTransform",
+      "label": "Body: Send count-only receipt",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Send count-only receipt\".\nconst __body = (JSON.stringify($json.receipt));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_1fadab75c1",
+      "actorId": "actor_1fadab75c1",
+      "type": "NodeTransform",
+      "label": "Verify receipt accepted",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Run the demo\": {{ctx}}, \"Configure check\": {\"demoCase\":\"healthy\",\"minimumItems\":1,\"recordIdField\":\"recordId\",\"sendReceipt\":false,\"testReceipt\":true,\"receiptUrl\":\"https://keptick.aifirm.app/api/v1/ingest/{{privateToken}}\"}, \"Fictional completed outputs\": {{steps.xf_3e50e43aeb.result}}, \"Check completed outputs\": {{steps.xf_edd2bf6302.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Verify receipt accepted\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  if ($json.received !== true) throw new Error('The receiver did not confirm this receipt.');\n  return [{json:{...$('Check completed outputs').first().json,\n    receiptAccepted:true, duplicateReceipt:$json.duplicate === true,\n    monitorStatus:$json.status || null}}];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_ed2a82eb2f",
+      "actorId": "actor_ed2a82eb2f",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f9e5468f7a",
+      "actorId": "actor_f9e5468f7a",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "privateToken": {
+            "$workflowSecret": "PRIVATE_TOKEN"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_3de02a4ca1",
+      "target": "node_595c339e80",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_3de02a4ca1",
+      "target": "node_595c339e80",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_6d4c8f1c50",
+      "target": "node_d7ed618713",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_6d4c8f1c50",
+      "target": "node_d7ed618713",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_c6d6e45383",
+      "target": "node_ec68b4df6b",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ec68b4df6b",
+      "target": "node_3e50e43aeb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ec68b4df6b",
+      "target": "node_3e50e43aeb",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3e50e43aeb",
+      "target": "node_edd2bf6302",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3e50e43aeb",
+      "target": "node_edd2bf6302",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_edd2bf6302",
+      "target": "node_3de02a4ca1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_edd2bf6302",
+      "target": "node_3de02a4ca1",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_595c339e80",
+      "target": "node_6d4c8f1c50",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_edd2bf6302",
+      "target": "node_6d4c8f1c50",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d7ed618713",
+      "target": "node_1fadab75c1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d7ed618713",
+      "target": "node_1fadab75c1",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1fadab75c1",
+      "target": "node_ed2a82eb2f",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "devops",
+    "categoryLabel": "DevOps and Server Automation",
+    "department": "Engineering",
+    "connectors": [],
+    "setupSecrets": [
+      {
+        "key": "PRIVATE_TOKEN",
+        "label": "private token",
+        "headerFormat": "read inside the step code",
+        "contextKey": "privateToken",
+        "usedBy": [
+          "Check completed outputs",
+          "Configure check",
+          "Fictional completed outputs",
+          "Send receipt enabled?",
+          "Verify receipt accepted"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 8,
+      "yantraSteps": 9,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "devops/Detect Empty Workflow Outputs with an Optional Keptick Receipt.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Detect Empty Workflow Outputs with an Optional Keptick Receipt"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Workflow secret PRIVATE_TOKEN: private token (read inside the step code). Add it in the workflow editor's Secrets panel after import; never paste it in chat."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Run the demo",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "## Check the output, including zero\nRun the demo without an account or network request. In Configure check, change demoCase from healthy to empty, invalid, or duplicates. Inspect the last node.\n\nThe sample records are fictional. This checks distinct nonempty IDs in one field, not whether the real business work was correct.",
+      "## Connect your real output\n1. Keep Configure check before your processing steps.\n2. Replace Fictional completed outputs with the node that emits completed records. Enable Always Output Data on that node, so Check completed outputs runs when there are none.\n3. Set recordIdField and minimumItems for that output.\n4. Test healthy, empty, invalid and duplicate results.\n\nErrors before this branch and workflows that never start require a separate error workflow or missing-run monitor. A run that never reaches the check sends no receipt.",
+      "## Optional receipt\nCreate a monitor in [Keptick](https://keptick.aifirm.app/guide?utm_source=github&utm_medium=template&utm_campaign=e08_n8n_output_guard), paste its private receipt URL in Configure check, then set sendReceipt to true. Keep testReceipt true during setup; set false for real work.\n\nOnly counts/status and an execution identifier leave n8n. The private URL is a credential: do not share workflow exports or execution data after adding it. HTTP errors stop the receipt branch; no automatic retries. The local check works without Keptick.\n\nMade by Keptick, with AI assistance. No affiliation with n8n."
+    ],
+    "nodes": {
+      "node_c6d6e45383": {
+        "n8n": "Run the demo",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_ec68b4df6b": {
+        "n8n": "Configure check",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_3e50e43aeb": {
+        "n8n": "Fictional completed outputs",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_edd2bf6302": {
+        "n8n": "Check completed outputs",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_3de02a4ca1": {
+        "n8n": "Send receipt enabled?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_595c339e80": {
+        "n8n": "Send receipt enabled?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_d7ed618713": {
+        "n8n": "Send count-only receipt",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_6d4c8f1c50": {
+        "n8n": "Send count-only receipt",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_1fadab75c1": {
+        "n8n": "Verify receipt accepted",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_ed2a82eb2f": {
+        "n8n": "__end:Verify receipt accepted",
+        "n8nType": "synthetic"
+      },
+      "node_f9e5468f7a": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

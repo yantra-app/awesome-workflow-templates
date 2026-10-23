@@ -1,0 +1,395 @@
+{
+  "name": "Qualify new leads in Google Sheets via OpenAI's GPT-4",
+  "workflowSlug": "qualify-new-leads-in-google-sheets-via-openai-s-gpt-4",
+  "description": "Uses OpenAI's GPT-4 to analyze and qualify new leads entered into a Google Sheet, helping sales teams prioritize their outreach.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_5d5c87c8fa",
+      "actorId": "actor_5d5c87c8fa",
+      "type": "NodeCdeWebhookTrigger",
+      "label": "Webhook: googlesuper/GOOGLESUPER_SPREADSHEET_ROW_CHANGED_TRI",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "connector": "googlesuper",
+        "webhookEndpointId": "",
+        "triggerSlug": "GOOGLESUPER_SPREADSHEET_ROW_CHANGED_TRIGGER",
+        "connectedAccountId": "",
+        "config": {},
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "nodeId": "node_a6a39f5e29",
+      "actorId": "actor_a6a39f5e29",
+      "type": "NodeLlmChain",
+      "label": "Qualify leads with GPT",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "Your task is to qualify incoming leads. Leads are form submissions to a closed community group. Use the following criteria for a quality lead:\n\n1. We are looking for decision makers who run companies or who have some teams. The bigger the team - the better. Basically, everyone with some level of responsibility should be accepted. This is the main criterion.\n2. Email from a non-standard domain. Ideally this should be a corporate domain, but this is a secondary criterion.\n\nPlease thing step by step whether a lead is quality or not?\n\nIf at least one of the criteria satisfy, reply with \"qualified\" in response. Otherwise reply \"not qualified\". Reply with a JSON of the following structure: {\"rating\":\"string\",\"explanation\":\"string\"}. Reply only with with the JSON and nothing more!",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_3824830522",
+      "actorId": "actor_3824830522",
+      "type": "NodeTransform",
+      "label": "Prompt: Qualify leads with GPT",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Qualify leads with GPT.\nconst __promptValue = `Here's a lead info:\nName: ${$json['Your name']}\nEmail: ${$json['Email Address']}\nBusiness area: ${$json['Your business area']}\nSize of the team: ${$json['Your team size']}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_d74dbae347",
+      "actorId": "actor_d74dbae347",
+      "type": "NodeTransform",
+      "label": "Extract JSON reply",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"reply\"] = (JSON.parse($json));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_2a1b7370d2",
+      "actorId": "actor_2a1b7370d2",
+      "type": "NodeSync",
+      "label": "Merge",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_efa3f724ec",
+      "actorId": "actor_efa3f724ec",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_BATCH_UPDATE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_BATCH_UPDATE",
+        "params": {
+          "spreadsheet_id": "{{spreadsheetId}}",
+          "sheet_name": "Form Responses 1",
+          "values": [
+            [
+              "{{last.data1.reply.rating}}",
+              "{{last.data1.Timestamp}}"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_107d636358",
+      "actorId": "actor_107d636358",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f522b97a2c",
+      "actorId": "actor_f522b97a2c",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "spreadsheetId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_913db1874b",
+      "actorId": "actor_913db1874b",
+      "type": "NodeChatModel",
+      "label": "Qualify leads with GPT: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_3824830522",
+      "target": "node_a6a39f5e29",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_2a1b7370d2",
+      "target": "node_efa3f724ec",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d74dbae347",
+      "target": "node_2a1b7370d2",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_a6a39f5e29",
+      "target": "node_d74dbae347",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a6a39f5e29",
+      "target": "node_d74dbae347",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5d5c87c8fa",
+      "target": "node_2a1b7370d2",
+      "sourceOutput": "payload",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_5d5c87c8fa",
+      "target": "node_3824830522",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5d5c87c8fa",
+      "target": "node_3824830522",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_efa3f724ec",
+      "target": "node_107d636358",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_913db1874b",
+      "target": "node_a6a39f5e29",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "google-drive-and-sheets",
+    "categoryLabel": "Google Drive and Google Sheets",
+    "department": "Sales",
+    "connectors": [
+      "googlesuper",
+      "openai"
+    ],
+    "setupVars": [
+      {
+        "key": "spreadsheetId",
+        "label": "Spreadsheet id",
+        "type": "id",
+        "example": "1AbC...xyz",
+        "usedBy": [
+          "Update lead status"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeCdeWebhookTrigger",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 5,
+      "yantraSteps": 7,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Google_Drive_and_Google_Sheets/Qualify new leads in Google Sheets via OpenAI_s GPT-4.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Qualify new leads in Google Sheets via OpenAI's GPT-4"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "webhook-registration",
+        "node": "Check for new entries",
+        "detail": "webhook trigger googlesuper/GOOGLESUPER_SPREADSHEET_ROW_CHANGED_TRIGGER needs webhookEndpointId, connectedAccountId"
+      }
+    ],
+    "setup": [
+      "\"Check for new entries\": after import, register the googlesuper webhook (`cdecli webhook endpoint create -c googlesuper`, then `cdecli trigger instance upsert --slug GOOGLESUPER_SPREADSHEET_ROW_CHANGED_TRIGGER`) and set webhookEndpointId, connectedAccountId on the trigger node.",
+      "Setup value spreadsheetId: Spreadsheet id (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Check for new entries",
+          "type": "n8n-nodes-base.googleSheetsTrigger",
+          "as": "NodeCdeWebhookTrigger"
+        }
+      ],
+      "hints": [
+        "\"Check for new entries\" is a provider webhook (googlesuper/GOOGLESUPER_SPREADSHEET_ROW_CHANGED_TRIGGER). Create the endpoint and trigger instance, then paste the we_… id and connected account into this node before the first run: `cdecli webhook endpoint create -c googlesuper --client-id <id>`, `cdecli webhook endpoint set-data <we_id> --signing-secret <secret>`, `cdecli trigger instance upsert --slug GOOGLESUPER_SPREADSHEET_ROW_CHANGED_TRIGGER --account <connectedAccountId>`.",
+        "\"Merge\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "### 1. Create a Google Sheet document\n* This template uses Google Sheet document connected to Google Forms, but a standalone Sheet document will work too\n* Adapt initial trigger to your needs: check for new entries periodically or add a manual trigger\n\n[Link to the Google Sheet template](https://docs.google.com/spreadsheets/d/[id removed])",
+      "### 2. Provide lead qualification instructions\n* Create a __system message__ with overall instructions\n* Add a __user message__ with the JSON variables\n* Set node parses the resulting JSON object, but you can also request a plain string response in the system message",
+      "### 3. Combine the initial data with GPT response\n* This Merge node puts together original records from the google sheet and responses from the OpenAI",
+      "### 4. Update the Google Sheet document\n* Provide __Column to Match On__ (usually a timestamp in case of Google Forms)\n* Enter the result from GPT into a separate column"
+    ],
+    "nodes": {
+      "node_5d5c87c8fa": {
+        "n8n": "Check for new entries",
+        "n8nType": "n8n-nodes-base.googleSheetsTrigger"
+      },
+      "node_a6a39f5e29": {
+        "n8n": "Qualify leads with GPT",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_3824830522": {
+        "n8n": "Qualify leads with GPT",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_d74dbae347": {
+        "n8n": "Extract JSON reply",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_2a1b7370d2": {
+        "n8n": "Merge",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_efa3f724ec": {
+        "n8n": "Update lead status",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_107d636358": {
+        "n8n": "__end:Update lead status",
+        "n8nType": "synthetic"
+      },
+      "node_f522b97a2c": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_913db1874b": {
+        "n8n": "Qualify leads with GPT",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

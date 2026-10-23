@@ -1,0 +1,721 @@
+{
+  "name": "AI-Powered Children's Arabic Storytelling on Telegram",
+  "workflowSlug": "ai-powered-children-s-arabic-storytelling-on-telegram",
+  "description": "A Telegram bot that uses OpenAI to generate and narrate children's stories in Arabic, making storytelling interactive and educational for young users.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_b609e6b313",
+      "actorId": "actor_b609e6b313",
+      "type": "NodeCron",
+      "label": "Schedule Trigger",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 */12 * * *"
+      }
+    },
+    {
+      "nodeId": "node_700a55f7e3",
+      "actorId": "actor_700a55f7e3",
+      "type": "NodeLlmChain",
+      "label": "Create a Story for Kids",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "Create a captivating short tale for kids, whisking them away to magical lands brimming with wisdom. Explore diverse themes in a fun and simple way, weaving in valuable messages. Dive into cultural adventures with lively language that sparks curiosity. Let your story inspire young minds through enchanting narratives that linger long after the last word. Begin crafting your imaginative tale now! (Approximately 900 characters)\n\n\n\"\"\n\nCONCISE SUMMARY:",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_eaee6d147a",
+      "actorId": "actor_eaee6d147a",
+      "type": "NodeTransform",
+      "label": "Prompt: Create a Story for Kids",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Create a Story for Kids.\nconst __promptValue = ($json);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_4bb1c874d5",
+      "actorId": "actor_4bb1c874d5",
+      "type": "NodeLlmChain",
+      "label": "Translate the Story to Arabic",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "Translate this story texts to \"Arabic\" and make it easy to understands for kids with easy words and moral lesson :\n\n\n\"\"",
+        "prompt": "{{last.text}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_730865e8c1",
+      "actorId": "actor_730865e8c1",
+      "type": "NodeLlmChain",
+      "label": "Create a Prompt for DALL-E",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "Summarize the characters in this story based on their appearance and describe them if they are humans or animals and how they look like and what kind of are they, the prompt should be no-text in the picture.\n\n\n\n\n\"\"\n\n\nCONCISE SUMMARY:",
+        "prompt": "{{last.text}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_a6e0dbbf1c",
+      "actorId": "actor_a6e0dbbf1c",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_SEND_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_SEND_MESSAGE",
+        "params": {
+          "chat_id": "{{telegramChatId}}",
+          "text": "{{last.text}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_1cd5bd8dcf",
+      "actorId": "actor_1cd5bd8dcf",
+      "type": "NodeCdeConnector",
+      "label": "yantra-voicebox/YANTRA_VOICEBOX_SPEAK",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-voicebox",
+        "connectorLabel": "Audio",
+        "action": "YANTRA_VOICEBOX_SPEAK",
+        "params": {
+          "text": "{{last.text}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_fcb27c8944",
+      "actorId": "actor_fcb27c8944",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-generation/YANTRA_GEMINI_IMAGE_GENERATE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-generation",
+        "connectorLabel": "Image generation",
+        "action": "YANTRA_GEMINI_IMAGE_GENERATE",
+        "params": {
+          "prompt": "Produce an image ensuring that no text is generated within the visual content. {{last.text}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_933ffbebc5",
+      "actorId": "actor_933ffbebc5",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_SEND_DOCUMENT",
+      "color": "#6366F1",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_SEND_DOCUMENT",
+        "params": {
+          "chat_id": "{{telegramChatId}}",
+          "document": "{{last.result.audioUrl}}",
+          "caption": "نهاية القصة ... "
+        }
+      }
+    },
+    {
+      "nodeId": "node_d25bfdaaf0",
+      "actorId": "actor_d25bfdaaf0",
+      "type": "NodeTransform",
+      "label": "Params: Send Image to the Channel",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for telegram/TELEGRAM_SEND_PHOTO (n8n node \"Send Image to the Channel\").\nreturn {\n  \"chat_id\": `{{telegramChatId}}`,\n  \"photo\": ($json.imageUrl ?? $json.imageUrls?.[0]),\n  \"caption\": null,\n  \"parse_mode\": null,\n};"
+      }
+    },
+    {
+      "nodeId": "node_5d1279a816",
+      "actorId": "actor_5d1279a816",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_SEND_PHOTO",
+      "color": "#6366F1",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_SEND_PHOTO"
+      }
+    },
+    {
+      "nodeId": "node_2387f0b215",
+      "actorId": "actor_2387f0b215",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_73fb226523",
+      "actorId": "actor_73fb226523",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_5c64f1d369",
+      "actorId": "actor_5c64f1d369",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_45ff2b1b4b",
+      "actorId": "actor_45ff2b1b4b",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "telegramChatId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_a44405a7da",
+      "actorId": "actor_a44405a7da",
+      "type": "NodeChatModel",
+      "label": "Create a Story for Kids: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4-turbo"
+      }
+    },
+    {
+      "nodeId": "node_e9e30f7abe",
+      "actorId": "actor_e9e30f7abe",
+      "type": "NodeChatModel",
+      "label": "Translate the Story to Arabic: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1600,
+        "y": 720
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4-turbo"
+      }
+    },
+    {
+      "nodeId": "node_bdc43ab130",
+      "actorId": "actor_bdc43ab130",
+      "type": "NodeChatModel",
+      "label": "Create a Prompt for DALL-E: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1600,
+        "y": 980
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_eaee6d147a",
+      "target": "node_700a55f7e3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_d25bfdaaf0",
+      "target": "node_5d1279a816",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d25bfdaaf0",
+      "target": "node_5d1279a816",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_b609e6b313",
+      "target": "node_eaee6d147a",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b609e6b313",
+      "target": "node_eaee6d147a",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_730865e8c1",
+      "target": "node_fcb27c8944",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_fcb27c8944",
+      "target": "node_d25bfdaaf0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fcb27c8944",
+      "target": "node_d25bfdaaf0",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1cd5bd8dcf",
+      "target": "node_933ffbebc5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_4bb1c874d5",
+      "target": "node_a6e0dbbf1c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_4bb1c874d5",
+      "target": "node_1cd5bd8dcf",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_a6e0dbbf1c",
+      "target": "node_2387f0b215",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_933ffbebc5",
+      "target": "node_73fb226523",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_5d1279a816",
+      "target": "node_5c64f1d369",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_a44405a7da",
+      "target": "node_700a55f7e3",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_e9e30f7abe",
+      "target": "node_4bb1c874d5",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_bdc43ab130",
+      "target": "node_730865e8c1",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_700a55f7e3",
+      "target": "node_4bb1c874d5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_700a55f7e3",
+      "target": "node_730865e8c1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "telegram",
+    "categoryLabel": "Telegram",
+    "department": "Support",
+    "connectors": [
+      "openai",
+      "telegram",
+      "yantra-image-generation",
+      "yantra-voicebox"
+    ],
+    "setupVars": [
+      {
+        "key": "telegramChatId",
+        "label": "Telegram chat id",
+        "type": "id",
+        "example": "123456789",
+        "usedBy": [
+          "Send Audio to the Channel",
+          "Send Image to the Channel",
+          "Send the Story To Channel"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate ai-powered-children-s-arabic-storytelling-on-telegram",
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 13,
+      "yantraSteps": 14,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "Recursive Character Text Splitter",
+        "OpenAI Chat Model1",
+        "OpenAI Chat Model2"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Telegram/AI-Powered Children_s Arabic Storytelling on Telegram.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Setup value telegramChatId: Telegram chat id (for example 123456789). Write it into the Workflow Configs initialContext before import.",
+      "Connect the openai connector (credential).",
+      "Connect the telegram connector (credential).",
+      "After import, start the schedule: cdecli cron activate ai-powered-children-s-arabic-storytelling-on-telegram."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Generate Audio for the Story",
+          "n8n": "audio.generate",
+          "action": "yantra-voicebox/YANTRA_VOICEBOX_SPEAK",
+          "soft": true
+        },
+        {
+          "node": "Send Audio to the Channel",
+          "n8n": "message.sendAudio",
+          "action": "telegram/TELEGRAM_SEND_DOCUMENT",
+          "soft": true
+        },
+        {
+          "node": "Send Image to the Channel",
+          "n8n": "message.sendPhoto",
+          "action": "telegram/TELEGRAM_SEND_PHOTO",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Create a Story for Kids",
+          "model": "gpt-4-turbo"
+        },
+        {
+          "node": "Recursive Character Text Splitter",
+          "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+          "into": "Create a Story for Kids",
+          "as": "ai_textSplitter"
+        },
+        {
+          "node": "OpenAI Chat Model1",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Translate the Story to Arabic",
+          "model": "gpt-4-turbo"
+        },
+        {
+          "node": "OpenAI Chat Model2",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Create a Prompt for DALL-E"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Schedule Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "\"Generate Audio for the Story\" used OpenAI text to speech; the platform voice speaks the text and returns audioUrl (a stored audio file) instead of binary audio.",
+        "\"Send Audio to the Channel\" sent the generated file by URL instead of as binary.",
+        "\"Send Image to the Channel\" sent the generated file by URL instead of as binary.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect telegram: `cdecli credential create -n \"telegram\" -p telegram --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "# Template for Kids' Story in Arabic\n\nThe n8n template for creating kids' stories in Arabic provides a versatile platform for storytellers to captivate young audiences with educational and interactive tales. Along with its core functionalities, this template allows for customization to suit various use cases and can be set up effortlessly.\n\nCheck this example: [https://t.me/st0ries95](https://t.me/st0ries95)\n\n\n## Node Functionalities\n\n\n## Automated Storytelling Process\n\n\n## Use Cases\n1. **Educational Platforms**:\n Educational platforms can automate the creation and distribution of educational stories in Arabic for children using this template. By incorporating visual and auditory elements into the storytelling process, educational platforms can enhance learning experiences and engage young learners effectively.\n\n2. **Children's Libraries**:\n Children's libraries can utilize this template to curate and share a diverse collection of Arabic stories with young readers. The automated generation of visual content and audio files enhances the storytelling experience, encouraging children to immerse themselves in new worlds and characters through captivating narratives.\n\n3. **Language Learning Apps**:\n Language learning apps focused on Arabic can integrate this template to offer culturally rich storytelling experiences for children learning the language. By translating stories into Arabic and supplementing them with visual and auditory components, these apps can facilitate language acquisition in an enjoyable and interactive manner.\n\n## Configuration Guide for Nodes\n\n### OpenAI Chat Model Nodes:\n- **Credentials**: Provide the necessary API credentials for the OpenAI GPT-4 Turbo model.\n- **Options**: Configure any specific options required for the chat model.\n\n### Create a Prompt for DALL-E Node:\n- **Prompts Customization**: Customize prompts to generate relevant visual content for the stories.\n- **Summarization Method and Prompts**: Define the summarization method and prompts for generating visual content without text.\n\n### Generate an Image for the Story Node:\n- **Resource**: Specify the type of resource (image).\n- **Prompt**: Set up the prompt for producing an image without text within the visual content.\n\n### Generate Audio for the Story Node:\n- **Resource**: Select the type of resource (audio).\n- **Input**: Define the input text for generating audio files.\n\n### Translate the Story to Arabic Node:\n- **Chunking Mode**: Choose the chunking mode (advanced).\n- **Summarization Method and Prompts**: Set the summarization method and prompts for translating the story into Arabic.\n\n### Send the Story To Channel Node:\n- **Chat ID**: Provide the chat ID where the story text will be sent.\n- **Text**: Configure the text to be sent to the channel.\n\nBy configuring each node as per the guidelines above, users can effectively set up and customize the n8n template for kids' stories in Arabic, tailoring it to specific use cases and delivering a seamless and engaging storytelling experience for young audiences."
+    ],
+    "nodes": {
+      "node_b609e6b313": {
+        "n8n": "Schedule Trigger",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_700a55f7e3": {
+        "n8n": "Create a Story for Kids",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainSummarization"
+      },
+      "node_eaee6d147a": {
+        "n8n": "Create a Story for Kids",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainSummarization"
+      },
+      "node_4bb1c874d5": {
+        "n8n": "Translate the Story to Arabic",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainSummarization"
+      },
+      "node_730865e8c1": {
+        "n8n": "Create a Prompt for DALL-E",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainSummarization"
+      },
+      "node_a6e0dbbf1c": {
+        "n8n": "Send the Story To Channel",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_1cd5bd8dcf": {
+        "n8n": "Generate Audio for the Story",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_fcb27c8944": {
+        "n8n": "Generate an Image for the Story",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_933ffbebc5": {
+        "n8n": "Send Audio to the Channel",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_d25bfdaaf0": {
+        "n8n": "Send Image to the Channel",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_5d1279a816": {
+        "n8n": "Send Image to the Channel",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_2387f0b215": {
+        "n8n": "__end:Send the Story To Channel",
+        "n8nType": "synthetic"
+      },
+      "node_73fb226523": {
+        "n8n": "__end:Send Audio to the Channel",
+        "n8nType": "synthetic"
+      },
+      "node_5c64f1d369": {
+        "n8n": "__end:Send Image to the Channel",
+        "n8nType": "synthetic"
+      },
+      "node_45ff2b1b4b": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_a44405a7da": {
+        "n8n": "Create a Story for Kids",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_e9e30f7abe": {
+        "n8n": "Translate the Story to Arabic",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_bdc43ab130": {
+        "n8n": "Create a Prompt for DALL-E",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

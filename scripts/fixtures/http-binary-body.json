@@ -1,0 +1,80 @@
+{
+ "name": "fixture-http-binary-body",
+ "nodes": [
+  {
+   "name": "Start",
+   "type": "n8n-nodes-base.manualTrigger",
+   "typeVersion": 1,
+   "position": [
+    0,
+    0
+   ],
+   "parameters": {}
+  },
+  {
+   "name": "Generate image",
+   "type": "@n8n/n8n-nodes-langchain.openAi",
+   "typeVersion": 1,
+   "position": [
+    220,
+    0
+   ],
+   "parameters": {
+    "resource": "image",
+    "prompt": "a cover photo"
+   }
+  },
+  {
+   "name": "Upload media",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 1,
+   "position": [
+    440,
+    0
+   ],
+   "parameters": {
+    "method": "POST",
+    "url": "https://blog.example.org/wp-json/wp/v2/media",
+    "sendBody": true,
+    "contentType": "binaryData",
+    "inputDataFieldName": "data",
+    "authentication": "predefinedCredentialType",
+    "nodeCredentialType": "wordpressApi",
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "Content-Disposition",
+       "value": "attachment; filename=\"cover.jpg\""
+      }
+     ]
+    },
+    "options": {}
+   }
+  }
+ ],
+ "connections": {
+  "Start": {
+   "main": [
+    [
+     {
+      "node": "Generate image",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Generate image": {
+   "main": [
+    [
+     {
+      "node": "Upload media",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ }
+}

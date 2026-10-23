@@ -1,0 +1,927 @@
+{
+  "name": "Inbox Rail Audit - Gmail payment rails to Google Sheets",
+  "workflowSlug": "inbox-rail-audit-gmail-payment-rails-to-google-sheets",
+  "description": "One pass over ~13 months of Gmail receipt metadata. Groups charges by payment rail (PayPal, Apple/Apple Pay, Google Play/Pay, Stripe/Paddle, SEPA/incasso, Klarna), writes amount/last4/VERIFIED evidence to Google Sheets. No PDF download, no mailbox writes, no LLM.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_088c2bb23d",
+      "actorId": "actor_088c2bb23d",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_ed5e69a627",
+      "actorId": "actor_ed5e69a627",
+      "type": "NodeTransform",
+      "label": "Set window",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"WINDOW_AFTER\"] = \"2025/08/01\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_4e0a846c28",
+      "actorId": "actor_4e0a846c28",
+      "type": "NodeTransform",
+      "label": "Params: Gmail PayPal",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When clicking ‘Execute workflow’\": {{ctx}}, \"Set window\": {\"WINDOW_AFTER\":\"2025/08/01\"} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_FETCH_EMAILS (n8n node \"Gmail PayPal\").\nreturn {\n  \"query\": ('after:' + $('Set window').first().json.WINDOW_AFTER + ' (from:paypal.com OR from:paypal.nl OR from:service@paypal.nl) (betaling OR receipt OR ontvangstbewijs OR \"automatische betaling\" OR payment)'),\n};"
+      }
+    },
+    {
+      "nodeId": "node_c589cb007a",
+      "actorId": "actor_c589cb007a",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_FETCH_EMAILS",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_FETCH_EMAILS"
+      }
+    },
+    {
+      "nodeId": "node_da07204ef8",
+      "actorId": "actor_da07204ef8",
+      "type": "NodeTransform",
+      "label": "Params: Gmail Apple",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When clicking ‘Execute workflow’\": {{ctx}}, \"Set window\": {\"WINDOW_AFTER\":\"2025/08/01\"}, \"Gmail PayPal\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_FETCH_EMAILS (n8n node \"Gmail Apple\").\nreturn {\n  \"query\": ('after:' + $('Set window').first().json.WINDOW_AFTER + ' (from:apple.com OR from:email.apple.com) (invoice OR factuur OR receipt OR Apple Pay)'),\n};"
+      }
+    },
+    {
+      "nodeId": "node_a0bbe40a6c",
+      "actorId": "actor_a0bbe40a6c",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_FETCH_EMAILS",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_FETCH_EMAILS"
+      }
+    },
+    {
+      "nodeId": "node_6ed54b2fe6",
+      "actorId": "actor_6ed54b2fe6",
+      "type": "NodeTransform",
+      "label": "Params: Gmail Google Play",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When clicking ‘Execute workflow’\": {{ctx}}, \"Set window\": {\"WINDOW_AFTER\":\"2025/08/01\"}, \"Gmail PayPal\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Gmail Apple\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_FETCH_EMAILS (n8n node \"Gmail Google Play\").\nreturn {\n  \"query\": ('after:' + $('Set window').first().json.WINDOW_AFTER + ' (from:googleplay OR from:google.com OR subject:\"Google Play\") (subscription OR abonnement OR \"Google LLC\" OR receipt)'),\n};"
+      }
+    },
+    {
+      "nodeId": "node_7f17349ad6",
+      "actorId": "actor_7f17349ad6",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_FETCH_EMAILS",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_FETCH_EMAILS"
+      }
+    },
+    {
+      "nodeId": "node_4bd7d3a23d",
+      "actorId": "actor_4bd7d3a23d",
+      "type": "NodeTransform",
+      "label": "Params: Gmail Google Pay",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When clicking ‘Execute workflow’\": {{ctx}}, \"Set window\": {\"WINDOW_AFTER\":\"2025/08/01\"}, \"Gmail PayPal\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Gmail Apple\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Gmail Google Play\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_FETCH_EMAILS (n8n node \"Gmail Google Pay\").\nreturn {\n  \"query\": ('after:' + $('Set window').first().json.WINDOW_AFTER + ' (\"Google Pay\" OR GPay OR \"kaart toegevoegd\" OR \"card added\")'),\n};"
+      }
+    },
+    {
+      "nodeId": "node_50602443fb",
+      "actorId": "actor_50602443fb",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_FETCH_EMAILS",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_FETCH_EMAILS"
+      }
+    },
+    {
+      "nodeId": "node_1646b3766d",
+      "actorId": "actor_1646b3766d",
+      "type": "NodeTransform",
+      "label": "Params: Gmail Stripe/Paddle",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 1140
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When clicking ‘Execute workflow’\": {{ctx}}, \"Set window\": {\"WINDOW_AFTER\":\"2025/08/01\"}, \"Gmail PayPal\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Gmail Apple\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Gmail Google Play\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Gmail Google Pay\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_FETCH_EMAILS (n8n node \"Gmail Stripe/Paddle\").\nreturn {\n  \"query\": ('after:' + $('Set window').first().json.WINDOW_AFTER + ' (from:stripe.com OR from:paddle.com OR from:lemonsqueezy.com) (receipt OR invoice OR payment)'),\n};"
+      }
+    },
+    {
+      "nodeId": "node_483ded8914",
+      "actorId": "actor_483ded8914",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_FETCH_EMAILS",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 1140
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_FETCH_EMAILS"
+      }
+    },
+    {
+      "nodeId": "node_84ff10b492",
+      "actorId": "actor_84ff10b492",
+      "type": "NodeTransform",
+      "label": "Params: Gmail SEPA",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 1400
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When clicking ‘Execute workflow’\": {{ctx}}, \"Set window\": {\"WINDOW_AFTER\":\"2025/08/01\"}, \"Gmail PayPal\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Gmail Apple\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Gmail Google Play\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Gmail Google Pay\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Gmail Stripe/Paddle\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_FETCH_EMAILS (n8n node \"Gmail SEPA\").\nreturn {\n  \"query\": ('after:' + $('Set window').first().json.WINDOW_AFTER + ' (incasso OR \"automatische incasso\" OR sepa OR machtiging OR \"direct debit\")'),\n};"
+      }
+    },
+    {
+      "nodeId": "node_eb52f10365",
+      "actorId": "actor_eb52f10365",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_FETCH_EMAILS",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 1400
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_FETCH_EMAILS"
+      }
+    },
+    {
+      "nodeId": "node_f1fcf34c87",
+      "actorId": "actor_f1fcf34c87",
+      "type": "NodeTransform",
+      "label": "Params: Gmail Klarna",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 1660
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When clicking ‘Execute workflow’\": {{ctx}}, \"Set window\": {\"WINDOW_AFTER\":\"2025/08/01\"}, \"Gmail PayPal\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Gmail Apple\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Gmail Google Play\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Gmail Google Pay\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Gmail Stripe/Paddle\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Gmail SEPA\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_FETCH_EMAILS (n8n node \"Gmail Klarna\").\nreturn {\n  \"query\": ('after:' + $('Set window').first().json.WINDOW_AFTER + ' (from:klarna OR from:afterpay) -unsubscribe -nieuwsbrief'),\n};"
+      }
+    },
+    {
+      "nodeId": "node_f0e1fd4809",
+      "actorId": "actor_f0e1fd4809",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_FETCH_EMAILS",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 1660
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_FETCH_EMAILS"
+      }
+    },
+    {
+      "nodeId": "node_08ca35754e",
+      "actorId": "actor_08ca35754e",
+      "type": "NodeSync",
+      "label": "Wait for all rails",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_ae4247183e",
+      "actorId": "actor_ae4247183e",
+      "type": "NodeTransform",
+      "label": "Classify rails",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When clicking ‘Execute workflow’\": {{ctx}}, \"Set window\": {\"WINDOW_AFTER\":\"2025/08/01\"}, \"Gmail PayPal\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Gmail Apple\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Gmail Google Play\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Gmail Google Pay\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Gmail Stripe/Paddle\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Gmail SEPA\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}}, \"Gmail Klarna\": {{steps.GOOGLESUPER_FETCH_EMAILS.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Classify rails\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  function last4(text) {\n    const s = String(text || '');\n    const m = s.match(/(?:ending in|eindigend op|card ending|xxxx|••••)\\s*(\\d{4})/i);\n    if (m) return m[1];\n    return '';\n  }\n  function amountOf(text) {\n    const s = String(text || '');\n    const m = s.match(/\\u20ac\\s*[\\d.,]+|\\$\\s*[\\d.,]+|[\\d.,]+\\s*EUR|[\\d.,]+\\s*USD/i);\n    return m ? m[0] : '';\n  }\n  function currencyOf(amount) {\n    const a = String(amount || '');\n    if (a.indexOf('\\u20ac') !== -1 || /EUR/i.test(a)) return 'EUR';\n    if (a.indexOf('$') !== -1 || /USD/i.test(a)) return 'USD';\n    return '';\n  }\n  function isCardAdded(text) {\n    return /card added|kaart toegevoegd/i.test(String(text || ''));\n  }\n  function isEmptyMsg(j) {\n    if (!j) return true;\n    return !(j.snippet || j.text || j.textPlain || j.subject || j.from);\n  }\n  function row(j, rail) {\n    const snippet = j.snippet || j.text || j.textPlain || '';\n    const subject = j.subject || '';\n    const blob = (subject + ' ' + snippet);\n    const date = j.date || j.internalDate || '';\n    const from = j.from || '';\n    const amt = amountOf(blob);\n    const added = isCardAdded(blob);\n    let evidence = amt ? 'VERIFIED' : 'UNCERTAIN';\n    let note = '';\n    if (added && !amt) {\n      evidence = 'UNCERTAIN';\n      note = 'Card added / kaart toegevoegd is not a charge';\n    }\n    if (rail === 'Stripe/Paddle' && /onboard|connect your|payout/i.test(blob) && !amt) {\n      note = 'Possible seller onboarding, not spend';\n    }\n    return {\n      rail: rail,\n      merchant: String(subject).slice(0, 120),\n      amount: amt,\n      currency: currencyOf(amt),\n      cadence: '',\n      last_charge: date,\n      last4: last4(blob),\n      evidence: evidence,\n      note: note,\n      from: from,\n      subject: subject,\n      snippet: String(snippet).slice(0, 240)\n    };\n  }\n  const rails = [\n    ['Gmail PayPal', 'PayPal'],\n    ['Gmail Apple', 'Apple'],\n    ['Gmail Google Play', 'Google Play'],\n    ['Gmail Google Pay', 'Google Pay'],\n    ['Gmail Stripe/Paddle', 'Stripe/Paddle'],\n    ['Gmail SEPA', 'SEPA'],\n    ['Gmail Klarna', 'Klarna']\n  ];\n  const out = [];\n  for (let r = 0; r < rails.length; r++) {\n    const name = rails[r][0];\n    const rail = rails[r][1];\n    try {\n      const items = $(name).all();\n      for (let i = 0; i < items.length; i++) {\n        if (isEmptyMsg(items[i].json)) continue;\n        out.push(row(items[i].json, rail));\n      }\n    } catch (e) {}\n  }\n  return out.map(function (json) { return { json: json }; });\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_e88233e88a",
+      "actorId": "actor_e88233e88a",
+      "type": "NodeTransform",
+      "label": "Params: Append sheet",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Params for googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND (n8n node \"Append sheet\").\nreturn {\n  \"spreadsheetId\": \"REPLACE_SHEET_ID\",\n  \"range\": \"rails\",\n  \"values\": ($input.all().map((i) => Object.values(i.json ?? {}))),\n  \"valueInputOption\": \"USER_ENTERED\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_e910455f82",
+      "actorId": "actor_e910455f82",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_SPREADSHEETS_VALUES_APPEND"
+      }
+    },
+    {
+      "nodeId": "node_e84491f4cb",
+      "actorId": "actor_e84491f4cb",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_8f5013931a",
+      "actorId": "actor_8f5013931a",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 1920
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": ""
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_4e0a846c28",
+      "target": "node_c589cb007a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_4e0a846c28",
+      "target": "node_c589cb007a",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_da07204ef8",
+      "target": "node_a0bbe40a6c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_da07204ef8",
+      "target": "node_a0bbe40a6c",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_6ed54b2fe6",
+      "target": "node_7f17349ad6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_6ed54b2fe6",
+      "target": "node_7f17349ad6",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_4bd7d3a23d",
+      "target": "node_50602443fb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_4bd7d3a23d",
+      "target": "node_50602443fb",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_1646b3766d",
+      "target": "node_483ded8914",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_1646b3766d",
+      "target": "node_483ded8914",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_84ff10b492",
+      "target": "node_eb52f10365",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_84ff10b492",
+      "target": "node_eb52f10365",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_f1fcf34c87",
+      "target": "node_f0e1fd4809",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_f1fcf34c87",
+      "target": "node_f0e1fd4809",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_e88233e88a",
+      "target": "node_e910455f82",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_e88233e88a",
+      "target": "node_e910455f82",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_088c2bb23d",
+      "target": "node_ed5e69a627",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ed5e69a627",
+      "target": "node_4e0a846c28",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ed5e69a627",
+      "target": "node_4e0a846c28",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ed5e69a627",
+      "target": "node_da07204ef8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ed5e69a627",
+      "target": "node_da07204ef8",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ed5e69a627",
+      "target": "node_6ed54b2fe6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ed5e69a627",
+      "target": "node_6ed54b2fe6",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ed5e69a627",
+      "target": "node_4bd7d3a23d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ed5e69a627",
+      "target": "node_4bd7d3a23d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ed5e69a627",
+      "target": "node_1646b3766d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ed5e69a627",
+      "target": "node_1646b3766d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ed5e69a627",
+      "target": "node_84ff10b492",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ed5e69a627",
+      "target": "node_84ff10b492",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ed5e69a627",
+      "target": "node_f1fcf34c87",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ed5e69a627",
+      "target": "node_f1fcf34c87",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c589cb007a",
+      "target": "node_08ca35754e",
+      "sourceOutput": "result",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_a0bbe40a6c",
+      "target": "node_08ca35754e",
+      "sourceOutput": "result",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_7f17349ad6",
+      "target": "node_08ca35754e",
+      "sourceOutput": "result",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_50602443fb",
+      "target": "node_08ca35754e",
+      "sourceOutput": "result",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_483ded8914",
+      "target": "node_08ca35754e",
+      "sourceOutput": "result",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_eb52f10365",
+      "target": "node_08ca35754e",
+      "sourceOutput": "result",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_f0e1fd4809",
+      "target": "node_08ca35754e",
+      "sourceOutput": "result",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_08ca35754e",
+      "target": "node_ae4247183e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_08ca35754e",
+      "target": "node_ae4247183e",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ae4247183e",
+      "target": "node_e88233e88a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ae4247183e",
+      "target": "node_e88233e88a",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e910455f82",
+      "target": "node_e84491f4cb",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "gmail-and-email",
+    "categoryLabel": "Gmail and Email Automation",
+    "department": "Finance/Ops",
+    "connectors": [
+      "googlesuper"
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeEnd",
+      "NodeStart",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 12,
+      "yantraSteps": 20,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Gmail_and_Email_Automation/Inbox Rail Audit - Gmail payment rails to Google Sheets.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Inbox Rail Audit"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Connect the googlesuper connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Append sheet",
+          "n8n": "sheet.appendOrUpdate",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking ‘Execute workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Wait for all rails\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was append).",
+        "\"Append sheet\" (sheet.appendOrUpdate): Sheets upsert without a match key → APPEND only (soft).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Inbox Rail Audit (free Hub workflow)\n\n**Who it is for:** solopreneurs with PayPal + Apple + Play + Stripe (and NL SEPA/Klarna) on one Gmail.\n\n**What it does:** one pass over ~13 months of Gmail *receipt metadata*. Groups by **payment rail**, not merchant dump. Writes a Google Sheet. Does not cancel anything, does not download PDFs, does not send mail, does not write labels.\n\n**How it works**\n1. Set `WINDOW_AFTER` (default `2025/08/01`).\n2. Seven Gmail searches run in parallel (cap 200 each). `downloadAttachments` is false.\n3. Merge waits for every rail, including empty inboxes.\n4. Code classifies rail / amount / last4 / VERIFIED vs UNCERTAIN. \"Card added\" is not a charge. Stripe seller onboarding is flagged.\n5. Rows append to sheet tab `rails`.\n\n**Setup**\n- Attach your Gmail OAuth and Google Sheets OAuth (placeholders are REPLACE).\n- Create a Sheet, tab name `rails`.\n- Paste the Sheet ID into **Append sheet**.\n- Execute once. Read `evidence` before you cancel.\n\n**Limits:** household SEPA (rent, health, telco) is often UNAVAILABLE in Gmail - that is a blind spot, not \"you have no rent\". Do not convert EUR/USD without a rate in the mail.",
+      "## Rail searches (Gmail, read-only)\n\nCap 200 threads each. No `has:attachment`. Metadata + snippet only.\n\n1. PayPal\n2. Apple / Apple Pay\n3. Google Play\n4. Google Pay (card-added is not spend)\n5. Stripe / Paddle / Lemon\n6. SEPA / incasso\n7. Klarna / Afterpay",
+      "## Before you run\n\n1. Credentials: Gmail + Google Sheets. IDs stay REPLACE until you attach your own.\n2. `WINDOW_AFTER` = `YYYY/MM/DD` (13-month window).\n3. Sheet tab = `rails`. Document ID = your Sheet.\n4. Keep **downloadAttachments = false**.\n5. Human still cancels. This map is not a mandate list.\n\nEmpty rails still continue (always output data).",
+      "## Classify + sheet\n\nOutput columns: rail, merchant (subject), amount, currency, last_charge, last4, evidence, note, from, snippet.\n\nEvidence: VERIFIED (amount in snippet) or UNCERTAIN.\n\nCadence / grouping by merchant is a second human pass. Do not treat every food order as recurring."
+    ],
+    "nodes": {
+      "node_088c2bb23d": {
+        "n8n": "When clicking ‘Execute workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_ed5e69a627": {
+        "n8n": "Set window",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_4e0a846c28": {
+        "n8n": "Gmail PayPal",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_c589cb007a": {
+        "n8n": "Gmail PayPal",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_da07204ef8": {
+        "n8n": "Gmail Apple",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_a0bbe40a6c": {
+        "n8n": "Gmail Apple",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_6ed54b2fe6": {
+        "n8n": "Gmail Google Play",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_7f17349ad6": {
+        "n8n": "Gmail Google Play",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_4bd7d3a23d": {
+        "n8n": "Gmail Google Pay",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_50602443fb": {
+        "n8n": "Gmail Google Pay",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_1646b3766d": {
+        "n8n": "Gmail Stripe/Paddle",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_483ded8914": {
+        "n8n": "Gmail Stripe/Paddle",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_84ff10b492": {
+        "n8n": "Gmail SEPA",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_eb52f10365": {
+        "n8n": "Gmail SEPA",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_f1fcf34c87": {
+        "n8n": "Gmail Klarna",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_f0e1fd4809": {
+        "n8n": "Gmail Klarna",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_08ca35754e": {
+        "n8n": "Wait for all rails",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_ae4247183e": {
+        "n8n": "Classify rails",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_e88233e88a": {
+        "n8n": "Append sheet",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_e910455f82": {
+        "n8n": "Append sheet",
+        "n8nType": "n8n-nodes-base.googleSheets",
+        "approximate": true
+      },
+      "node_e84491f4cb": {
+        "n8n": "__end:Append sheet",
+        "n8nType": "synthetic"
+      },
+      "node_8f5013931a": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

@@ -1,0 +1,540 @@
+{
+  "name": "Easy Image Captioning with Gemini 1.5 Pro",
+  "workflowSlug": "easy-image-captioning-with-gemini-1-5-pro",
+  "description": "Converted from the n8n template \"Easy Image Captioning with Gemini 1.5 Pro\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_78fc7802e0",
+      "actorId": "actor_78fc7802e0",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_18c0f901ac",
+      "actorId": "actor_18c0f901ac",
+      "type": "NodeHttpRequest",
+      "label": "Get Image",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://images.pexels.com/photos/1267338/pexels-photo-1267338.jpeg?auto=compress&cs=tinysrgb&w=600"
+      }
+    },
+    {
+      "nodeId": "node_6a2bfa4a75",
+      "actorId": "actor_6a2bfa4a75",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-editing/YANTRA_IMAGE_EDIT_RESIZE",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-editing",
+        "connectorLabel": "Image editing",
+        "action": "YANTRA_IMAGE_EDIT_RESIZE",
+        "params": {
+          "width": 512,
+          "height": 512
+        }
+      }
+    },
+    {
+      "nodeId": "node_999c8b6201",
+      "actorId": "actor_999c8b6201",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-editing/YANTRA_IMAGE_EDIT_CONVERT",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-editing",
+        "connectorLabel": "Image editing",
+        "action": "YANTRA_IMAGE_EDIT_CONVERT",
+        "params": {}
+      }
+    },
+    {
+      "nodeId": "node_28f8e435f4",
+      "actorId": "actor_28f8e435f4",
+      "type": "NodeLlmChain",
+      "label": "Image Captioning Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "caption_title": {
+              "type": "string"
+            },
+            "caption_text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "caption_title",
+            "caption_text"
+          ],
+          "additionalProperties": false
+        },
+        "system": "You role is to provide an appropriate image caption for user provided images.\n\nThe individual components of a caption are as follows: who, when, where, context and miscellaneous. For a really good caption, follow this template: who + when + where + context + miscellaneous\n\nGive the caption a punny title.",
+        "prompt": "Generate a caption for this image.",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_9da1056900",
+      "actorId": "actor_9da1056900",
+      "type": "NodeSync",
+      "label": "Merge Image & Caption",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_5e3cb3bd2d",
+      "actorId": "actor_5e3cb3bd2d",
+      "type": "NodeTransform",
+      "label": "Calculate Positioning",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Calculate Positioning\" (run once for each item).\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __results = __items.map((__item) => {\n  const $json = __item;\n  const item = { json: __item };\n  const $input = { item: { json: __item }, first: () => ({ json: __item }), all: () => [{ json: __item }] };\n  return (() => {\n  const { size, output } = $input.item.json;\n  \n  const lineHeight = 35;\n  const fontSize = Math.round(size.height / lineHeight);\n  const maxLineLength = Math.round(size.width/fontSize) * 2;\n  const text = `\"${output.caption_title}\". ${output.caption_text}`;\n  const numLinesOccupied = Math.round(text.length / maxLineLength);\n  \n  const verticalPadding = size.height * 0.02;\n  const horizontalPadding = size.width * 0.02;\n  const rectPosX = 0;\n  const rectPosY = size.height - (verticalPadding * 2.5) - (numLinesOccupied * fontSize);\n  const textPosX = horizontalPadding;\n  const textPosY = size.height - (numLinesOccupied * fontSize) - (verticalPadding/2);\n  \n  return {\n   caption: {\n   fontSize,\n   maxLineLength,\n   numLinesOccupied,\n   rectPosX,\n   rectPosY,\n   textPosX,\n   textPosY,\n   verticalPadding,\n   horizontalPadding,\n   }\n  }\n  \n  })();\n});\nreturn __single(__results.map(__unwrap));"
+      }
+    },
+    {
+      "nodeId": "node_c6569d5340",
+      "actorId": "actor_c6569d5340",
+      "type": "NodeSync",
+      "label": "Merge Caption & Positions",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_ecbd25b6b3",
+      "actorId": "actor_ecbd25b6b3",
+      "type": "NodeTransform",
+      "label": "Apply Caption to Image: draw",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// image draw has no Yantra image-editing action.\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_a13b4aaf03",
+      "actorId": "actor_a13b4aaf03",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-editing/YANTRA_IMAGE_EDIT_ANNOTATE",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-editing",
+        "connectorLabel": "Image editing",
+        "action": "YANTRA_IMAGE_EDIT_ANNOTATE",
+        "params": {
+          "text": "\"{{last.transformed.output.caption_title}}\". {{last.transformed.output.caption_text}}",
+          "font_size": "{{last.transformed.caption.fontSize}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_b0124e52b9",
+      "actorId": "actor_b0124e52b9",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_29ad06a180",
+      "actorId": "actor_29ad06a180",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": ""
+      }
+    },
+    {
+      "nodeId": "node_202e575604",
+      "actorId": "actor_202e575604",
+      "type": "NodeChatModel",
+      "label": "Image Captioning Agent: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "gemini",
+        "model": "models/gemini-1.5-flash"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_ecbd25b6b3",
+      "target": "node_a13b4aaf03",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_78fc7802e0",
+      "target": "node_18c0f901ac",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_999c8b6201",
+      "target": "node_9da1056900",
+      "sourceOutput": "result",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_6a2bfa4a75",
+      "target": "node_28f8e435f4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_5e3cb3bd2d",
+      "target": "node_c6569d5340",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_9da1056900",
+      "target": "node_5e3cb3bd2d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9da1056900",
+      "target": "node_5e3cb3bd2d",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9da1056900",
+      "target": "node_c6569d5340",
+      "sourceOutput": "data1",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_c6569d5340",
+      "target": "node_ecbd25b6b3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c6569d5340",
+      "target": "node_ecbd25b6b3",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_18c0f901ac",
+      "target": "node_6a2bfa4a75",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_18c0f901ac",
+      "target": "node_999c8b6201",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_28f8e435f4",
+      "target": "node_9da1056900",
+      "sourceOutput": "object",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_a13b4aaf03",
+      "target": "node_b0124e52b9",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_202e575604",
+      "target": "node_28f8e435f4",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "",
+    "connectors": [
+      "gemini",
+      "yantra-image-editing"
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 11,
+      "yantraSteps": 11,
+      "foldedHelpers": [
+        "Google Gemini Chat Model",
+        "Structured Output Parser"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/Easy Image Captioning with Gemini 1.5 Pro.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "hard-approximation",
+        "node": "Apply Caption to Image",
+        "detail": "image.multiStep -> yantra-image-editing"
+      }
+    ],
+    "setup": [
+      "\"Apply Caption to Image\" (image.multiStep) only approximates the original; review it before relying on the result.",
+      "Connect the gemini connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Apply Caption to Image",
+          "n8n": "image.multiStep",
+          "action": "yantra-image-editing"
+        }
+      ],
+      "folded": [
+        {
+          "node": "Google Gemini Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+          "into": "Image Captioning Agent",
+          "model": "models/gemini-1.5-flash"
+        },
+        {
+          "node": "Structured Output Parser",
+          "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+          "into": "Image Captioning Agent",
+          "as": "ai_outputParser"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Merge Image & Caption\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "\"Merge Caption & Positions\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "\"Apply Caption to Image\": image operations draw have no Yantra action.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "## Try it out!\n\n### This workflow takes an image and generates a caption for it using AI. The OpenAI node has been able to do this for a while but this workflow demonstrates how to achieve the same with other multimodal vision models such as Google's Gemini.\n\nAdditional, we'll use the Edit Image node to overlay the generated caption onto the image. This can be useful for publications or can be repurposed for copyrights and/or watermarks.\n\n### Need Help?\nJoin the [Discord](https://discord.com/invite/XPKeKXeB7d) or ask in the [Forum](https://community.n8n.io/)!",
+      "## 1. Import an Image \n[Read more about the HTTP request node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.httprequest)\n\nFor this demonstration, we'll grab an image off Pexels.com - a popular free stock photography site - by using the HTTP request node to download.\n\nIn your own workflows, this can be replaces by other triggers such as webhooks.",
+      "## 2. Using Vision Model to Generate Caption\n[Learn more about the Basic LLM Chain](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.chainllm)\n\nn8n's basic LLM node supports multimodal input by allowing you to specify either a binary or an image url to send to a compatible LLM. This makes it easy to start utilising this powerful feature for visual classification or OCR tasks which have previously depended on more dedicated OCR models.\n\nHere, we've simply passed our image binary as a \"user message\" option, asking the LLM to help us generate a caption title and text which is appropriate for the given subject. Once generated, we'll pass this text along with the image to combine them both.",
+      "## 3. Overlay Caption on Image \n[Read more about the Edit Image node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.editimage)\n\nFinally, we’ll perform some basic calculations to place the generated caption onto the image. With n8n's user-friendly image editing features, this can be done entirely within the workflow!\n\nThe Code node tool is ideal for these types of calculations and is used here to position the caption at the bottom of the image. To create the overlay, the Edit Image node enables us to insert text onto the image, which we’ll use to add the generated caption.",
+      "**FIG 1.** Example input image with AI generated caption\n![Example Output](https://res.cloudinary.com/daglih2g8/image/upload/f_auto,q_auto/v1/n8n-workflows/l5xbb4ze4wyxwwefqmnc#full-width)"
+    ],
+    "nodes": {
+      "node_78fc7802e0": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_18c0f901ac": {
+        "n8n": "Get Image",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_6a2bfa4a75": {
+        "n8n": "Resize For AI",
+        "n8nType": "n8n-nodes-base.editImage"
+      },
+      "node_999c8b6201": {
+        "n8n": "Get Info",
+        "n8nType": "n8n-nodes-base.editImage"
+      },
+      "node_28f8e435f4": {
+        "n8n": "Image Captioning Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_9da1056900": {
+        "n8n": "Merge Image & Caption",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_5e3cb3bd2d": {
+        "n8n": "Calculate Positioning",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_c6569d5340": {
+        "n8n": "Merge Caption & Positions",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_ecbd25b6b3": {
+        "n8n": "Apply Caption to Image",
+        "n8nType": "n8n-nodes-base.editImage"
+      },
+      "node_a13b4aaf03": {
+        "n8n": "Apply Caption to Image",
+        "n8nType": "n8n-nodes-base.editImage"
+      },
+      "node_b0124e52b9": {
+        "n8n": "__end:Apply Caption to Image",
+        "n8nType": "synthetic"
+      },
+      "node_29ad06a180": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_202e575604": {
+        "n8n": "Image Captioning Agent",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

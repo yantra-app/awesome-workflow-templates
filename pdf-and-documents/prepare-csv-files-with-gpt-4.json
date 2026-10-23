@@ -1,0 +1,704 @@
+{
+  "name": "Prepare CSV files with GPT-4",
+  "workflowSlug": "prepare-csv-files-with-gpt-4",
+  "description": "Converted from the n8n template \"Prepare CSV files with GPT-4\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_cc919b02fa",
+      "actorId": "actor_cc919b02fa",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_94e19763ed",
+      "actorId": "actor_94e19763ed",
+      "type": "NodeLlmChain",
+      "label": "OpenAI",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "prompt": "please create a list of 10 random users. Return back ONLY a JSON array. Character names of famous fiction characters. Make Names and Surnames start with the same letter. Name and Surname can be from different characters. If subscribed is false then make date_subscribed empty. If date_subscribed is not empty then make it random and no later then 2023-10-01. Make JSON in a single line, avoid line breaks. Here's an example: [{\"user_name\": \"Jack Jones\", \"user_email\":\"{{contactEmail}}\",\"subscribed\": true, \"date_subscribed\":\"2023-10-01\" },{\"user_name\": \"Martin Moor\", \"user_email\":\"{{contactEmail2}}\",\"subscribed\": false, \"date_subscribed\":\"\" }]",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_04aee38c1a",
+      "actorId": "actor_04aee38c1a",
+      "type": "NodeTransform",
+      "label": "Items: Split In Batches",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_5b3c200e2c",
+      "actorId": "actor_5b3c200e2c",
+      "type": "NodeLoop",
+      "label": "Split In Batches",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_735628c943",
+      "actorId": "actor_735628c943",
+      "type": "NodeTransform",
+      "label": "Item: Split In Batches",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_975d224f9f",
+      "actorId": "actor_975d224f9f",
+      "type": "NodeTransform",
+      "label": "Results: Split In Batches",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_19e37fba5a",
+      "actorId": "actor_19e37fba5a",
+      "type": "NodeTransform",
+      "label": "Parse JSON",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"content\"] = (JSON.parse($json.message.content));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_76f193f06f",
+      "actorId": "actor_76f193f06f",
+      "type": "NodeTransform",
+      "label": "Make JSON Table",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"content\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"content\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"content\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_6f61703c30",
+      "actorId": "actor_6f61703c30",
+      "type": "NodeTransform",
+      "label": "Convert to CSV",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Split In Batches\": __namedCtx.steps?.[\"Item: Split In Batches\"]?.[\"transformed\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst items = __items.map((json) => ({ json }));\nconst $workflow = { id: '', name: '', active: true }; const $execution = { id: '', mode: 'manual', resumeUrl: '' }; const $executionId = $execution.id;\nconst $runIndex = 0; const $itemIndex = 0; const $binary = {}; const $prevNode = { name: '', outputIndex: 0, runIndex: 0 }; const $parameter = {}; const $position = 0;\n// CSV file from the items.\nconst __list = Array.isArray(source) ? source : [source];\nconst __cols = [...new Set(__list.flatMap((r) => Object.keys(r ?? {})))];\nconst __cell = (v) => { const s = v == null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v); return /[\",\\n\\r]/.test(s) ? '\"' + s.replace(/\"/g, '\"\"') + '\"' : s; };\nconst __csv = [__cols.map(__cell).join(','), ...__list.map((r) => __cols.map((c) => __cell(r?.[c])).join(','))].join('\\n');\nreturn { data: __csv, fileName: `funny_names_${$('Split In Batches').item.json.index+1}.${$parameter[\"fileFormat\"]}`, mimeType: \"text/csv\" };"
+      }
+    },
+    {
+      "nodeId": "node_bdfe64dc1d",
+      "actorId": "actor_bdfe64dc1d",
+      "type": "NodeTransform",
+      "label": "Strip UTF BOM bytes",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// moveBinaryData: surface binary/file payload as a JSON field.\nconst __file = typeof source === 'string' ? source : source?.data ?? source?.content ?? source?.body ?? source;\nconst __text = typeof __file === 'string' ? __file : JSON.stringify(__file ?? '');\nreturn { ...($json && typeof $json === 'object' ? $json : {}), \"data\": __text };"
+      }
+    },
+    {
+      "nodeId": "node_44263cbf5e",
+      "actorId": "actor_44263cbf5e",
+      "type": "NodeTransform",
+      "label": "Create valid binary",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// moveBinaryData: surface binary/file payload as a JSON field.\nconst __file = typeof source === 'string' ? source : source?.data ?? source?.content ?? source?.body ?? source;\nconst __text = typeof __file === 'string' ? __file : JSON.stringify(__file ?? '');\nreturn { ...($json && typeof $json === 'object' ? $json : {}), \"data\": __text };"
+      }
+    },
+    {
+      "nodeId": "node_87bac3fc4c",
+      "actorId": "actor_87bac3fc4c",
+      "type": "NodeTransform",
+      "label": "Save to Disk",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst $workflow = { id: '', name: '', active: true }; const $execution = { id: '', mode: 'manual', resumeUrl: '' }; const $executionId = $execution.id;\nconst $runIndex = 0; const $itemIndex = 0; const $binary = {}; const $prevNode = { name: '', outputIndex: 0, runIndex: 0 }; const $parameter = {}; const $position = 0;\n// Write file: emit a Yantra file object (no host filesystem).\nconst __file = typeof source === 'string' ? source : source?.data ?? source?.content ?? source?.body ?? source;\nconst __text = typeof __file === 'string' ? __file : JSON.stringify(__file ?? '');\nreturn { data: __text, fileName: \"=./.n8n/{{ $binary.data.fileName }}\", mimeType: 'application/octet-stream' };"
+      }
+    },
+    {
+      "nodeId": "node_7ed102607f",
+      "actorId": "actor_7ed102607f",
+      "type": "NodeTransform",
+      "label": "Return: Save to Disk",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_75333b4874",
+      "actorId": "actor_75333b4874",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_e7406c6b1a",
+      "actorId": "actor_e7406c6b1a",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "contactEmail": "",
+          "contactEmail2": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_d5ed4b7387",
+      "actorId": "actor_d5ed4b7387",
+      "type": "NodeChatModel",
+      "label": "OpenAI: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_04aee38c1a",
+      "target": "node_5b3c200e2c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_04aee38c1a",
+      "target": "node_5b3c200e2c",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_5b3c200e2c",
+      "target": "node_735628c943",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5b3c200e2c",
+      "target": "node_735628c943",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5b3c200e2c",
+      "target": "node_975d224f9f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5b3c200e2c",
+      "target": "node_975d224f9f",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cc919b02fa",
+      "target": "node_94e19763ed",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_94e19763ed",
+      "target": "node_04aee38c1a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_94e19763ed",
+      "target": "node_04aee38c1a",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_735628c943",
+      "target": "node_19e37fba5a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_735628c943",
+      "target": "node_19e37fba5a",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_19e37fba5a",
+      "target": "node_76f193f06f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_19e37fba5a",
+      "target": "node_76f193f06f",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_76f193f06f",
+      "target": "node_6f61703c30",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_76f193f06f",
+      "target": "node_6f61703c30",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6f61703c30",
+      "target": "node_bdfe64dc1d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6f61703c30",
+      "target": "node_bdfe64dc1d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bdfe64dc1d",
+      "target": "node_44263cbf5e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bdfe64dc1d",
+      "target": "node_44263cbf5e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_44263cbf5e",
+      "target": "node_87bac3fc4c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_44263cbf5e",
+      "target": "node_87bac3fc4c",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_87bac3fc4c",
+      "target": "node_7ed102607f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_87bac3fc4c",
+      "target": "node_7ed102607f",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7ed102607f",
+      "target": "node_5b3c200e2c",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_7ed102607f",
+      "target": "node_5b3c200e2c",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_975d224f9f",
+      "target": "node_75333b4874",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_d5ed4b7387",
+      "target": "node_94e19763ed",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "pdf-and-documents",
+    "categoryLabel": "PDF and Document Processing",
+    "department": "",
+    "connectors": [
+      "openai"
+    ],
+    "setupVars": [
+      {
+        "key": "contactEmail",
+        "label": "Email address",
+        "type": "email",
+        "example": "you@example.com",
+        "usedBy": [
+          "OpenAI"
+        ]
+      },
+      {
+        "key": "contactEmail2",
+        "label": "Email address",
+        "type": "email",
+        "example": "you@example.com",
+        "usedBy": [
+          "OpenAI"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeLoop",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 9,
+      "yantraSteps": 14,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "PDF_and_Document_Processing/Prepare CSV files with GPT-4.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Prepare CSV files with GPT-4"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Setup value contactEmail: Email address (for example you@example.com). Write it into the Workflow Configs initialContext before import.",
+      "Setup value contactEmail2: Email address (for example you@example.com). Write it into the Workflow Configs initialContext before import.",
+      "Connect the openai connector (credential).",
+      "Provide run inputs: $binary."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Convert to CSV",
+          "n8n": "spreadsheetFile.toFile",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Strip UTF BOM bytes",
+          "n8n": "moveBinaryData",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Create valid binary",
+          "n8n": "moveBinaryData",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Save to Disk",
+          "n8n": "writeBinaryFile",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "When clicking \"Execute Workflow\"",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Split In Batches\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "\"Convert to CSV\" (spreadsheetFile.toFile): Spreadsheet export approximated as a csv file object; point the next step at data.",
+        "\"Convert to CSV\": spreadsheetFile became a Transform that builds { data, fileName, mimeType } (csv).",
+        "\"Strip UTF BOM bytes\" (moveBinaryData): Local filesystem / binary helpers become `{ data, fileName, mimeType }` fields on Yantra; there is no host disk.",
+        "\"Strip UTF BOM bytes\": Yantra steps exchange file content as text or base64 fields, not paths on disk. Point this at the upstream file payload.",
+        "\"Create valid binary\" (moveBinaryData): Local filesystem / binary helpers become `{ data, fileName, mimeType }` fields on Yantra; there is no host disk.",
+        "\"Create valid binary\": Yantra steps exchange file content as text or base64 fields, not paths on disk. Point this at the upstream file payload.",
+        "\"Save to Disk\" (writeBinaryFile): Local filesystem / binary helpers become `{ data, fileName, mimeType }` fields on Yantra; there is no host disk.",
+        "\"Save to Disk\": Yantra steps exchange file content as text or base64 fields, not paths on disk. Point this at the upstream file payload.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "## This is a helper workflow to create 3 CSV files\n### Feel free to adapt as needed\n### Some mock data from GPT is pinned for convenience",
+      "### These 2 nodes fix an issue with BOM bytes in the beginning of the file.\nWithout them reading the CSV file back becomes tricky"
+    ],
+    "nodes": {
+      "node_cc919b02fa": {
+        "n8n": "When clicking \"Execute Workflow\"",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_94e19763ed": {
+        "n8n": "OpenAI",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_04aee38c1a": {
+        "n8n": "Split In Batches",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_5b3c200e2c": {
+        "n8n": "Split In Batches",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_735628c943": {
+        "n8n": "Split In Batches",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_975d224f9f": {
+        "n8n": "Split In Batches",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_19e37fba5a": {
+        "n8n": "Parse JSON",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_76f193f06f": {
+        "n8n": "Make JSON Table",
+        "n8nType": "n8n-nodes-base.itemLists"
+      },
+      "node_6f61703c30": {
+        "n8n": "Convert to CSV",
+        "n8nType": "n8n-nodes-base.spreadsheetFile"
+      },
+      "node_bdfe64dc1d": {
+        "n8n": "Strip UTF BOM bytes",
+        "n8nType": "n8n-nodes-base.moveBinaryData"
+      },
+      "node_44263cbf5e": {
+        "n8n": "Create valid binary",
+        "n8nType": "n8n-nodes-base.moveBinaryData"
+      },
+      "node_87bac3fc4c": {
+        "n8n": "Save to Disk",
+        "n8nType": "n8n-nodes-base.writeBinaryFile"
+      },
+      "node_7ed102607f": {
+        "n8n": "Save to Disk",
+        "n8nType": "n8n-nodes-base.writeBinaryFile"
+      },
+      "node_75333b4874": {
+        "n8n": "__end:Split In Batches",
+        "n8nType": "synthetic"
+      },
+      "node_e7406c6b1a": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_d5ed4b7387": {
+        "n8n": "OpenAI",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

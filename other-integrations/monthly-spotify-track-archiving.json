@@ -1,0 +1,1525 @@
+{
+  "name": "Monthly Spotify Track Archiving",
+  "workflowSlug": "monthly-spotify-track-archiving",
+  "description": "Archives and classifies monthly Spotify tracks into playlists.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_2b83142d1b",
+      "actorId": "actor_2b83142d1b",
+      "type": "NodeCron",
+      "label": "Monthly Trigger",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 0 1 * *"
+      }
+    },
+    {
+      "nodeId": "node_e1b21280a7",
+      "actorId": "actor_e1b21280a7",
+      "type": "NodeCdeConnector",
+      "label": "spotify/SPOTIFY_GET_A_LIST_OF_CURRENT_USERS_PLAYLISTS",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "spotify",
+        "connectorLabel": "Spotify",
+        "action": "SPOTIFY_GET_A_LIST_OF_CURRENT_USERS_PLAYLISTS",
+        "params": {}
+      }
+    },
+    {
+      "nodeId": "node_189cf5fdfa",
+      "actorId": "actor_189cf5fdfa",
+      "type": "NodeCdeConnector",
+      "label": "spotify/SPOTIFY_GET_USER_S_SAVED_TRACKS",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "spotify",
+        "connectorLabel": "Spotify",
+        "action": "SPOTIFY_GET_USER_S_SAVED_TRACKS",
+        "params": {}
+      }
+    },
+    {
+      "nodeId": "node_b2b465ce8f",
+      "actorId": "actor_b2b465ce8f",
+      "type": "NodeTransform",
+      "label": "Filter my playlist",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn __items.filter(($json) => Boolean((String(($json.owner.display_name) ?? '') === String(\"Arnaud\" ?? ''))));"
+      }
+    },
+    {
+      "nodeId": "node_3babb62379",
+      "actorId": "actor_3babb62379",
+      "type": "NodeTransform",
+      "label": "Retrieve relevant info",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(String.prototype, { toDateTime() { return __dt(String(this)); } });\n// Set fields from JSON (n8n Set node, JSON mode): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const __raw = `{\n\"track\" : \"${$json.track.name.replaceAll('\"',\"'\")}\",\n\"artist\": \"${$json.track.artists[0].name}\",\n\"album\" :\"${$json.track.album.name}\",\n\"track_spotify_uri\" : \"${$json.track.uri}\",\n\"track_spotify_id\" : \"${$json.track.id}\",\n\"external_urls\": \"${$json.track.external_urls.spotify}\",\n\"track_popularity\" : \"${$json.track.popularity}\",\n\"album_release_date\" : \"${$json.track.album.release_date.toDateTime().year}\"\n}`;\n  let __obj;\n  try { __obj = typeof __raw === 'string' ? JSON.parse(__raw) : __raw; } catch (e) { throw new Error('Set node JSON is not valid JSON: ' + e.message); }\n  return __obj;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_4b192855a8",
+      "actorId": "actor_4b192855a8",
+      "type": "NodeTransform",
+      "label": "Playlists informations",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields from JSON (n8n Set node, JSON mode): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const __raw = `{\n \"playlist_name\": \"${$json.name}\",\n \"playlist_description\": \"${$json.description}\",\n \"playlist_spotify_uri\": \"${$json.uri}\"\n}\n `;\n  let __obj;\n  try { __obj = typeof __raw === 'string' ? JSON.parse(__raw) : __raw; } catch (e) { throw new Error('Set node JSON is not valid JSON: ' + e.message); }\n  return __obj;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_b439fbd7ea",
+      "actorId": "actor_b439fbd7ea",
+      "type": "NodeTransform",
+      "label": "Batch preparation",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Batch preparation\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const items = $input.all();\n  const trackSpotifyIds = items.map((item) => item?.json?.track_spotify_id);\n  \n  const aggregatedItems = [];\n  for (let i = 0; i < trackSpotifyIds.length; i += 100) {\n   aggregatedItems.push({\n   json: {\n   trackSpotifyIds: trackSpotifyIds.slice(i, i + 100),\n   },\n   });\n  }\n  \n  return aggregatedItems;\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_6478a71897",
+      "actorId": "actor_6478a71897",
+      "type": "NodeTransform",
+      "label": "Limit2",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nreturn __items.slice(0, 1);"
+      }
+    },
+    {
+      "nodeId": "node_6cdddbd0a5",
+      "actorId": "actor_6cdddbd0a5",
+      "type": "NodeHttpRequest",
+      "label": "Get Track details",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "headers": {
+          "Authorization": "Bearer {{spotifyAccessToken}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_e6bd0b66f2",
+      "actorId": "actor_e6bd0b66f2",
+      "type": "NodeTransform",
+      "label": "URL: Get Track details",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request URL for \"Get Track details\".\nreturn `https://api.spotify.com/v1/audio-features?ids=${$json.trackSpotifyIds.join(\",\")}`;"
+      }
+    },
+    {
+      "nodeId": "node_a66d408d90",
+      "actorId": "actor_a66d408d90",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_BATCH_GET",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_BATCH_GET",
+        "params": {
+          "spreadsheet_id": "https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit?gid=0#gid=0",
+          "ranges": [
+            "playslists listing"
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_f576416722",
+      "actorId": "actor_f576416722",
+      "type": "NodeTransform",
+      "label": "Split Out",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"audio_features\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"audio_features\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"audio_features\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_d378053c92",
+      "actorId": "actor_d378053c92",
+      "type": "NodeSync",
+      "label": "Excluding logged playlists",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_0c6e3fb522",
+      "actorId": "actor_0c6e3fb522",
+      "type": "NodeSync",
+      "label": "Merge",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_23ed351af5",
+      "actorId": "actor_23ed351af5",
+      "type": "NodeTransform",
+      "label": "Params: Log new playlists",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Params for googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND (n8n node \"Log new playlists\").\nreturn {\n  \"spreadsheetId\": \"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit?gid=0#gid=0\",\n  \"range\": \"playslists listing\",\n  \"values\": ($input.all().map((i) => Object.values(i.json ?? {}))),\n  \"valueInputOption\": \"USER_ENTERED\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_fffd5d9a8c",
+      "actorId": "actor_fffd5d9a8c",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_SPREADSHEETS_VALUES_APPEND"
+      }
+    },
+    {
+      "nodeId": "node_50f954611b",
+      "actorId": "actor_50f954611b",
+      "type": "NodeTransform",
+      "label": "Simplify Tracks informations",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"date_added\"] = ($now.format('yyyy-MM-dd'));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_ed7cd8cd3d",
+      "actorId": "actor_ed7cd8cd3d",
+      "type": "NodeTransform",
+      "label": "Limit",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nreturn __items.slice(0, 1);"
+      }
+    },
+    {
+      "nodeId": "node_7daf3ff8ee",
+      "actorId": "actor_7daf3ff8ee",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_BATCH_GET",
+      "color": "#6366F1",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_BATCH_GET",
+        "params": {
+          "spreadsheet_id": "https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit?gid=0#gid=0",
+          "ranges": [
+            "tracks listing"
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_c432939e59",
+      "actorId": "actor_c432939e59",
+      "type": "NodeSync",
+      "label": "Excluding logged tracks",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_d2c04af26c",
+      "actorId": "actor_d2c04af26c",
+      "type": "NodeTransform",
+      "label": "Params: Log new tracks",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Params for googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND (n8n node \"Log new tracks\").\nreturn {\n  \"spreadsheetId\": \"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit?gid=0#gid=0\",\n  \"range\": \"tracks listing\",\n  \"values\": ($input.all().map((i) => Object.values(i.json ?? {}))),\n  \"valueInputOption\": \"USER_ENTERED\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_0ef14ce260",
+      "actorId": "actor_0ef14ce260",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_SPREADSHEETS_VALUES_APPEND"
+      }
+    },
+    {
+      "nodeId": "node_236e277b47",
+      "actorId": "actor_236e277b47",
+      "type": "NodeTransform",
+      "label": "Aggregate by 200 tracks",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Aggregate by 200 tracks\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const items = $input.all();\n  const chunkSize = 200;\n  const result = [];\n  \n  for (let i = 0; i < items.length; i += chunkSize) {\n   const chunk = items.slice(i, i + chunkSize).map((item) => item.json);\n   result.push({json:{chunk}}); // Wrap each chunk in an object with a json property\n  }\n  \n  return result;\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_e5eee203ad",
+      "actorId": "actor_e5eee203ad",
+      "type": "NodeLlmChain",
+      "label": "Basic LLM Chain - AI Classification",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "$schema": "http://json-schema.org/draft-07/schema#",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "playlistName": {
+                    "type": "string",
+                    "description": "The name of the playlist"
+                  },
+                  "uri": {
+                    "type": "string",
+                    "description": "The unique identifier for the playlist, in URI format"
+                  },
+                  "trackUris": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "description": "The unique identifier for each track in the playlist, in URI format"
+                    },
+                    "description": "A list of track URIs for the playlist",
+                    "maxItems": 1000
+                  }
+                },
+                "required": [
+                  "playlistName",
+                  "uri",
+                  "trackUris"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "items"
+          ],
+          "additionalProperties": false
+        },
+        "system": "You are an expert in music classification with extensive knowledge of genres, moods, and various musical elements. Your task is to analyze the provided tracks and generate a **comprehensive and exhaustive classification** to enhance my listening experience.\n\n### Process:\n\n1. **Identify Playlist Style**: For each of my personal playlist, use the information provided in <playlists_informations>, including the name and description, to understand its purpose and the types of tracks that are most suitable for it. Use this understanding to guide your classification decisions.\n\n2. **Identify Track Characteristics**: For each track in <tracks_to_analyze>, even if you don't have the audio, use the track's **title and artist**, along with relevant characteristics (including genre, mood, tempo, instrumentation, lyrical themes, and any other musical features), to infer these characteristics based on your expertise.\n\n3. **Playlist Assignment**: For each playlist, identify the most relevant tracks and assign them to the appropriate playlists based on their characteristics. A single track may belong to multiple playlists, so ensure you **exhaustively include it in all relevant categories**.\n\n#### Playlist Information:\n<playlists_informations>\n {{ JSON.stringify($('Playlists informations').all()) }}\n</playlists_informations>\n\n### Examples\n\nFind below the track input and a sample response for reference.\n\n\n<tracks_to_analyze>\n[ {\"track\":\"William Tell (Guillaume Tell) Overture: Finale [Arr. for Euphonium by Jorijn Van Hese]\",\"artist\":\"Jorijn Van Hese\",\"album\":\"William Tell (Guillaume Tell) Overture: Finale [Arr. for Euphonium by Jorijn Van Hese]\",\"track_spotify_uri\":\"spotify:track:1I5L8EAVFpTnSAYptTJVrU\",\"track_popularity\":\"28\",\"album_release_date\":\"2018\",\"danceability\":0.561,\"energy\":0.236,\"key\":0,\"loudness\":-27.926,\"mode\":1,\"speechiness\":0.0491,\"acousticness\":0.995,\"instrumentalness\":0.934,\"liveness\":0.121,\"valence\":0.964,\"tempo\":102.216,\"type\":\"audio_features\",\"duration_ms\":120080,\"time_signature\":4,\"date_added\":\"2024-10-27\"}, {\"track\":\"Geffen\",\"artist\":\"Barnt\",\"album\":\"Azari & III Presents - Body Language, Vol. 13\",\"track_spotify_uri\":\"spotify:track:7wVKbT4vwRaEEJ7fnu6Ota\",\"track_popularity\":\"13\",\"album_release_date\":\"2013\",\"danceability\":0.83,\"energy\":0.355,\"key\":1,\"loudness\":-12.172,\"mode\":1,\"speechiness\":0.0911,\"acousticness\":0.00151,\"instrumentalness\":0.934,\"liveness\":0.111,\"valence\":0.129,\"tempo\":118.947,\"type\":\"audio_features\",\"duration_ms\":486910,\"time_signature\":4,\"date_added\":\"2024-10-27\"}, {\"track\":\"I Wan'na Be Like You (The Monkey Song)\",\"artist\":\"Louis Prima\",\"album\":\"The Jungle Book\",\"track_spotify_uri\":\"spotify:track:2EeVPGHq2I7fjeDfT6LEYX\",\"track_popularity\":\"58\",\"album_release_date\":\"1997\",\"danceability\":0.746,\"energy\":0.404,\"key\":7,\"loudness\":-15.09,\"mode\":0,\"speechiness\":0.0995,\"acousticness\":0.662,\"instrumentalness\":0.000238,\"liveness\":0.281,\"valence\":0.795,\"tempo\":96.317,\"type\":\"audio_features\",\"duration_ms\":279453,\"time_signature\":4,\"date_added\":\"2024-10-27\"}, {\"track\":\"Linda Nena\",\"artist\":\"Juaneco Y Su Combo\",\"album\":\"The Roots of Chicha\",\"track_spotify_uri\":\"spotify:track:6QsovprLkdGeE9FSsOjuQA\",\"track_popularity\":\"0\",\"album_release_date\":\"2007\",\"danceability\":0.707,\"energy\":0.749,\"key\":4,\"loudness\":-6.36,\"mode\":0,\"speechiness\":0.0336,\"acousticness\":0.696,\"instrumentalness\":0.0000203,\"liveness\":0.104,\"valence\":0.97,\"tempo\":107.552,\"type\":\"audio_features\",\"duration_ms\":225013,\"time_signature\":4,\"date_added\":\"2024-10-27\"}, {\"track\":\"Sonido Amazonico\",\"artist\":\"Los Mirlos\",\"album\":\"The Roots of Chicha\",\"track_spotify_uri\":\"spotify:track:3hH0sVIoIoPOTmMdjmXSob\",\"track_popularity\":\"0\",\"album_release_date\":\"2007\",\"danceability\":0.883,\"energy\":0.64,\"key\":3,\"loudness\":-6.637,\"mode\":1,\"speechiness\":0.0788,\"acousticness\":0.559,\"instrumentalness\":0.000408,\"liveness\":0.176,\"valence\":0.886,\"tempo\":100.832,\"type\":\"audio_features\",\"duration_ms\":155000,\"time_signature\":4,\"date_added\":\"2024-10-27\"}, {\"track\":\"Para Elisa\",\"artist\":\"Los Destellos\",\"album\":\"The Roots of Chicha\",\"track_spotify_uri\":\"spotify:track:4Sd525AYAaYuiexGHTcoFy\",\"track_popularity\":\"0\",\"album_release_date\":\"2007\",\"danceability\":0.69,\"energy\":0.8,\"key\":11,\"loudness\":-11.125,\"mode\":1,\"speechiness\":0.0602,\"acousticness\":0.205,\"instrumentalness\":0.886,\"liveness\":0.0531,\"valence\":0.801,\"tempo\":113.401,\"type\":\"audio_features\",\"duration_ms\":166507,\"time_signature\":4,\"date_added\":\"2024-10-27\"}, {\"track\":\"Stand By Me\",\"artist\":\"Ben E. King\",\"album\":\"Don't Play That Song (Mono)\",\"track_spotify_uri\":\"spotify:track:3SdTKo2uVsxFblQjpScoHy\",\"track_popularity\":\"75\",\"album_release_date\":\"1962\",\"danceability\":0.65,\"energy\":0.306,\"key\":9,\"loudness\":-9.443,\"mode\":1,\"speechiness\":0.0393,\"acousticness\":0.57,\"instrumentalness\":0.00000707,\"liveness\":0.0707,\"valence\":0.605,\"tempo\":118.068,\"type\":\"audio_features\",\"duration_ms\":180056,\"time_signature\":4,\"date_added\":\"2024-10-27\"}, {\"track\":\"One Night in Bangkok\",\"artist\":\"Murray Head\",\"album\":\"Emotions (My Favourite Songs)\",\"track_spotify_uri\":\"spotify:track:6erBowZaW6Ur3vNOWhS2zM\",\"track_popularity\":\"58\",\"album_release_date\":\"1980\",\"danceability\":0.892,\"energy\":0.578,\"key\":10,\"loudness\":-5.025,\"mode\":1,\"speechiness\":0.15,\"acousticness\":0.112,\"instrumentalness\":0.000315,\"liveness\":0.0897,\"valence\":0.621,\"tempo\":108.703,\"type\":\"audio_features\",\"duration_ms\":236067,\"time_signature\":4,\"date_added\":\"2024-10-27\"}, {\"track\":\"The Big Tree\",\"artist\":\"Stand High Patrol\",\"album\":\"Midnight Walkers\",\"track_spotify_uri\":\"spotify:track:4ZpqCGtkgPn1Pxsgtmtc8O\",\"track_popularity\":\"50\",\"album_release_date\":\"2012\",\"danceability\":0.697,\"energy\":0.392,\"key\":2,\"loudness\":-9.713,\"mode\":1,\"speechiness\":0.0417,\"acousticness\":0.259,\"instrumentalness\":0.0000388,\"liveness\":0.0956,\"valence\":0.196,\"tempo\":167.002,\"type\":\"audio_features\",\"duration_ms\":241120,\"time_signature\":4,\"date_added\":\"2024-10-27\"}, {\"track\":\"Hotel California - 2013 Remaster\",\"artist\":\"Eagles\",\"album\":\"Hotel California (2013 Remaster)\",\"track_spotify_uri\":\"spotify:track:40riOy7x9W7GXjyGp4pjAv\",\"track_popularity\":\"82\",\"album_release_date\":\"1976\",\"danceability\":0.579,\"energy\":0.508,\"key\":2,\"loudness\":-9.484,\"mode\":1,\"speechiness\":0.027,\"acousticness\":0.00574,\"instrumentalness\":0.000494,\"liveness\":0.0575,\"valence\":0.609,\"tempo\":147.125,\"type\":\"audio_features\",\"duration_ms\":391376,\"time_signature\":4,\"date_added\":\"2024-10-27\"} ]\n</tracks_to_analyze>\n\nOutput : \n[\n {\n \"playlistName\": \"Classique\",\n \"uri\": \"spotify:playlist:1AASnV7pZApr6JWCAWg94R\",\n \"tracks\": [\n {\n \"trackName\": \"William Tell (Guillaume Tell) Overture: Finale [Arr. for Euphonium by Jorijn Van Hese]\",\n \"trackUri\": \"spotify:track:1I5L8EAVFpTnSAYptTJVrU\"\n }\n ]\n },\n {\n \"playlistName\": \"Pro Sound\",\n \"uri\": \"spotify:playlist:7G27Ccw1vZdWt7uYrUMLwk\",\n \"tracks\": [\n {\n \"trackName\": \"Geffen\",\n \"trackUri\": \"spotify:track:7wVKbT4vwRaEEJ7fnu6Ota\"\n }\n ]\n },\n {\n \"playlistName\": \"To Sing\",\n \"uri\": \"spotify:playlist:7ts0Ccxw5UijIO8zQ8YJqh\",\n \"tracks\": [\n {\n \"trackName\": \"I Wan'na Be Like You (The Monkey Song)\",\n \"trackUri\": \"spotify:track:2EeVPGHq2I7fjeDfT6LEYX\"\n },\n {\n \"trackName\": \"Stand By Me\",\n \"trackUri\": \"spotify:track:3SdTKo2uVsxFblQjpScoHy\"\n },\n {\n \"trackName\": \"One Night in Bangkok\",\n \"trackUri\": \"spotify:track:6erBowZaW6Ur3vNOWhS2zM\"\n },\n {\n \"trackName\": \"Hotel California - 2013 Remaster\",\n \"trackUri\": \"spotify:track:40riOy7x9W7GXjyGp4pjAv\"\n }\n ]\n },\n {\n \"playlistName\": \"1980s\",\n \"uri\": \"spotify:playlist:6DqSzwNT9v7eKE3hbPAQtM\",\n \"tracks\": [\n {\n \"trackName\": \"One Night in Bangkok\",\n \"trackUri\": \"spotify:track:6erBowZaW6Ur3vNOWhS2zM\"\n }\n ]\n },\n {\n \"playlistName\": \"Groove Up\",\n \"uri\": \"spotify:playlist:4rBZMQPf0u6D5FDB82LjHb\",\n \"tracks\": [\n {\n \"trackName\": \"I Wan'na Be Like You (The Monkey Song)\",\n \"trackUri\": \"spotify:track:2EeVPGHq2I7fjeDfT6LEYX\"\n },\n {\n \"trackName\": \"Stand By Me\",\n \"trackUri\": \"spotify:track:3SdTKo2uVsxFblQjpScoHy\"\n }\n ]\n },\n {\n \"playlistName\": \"Reggae & Dub\",\n \"uri\": \"spotify:playlist:60khtG2acFWcFQUIGWrPW6\",\n \"tracks\": [\n {\n \"trackName\": \"The Big Tree\",\n \"trackUri\": \"spotify:track:4ZpqCGtkgPn1Pxsgtmtc8O\"\n }\n ]\n },\n {\n \"playlistName\": \"Cumbia\",\n \"uri\": \"spotify:playlist:1SwaCdO1tS2BbF8IL3WwXO\",\n \"tracks\": [\n {\n \"trackName\": \"Linda Nena\",\n \"trackUri\": \"spotify:track:6QsovprLkdGeE9FSsOjuQA\"\n },\n {\n \"trackName\": \"Sonido Amazonico\",\n \"trackUri\": \"spotify:track:3hH0sVIoIoPOTmMdjmXSob\"\n },\n {\n \"trackName\": \"Para Elisa\",\n \"trackUri\": \"spotify:track:4Sd525AYAaYuiexGHTcoFy\"\n }\n ]\n },\n {\n \"playlistName\": \"Funky Groove\",\n \"uri\": \"spotify:playlist:7jbAj4iensK9FEWsPUez67\",\n \"tracks\": [\n {\n \"trackName\": \"I Wan'na Be Like You (The Monkey Song)\",\n \"trackUri\": \"spotify:track:2EeVPGHq2I7fjeDfT6LEYX\"\n },\n {\n \"trackName\": \"Stand By Me\",\n \"trackUri\": \"spotify:track:3SdTKo2uVsxFblQjpScoHy\"\n }\n ]\n }\n]\n\n### Output Requirements:\n\n1. **Exhaustiveness**: Ensure that at least **80% of the tracks** are categorized into playlists. Be thorough in your analysis to leave no relevant tracks unclassified.\n\n2. **Step-by-Step Approach**:\n - **Think step by step** when classifying tracks, starting with a detailed analysis of their characteristics.\n - **Review each playlist one by one**, assigning tracks based on their attributes to ensure a comprehensive and accurate classification.\n\n3. **Avoid Duplicates**: Do not include the same track more than once in the output unless it belongs to multiple playlists. Each track should appear only once in each playlist's list of tracks.\n\n4. **Only Use Provided Tracks & Playlists**: Classify tracks exclusively from the given list and assign them to the specified playlists. Do not include any tracks or playlists that are not part of the provided data.\n\n### Output Format:\n\nReturn the classification results in the following JSON structure, ensuring that the output is clear and well-organized.\n\n",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_2413a2acf3",
+      "actorId": "actor_2413a2acf3",
+      "type": "NodeTransform",
+      "label": "Prompt: Basic LLM Chain - AI Classification",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Basic LLM Chain - AI Classification.\nconst __promptValue = `#### Tracks to Analyze:\n<tracks_to_analyze>\n ${JSON.stringify($json.chunk)}\n</tracks_to_analyze>`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_0229dcaa56",
+      "actorId": "actor_0229dcaa56",
+      "type": "NodeTransform",
+      "label": "Split Out1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"output\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"output\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"output\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_ab8d58dab8",
+      "actorId": "actor_ab8d58dab8",
+      "type": "NodeTransform",
+      "label": "Filter",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn __items.filter(($json) => Boolean((!((v) => v == null || v === '' || (Array.isArray(v) && v.length === 0) || (typeof v === 'object' && Object.keys(v).length === 0))(($json.trackUris)))));"
+      }
+    },
+    {
+      "nodeId": "node_acf7d8e6aa",
+      "actorId": "actor_acf7d8e6aa",
+      "type": "NodeTransform",
+      "label": "Batch preparation1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Batch preparation1\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const items = $input.all();\n  const result = [];\n  \n  items.forEach((item) => {\n   const trackUris = item.json.trackUris;\n   if (trackUris.length > 100) {\n   for (let i = 0; i < trackUris.length; i += 100) {\n   const newItem = { ...item.json, trackUris: trackUris.slice(i, i + 100) };\n   result.push(newItem);\n   }\n   } else {\n   result.push(item.json);\n   }\n  });\n  \n  return result;\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_07d481b6ab",
+      "actorId": "actor_07d481b6ab",
+      "type": "NodeTransform",
+      "label": "Params: Spotify",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for spotify/SPOTIFY_ADD_TRACKS_TO_PLAYLIST (n8n node \"Spotify\").\nreturn {\n  \"playlist_id\": ($json.uri),\n  \"uris\": ($json.trackUris.join(\",\")),\n};"
+      }
+    },
+    {
+      "nodeId": "node_4851c7feaa",
+      "actorId": "actor_4851c7feaa",
+      "type": "NodeCdeConnector",
+      "label": "spotify/SPOTIFY_ADD_TRACKS_TO_PLAYLIST",
+      "color": "#6366F1",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "spotify",
+        "connectorLabel": "Spotify",
+        "action": "SPOTIFY_ADD_TRACKS_TO_PLAYLIST"
+      }
+    },
+    {
+      "nodeId": "node_670af39b70",
+      "actorId": "actor_670af39b70",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_6f7c68cec9",
+      "actorId": "actor_6f7c68cec9",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 5400,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_0c9a382a19",
+      "actorId": "actor_0c9a382a19",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 7680,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_387d7297df",
+      "actorId": "actor_387d7297df",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "spreadsheetId": "",
+          "spotifyAccessToken": {
+            "$workflowSecret": "SPOTIFY_ACCESS_TOKEN"
+          },
+          "llmModel_e5eee203ad": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_1ffca9e5d1",
+      "actorId": "actor_1ffca9e5d1",
+      "type": "NodeChatModel",
+      "label": "Basic LLM Chain - AI Classification: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 5400,
+        "y": 720
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "anthropic",
+        "model": "{{llmModel_e5eee203ad}}"
+      }
+    },
+    {
+      "nodeId": "node_24d4c6a642",
+      "actorId": "actor_24d4c6a642",
+      "type": "NodeTransform",
+      "label": "Basic LLM Chain - AI Classification: array output",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 1020
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// LLMChain validates an object; preserve the original array output.\nreturn source.items;"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_e6bd0b66f2",
+      "target": "node_6cdddbd0a5",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_e6bd0b66f2",
+      "target": "node_6cdddbd0a5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_23ed351af5",
+      "target": "node_fffd5d9a8c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_23ed351af5",
+      "target": "node_fffd5d9a8c",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d2c04af26c",
+      "target": "node_0ef14ce260",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d2c04af26c",
+      "target": "node_0ef14ce260",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_2413a2acf3",
+      "target": "node_e5eee203ad",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_07d481b6ab",
+      "target": "node_4851c7feaa",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_07d481b6ab",
+      "target": "node_4851c7feaa",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_3babb62379",
+      "target": "node_b439fbd7ea",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3babb62379",
+      "target": "node_b439fbd7ea",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3babb62379",
+      "target": "node_0c6e3fb522",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_b439fbd7ea",
+      "target": "node_e6bd0b66f2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b439fbd7ea",
+      "target": "node_e6bd0b66f2",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6cdddbd0a5",
+      "target": "node_f576416722",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6cdddbd0a5",
+      "target": "node_f576416722",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f576416722",
+      "target": "node_0c6e3fb522",
+      "sourceOutput": "transformed",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_e1b21280a7",
+      "target": "node_b2b465ce8f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e1b21280a7",
+      "target": "node_b2b465ce8f",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_189cf5fdfa",
+      "target": "node_3babb62379",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_189cf5fdfa",
+      "target": "node_3babb62379",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4b192855a8",
+      "target": "node_d378053c92",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_4b192855a8",
+      "target": "node_6478a71897",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4b192855a8",
+      "target": "node_6478a71897",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b2b465ce8f",
+      "target": "node_4b192855a8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b2b465ce8f",
+      "target": "node_4b192855a8",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0229dcaa56",
+      "target": "node_ab8d58dab8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0229dcaa56",
+      "target": "node_ab8d58dab8",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_acf7d8e6aa",
+      "target": "node_07d481b6ab",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_acf7d8e6aa",
+      "target": "node_07d481b6ab",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0c6e3fb522",
+      "target": "node_50f954611b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0c6e3fb522",
+      "target": "node_50f954611b",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_50f954611b",
+      "target": "node_ed7cd8cd3d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_50f954611b",
+      "target": "node_ed7cd8cd3d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_50f954611b",
+      "target": "node_c432939e59",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_ed7cd8cd3d",
+      "target": "node_7daf3ff8ee",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_7daf3ff8ee",
+      "target": "node_c432939e59",
+      "sourceOutput": "result",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_c432939e59",
+      "target": "node_d2c04af26c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c432939e59",
+      "target": "node_d2c04af26c",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c432939e59",
+      "target": "node_236e277b47",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c432939e59",
+      "target": "node_236e277b47",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ab8d58dab8",
+      "target": "node_acf7d8e6aa",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ab8d58dab8",
+      "target": "node_acf7d8e6aa",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_236e277b47",
+      "target": "node_2413a2acf3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_236e277b47",
+      "target": "node_2413a2acf3",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2b83142d1b",
+      "target": "node_e1b21280a7",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_2b83142d1b",
+      "target": "node_189cf5fdfa",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_a66d408d90",
+      "target": "node_d378053c92",
+      "sourceOutput": "result",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_d378053c92",
+      "target": "node_23ed351af5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d378053c92",
+      "target": "node_23ed351af5",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6478a71897",
+      "target": "node_a66d408d90",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_24d4c6a642",
+      "target": "node_0229dcaa56",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_24d4c6a642",
+      "target": "node_0229dcaa56",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fffd5d9a8c",
+      "target": "node_670af39b70",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_0ef14ce260",
+      "target": "node_6f7c68cec9",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_4851c7feaa",
+      "target": "node_0c9a382a19",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_1ffca9e5d1",
+      "target": "node_e5eee203ad",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_e5eee203ad",
+      "target": "node_24d4c6a642",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e5eee203ad",
+      "target": "node_24d4c6a642",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "other-integrations",
+    "categoryLabel": "Other Integrations and Use Cases",
+    "department": "Personal/Music",
+    "connectors": [
+      "anthropic",
+      "googlesuper",
+      "spotify"
+    ],
+    "setupVars": [
+      {
+        "key": "spreadsheetId",
+        "label": "Google Sheets spreadsheet id",
+        "type": "id",
+        "example": "1AbC...xyz",
+        "usedBy": [
+          "Get logged playlists",
+          "Get logged tracks",
+          "Log new playlists",
+          "Log new tracks"
+        ]
+      },
+      {
+        "key": "llmModel_e5eee203ad",
+        "label": "anthropic model ID for Basic LLM Chain - AI Classification (not recorded by the original conversion)",
+        "type": "text",
+        "usedBy": [
+          "Basic LLM Chain - AI Classification"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "SPOTIFY_ACCESS_TOKEN",
+        "label": "Spotify OAuth access token",
+        "host": "api.spotify.com",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "spotifyAccessToken",
+        "usedBy": [
+          "Get Track details"
+        ],
+        "oauth": true
+      }
+    ],
+    "activation": "cdecli cron activate monthly-spotify-track-archiving",
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 28,
+      "yantraSteps": 32,
+      "foldedHelpers": [
+        "Anthropic Chat Model",
+        "Structured Output Parser"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Other_Integrations_and_Use_Cases/Monthly Spotify Track Archiving and Playlist Classification.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "missing-required-param",
+        "node": "Basic LLM Chain - AI Classification",
+        "detail": "Chat Model provider anthropic is not supported by the current node catalog"
+      }
+    ],
+    "setup": [
+      "\"Basic LLM Chain - AI Classification\": the original provider \"anthropic\" and model are preserved. Select a supported Chat Model provider and matching model, or add its adapter in Yantra before running.",
+      "Setup value spreadsheetId: Google Sheets spreadsheet id (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
+      "Setup value llmModel_e5eee203ad: anthropic model ID for Basic LLM Chain - AI Classification (not recorded by the original conversion). Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret SPOTIFY_ACCESS_TOKEN: Spotify OAuth access token for api.spotify.com (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the anthropic connector (credential).",
+      "Connect the googlesuper connector (credential).",
+      "Connect the spotify connector (credential).",
+      "After import, start the schedule: cdecli cron activate monthly-spotify-track-archiving.",
+      "Provide run inputs: JSON."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Log new playlists",
+          "n8n": "sheet.append.autoMap",
+          "action": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+          "soft": true
+        },
+        {
+          "node": "Log new tracks",
+          "n8n": "sheet.append.autoMap",
+          "action": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "Split Out2",
+          "type": "n8n-nodes-base.splitOut",
+          "reason": "disabled in the original"
+        },
+        {
+          "node": "Manual Verification",
+          "type": "n8n-nodes-base.merge",
+          "reason": "disabled in the original"
+        },
+        {
+          "node": "Anthropic Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+          "into": "Basic LLM Chain - AI Classification"
+        },
+        {
+          "node": "Structured Output Parser",
+          "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+          "into": "Basic LLM Chain - AI Classification",
+          "as": "ai_outputParser"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Monthly Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "\"Get Track details\" authenticated with spotifyOAuth2Api in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Get Track details\": Spotify OAuth access token expires; refresh the workflow secret SPOTIFY_ACCESS_TOKEN when calls start failing, or move this step onto the service's connector.",
+        "\"Excluding logged playlists\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "\"Merge\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "\"Log new playlists\" mapped columns automatically; here each item's fields are appended in their own order, so keep them in the same order as the sheet's header row.",
+        "\"Excluding logged tracks\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "\"Log new tracks\" mapped columns automatically; here each item's fields are appended in their own order, so keep them in the same order as the sheet's header row.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect spotify: `cdecli credential create -n \"spotify\" -p spotify --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "# Monthly Spotify Track Archiving and Playlist Classification\n\nThis n8n workflow allows you to automatically archive your monthly Spotify liked tracks in a Google Sheet, along with playlist details and descriptions. Based on this data, Claude 3.5 is used to classify each track into multiple playlists and add them in bulk.\n\n## Who is this template for?\nThis workflow template is perfect for Spotify users who want to systematically archive their listening history and organize their tracks into custom playlists.\n\n## What problem does this workflow solve?\nIt automates the monthly process of tracking, storing, and categorizing Spotify tracks into relevant playlists, helping users maintain well-organized music collections and keep a historical record of their listening habits.\n\n## Workflow Overview\n- **Trigger Options**: Can be initiated manually or on a set schedule.\n- **Spotify Playlists Retrieval**: Fetches the current playlists and filters them by owner.\n- **Track Details Collection**: Retrieves information such as track ID and popularity from the user’s library.\n- **Audio Features Fetching**: Uses Spotify's API to get audio features for each track.\n- **Data Merging**: Combines track information with their audio features.\n- **Duplicate Checking**: Filters out tracks that have already been logged in Google Sheets.\n- **Data Logging**: Archives new tracks into a Google Sheet.\n- **AI Classification**: Uses an AI model to classify tracks into suitable playlists.\n- **Playlist Updates**: Adds classified tracks to the corresponding playlists.\n\n## Setup Instructions\n1. **Credentials Setup**: \n Make sure you have valid Spotify OAuth2 and Google Sheets access credentials.\n2. **Trigger Configuration**: \n Choose between manual or scheduled triggers to start the workflow.\n3. **Google Sheets Preparation**: \n Set up a Google Sheet with the necessary structure for logging track details.\n4. **Spotify Playlists Setup**: \n Have a diverse range of playlists and exhaustive description (see example) ready to accommodate different music genres and moods.\n\n## Customization Options\n- **Adjust Playlist Conditions**: \n Modify the AI model’s classification criteria to align with your personal music preferences.\n- **Enhance Track Analysis**: \n Incorporate additional audio features or external data sources for more refined track categorization.\n- **Personalize Data Logging**: \n Customize which track attributes to log in Google Sheets based on your archival preferences.\n- **Configure Scheduling**: \n Set a preferred schedule for periodic track archiving, e.g., monthly or weekly.\n\n## Cost Estimate \nFor 300 tracks, the token usage amounts to approximately 60,000 tokens (58,000 for input and 2,000 for completion), costing around 20 cents with Claude 3.5 Sonnet (as of October 2024).",
+      "**Get & Log Playlists informations**",
+      "**Get & Log Playlists informations**",
+      "**AI Classification**",
+      "**Update Spotify Playlists**",
+      "**Manual Verification**\nWe performed this merge to include the track name, making it easier to verify the AI's output. Adding the track name directly in the machine learning response would double the completion tokens, so it was avoided to keep token usage efficient.",
+      "### Playlists' Description Examples\n\n\n| Playlist Name | Playlist Description |\n|-------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|\n| Classique | Indulge in the timeless beauty of classical music with this refined playlist. From baroque to romantic periods, this collection showcases renowned compositions. |\n| Poi | Find your flow with this dynamic playlist tailored for poi, staff, and ball juggling. Featuring rhythmic tracks that complement your movements. |\n| Pro Sound | Boost your productivity and focus with this carefully selected mix of concentration-enhancing music. Ideal for work or study sessions. |\n| ChillySleep | Drift off to dreamland with this soothing playlist of sleep-inducing tracks. Gentle melodies and ambient sounds create a peaceful atmosphere for restful sleep. |\n| To Sing | Warm up your vocal cords and sing your heart out with karaoke-friendly tracks. Featuring popular songs, perfect for solo performances or group sing-alongs. |\n| 1990s | Relive the diverse musical landscape of the 90s with this eclectic mix. From grunge to pop, hip-hop to electronic, this playlist showcases defining genres. |\n| 1980s | Take a nostalgic trip back to the era of big hair and neon with this 80s playlist. Packed with iconic hits and forgotten gems, capturing the energy of the decade.|\n| Groove Up | Elevate your mood and energy with this upbeat playlist. Featuring a mix of feel-good tracks across various genres to lift your spirits and get you moving. |\n| Reggae & Dub | Relax and unwind with the laid-back vibes of reggae and dub. This playlist combines classic reggae tunes with deep, spacious dub tracks for a chilled-out vibe. |\n| Psytrance | Embark on a mind-bending journey with this collection of psychedelic trance tracks. Ideal for late-night dance sessions or intense focus. |\n| Cumbia | Sway to the infectious rhythms of Cumbia with this lively playlist. Blending traditional Latin American sounds with modern interpretations for a danceable mix. |\n| Funky Groove | Get your body moving with this collection of funk and disco tracks. Featuring irresistible basslines and catchy rhythms, perfect for dance parties. |\n| French Chanson | Experience the romance and charm of France with this mix of classic and modern French songs, capturing the essence of French musical culture. |\n| Workout Motivation | Push your limits and power through your exercise routine with this high-energy playlist. From warm-up to cool-down, these tracks will keep you motivated. |\n| Cinematic Instrumentals | Immerse yourself in a world of atmospheric sounds with this collection of cinematic instrumental tracks, perfect for focus, relaxation, or contemplation. |"
+    ],
+    "nodes": {
+      "node_2b83142d1b": {
+        "n8n": "Monthly Trigger",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_e1b21280a7": {
+        "n8n": "Get Playlist",
+        "n8nType": "n8n-nodes-base.spotify"
+      },
+      "node_189cf5fdfa": {
+        "n8n": "Get Tracks",
+        "n8nType": "n8n-nodes-base.spotify"
+      },
+      "node_b2b465ce8f": {
+        "n8n": "Filter my playlist",
+        "n8nType": "n8n-nodes-base.filter"
+      },
+      "node_3babb62379": {
+        "n8n": "Retrieve relevant info",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_4b192855a8": {
+        "n8n": "Playlists informations",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_b439fbd7ea": {
+        "n8n": "Batch preparation",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_6478a71897": {
+        "n8n": "Limit2",
+        "n8nType": "n8n-nodes-base.limit"
+      },
+      "node_6cdddbd0a5": {
+        "n8n": "Get Track details",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "spotifyOAuth2Api"
+      },
+      "node_e6bd0b66f2": {
+        "n8n": "Get Track details",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_a66d408d90": {
+        "n8n": "Get logged playlists",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_f576416722": {
+        "n8n": "Split Out",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_d378053c92": {
+        "n8n": "Excluding logged playlists",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_0c6e3fb522": {
+        "n8n": "Merge",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_23ed351af5": {
+        "n8n": "Log new playlists",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_fffd5d9a8c": {
+        "n8n": "Log new playlists",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_50f954611b": {
+        "n8n": "Simplify Tracks informations",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_ed7cd8cd3d": {
+        "n8n": "Limit",
+        "n8nType": "n8n-nodes-base.limit"
+      },
+      "node_7daf3ff8ee": {
+        "n8n": "Get logged tracks",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_c432939e59": {
+        "n8n": "Excluding logged tracks",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_d2c04af26c": {
+        "n8n": "Log new tracks",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_0ef14ce260": {
+        "n8n": "Log new tracks",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_236e277b47": {
+        "n8n": "Aggregate by 200 tracks",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_e5eee203ad": {
+        "n8n": "Basic LLM Chain - AI Classification",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_2413a2acf3": {
+        "n8n": "Basic LLM Chain - AI Classification",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_0229dcaa56": {
+        "n8n": "Split Out1",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_ab8d58dab8": {
+        "n8n": "Filter",
+        "n8nType": "n8n-nodes-base.filter"
+      },
+      "node_acf7d8e6aa": {
+        "n8n": "Batch preparation1",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_07d481b6ab": {
+        "n8n": "Spotify",
+        "n8nType": "n8n-nodes-base.spotify"
+      },
+      "node_4851c7feaa": {
+        "n8n": "Spotify",
+        "n8nType": "n8n-nodes-base.spotify"
+      },
+      "node_670af39b70": {
+        "n8n": "__end:Log new playlists",
+        "n8nType": "synthetic"
+      },
+      "node_6f7c68cec9": {
+        "n8n": "__end:Log new tracks",
+        "n8nType": "synthetic"
+      },
+      "node_0c9a382a19": {
+        "n8n": "__end:Spotify",
+        "n8nType": "synthetic"
+      },
+      "node_387d7297df": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_1ffca9e5d1": {
+        "n8n": "Basic LLM Chain - AI Classification",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_24d4c6a642": {
+        "n8n": "Basic LLM Chain - AI Classification",
+        "n8nType": "synthetic",
+        "role": "llm-chain-array"
+      }
+    }
+  }
+}

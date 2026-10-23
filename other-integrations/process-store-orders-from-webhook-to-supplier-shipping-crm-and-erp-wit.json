@@ -1,0 +1,1690 @@
+{
+  "name": "Process store orders from webhook to supplier, shipping, CRM and ERP with stock checks",
+  "workflowSlug": "process-store-orders-from-webhook-to-supplier-shipping-crm-and-erp-wit",
+  "description": "Verifies the store webhook signature, de-duplicates by order id, checks supplier stock, then raises the purchase order, shipping label, customer email, CRM upsert and ERP inventory update, or tags a backorder with the lead time; a scheduled branch syncs inventory to the CRM and posts a low stock digest.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_f7c36d3225",
+      "actorId": "actor_f7c36d3225",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_c748fde10d",
+      "actorId": "actor_c748fde10d",
+      "type": "NodeCron",
+      "label": "Every 6 h: ERP to CRM inventory sync",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 */6 * * *"
+      }
+    },
+    {
+      "nodeId": "node_17a6021876",
+      "actorId": "actor_17a6021876",
+      "type": "NodeTransform",
+      "label": "Config",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"base\"] = \"{{companyBaseUrl}}\";\n  out[\"webhook_secret\"] = \"{{webhookSecret}}-webhook-secret\";\n  out[\"sku_map\"] = \"{\\\"Walnut floating shelf 120x25cm\\\":\\\"SHELF-WAL-120\\\",\\\"White Oak floating shelf 150x30cm\\\":\\\"SHELF-OAK-150\\\",\\\"Maple floating shelf 90x25cm\\\":\\\"SHELF-MAP-90\\\"}\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_faea6f0c86",
+      "actorId": "actor_faea6f0c86",
+      "type": "NodeTransform",
+      "label": "Config (schedule)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"base\"] = \"{{companyBaseUrl}}\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_b37122a409",
+      "actorId": "actor_b37122a409",
+      "type": "NodeTransform",
+      "label": "Config (errors)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"base\"] = \"{{companyBaseUrl}}\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_44ea6b3df0",
+      "actorId": "actor_44ea6b3df0",
+      "type": "NodeTransform",
+      "label": "Verify HMAC, normalise, idempotency",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: store order paid (Shopify / WooCommerce / Salla)\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"webhook_secret\":\"{{webhookSecret}}-webhook-secret\",\"sku_map\":\"{\\\"Walnut floating shelf 120x25cm\\\":\\\"SHELF-WAL-120\\\",\\\"White Oak floating shelf 150x30cm\\\":\\\"SHELF-OAK-150\\\",\\\"Maple floating shelf 90x25cm\\\":\\\"SHELF-MAP-90\\\"}\"}, \"Config (schedule)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst __staticData = {}; const $getWorkflowStaticData = () => __staticData; // not persisted between runs on Yantra\nconst Buffer = { from: (v, enc) => { const bytes = enc === 'base64' ? Uint8Array.from(atob(String(v)), (c) => c.charCodeAt(0)) : new TextEncoder().encode(String(v)); return { toString: (e) => (e === 'base64' ? btoa(String.fromCharCode(...bytes)) : new TextDecoder().decode(bytes)), length: bytes.length, bytes }; } };\n// Ported from n8n Code node \"Verify HMAC, normalise, idempotency\".\nconst __one = (i) => (i && typeof i === 'object' && 'json' in i ? (i.binary && typeof i.binary === 'object' ? { ...i.json, binary: i.binary } : i.json) : i);\nconst __unwrap = (v) => Array.isArray(v) ? v.map(__one) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? __one(v) : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // node:crypto is not available in the Yantra Transform runtime. Calls below fail closed instead of faking a digest.\n  const __noCrypto = (fn) => () => { throw new Error('crypto.' + fn + ' is not available in the Yantra Transform runtime; verify signatures or hash in a connector step or before the workflow'); };\n  const crypto = { randomUUID: () => globalThis.crypto.randomUUID(), getRandomValues: (a) => globalThis.crypto.getRandomValues(a), \"createHmac\": __noCrypto(\"createHmac\") };\n  // 1) Verify the store's HMAC signature on the raw body before trusting anything.\n  /* require(crypto) removed for Transform */\n  const cfg = $('Config').first().json;\n  const item = $('Webhook: store order paid (Shopify / WooCommerce / Salla)').first();\n  const headers = item.json.headers || {};\n  const raw = item.binary?.data ? Buffer.from(item.binary.data.data, 'base64').toString() : JSON.stringify(item.json.body || {});\n  const expected = crypto.createHmac('sha256', cfg.webhook_secret).update(raw).digest('base64');\n  const given = headers['x-shopify-hmac-sha256'] || headers['x-sample-hmac'] || '';\n  if (given !== expected) throw new Error('Webhook signature mismatch, request dropped');\n  const o = item.json.body || JSON.parse(raw);\n  // 2) Normalise\n  const map = JSON.parse(cfg.sku_map);\n  const li = (o.line_items || [])[0] || {};\n  const order = {\n    order_id: 'SH-' + (o.order_number || o.id), channel: o.channel || 'Shopify',\n    customer: [o.customer?.first_name, o.customer?.last_name].filter(Boolean).join(' ') || o.customer?.name || 'Unknown',\n    email: (o.email || o.customer?.email || '').toLowerCase(), phone: o.phone || o.customer?.phone || '',\n    product: li.title, sku: li.sku || map[li.title] || 'UNMAPPED', qty: Number(li.quantity || 1), amount: Number(o.total_price || 0),\n    ship_to: o.shipping_address || {}, base: cfg.base, received_at: new Date().toISOString()\n  };\n  if (!order.email) throw new Error('Order without customer email');\n  // 3) Idempotency: same order id twice = second delivery ignored\n  const seen = $getWorkflowStaticData('global'); seen.orders = seen.orders || {};\n  order.duplicate = !!seen.orders[order.order_id]; seen.orders[order.order_id] = Date.now();\n  return [{ json: order }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_726a5bc0ce",
+      "actorId": "actor_726a5bc0ce",
+      "type": "NodeHttpRequest",
+      "label": "ERP: read inventory",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "{{steps.xf_faea6f0c86.result.base}}/erp/inventory"
+      }
+    },
+    {
+      "nodeId": "node_306529c046",
+      "actorId": "actor_306529c046",
+      "type": "NodeHttpRequest",
+      "label": "Alert ops",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_b37122a409.result.base}}/alerts",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_cea1bdd6db",
+      "actorId": "actor_cea1bdd6db",
+      "type": "NodeTransform",
+      "label": "Body: Alert ops",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Alert ops\".\nconst __body = (JSON.stringify({ channel: '#ops-alerts', text: 'Order integration failed: ' + ($json.execution?.error?.message || 'unknown') }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_24a6dc6478",
+      "actorId": "actor_24a6dc6478",
+      "type": "NodeTransform",
+      "label": "First delivery?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.duplicate)) === false || (($json.duplicate)) === 'false'));"
+      }
+    },
+    {
+      "nodeId": "node_ea4ea13361",
+      "actorId": "actor_ea4ea13361",
+      "type": "NodeBranch",
+      "label": "First delivery?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_fa217ab83c",
+      "actorId": "actor_fa217ab83c",
+      "type": "NodeTransform",
+      "label": "Low-stock rule (≤5)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Low-stock rule (≤5)\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const items = $input.first().json.items || [];\n  const low = items.filter(i => i.qty <= 5);\n  return [{ json: { checked: items.length, low_stock: low, text: low.length ? 'Low stock: ' + low.map(i => i.sku + '=' + i.qty).join(', ') : 'All SKUs above threshold' } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_e487fe15bb",
+      "actorId": "actor_e487fe15bb",
+      "type": "NodeHttpRequest",
+      "label": "Supplier API: stock check",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{last.transformed.base}}/supplier/stock",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_643114e987",
+      "actorId": "actor_643114e987",
+      "type": "NodeTransform",
+      "label": "Body: Supplier API: stock check",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Supplier API: stock check\".\nconst __body = (JSON.stringify({ sku: $json.sku, qty: $json.qty }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_7ccf45096c",
+      "actorId": "actor_7ccf45096c",
+      "type": "NodeTransform",
+      "label": "Skip duplicate delivery",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Ported from n8n Code node \"Skip duplicate delivery\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  return [{ json: { ok: true, skipped: 'duplicate webhook delivery', order_id: $json.order_id } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_3536acc327",
+      "actorId": "actor_3536acc327",
+      "type": "NodeHttpRequest",
+      "label": "Post inventory digest",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_faea6f0c86.result.base}}/alerts",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_1dcf47f046",
+      "actorId": "actor_1dcf47f046",
+      "type": "NodeTransform",
+      "label": "Body: Post inventory digest",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Post inventory digest\".\nconst __body = (JSON.stringify({ channel: '#ops-inventory', text: $json.text }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_5abdf94089",
+      "actorId": "actor_5abdf94089",
+      "type": "NodeTransform",
+      "label": "In stock?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.ok)) === true || (($json.ok)) === 'true'));"
+      }
+    },
+    {
+      "nodeId": "node_327957b122",
+      "actorId": "actor_327957b122",
+      "type": "NodeBranch",
+      "label": "In stock?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_612278f5e4",
+      "actorId": "actor_612278f5e4",
+      "type": "NodeHttpRequest",
+      "label": "Supplier API: place PO",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_44ea6b3df0.result.base}}/supplier/orders",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_86e1e9314d",
+      "actorId": "actor_86e1e9314d",
+      "type": "NodeTransform",
+      "label": "Body: Supplier API: place PO",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: store order paid (Shopify / WooCommerce / Salla)\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"webhook_secret\":\"{{webhookSecret}}-webhook-secret\",\"sku_map\":\"{\\\"Walnut floating shelf 120x25cm\\\":\\\"SHELF-WAL-120\\\",\\\"White Oak floating shelf 150x30cm\\\":\\\"SHELF-OAK-150\\\",\\\"Maple floating shelf 90x25cm\\\":\\\"SHELF-MAP-90\\\"}\"}, \"Config (schedule)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify HMAC, normalise, idempotency\": {{steps.xf_44ea6b3df0.result}}, \"ERP: read inventory\": {{steps.http_726a5bc0ce.result}}, \"Low-stock rule (≤5)\": {{steps.xf_fa217ab83c.result}}, \"Skip duplicate delivery\": {{steps.xf_7ccf45096c.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Supplier API: place PO\".\nconst __body = (JSON.stringify({ order_id: $('Verify HMAC, normalise, idempotency').first().json.order_id, sku: $('Verify HMAC, normalise, idempotency').first().json.sku, qty: $('Verify HMAC, normalise, idempotency').first().json.qty, ship_to: $('Verify HMAC, normalise, idempotency').first().json.ship_to }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_da3d3d11b5",
+      "actorId": "actor_da3d3d11b5",
+      "type": "NodeHttpRequest",
+      "label": "CRM: tag BACKORDER",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_44ea6b3df0.result.base}}/crm/contacts/upsert",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_3e98674cd8",
+      "actorId": "actor_3e98674cd8",
+      "type": "NodeTransform",
+      "label": "Body: CRM: tag BACKORDER",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: store order paid (Shopify / WooCommerce / Salla)\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"webhook_secret\":\"{{webhookSecret}}-webhook-secret\",\"sku_map\":\"{\\\"Walnut floating shelf 120x25cm\\\":\\\"SHELF-WAL-120\\\",\\\"White Oak floating shelf 150x30cm\\\":\\\"SHELF-OAK-150\\\",\\\"Maple floating shelf 90x25cm\\\":\\\"SHELF-MAP-90\\\"}\"}, \"Config (schedule)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify HMAC, normalise, idempotency\": {{steps.xf_44ea6b3df0.result}}, \"ERP: read inventory\": {{steps.http_726a5bc0ce.result}}, \"Low-stock rule (≤5)\": {{steps.xf_fa217ab83c.result}}, \"Skip duplicate delivery\": {{steps.xf_7ccf45096c.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"CRM: tag BACKORDER\".\nconst __body = (JSON.stringify({ email: $('Verify HMAC, normalise, idempotency').first().json.email, name: $('Verify HMAC, normalise, idempotency').first().json.customer, last_order: $('Verify HMAC, normalise, idempotency').first().json.order_id, status: 'backorder', eta_days: $json.lead_days }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_592c35c019",
+      "actorId": "actor_592c35c019",
+      "type": "NodeHttpRequest",
+      "label": "Shipping API: create label + tracking",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_44ea6b3df0.result.base}}/shipping/label",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_6d595f3c5f",
+      "actorId": "actor_6d595f3c5f",
+      "type": "NodeTransform",
+      "label": "Body: Shipping API: create label + tracking",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: store order paid (Shopify / WooCommerce / Salla)\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"webhook_secret\":\"{{webhookSecret}}-webhook-secret\",\"sku_map\":\"{\\\"Walnut floating shelf 120x25cm\\\":\\\"SHELF-WAL-120\\\",\\\"White Oak floating shelf 150x30cm\\\":\\\"SHELF-OAK-150\\\",\\\"Maple floating shelf 90x25cm\\\":\\\"SHELF-MAP-90\\\"}\"}, \"Config (schedule)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify HMAC, normalise, idempotency\": {{steps.xf_44ea6b3df0.result}}, \"ERP: read inventory\": {{steps.http_726a5bc0ce.result}}, \"Low-stock rule (≤5)\": {{steps.xf_fa217ab83c.result}}, \"Skip duplicate delivery\": {{steps.xf_7ccf45096c.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Shipping API: create label + tracking\".\nconst __body = (JSON.stringify({ order_id: $('Verify HMAC, normalise, idempotency').first().json.order_id, po_number: $json.po_number }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_a8d2aa4928",
+      "actorId": "actor_a8d2aa4928",
+      "type": "NodeHttpRequest",
+      "label": "Customer: backorder email",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_44ea6b3df0.result.base}}/messages/send",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_556a9c99f4",
+      "actorId": "actor_556a9c99f4",
+      "type": "NodeTransform",
+      "label": "Body: Customer: backorder email",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: store order paid (Shopify / WooCommerce / Salla)\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"webhook_secret\":\"{{webhookSecret}}-webhook-secret\",\"sku_map\":\"{\\\"Walnut floating shelf 120x25cm\\\":\\\"SHELF-WAL-120\\\",\\\"White Oak floating shelf 150x30cm\\\":\\\"SHELF-OAK-150\\\",\\\"Maple floating shelf 90x25cm\\\":\\\"SHELF-MAP-90\\\"}\"}, \"Config (schedule)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify HMAC, normalise, idempotency\": {{steps.xf_44ea6b3df0.result}}, \"ERP: read inventory\": {{steps.http_726a5bc0ce.result}}, \"Low-stock rule (≤5)\": {{steps.xf_fa217ab83c.result}}, \"Skip duplicate delivery\": {{steps.xf_7ccf45096c.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Customer: backorder email\".\nconst __body = (JSON.stringify({ channel: 'email', to: $('Verify HMAC, normalise, idempotency').first().json.email, body: 'Hi ' + $('Verify HMAC, normalise, idempotency').first().json.customer.split(' ')[0] + ', your ' + $('Verify HMAC, normalise, idempotency').first().json.product + ' is on backorder; current lead time ' + $('Supplier API: stock check').first().json.lead_days + ' days. Reply if you would like to change or cancel.' }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_76e136f86e",
+      "actorId": "actor_76e136f86e",
+      "type": "NodeHttpRequest",
+      "label": "Customer: shipping email",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_44ea6b3df0.result.base}}/messages/send",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_1f3fb46f0d",
+      "actorId": "actor_1f3fb46f0d",
+      "type": "NodeTransform",
+      "label": "Body: Customer: shipping email",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: store order paid (Shopify / WooCommerce / Salla)\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"webhook_secret\":\"{{webhookSecret}}-webhook-secret\",\"sku_map\":\"{\\\"Walnut floating shelf 120x25cm\\\":\\\"SHELF-WAL-120\\\",\\\"White Oak floating shelf 150x30cm\\\":\\\"SHELF-OAK-150\\\",\\\"Maple floating shelf 90x25cm\\\":\\\"SHELF-MAP-90\\\"}\"}, \"Config (schedule)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify HMAC, normalise, idempotency\": {{steps.xf_44ea6b3df0.result}}, \"ERP: read inventory\": {{steps.http_726a5bc0ce.result}}, \"Low-stock rule (≤5)\": {{steps.xf_fa217ab83c.result}}, \"Skip duplicate delivery\": {{steps.xf_7ccf45096c.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Customer: shipping email\".\nconst __body = (JSON.stringify({ channel: 'email', to: $('Verify HMAC, normalise, idempotency').first().json.email, body: 'Hi ' + $('Verify HMAC, normalise, idempotency').first().json.customer.split(' ')[0] + ', your ' + $('Verify HMAC, normalise, idempotency').first().json.product + ' is on its way. ' + $json.carrier + ' tracking: ' + $json.tracking }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_870fcb7661",
+      "actorId": "actor_870fcb7661",
+      "type": "NodeHttpRequest",
+      "label": "Ops alert (Slack)",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5400,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_44ea6b3df0.result.base}}/alerts",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_3611818a1d",
+      "actorId": "actor_3611818a1d",
+      "type": "NodeTransform",
+      "label": "Body: Ops alert (Slack)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: store order paid (Shopify / WooCommerce / Salla)\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"webhook_secret\":\"{{webhookSecret}}-webhook-secret\",\"sku_map\":\"{\\\"Walnut floating shelf 120x25cm\\\":\\\"SHELF-WAL-120\\\",\\\"White Oak floating shelf 150x30cm\\\":\\\"SHELF-OAK-150\\\",\\\"Maple floating shelf 90x25cm\\\":\\\"SHELF-MAP-90\\\"}\"}, \"Config (schedule)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify HMAC, normalise, idempotency\": {{steps.xf_44ea6b3df0.result}}, \"ERP: read inventory\": {{steps.http_726a5bc0ce.result}}, \"Low-stock rule (≤5)\": {{steps.xf_fa217ab83c.result}}, \"Skip duplicate delivery\": {{steps.xf_7ccf45096c.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Ops alert (Slack)\".\nconst __body = (JSON.stringify({ channel: '#ops-backorders', text: 'BACKORDER ' + $('Verify HMAC, normalise, idempotency').first().json.order_id + ' ' + $('Verify HMAC, normalise, idempotency').first().json.sku + ' x' + $('Verify HMAC, normalise, idempotency').first().json.qty + ', supplier lead ' + $('Supplier API: stock check').first().json.lead_days + 'd' }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_7de632ef70",
+      "actorId": "actor_7de632ef70",
+      "type": "NodeHttpRequest",
+      "label": "CRM: upsert customer + order",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_44ea6b3df0.result.base}}/crm/contacts/upsert",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_c172589db5",
+      "actorId": "actor_c172589db5",
+      "type": "NodeTransform",
+      "label": "Body: CRM: upsert customer + order",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: store order paid (Shopify / WooCommerce / Salla)\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"webhook_secret\":\"{{webhookSecret}}-webhook-secret\",\"sku_map\":\"{\\\"Walnut floating shelf 120x25cm\\\":\\\"SHELF-WAL-120\\\",\\\"White Oak floating shelf 150x30cm\\\":\\\"SHELF-OAK-150\\\",\\\"Maple floating shelf 90x25cm\\\":\\\"SHELF-MAP-90\\\"}\"}, \"Config (schedule)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify HMAC, normalise, idempotency\": {{steps.xf_44ea6b3df0.result}}, \"ERP: read inventory\": {{steps.http_726a5bc0ce.result}}, \"Low-stock rule (≤5)\": {{steps.xf_fa217ab83c.result}}, \"Skip duplicate delivery\": {{steps.xf_7ccf45096c.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"CRM: upsert customer + order\".\nconst __body = (JSON.stringify({ email: $('Verify HMAC, normalise, idempotency').first().json.email, name: $('Verify HMAC, normalise, idempotency').first().json.customer, last_order: $('Verify HMAC, normalise, idempotency').first().json.order_id, ltv_add: $('Verify HMAC, normalise, idempotency').first().json.amount, status: 'shipped', tracking: $('Shipping API: create label + tracking').first().json.tracking }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_c712077455",
+      "actorId": "actor_c712077455",
+      "type": "NodeHttpRequest",
+      "label": "ERP: inventory sync",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_44ea6b3df0.result.base}}/erp/inventory/upsert",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_96ea594e05",
+      "actorId": "actor_96ea594e05",
+      "type": "NodeTransform",
+      "label": "Body: ERP: inventory sync",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: store order paid (Shopify / WooCommerce / Salla)\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"webhook_secret\":\"{{webhookSecret}}-webhook-secret\",\"sku_map\":\"{\\\"Walnut floating shelf 120x25cm\\\":\\\"SHELF-WAL-120\\\",\\\"White Oak floating shelf 150x30cm\\\":\\\"SHELF-OAK-150\\\",\\\"Maple floating shelf 90x25cm\\\":\\\"SHELF-MAP-90\\\"}\"}, \"Config (schedule)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify HMAC, normalise, idempotency\": {{steps.xf_44ea6b3df0.result}}, \"ERP: read inventory\": {{steps.http_726a5bc0ce.result}}, \"Low-stock rule (≤5)\": {{steps.xf_fa217ab83c.result}}, \"Skip duplicate delivery\": {{steps.xf_7ccf45096c.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"ERP: inventory sync\".\nconst __body = (JSON.stringify({ sku: $('Verify HMAC, normalise, idempotency').first().json.sku, qty: $('Supplier API: stock check').first().json.available - $('Verify HMAC, normalise, idempotency').first().json.qty }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_3909cb199f",
+      "actorId": "actor_3909cb199f",
+      "type": "NodeTransform",
+      "label": "Respond to webhook",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: store order paid (Shopify / WooCommerce / Salla)\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"webhook_secret\":\"{{webhookSecret}}-webhook-secret\",\"sku_map\":\"{\\\"Walnut floating shelf 120x25cm\\\":\\\"SHELF-WAL-120\\\",\\\"White Oak floating shelf 150x30cm\\\":\\\"SHELF-OAK-150\\\",\\\"Maple floating shelf 90x25cm\\\":\\\"SHELF-MAP-90\\\"}\"}, \"Config (schedule)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify HMAC, normalise, idempotency\": {{steps.xf_44ea6b3df0.result}}, \"ERP: read inventory\": {{steps.http_726a5bc0ce.result}}, \"Low-stock rule (≤5)\": {{steps.xf_fa217ab83c.result}}, \"Skip duplicate delivery\": {{steps.xf_7ccf45096c.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Respond to webhook\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const o = $('Verify HMAC, normalise, idempotency').first().json;\n  const stock = $('Supplier API: stock check').first().json;\n  let tracking = null; try { tracking = $('Shipping API: create label + tracking').first().json.tracking; } catch (e) {}\n  return [{ json: { ok: true, order_id: o.order_id, sku: o.sku, route: stock.ok ? 'fulfilled' : 'backorder', tracking, lead_days: stock.lead_days } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_ccd4d9aa14",
+      "actorId": "actor_ccd4d9aa14",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_2dd873daf2",
+      "actorId": "actor_2dd873daf2",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_ac018ff628",
+      "actorId": "actor_ac018ff628",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_5582869f83",
+      "actorId": "actor_5582869f83",
+      "type": "NodeEnd",
+      "label": "End 4",
+      "color": "#EF4444",
+      "position": {
+        "x": 7680,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_4fb85d4441",
+      "actorId": "actor_4fb85d4441",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {},
+          "event": {},
+          "companyBaseUrl": "",
+          "webhookSecret": {
+            "$workflowSecret": "WEBHOOK_SECRET"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_cea1bdd6db",
+      "target": "node_306529c046",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_cea1bdd6db",
+      "target": "node_306529c046",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_24a6dc6478",
+      "target": "node_ea4ea13361",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_24a6dc6478",
+      "target": "node_ea4ea13361",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_643114e987",
+      "target": "node_e487fe15bb",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_643114e987",
+      "target": "node_e487fe15bb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_1dcf47f046",
+      "target": "node_3536acc327",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_1dcf47f046",
+      "target": "node_3536acc327",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_5abdf94089",
+      "target": "node_327957b122",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_5abdf94089",
+      "target": "node_327957b122",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_86e1e9314d",
+      "target": "node_612278f5e4",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_86e1e9314d",
+      "target": "node_612278f5e4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_3e98674cd8",
+      "target": "node_da3d3d11b5",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_3e98674cd8",
+      "target": "node_da3d3d11b5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_6d595f3c5f",
+      "target": "node_592c35c019",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_6d595f3c5f",
+      "target": "node_592c35c019",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_556a9c99f4",
+      "target": "node_a8d2aa4928",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_556a9c99f4",
+      "target": "node_a8d2aa4928",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_1f3fb46f0d",
+      "target": "node_76e136f86e",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_1f3fb46f0d",
+      "target": "node_76e136f86e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_3611818a1d",
+      "target": "node_870fcb7661",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_3611818a1d",
+      "target": "node_870fcb7661",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_c172589db5",
+      "target": "node_7de632ef70",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_c172589db5",
+      "target": "node_7de632ef70",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_96ea594e05",
+      "target": "node_c712077455",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_96ea594e05",
+      "target": "node_c712077455",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_f7c36d3225",
+      "target": "node_17a6021876",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_17a6021876",
+      "target": "node_44ea6b3df0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_17a6021876",
+      "target": "node_44ea6b3df0",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_44ea6b3df0",
+      "target": "node_24a6dc6478",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_44ea6b3df0",
+      "target": "node_24a6dc6478",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ea4ea13361",
+      "target": "node_643114e987",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_44ea6b3df0",
+      "target": "node_643114e987",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ea4ea13361",
+      "target": "node_7ccf45096c",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_44ea6b3df0",
+      "target": "node_7ccf45096c",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e487fe15bb",
+      "target": "node_5abdf94089",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e487fe15bb",
+      "target": "node_5abdf94089",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_327957b122",
+      "target": "node_86e1e9314d",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e487fe15bb",
+      "target": "node_86e1e9314d",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_327957b122",
+      "target": "node_3e98674cd8",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e487fe15bb",
+      "target": "node_3e98674cd8",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_612278f5e4",
+      "target": "node_6d595f3c5f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_612278f5e4",
+      "target": "node_6d595f3c5f",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_592c35c019",
+      "target": "node_1f3fb46f0d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_592c35c019",
+      "target": "node_1f3fb46f0d",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_76e136f86e",
+      "target": "node_c172589db5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_76e136f86e",
+      "target": "node_c172589db5",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7de632ef70",
+      "target": "node_96ea594e05",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7de632ef70",
+      "target": "node_96ea594e05",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c712077455",
+      "target": "node_3909cb199f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c712077455",
+      "target": "node_3909cb199f",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_da3d3d11b5",
+      "target": "node_556a9c99f4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_da3d3d11b5",
+      "target": "node_556a9c99f4",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a8d2aa4928",
+      "target": "node_3611818a1d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a8d2aa4928",
+      "target": "node_3611818a1d",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_870fcb7661",
+      "target": "node_3909cb199f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_870fcb7661",
+      "target": "node_3909cb199f",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c748fde10d",
+      "target": "node_faea6f0c86",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c748fde10d",
+      "target": "node_faea6f0c86",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_726a5bc0ce",
+      "target": "node_fa217ab83c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_726a5bc0ce",
+      "target": "node_fa217ab83c",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fa217ab83c",
+      "target": "node_1dcf47f046",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fa217ab83c",
+      "target": "node_1dcf47f046",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f7c36d3225",
+      "target": "node_b37122a409",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_faea6f0c86",
+      "target": "node_726a5bc0ce",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_b37122a409",
+      "target": "node_cea1bdd6db",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b37122a409",
+      "target": "node_cea1bdd6db",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_306529c046",
+      "target": "node_ccd4d9aa14",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_7ccf45096c",
+      "target": "node_2dd873daf2",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_3536acc327",
+      "target": "node_ac018ff628",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_3909cb199f",
+      "target": "node_5582869f83",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "other-integrations",
+    "categoryLabel": "Other Integrations and Use Cases",
+    "department": "Operations/E-commerce",
+    "connectors": [],
+    "setupVars": [
+      {
+        "key": "companyBaseUrl",
+        "label": "Company Base Url",
+        "type": "url",
+        "example": "https://api.your-company.com",
+        "usedBy": [
+          "CRM: tag BACKORDER",
+          "CRM: upsert customer + order",
+          "Config",
+          "Config (errors)",
+          "Config (schedule)",
+          "Customer: backorder email",
+          "Customer: shipping email",
+          "ERP: inventory sync",
+          "Ops alert (Slack)",
+          "Respond to webhook",
+          "Shipping API: create label + tracking",
+          "Supplier API: place PO",
+          "Verify HMAC, normalise, idempotency"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "WEBHOOK_SECRET",
+        "label": "webhook secret",
+        "headerFormat": "read inside the step code",
+        "contextKey": "webhookSecret",
+        "usedBy": [
+          "CRM: tag BACKORDER",
+          "CRM: upsert customer + order",
+          "Config",
+          "Customer: backorder email",
+          "Customer: shipping email",
+          "ERP: inventory sync",
+          "Ops alert (Slack)",
+          "Respond to webhook",
+          "Shipping API: create label + tracking",
+          "Supplier API: place PO",
+          "Verify HMAC, normalise, idempotency"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate process-store-orders-from-webhook-to-supplier-shipping-crm-and-erp-wit",
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCron",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 24,
+      "yantraSteps": 36,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Other_Integrations_and_Use_Cases/Process store orders from webhook to supplier, shipping, CRM and ERP with stock checks.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Process store orders from webhook to supplier, shipping, CRM and ERP with stock checks"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "signature-verification",
+        "node": "Verify HMAC, normalise, idempotency",
+        "detail": "code.crypto: checks the x-shopify-hmac-sha256 HMAC over the raw request body of the webhook \"Webhook: store order paid (Shopify / WooCommerce / Salla)\"; the Yantra start node passes the webhook body as parsed JSON with no raw bytes, and re-serialised JSON does not match the sender's bytes, so the check cannot be faithful until the webhook trigger exposes the raw body (yantra-storage YANTRA_STORAGE_VERIFY_SIGNATURE can then verify it)"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Error trigger",
+        "detail": "n8n-nodes-base.errorTrigger became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Webhook: store order paid (Shopify / WooCommerce / Salla)",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Verify HMAC, normalise, idempotency\" (code.crypto): checks the x-shopify-hmac-sha256 HMAC over the raw request body of the webhook \"Webhook: store order paid (Shopify / WooCommerce / Salla)\"; the Yantra start node passes the webhook body as parsed JSON with no raw bytes, and re-serialised JSON does not match the sender's bytes, so the check cannot be faithful until the webhook trigger exposes the raw body (yantra-storage YANTRA_STORAGE_VERIFY_SIGNATURE can then verify it).",
+      "\"Error trigger\" (errorTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Webhook: store order paid (Shopify / WooCommerce / Salla)\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value companyBaseUrl: Company Base Url (for example https://api.your-company.com). Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret WEBHOOK_SECRET: webhook secret (read inside the step code). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "After import, start the schedule: cdecli cron activate process-store-orders-from-webhook-to-supplier-shipping-crm-and-erp-wit.",
+      "Provide run inputs: body, query, headers, event."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Verify HMAC, normalise, idempotency",
+          "n8n": "code.require",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Verify HMAC, normalise, idempotency",
+          "n8n": "code.crypto",
+          "action": "NodeTransform",
+          "blocker": "signature-verification",
+          "reason": "checks the x-shopify-hmac-sha256 HMAC over the raw request body of the webhook \"Webhook: store order paid (Shopify / WooCommerce / Salla)\"; the Yantra start node passes the webhook body as parsed JSON with no raw bytes, and re-serialised JSON does not match the sender's bytes, so the check cannot be faithful until the webhook trigger exposes the raw body (yantra-storage YANTRA_STORAGE_VERIFY_SIGNATURE can then verify it)"
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Webhook: store order paid (Shopify / WooCommerce / Salla)",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Every 6 h: ERP to CRM inventory sync",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        },
+        {
+          "node": "Error trigger",
+          "type": "n8n-nodes-base.errorTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /shopify-order). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "The original started from errorTrigger; Yantra has no webhook slug for it, so run on demand, on a schedule (add a NodeCron), or via the workflow API with the event under the run input `event`.",
+        "\"Verify HMAC, normalise, idempotency\" (code.require): Allowlisted require() calls were rewritten or dropped for Transform (no module system).",
+        "\"Verify HMAC, normalise, idempotency\" (code.crypto): uses crypto.createHmac, which the Transform runtime does not provide; the step stops the run instead of faking a digest. It checks the x-shopify-hmac-sha256 HMAC over the raw request body of the webhook \"Webhook: store order paid (Shopify / WooCommerce / Salla)\"; the Yantra start node passes the webhook body as parsed JSON with no raw bytes, and re-serialised JSON does not match the sender's bytes, so the check cannot be faithful until the webhook trigger exposes the raw body (yantra-storage YANTRA_STORAGE_VERIFY_SIGNATURE can then verify it).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "## Process store orders from webhook to supplier, shipping, CRM and ERP with stock checks\n\n**Who it is for.** Online stores and trading companies that still update supplier, shipping, CRM and ERP by hand after every order.\n\n**What it does**\n- Verifies the store webhook signature on the raw body, normalises the order and de-duplicates by order id.\n- Checks stock with the supplier. In stock: purchase order, shipping label with tracking, customer email, CRM upsert, ERP inventory update.\n- Out of stock: BACKORDER tag, customer email with the lead time, alert to operations.\n- A scheduled branch syncs ERP inventory to the CRM every six hours and posts a low stock digest.\n- Retries on every API call; bad signatures dropped and alerted; duplicates acknowledged and not re-run.\n\n**Setup**\n1. Set base and the store signing secret in Config, or swap each HTTP Request node for your store, supplier, carrier, CRM and ERP nodes.\n2. Register the Webhook URL as the store's order created webhook.\n3. Activate; the six hourly schedule runs the inventory sync.\n\nAll external systems are reached through HTTP Request nodes against `base` in the Config node, so the whole flow imports and runs against any REST backend; swap any of them for the native n8n node of your system. Built and tested on sample data by Finamatik: https://finamatik.com/work/order-to-fulfilment\n\n**Requirements.** n8n 1.100 or later; for the AI steps, a model endpoint at `base`/llm/complete or the OpenAI or Anthropic node in its place; your own systems reachable over HTTPS.\n\n**How to customise.** Every rule lives in one Code or Config node and is named for what it decides; change the thresholds there, not in the branches.",
+      "## Setup in three steps\n\n1. Open **Config** and set `base` (your API root) and `webhook_secret`, or replace each HTTP Request node with the native node for your store, supplier, carrier, CRM and ERP.\n2. Copy the Webhook URL into your store's *order created* webhook.\n3. Activate. The schedule branch syncs inventory every six hours.\n\nTest first with one order that is in stock and one that is not."
+    ],
+    "nodes": {
+      "node_f7c36d3225": {
+        "n8n": "Webhook: store order paid (Shopify / WooCommerce / Salla)",
+        "n8nType": "n8n-nodes-base.webhook",
+        "also": [
+          "Error trigger"
+        ]
+      },
+      "node_c748fde10d": {
+        "n8n": "Every 6 h: ERP to CRM inventory sync",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_17a6021876": {
+        "n8n": "Config",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_faea6f0c86": {
+        "n8n": "Config (schedule)",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_b37122a409": {
+        "n8n": "Config (errors)",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_44ea6b3df0": {
+        "n8n": "Verify HMAC, normalise, idempotency",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_726a5bc0ce": {
+        "n8n": "ERP: read inventory",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_306529c046": {
+        "n8n": "Alert ops",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_cea1bdd6db": {
+        "n8n": "Alert ops",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_24a6dc6478": {
+        "n8n": "First delivery?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_ea4ea13361": {
+        "n8n": "First delivery?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_fa217ab83c": {
+        "n8n": "Low-stock rule (≤5)",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_e487fe15bb": {
+        "n8n": "Supplier API: stock check",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_643114e987": {
+        "n8n": "Supplier API: stock check",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_7ccf45096c": {
+        "n8n": "Skip duplicate delivery",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_3536acc327": {
+        "n8n": "Post inventory digest",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_1dcf47f046": {
+        "n8n": "Post inventory digest",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_5abdf94089": {
+        "n8n": "In stock?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_327957b122": {
+        "n8n": "In stock?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_612278f5e4": {
+        "n8n": "Supplier API: place PO",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_86e1e9314d": {
+        "n8n": "Supplier API: place PO",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_da3d3d11b5": {
+        "n8n": "CRM: tag BACKORDER",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_3e98674cd8": {
+        "n8n": "CRM: tag BACKORDER",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_592c35c019": {
+        "n8n": "Shipping API: create label + tracking",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_6d595f3c5f": {
+        "n8n": "Shipping API: create label + tracking",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_a8d2aa4928": {
+        "n8n": "Customer: backorder email",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_556a9c99f4": {
+        "n8n": "Customer: backorder email",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_76e136f86e": {
+        "n8n": "Customer: shipping email",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_1f3fb46f0d": {
+        "n8n": "Customer: shipping email",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_870fcb7661": {
+        "n8n": "Ops alert (Slack)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_3611818a1d": {
+        "n8n": "Ops alert (Slack)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_7de632ef70": {
+        "n8n": "CRM: upsert customer + order",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_c172589db5": {
+        "n8n": "CRM: upsert customer + order",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_c712077455": {
+        "n8n": "ERP: inventory sync",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_96ea594e05": {
+        "n8n": "ERP: inventory sync",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_3909cb199f": {
+        "n8n": "Respond to webhook",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_ccd4d9aa14": {
+        "n8n": "__end:Alert ops",
+        "n8nType": "synthetic"
+      },
+      "node_2dd873daf2": {
+        "n8n": "__end:Skip duplicate delivery",
+        "n8nType": "synthetic"
+      },
+      "node_ac018ff628": {
+        "n8n": "__end:Post inventory digest",
+        "n8nType": "synthetic"
+      },
+      "node_5582869f83": {
+        "n8n": "__end:Respond to webhook",
+        "n8nType": "synthetic"
+      },
+      "node_4fb85d4441": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

@@ -1,0 +1,371 @@
+{
+  "name": "AI: Ask questions about any data source (using the n8n workflow retriever)",
+  "workflowSlug": "ai-ask-questions-about-any-data-source-using-the-n8n-workflow-retrieve",
+  "description": "Allows users to ask questions about various data sources using an n8n workflow retriever.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_cfc2db7291",
+      "actorId": "actor_cfc2db7291",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_0d47541b9c",
+      "actorId": "actor_0d47541b9c",
+      "type": "NodeTransform",
+      "label": "Example Prompt",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"input\"] = \"What notes can you find for Jay Gatsby and what is his email address?\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_524a1b1fd3",
+      "actorId": "actor_524a1b1fd3",
+      "type": "NodeLlmChain",
+      "label": "Retrieval QA Chain2",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{llm_system_f8524252c1}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_f8524252c1",
+      "actorId": "actor_f8524252c1",
+      "type": "NodeTransform",
+      "label": "System: Retrieval QA Chain2",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: Retrieval QA Chain2.\nconst __promptValue = `Answer the question using only the provided context. If the context is empty, say you do not know.\n\nContext:\n${$json.context || $json.documents || $json.text || ''}`;\nreturn { \"llm_system_f8524252c1\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_693ee41447",
+      "actorId": "actor_693ee41447",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Retrieval QA Chain2",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_05b69469f6",
+      "actorId": "actor_05b69469f6",
+      "type": "NodeTransform",
+      "label": "Prompt: Retrieval QA Chain2",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Retrieval QA Chain2.\nconst __promptValue = ($json.input);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_63a42cafad",
+      "actorId": "actor_63a42cafad",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_b5287d41e5",
+      "actorId": "actor_b5287d41e5",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": ""
+      }
+    },
+    {
+      "nodeId": "node_d40a9253da",
+      "actorId": "actor_d40a9253da",
+      "type": "NodeChatModel",
+      "label": "Retrieval QA Chain2: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_f8524252c1",
+      "target": "node_693ee41447",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_f8524252c1",
+      "target": "node_693ee41447",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_693ee41447",
+      "target": "node_05b69469f6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_05b69469f6",
+      "target": "node_524a1b1fd3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_cfc2db7291",
+      "target": "node_0d47541b9c",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0d47541b9c",
+      "target": "node_f8524252c1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0d47541b9c",
+      "target": "node_f8524252c1",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0d47541b9c",
+      "target": "node_05b69469f6",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_524a1b1fd3",
+      "target": "node_63a42cafad",
+      "sourceOutput": "text",
+      "targetInput": "result",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_d40a9253da",
+      "target": "node_524a1b1fd3",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "AI/Data Analysis/Workflow Automation",
+    "connectors": [
+      "openai"
+    ],
+    "nodeTypes": [
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 5,
+      "yantraSteps": 7,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "Workflow Retriever"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/AI_ Ask questions about any data source (using the n8n workflow retriever).json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "LangChain - Example - Workflow Retriever"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Connect the openai connector (credential).",
+      "Provide run inputs: llm_system_f8524252c1."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Retrieval QA Chain2",
+          "n8n": "chainRetrievalQa",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Retrieval QA Chain2"
+        },
+        {
+          "node": "Workflow Retriever",
+          "type": "@n8n/n8n-nodes-langchain.retrieverWorkflow",
+          "into": "Retrieval QA Chain2",
+          "as": "ai_retriever"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking \"Execute Workflow\"",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Retrieval QA Chain2\" folded a retriever (retrieverWorkflow); retrieved text is expected on the upstream payload as context/documents.",
+        "\"Retrieval QA Chain2\" (chainRetrievalQa): Retriever output should arrive as context/documents/text on the upstream payload.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "### Q&A on data returned from a workflow",
+      "Replace \"Workflow ID\" with the ID the Subworkflow got saved as"
+    ],
+    "nodes": {
+      "node_cfc2db7291": {
+        "n8n": "When clicking \"Execute Workflow\"",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_0d47541b9c": {
+        "n8n": "Example Prompt",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_524a1b1fd3": {
+        "n8n": "Retrieval QA Chain2",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainRetrievalQa"
+      },
+      "node_f8524252c1": {
+        "n8n": "Retrieval QA Chain2",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainRetrievalQa"
+      },
+      "node_693ee41447": {
+        "n8n": "Retrieval QA Chain2",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainRetrievalQa"
+      },
+      "node_05b69469f6": {
+        "n8n": "Retrieval QA Chain2",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainRetrievalQa"
+      },
+      "node_63a42cafad": {
+        "n8n": "__end:Retrieval QA Chain2",
+        "n8nType": "synthetic"
+      },
+      "node_b5287d41e5": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_d40a9253da": {
+        "n8n": "Retrieval QA Chain2",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

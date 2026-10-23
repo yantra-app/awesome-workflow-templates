@@ -1,0 +1,809 @@
+{
+  "name": "Classify lemlist replies using OpenAI and automate reply handling",
+  "workflowSlug": "classify-lemlist-replies-using-openai-and-automate-reply-handling",
+  "description": "Converted from the n8n template \"Classify lemlist replies using OpenAI and automate reply handling\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_f4f1d9ac07",
+      "actorId": "actor_f4f1d9ac07",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_b398a5590f",
+      "actorId": "actor_b398a5590f",
+      "type": "NodeTransform",
+      "label": "Format text with Markdown",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst __md = String(null ?? '');\nconst __html = __md.replace(/^### (.*)$/gm, '<h3>$1</h3>').replace(/^## (.*)$/gm, '<h2>$1</h2>').replace(/^# (.*)$/gm, '<h1>$1</h1>').replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>').replace(/\\*(.+?)\\*/g, '<em>$1</em>').replace(/\\[(.+?)\\]\\((.+?)\\)/g, '<a href=\"$2\">$1</a>').replace(/\\n{2,}/g, '</p><p>');\nreturn { ...$json, \"textClean\": '<p>' + __html + '</p>' };"
+      }
+    },
+    {
+      "nodeId": "node_80c59ff3fd",
+      "actorId": "actor_80c59ff3fd",
+      "type": "NodeLlmChain",
+      "label": "Categorize lemlist reply",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string"
+            }
+          }
+        },
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_e42c3a61d6",
+      "actorId": "actor_e42c3a61d6",
+      "type": "NodeTransform",
+      "label": "Prompt: Categorize lemlist reply",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Categorize lemlist reply.\nconst __promptValue = `Classify the [email_content] in one only of the following categories: \n\nCategories=[\"Interested\", \"Out of office\", \"Unsubscribe\", \"Not interested\", \"Other\"] \n\n- Interested is when the reply is positive, and the person want more information or a meeting \n\nDon't output quotes like in the next example: \nemail_content_example:Hey I would like to know more \ncategory:Interested\n\nemail_content:\"${$json.textClean}\" \n\nOnly answer with JSON in the following format:\n{\"replyStatus\":category}\n\nJSON:`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_ff3a5463b3",
+      "actorId": "actor_ff3a5463b3",
+      "type": "NodeSync",
+      "label": "Merge data",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_9da030b5c5",
+      "actorId": "actor_9da030b5c5",
+      "type": "NodeTransform",
+      "label": "Route reply to the right branch: Send all replies to Slack",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.output.category)) != null));"
+      }
+    },
+    {
+      "nodeId": "node_05ebbd4fd3",
+      "actorId": "actor_05ebbd4fd3",
+      "type": "NodeBranch",
+      "label": "Route reply to the right branch: Send all replies to Slack?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_152a2b16d1",
+      "actorId": "actor_152a2b16d1",
+      "type": "NodeTransform",
+      "label": "Route reply to the right branch: Unsubscribe",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.output.category) ?? '') === String(\"Unsubscribe\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_a2d55ee95a",
+      "actorId": "actor_a2d55ee95a",
+      "type": "NodeBranch",
+      "label": "Route reply to the right branch: Unsubscribe?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_b1d13decb8",
+      "actorId": "actor_b1d13decb8",
+      "type": "NodeTransform",
+      "label": "Route reply to the right branch: Interested",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.output.category) ?? '') === String(\"Interested\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_bf0cf32b18",
+      "actorId": "actor_bf0cf32b18",
+      "type": "NodeBranch",
+      "label": "Route reply to the right branch: Interested?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_256f00ac28",
+      "actorId": "actor_256f00ac28",
+      "type": "NodeTransform",
+      "label": "Params: Send alert to Slack",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for slack/SLACK_CHAT_POST_MESSAGE (n8n node \"Send alert to Slack\").\nreturn {\n  \"channel\": \"automated_outbound_replies\",\n  \"text\": '',\n  \"blocks\": `{\n\t\"blocks\": [\n\t\t{\n\t\t\t\"type\": \"section\",\n\t\t\t\"text\": {\n\t\t\t\t\"type\": \"mrkdwn\",\n\t\t\t\t\"text\": \":raised_hands: New reply in lemlist!\\\\n\"\n\t\t\t}\n\t\t},\n\t\t{\n\t\t\t\"type\": \"section\",\n\t\t\t\"fields\": [\n\t\t\t\t{\n\t\t\t\t\t\"type\": \"mrkdwn\",\n\t\t\t\t\t\"text\": \"*Categorized as:*\\\\n${$json[\"output\"][\"category\"]}\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"type\": \"mrkdwn\",\n\t\t\t\t\t\"text\": \"*Campaign:*\\\\n<https://app.lemlist.com/teams/${$json[\"teamId\"]}/reports/campaigns/${$json[\"campaignId\"]}|${$json[\"campaignName\"]}>\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"type\": \"mrkdwn\",\n\t\t\t\t\t\"text\": \"*Sender Email:*\\\\n${$json[\"sendUserEmail\"]}\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"type\": \"mrkdwn\",\n\t\t\t\t\t\"text\": \"*Lead Email:*\\\\n${$json[\"leadEmail\"]}\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"type\": \"mrkdwn\",\n\t\t\t\t\t\"text\": \"*Linkedin URL:*\\\\n${$json[\"linkedinUrl\"]}\"\n\t\t\t\t}\n\t\t\t]\n\t\t},\n\t\t{\n\t\t\t\"type\": \"section\",\n\t\t\t\"text\": {\n\t\t\t\t\"type\": \"mrkdwn\",\n\t\t\t\t\"text\": \"*Reply preview*:\\\\n${JSON.stringify($json[\"textClean\"]).replace(/^\"(.+(?=\"$))\"$/, '$1').substring(0, 100)}\"\n\t\t\t}\n\t\t}\n\t]\n}`,\n};"
+      }
+    },
+    {
+      "nodeId": "node_1e708e0395",
+      "actorId": "actor_1e708e0395",
+      "type": "NodeCdeConnector",
+      "label": "slack/SLACK_CHAT_POST_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "slack",
+        "connectorLabel": "Slack",
+        "action": "SLACK_CHAT_POST_MESSAGE"
+      }
+    },
+    {
+      "nodeId": "node_6d3353674a",
+      "actorId": "actor_6d3353674a",
+      "type": "NodeCdeConnector",
+      "label": "lemlist/LEMLIST_DELETE_DELETE_UNSUBSCRIBE_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "lemlist",
+        "connectorLabel": "Lemlist",
+        "action": "LEMLIST_DELETE_DELETE_UNSUBSCRIBE_EMAIL",
+        "params": {
+          "email": "{{last.data1.leadEmail}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_d206a54fa7",
+      "actorId": "actor_d206a54fa7",
+      "type": "NodeHttpRequest",
+      "label": "lemlist - Mark as interested",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://api.lemlist.com/api/campaigns/{{last.data1.campaignId}}/leads/{{last.data1.leadEmail}}/interested",
+        "headers": {
+          "Authorization": "Basic {{lemlistBasicAuth}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_0ecf3305fe",
+      "actorId": "actor_0ecf3305fe",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3500,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_2fdf3bd2b0",
+      "actorId": "actor_2fdf3bd2b0",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 3880,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f50b1700fa",
+      "actorId": "actor_f50b1700fa",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_ba28168953",
+      "actorId": "actor_ba28168953",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "event": {},
+          "lemlistBasicAuth": {
+            "$workflowSecret": "LEMLIST_BASIC_AUTH"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_79085fdedc",
+      "actorId": "actor_79085fdedc",
+      "type": "NodeChatModel",
+      "label": "Categorize lemlist reply: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_e42c3a61d6",
+      "target": "node_80c59ff3fd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_9da030b5c5",
+      "target": "node_05ebbd4fd3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_9da030b5c5",
+      "target": "node_05ebbd4fd3",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_05ebbd4fd3",
+      "target": "node_152a2b16d1",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_152a2b16d1",
+      "target": "node_a2d55ee95a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_152a2b16d1",
+      "target": "node_a2d55ee95a",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_a2d55ee95a",
+      "target": "node_b1d13decb8",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b1d13decb8",
+      "target": "node_bf0cf32b18",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_b1d13decb8",
+      "target": "node_bf0cf32b18",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_256f00ac28",
+      "target": "node_1e708e0395",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_256f00ac28",
+      "target": "node_1e708e0395",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_b398a5590f",
+      "target": "node_ff3a5463b3",
+      "sourceOutput": "transformed",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_b398a5590f",
+      "target": "node_e42c3a61d6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b398a5590f",
+      "target": "node_e42c3a61d6",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f4f1d9ac07",
+      "target": "node_b398a5590f",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_80c59ff3fd",
+      "target": "node_ff3a5463b3",
+      "sourceOutput": "object",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_ff3a5463b3",
+      "target": "node_9da030b5c5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ff3a5463b3",
+      "target": "node_9da030b5c5",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ff3a5463b3",
+      "target": "node_152a2b16d1",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ff3a5463b3",
+      "target": "node_b1d13decb8",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_05ebbd4fd3",
+      "target": "node_256f00ac28",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ff3a5463b3",
+      "target": "node_256f00ac28",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a2d55ee95a",
+      "target": "node_6d3353674a",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_bf0cf32b18",
+      "target": "node_d206a54fa7",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_1e708e0395",
+      "target": "node_0ecf3305fe",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_6d3353674a",
+      "target": "node_2fdf3bd2b0",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_d206a54fa7",
+      "target": "node_f50b1700fa",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_79085fdedc",
+      "target": "node_80c59ff3fd",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "gmail-and-email",
+    "categoryLabel": "Gmail and Email Automation",
+    "department": "",
+    "connectors": [
+      "lemlist",
+      "openai",
+      "slack"
+    ],
+    "setupSecrets": [
+      {
+        "key": "LEMLIST_BASIC_AUTH",
+        "label": "lemlist API key as Basic auth (base64 of \":<api key>\")",
+        "host": "api.lemlist.com",
+        "headerFormat": "Authorization: Basic <secret>",
+        "contextKey": "lemlistBasicAuth",
+        "usedBy": [
+          "lemlist - Mark as interested"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 10,
+      "yantraSteps": 16,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "Structured Output Parser"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Gmail_and_Email_Automation/Classify lemlist replies using OpenAI and automate reply handling.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Lemlist Trigger - On new reply",
+        "detail": "n8n-nodes-base.lemlistTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Lemlist Trigger - On new reply\" (lemlistTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Workflow secret LEMLIST_BASIC_AUTH: lemlist API key as Basic auth (base64 of \":<api key>\") for api.lemlist.com (Authorization: Basic <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the lemlist connector (credential).",
+      "Connect the openai connector (credential).",
+      "Connect the slack connector (credential).",
+      "Provide run inputs: event."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Format text with Markdown",
+          "n8n": "markdown.markdownToHtml",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Categorize lemlist reply",
+          "model": "gpt-4o"
+        },
+        {
+          "node": "Structured Output Parser",
+          "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+          "into": "Categorize lemlist reply",
+          "as": "ai_outputParser"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Lemlist Trigger - On new reply",
+          "type": "n8n-nodes-base.lemlistTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from lemlistTrigger; Yantra has no webhook slug for it, so run on demand, on a schedule (add a NodeCron), or via the workflow API with the event under the run input `event`.",
+        "\"Format text with Markdown\" (markdown.markdownToHtml): Markdown to HTML is a minimal converter on Yantra.",
+        "\"Format text with Markdown\": Markdown to HTML is a minimal converter on Yantra; swap in a connector if you need full fidelity.",
+        "\"Merge data\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "\"lemlist - Mark as interested\" authenticated with lemlistApi in the original; add the matching Authorization header (or use the service's connector).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect lemlist: `cdecli credential create -n \"lemlist\" -p lemlist --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect slack: `cdecli credential create -n \"slack\" -p slack --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "### Get your lemlist API key\n\n1. Go to your lemlist account or create one [HERE](https://app.lemlist.com/create-account)\n\n2. Go to Settings -> Integrations\n\n3. Generate your API Key and copy it\n\n4. On this node, click on create new credential and paste your API key",
+      "# Read me\n\nThis workflow send email replies of your lemlist campaigns to the Slack channel of your choice.\n\nThe OpenAI node will classify the reply status. \n\nThe Slack alert is structured in a way that make it easy to read for the user.",
+      "### Create a Slack notification for each new replies\n\n1. Connect your Slack account by clicking to add Credentials\n\n2. Write the name of the channel where you want to send the Slack alert",
+      "### Save time by automatically unsubscribing leads that don't want to receive emails from you",
+      "### Mark interested leads as interested in lemlist",
+      "### Categorize the reply with OpenAI",
+      "### This node will clean the text and make sure it looks pretty on Slack",
+      "### Trigger a different scenario according to the category of the reply"
+    ],
+    "nodes": {
+      "node_f4f1d9ac07": {
+        "n8n": "Lemlist Trigger - On new reply",
+        "n8nType": "n8n-nodes-base.lemlistTrigger"
+      },
+      "node_b398a5590f": {
+        "n8n": "Format text with Markdown",
+        "n8nType": "n8n-nodes-base.markdown"
+      },
+      "node_80c59ff3fd": {
+        "n8n": "Categorize lemlist reply",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_e42c3a61d6": {
+        "n8n": "Categorize lemlist reply",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_ff3a5463b3": {
+        "n8n": "Merge data",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_9da030b5c5": {
+        "n8n": "Route reply to the right branch",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_05ebbd4fd3": {
+        "n8n": "Route reply to the right branch",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_152a2b16d1": {
+        "n8n": "Route reply to the right branch",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_a2d55ee95a": {
+        "n8n": "Route reply to the right branch",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_b1d13decb8": {
+        "n8n": "Route reply to the right branch",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_bf0cf32b18": {
+        "n8n": "Route reply to the right branch",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_256f00ac28": {
+        "n8n": "Send alert to Slack",
+        "n8nType": "n8n-nodes-base.slack"
+      },
+      "node_1e708e0395": {
+        "n8n": "Send alert to Slack",
+        "n8nType": "n8n-nodes-base.slack"
+      },
+      "node_6d3353674a": {
+        "n8n": "Lemlist - Unsubscribe",
+        "n8nType": "n8n-nodes-base.lemlist"
+      },
+      "node_d206a54fa7": {
+        "n8n": "lemlist - Mark as interested",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "lemlistApi"
+      },
+      "node_0ecf3305fe": {
+        "n8n": "__end:Send alert to Slack",
+        "n8nType": "synthetic"
+      },
+      "node_2fdf3bd2b0": {
+        "n8n": "__end:Lemlist - Unsubscribe",
+        "n8nType": "synthetic"
+      },
+      "node_f50b1700fa": {
+        "n8n": "__end:lemlist - Mark as interested",
+        "n8nType": "synthetic"
+      },
+      "node_ba28168953": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_79085fdedc": {
+        "n8n": "Categorize lemlist reply",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "name": "fixture-default-ops-misc",
+  "nodes": [
+    {
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "name": "Get database details",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "parameters": {
+        "resource": "database",
+        "databaseId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.db }}"
+        }
+      },
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "name": "Tasks",
+      "type": "n8n-nodes-base.baserow",
+      "parameters": {
+        "tableId": "={{ $json.table }}",
+        "databaseId": 1
+      },
+      "typeVersion": 1,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "name": "Send Auto-Reply",
+      "type": "n8n-nodes-base.whatsApp",
+      "parameters": {
+        "phoneNumberId": "={{ $json.phone }}",
+        "recipientPhoneNumber": "={{ $json.to }}",
+        "template": "welcome|en"
+      },
+      "typeVersion": 1,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "name": "Reply to Issue",
+      "type": "n8n-nodes-base.jira",
+      "parameters": {
+        "resource": "issueComment",
+        "issueKey": "={{ $json.key }}",
+        "comment": "Thanks"
+      },
+      "typeVersion": 1,
+      "position": [
+        880,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Get database details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get database details": {
+      "main": [
+        [
+          {
+            "node": "Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tasks": {
+      "main": [
+        [
+          {
+            "node": "Send Auto-Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Auto-Reply": {
+      "main": [
+        [
+          {
+            "node": "Reply to Issue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

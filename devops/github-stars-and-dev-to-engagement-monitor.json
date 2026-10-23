@@ -1,0 +1,345 @@
+{
+  "name": "GitHub Stars and Dev.to Engagement Monitor",
+  "workflowSlug": "github-stars-and-dev-to-engagement-monitor",
+  "description": "Checks GitHub repo stars/forks/open issues and dev.to article reactions/comments on a schedule, compiling them into one record per run - for tracking whether anyone noticed what you shipped without opening five tabs. Easy to extend: duplicate an HTTP node per repo/article you want to track.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_29634245b9",
+      "actorId": "actor_29634245b9",
+      "type": "NodeCron",
+      "label": "Every 12 Hours",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 */12 * * *"
+      }
+    },
+    {
+      "nodeId": "node_344b1c3a84",
+      "actorId": "actor_344b1c3a84",
+      "type": "NodeHttpRequest",
+      "label": "GitHub Repo 1",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://api.github.com/repos/{{yourGithubUsername}}/{{yourRepo1}}",
+        "headers": {
+          "Authorization": "Bearer {{githubToken}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_3d1e9b2318",
+      "actorId": "actor_3d1e9b2318",
+      "type": "NodeHttpRequest",
+      "label": "GitHub Repo 2",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://api.github.com/repos/{{yourGithubUsername}}/{{yourRepo2}}",
+        "headers": {
+          "Authorization": "Bearer {{githubToken}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_6482480ac8",
+      "actorId": "actor_6482480ac8",
+      "type": "NodeHttpRequest",
+      "label": "dev.to Article 1",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://dev.to/api/articles/{{yourDevtoUsername}}/{{yourArticleSlug}}"
+      }
+    },
+    {
+      "nodeId": "node_02af0dc4d5",
+      "actorId": "actor_02af0dc4d5",
+      "type": "NodeTransform",
+      "label": "Compile Summary",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"GitHub Repo 1\": {{steps.http_344b1c3a84.result}}, \"GitHub Repo 2\": {{steps.http_3d1e9b2318.result}}, \"dev.to Article 1\": {{steps.http_6482480ac8.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Compile Summary\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Add or remove blocks below to match the HTTP Request nodes you have.\n  // Every $('Node Name') reference must match a node name in this workflow exactly.\n  const repo1 = $('GitHub Repo 1').item.json;\n  const repo2 = $('GitHub Repo 2').item.json;\n  const article1 = $('dev.to Article 1').item.json;\n  \n  return [{\n    json: {\n      checked_at: new Date().toISOString(),\n      repo1: { stars: repo1.stargazers_count, forks: repo1.forks_count, open_issues: repo1.open_issues_count },\n      repo2: { stars: repo2.stargazers_count, forks: repo2.forks_count, open_issues: repo2.open_issues_count },\n      article1: { reactions: article1.positive_reactions_count, comments: article1.comments_count }\n    }\n  }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_52a71e1365",
+      "actorId": "actor_52a71e1365",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_1d445392d8",
+      "actorId": "actor_1d445392d8",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "yourGithubUsername": "",
+          "yourRepo1": "",
+          "yourRepo2": "",
+          "yourDevtoUsername": "",
+          "yourArticleSlug": "",
+          "githubToken": {
+            "$workflowSecret": "GITHUB_TOKEN"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_29634245b9",
+      "target": "node_344b1c3a84",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_344b1c3a84",
+      "target": "node_3d1e9b2318",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_3d1e9b2318",
+      "target": "node_6482480ac8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_6482480ac8",
+      "target": "node_02af0dc4d5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6482480ac8",
+      "target": "node_02af0dc4d5",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_02af0dc4d5",
+      "target": "node_52a71e1365",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "devops",
+    "categoryLabel": "DevOps and Server Automation",
+    "department": "Marketing",
+    "connectors": [],
+    "setupVars": [
+      {
+        "key": "yourGithubUsername",
+        "label": "Your Github Username",
+        "type": "text",
+        "usedBy": [
+          "GitHub Repo 1",
+          "GitHub Repo 2"
+        ]
+      },
+      {
+        "key": "yourRepo1",
+        "label": "Your Repo1",
+        "type": "text",
+        "usedBy": [
+          "GitHub Repo 1"
+        ]
+      },
+      {
+        "key": "yourRepo2",
+        "label": "Your Repo2",
+        "type": "text",
+        "usedBy": [
+          "GitHub Repo 2"
+        ]
+      },
+      {
+        "key": "yourDevtoUsername",
+        "label": "Your Devto Username",
+        "type": "text",
+        "usedBy": [
+          "dev.to Article 1"
+        ]
+      },
+      {
+        "key": "yourArticleSlug",
+        "label": "Your Article Slug",
+        "type": "text",
+        "usedBy": [
+          "dev.to Article 1"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "GITHUB_TOKEN",
+        "label": "GitHub token",
+        "host": "api.github.com",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "githubToken",
+        "usedBy": [
+          "GitHub Repo 1",
+          "GitHub Repo 2"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate github-stars-and-dev-to-engagement-monitor",
+    "nodeTypes": [
+      "NodeCron",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 5,
+      "yantraSteps": 5,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "devops/GitHub Stars and Dev.to Engagement Monitor.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Engagement Monitor Template"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Setup value yourGithubUsername: Your Github Username. Write it into the Workflow Configs initialContext before import.",
+      "Setup value yourRepo1: Your Repo1. Write it into the Workflow Configs initialContext before import.",
+      "Setup value yourRepo2: Your Repo2. Write it into the Workflow Configs initialContext before import.",
+      "Setup value yourDevtoUsername: Your Devto Username. Write it into the Workflow Configs initialContext before import.",
+      "Setup value yourArticleSlug: Your Article Slug. Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret GITHUB_TOKEN: GitHub token for api.github.com (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "After import, start the schedule: cdecli cron activate github-stars-and-dev-to-engagement-monitor."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Every 12 Hours",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_29634245b9": {
+        "n8n": "Every 12 Hours",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_344b1c3a84": {
+        "n8n": "GitHub Repo 1",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_3d1e9b2318": {
+        "n8n": "GitHub Repo 2",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_6482480ac8": {
+        "n8n": "dev.to Article 1",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_02af0dc4d5": {
+        "n8n": "Compile Summary",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_52a71e1365": {
+        "n8n": "__end:Compile Summary",
+        "n8nType": "synthetic"
+      },
+      "node_1d445392d8": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

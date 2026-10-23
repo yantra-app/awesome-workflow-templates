@@ -1,0 +1,199 @@
+{
+  "name": "Get Airtable data via AI and Obsidian Notes",
+  "workflowSlug": "get-airtable-data-via-ai-and-obsidian-notes",
+  "description": "This workflow retrieves data from Airtable using an AI agent and integrates it with Obsidian Notes, allowing for seamless data access and organization within Obsidian.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_0a678ce32e",
+      "actorId": "actor_0a678ce32e",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_36572076d5",
+      "actorId": "actor_36572076d5",
+      "type": "NodeCdecliAgent",
+      "label": "AI Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "gpt-4o-mini",
+        "sessionId": "",
+        "message": "{{body.content}}"
+      }
+    },
+    {
+      "nodeId": "node_e5e7ca7e49",
+      "actorId": "actor_e5e7ca7e49",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_4b44a7ca91",
+      "actorId": "actor_4b44a7ca91",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {}
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_36572076d5",
+      "target": "node_e5e7ca7e49",
+      "sourceOutput": "text",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_0a678ce32e",
+      "target": "node_36572076d5",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdecliAgent"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "airtable",
+    "categoryLabel": "Airtable",
+    "department": "Productivity",
+    "connectors": [
+      "airtable"
+    ],
+    "nodeTypes": [
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeStart",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 5,
+      "yantraSteps": 2,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "Airtable"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Airtable/Get Airtable data via AI and Obsidian Notes.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Get Airtable data in Obsidian Notes"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Webhook Set Up in Obsidian",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Webhook Set Up in Obsidian\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Connect the airtable connector (credential).",
+      "Provide run inputs: body, query, headers."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "AI Agent",
+          "model": "gpt-4o-mini"
+        },
+        {
+          "node": "Airtable",
+          "type": "n8n-nodes-base.airtableTool",
+          "into": "AI Agent",
+          "as": "ai_tool"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Webhook Set Up in Obsidian",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /59fc8248-d3f7-4dbc-bdf3-39d59e427160). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "\"AI Agent\" used agent tools in the original: Airtable (airtableTool). The cdecli agent calls connectors directly; connect credentials for the services those tools reached. Prefer connectors: airtable.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect airtable: `cdecli credential create -n \"airtable\" -p airtable --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "[![YouTube Video](https://img.youtube.com/vi/2PIdeTgsENo/0.jpg)](https://www.youtube.com/watch?v=2PIdeTgsENo)",
+      "## Get Airtable Data in Obsidian with AI Agent\n<-- Watch the video to see it in action!\n\n**How to Set Up:**\n- Install the [Post Webhook Plugin](https://github.com/Masterb1234/obsidian-post-webhook/) in Obsidian.\n- Insert the n8n Webhook URL into the Post Webhook plugin settings.\n- Configure Your Airtable Node to match your workflow needs.\n\n\n**How to Use:**\n- Highlight text containing a question about your Airtable data.\n- Open the Obsidian Command Palette (Ctrl+P) and choose 'Send Selection to [Your Webhook]'.\n- Click, wait for the AI Agent to process your request, and see the result appear below your selected text."
+    ],
+    "nodes": {
+      "node_0a678ce32e": {
+        "n8n": "Webhook Set Up in Obsidian",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_36572076d5": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_e5e7ca7e49": {
+        "n8n": "Respond to Obsidian",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_4b44a7ca91": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

@@ -1,0 +1,992 @@
+{
+  "name": "Upsert huge documents in a vector store with Supabase and Notion",
+  "workflowSlug": "upsert-huge-documents-in-a-vector-store-with-supabase-and-notion",
+  "description": "Manages large documents by splitting them into chunks, generating embeddings, and upserting them into a Supabase vector store, with Notion serving as the document source.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_9df1532f15",
+      "actorId": "actor_9df1532f15",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_ad8aa8dc59",
+      "actorId": "actor_ad8aa8dc59",
+      "type": "NodeCron",
+      "label": "Schedule Trigger",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "*/1 * * * *"
+      }
+    },
+    {
+      "nodeId": "node_3cd4689b18",
+      "actorId": "actor_3cd4689b18",
+      "type": "NodeLlmChain",
+      "label": "Question and Answer Chain",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{last.transformed}}",
+        "prompt": "{{chatInput}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_e451f6a233",
+      "actorId": "actor_e451f6a233",
+      "type": "NodeTransform",
+      "label": "System: Question and Answer Chain",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: Question and Answer Chain.\nconst __promptValue = `Answer the question using only the provided context. If the context is empty, say you do not know.\n\nContext:\n${$json.context || $json.documents || $json.text || ''}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_a43c1d74ba",
+      "actorId": "actor_a43c1d74ba",
+      "type": "NodeCdeConnector",
+      "label": "notion/NOTION_QUERY_DATABASE",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "notion",
+        "connectorLabel": "Notion",
+        "action": "NOTION_QUERY_DATABASE",
+        "params": {
+          "database_id": "{{notionDatabaseId}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_22377d5911",
+      "actorId": "actor_22377d5911",
+      "type": "NodeTransform",
+      "label": "Items: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_17b2176de6",
+      "actorId": "actor_17b2176de6",
+      "type": "NodeLoop",
+      "label": "Loop Over Items",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_26b91d514a",
+      "actorId": "actor_26b91d514a",
+      "type": "NodeTransform",
+      "label": "Item: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_29813f47b5",
+      "actorId": "actor_29813f47b5",
+      "type": "NodeTransform",
+      "label": "Results: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_85417103f5",
+      "actorId": "actor_85417103f5",
+      "type": "NodeTransform",
+      "label": "Params: Delete old embeddings if exist",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for supabase/SUPABASE_DELETE_ROW (n8n node \"Delete old embeddings if exist\").\nreturn {\n  \"table\": \"documents\",\n  \"filters\": `metadata->>id=eq.${$('Input Reference').item.json.id}`,\n  \"ref\": \"{{supabaseProjectRef}}\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_81912f9c7e",
+      "actorId": "actor_81912f9c7e",
+      "type": "NodeCdeConnector",
+      "label": "supabase/SUPABASE_DELETE_ROW",
+      "color": "#6366F1",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "supabase",
+        "connectorLabel": "Supabase",
+        "action": "SUPABASE_DELETE_ROW"
+      }
+    },
+    {
+      "nodeId": "node_8b99133e63",
+      "actorId": "actor_8b99133e63",
+      "type": "NodeTransform",
+      "label": "Limit",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nreturn __items.slice(0, 1);"
+      }
+    },
+    {
+      "nodeId": "node_c6f2f74065",
+      "actorId": "actor_c6f2f74065",
+      "type": "NodeTransform",
+      "label": "Params: Get page blocks",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for notion/NOTION_FETCH_BLOCK_CONTENTS (n8n node \"Get page blocks\").\nreturn {\n  \"block_id\": ($('Input Reference').item.json.id),\n};"
+      }
+    },
+    {
+      "nodeId": "node_0ee5f95c45",
+      "actorId": "actor_0ee5f95c45",
+      "type": "NodeCdeConnector",
+      "label": "notion/NOTION_FETCH_BLOCK_CONTENTS",
+      "color": "#6366F1",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "notion",
+        "connectorLabel": "Notion",
+        "action": "NOTION_FETCH_BLOCK_CONTENTS"
+      }
+    },
+    {
+      "nodeId": "node_5dec5db34c",
+      "actorId": "actor_5dec5db34c",
+      "type": "NodeTransform",
+      "label": "Concatenate to single string",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Object.prototype, { values() { return Object.values(this); } });\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Summarize (n8n Summarize node): concatenate of content.\nconst __fields = [{ field: \"content\", aggregation: \"concatenate\", separateBy: \"\\n\" }];\nconst __splitBy = [];\nconst __summarize = (rows) => {\n  const out = {};\n  for (const f of __fields) {\n    const vals = rows.map((r) => __get(r, f.field)).filter((v) => v !== undefined && v !== null && v !== '');\n    const nums = vals.map(Number).filter((n) => !Number.isNaN(n));\n    const key = (f.aggregation === 'concatenate' ? 'concatenated' : f.aggregation) + '_' + f.field;\n    switch (f.aggregation) {\n      case 'count': out[key] = vals.length; break;\n      case 'countUnique': out[key] = new Set(vals.map((v) => JSON.stringify(v))).size; break;\n      case 'sum': out[key] = nums.reduce((a, b) => a + b, 0); break;\n      case 'average': out[key] = nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null; break;\n      case 'min': out[key] = nums.length ? Math.min(...nums) : null; break;\n      case 'max': out[key] = nums.length ? Math.max(...nums) : null; break;\n      case 'append': out[key] = vals; break;\n      case 'concatenate': out[key] = vals.join(f.separateBy); break;\n      default: out[key] = vals;\n    }\n  }\n  return out;\n};\nif (!__splitBy.length) return [__summarize(__items)];\nconst __groups = new Map();\nfor (const r of __items) {\n  const k = __splitBy.map((f) => JSON.stringify(__get(r, f))).join('|');\n  if (!__groups.has(k)) __groups.set(k, []);\n  __groups.get(k).push(r);\n}\nreturn [...__groups.values()].map((rows) => ({ ...Object.fromEntries(__splitBy.map((f) => [f, __get(rows[0], f)])), ...__summarize(rows) }));"
+      }
+    },
+    {
+      "nodeId": "node_a54ccf1f79",
+      "actorId": "actor_a54ccf1f79",
+      "type": "NodeTransform",
+      "label": "Params: Supabase Vector Store",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for supabase/SUPABASE_INSERT_ROW (n8n node \"Supabase Vector Store\").\nreturn {\n  \"table\": \"documents\",\n  \"fields\": { \"content\": ($json.pageContent ?? $json.content ?? $json.text), \"embedding\": ($json.embedding), \"metadata\": ($json.metadata) },\n  \"ref\": \"{{supabaseProjectRef}}\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_98ba577780",
+      "actorId": "actor_98ba577780",
+      "type": "NodeCdeConnector",
+      "label": "supabase/SUPABASE_INSERT_ROW",
+      "color": "#6366F1",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "supabase",
+        "connectorLabel": "Supabase",
+        "action": "SUPABASE_INSERT_ROW"
+      }
+    },
+    {
+      "nodeId": "node_3eeef7db2e",
+      "actorId": "actor_3eeef7db2e",
+      "type": "NodeTransform",
+      "label": "Limit1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nreturn __items.slice(0, 1);"
+      }
+    },
+    {
+      "nodeId": "node_964d5e1725",
+      "actorId": "actor_964d5e1725",
+      "type": "NodeTransform",
+      "label": "Return: Limit1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_62b84661f3",
+      "actorId": "actor_62b84661f3",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_a349a9b7c6",
+      "actorId": "actor_a349a9b7c6",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_be2f31b48d",
+      "actorId": "actor_be2f31b48d",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "chatInput": "",
+          "sessionId": "",
+          "supabaseProjectRef": "",
+          "notionDatabaseId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_f7518420ac",
+      "actorId": "actor_f7518420ac",
+      "type": "NodeChatModel",
+      "label": "Question and Answer Chain: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 720
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_e451f6a233",
+      "target": "node_3cd4689b18",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_22377d5911",
+      "target": "node_17b2176de6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_22377d5911",
+      "target": "node_17b2176de6",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_17b2176de6",
+      "target": "node_26b91d514a",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_17b2176de6",
+      "target": "node_26b91d514a",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_17b2176de6",
+      "target": "node_29813f47b5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_17b2176de6",
+      "target": "node_29813f47b5",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_85417103f5",
+      "target": "node_81912f9c7e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_85417103f5",
+      "target": "node_81912f9c7e",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_c6f2f74065",
+      "target": "node_0ee5f95c45",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_c6f2f74065",
+      "target": "node_0ee5f95c45",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_a54ccf1f79",
+      "target": "node_98ba577780",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_a54ccf1f79",
+      "target": "node_98ba577780",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_26b91d514a",
+      "target": "node_85417103f5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_26b91d514a",
+      "target": "node_85417103f5",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9df1532f15",
+      "target": "node_e451f6a233",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ad8aa8dc59",
+      "target": "node_a43c1d74ba",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_8b99133e63",
+      "target": "node_c6f2f74065",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8b99133e63",
+      "target": "node_c6f2f74065",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_81912f9c7e",
+      "target": "node_8b99133e63",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_81912f9c7e",
+      "target": "node_8b99133e63",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0ee5f95c45",
+      "target": "node_5dec5db34c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0ee5f95c45",
+      "target": "node_5dec5db34c",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a43c1d74ba",
+      "target": "node_22377d5911",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a43c1d74ba",
+      "target": "node_22377d5911",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_98ba577780",
+      "target": "node_3eeef7db2e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_98ba577780",
+      "target": "node_3eeef7db2e",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5dec5db34c",
+      "target": "node_a54ccf1f79",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5dec5db34c",
+      "target": "node_a54ccf1f79",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3eeef7db2e",
+      "target": "node_964d5e1725",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3eeef7db2e",
+      "target": "node_964d5e1725",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_964d5e1725",
+      "target": "node_17b2176de6",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_964d5e1725",
+      "target": "node_17b2176de6",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_3cd4689b18",
+      "target": "node_62b84661f3",
+      "sourceOutput": "text",
+      "targetInput": "result",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_29813f47b5",
+      "target": "node_a349a9b7c6",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_f7518420ac",
+      "target": "node_3cd4689b18",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "notion",
+    "categoryLabel": "Notion",
+    "department": "Engineering",
+    "connectors": [
+      "notion",
+      "openai",
+      "supabase"
+    ],
+    "setupVars": [
+      {
+        "key": "supabaseProjectRef",
+        "label": "Supabase project ref (Settings > General)",
+        "type": "id",
+        "example": "abcdefghijklmnopqrst",
+        "usedBy": [
+          "Delete old embeddings if exist",
+          "Supabase Vector Store"
+        ]
+      },
+      {
+        "key": "notionDatabaseId",
+        "label": "Notion database id",
+        "type": "id",
+        "usedBy": [
+          "Get updated pages"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate upsert-huge-documents-in-a-vector-store-with-supabase-and-notion",
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeLoop",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 18,
+      "yantraSteps": 20,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "Vector Store Retriever",
+        "Embeddings OpenAI",
+        "Default Data Loader"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Notion/Upsert huge documents in a vector store with Supabase and Notion.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "RAG on living data"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "When chat message received",
+        "detail": "@n8n/n8n-nodes-langchain.chatTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"When chat message received\" (chatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value supabaseProjectRef: Supabase project ref (Settings > General) (for example abcdefghijklmnopqrst). Write it into the Workflow Configs initialContext before import.",
+      "Setup value notionDatabaseId: Notion database id. Write it into the Workflow Configs initialContext before import.",
+      "Connect the notion connector (credential).",
+      "Connect the openai connector (credential).",
+      "Connect the supabase connector (credential).",
+      "After import, start the schedule: cdecli cron activate upsert-huge-documents-in-a-vector-store-with-supabase-and-notion.",
+      "Provide run inputs: chatInput, sessionId."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Question and Answer Chain",
+          "n8n": "chainRetrievalQa",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "Notion Trigger",
+          "type": "n8n-nodes-base.notionTrigger",
+          "reason": "disabled in the original"
+        },
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Question and Answer Chain",
+          "model": "gpt-4o"
+        },
+        {
+          "node": "Vector Store Retriever",
+          "type": "@n8n/n8n-nodes-langchain.retrieverVectorStore",
+          "into": "Question and Answer Chain",
+          "as": "ai_retriever"
+        },
+        {
+          "node": "Embeddings OpenAI",
+          "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+          "into": "Supabase Vector Store",
+          "as": "ai_embedding"
+        },
+        {
+          "node": "Default Data Loader",
+          "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+          "into": "Supabase Vector Store",
+          "as": "ai_document"
+        }
+      ],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "When chat message received",
+          "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Schedule Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
+        "\"Question and Answer Chain\" folded a retriever (retrieverVectorStore); retrieved text is expected on the upstream payload as context/documents.",
+        "\"Question and Answer Chain\" (chainRetrievalQa): Retriever output should arrive as context/documents/text on the upstream payload.",
+        "\"Loop Over Items\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "\"Delete old embeddings if exist\": set the Supabase project ref (Management API) on SUPABASE_DELETE_ROW.",
+        "\"Supabase Vector Store\" folded a document (documentDefaultDataLoader); retrieved text is expected on the upstream payload as context/documents.",
+        "\"Supabase Vector Store\": set the Supabase project ref on SUPABASE_INSERT_ROW. content, embedding, and metadata come from the upstream item.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect notion: `cdecli credential create -n \"notion\" -p notion --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect supabase: `cdecli credential create -n \"supabase\" -p supabase --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Switch trigger (optional)\nIf you are on the cloud plan, consider switching to the Notion Trigger Node instead, to save on executions.",
+      "## Adjust chunk size and overlap\nFor more accurate search results, increase the overlap. For the *text-embedding-ada-002* model the chunk size plus overlap must not exceed 8191",
+      "This placeholder serves as a reference point so it is easier to swap the data source with a different service",
+      "All chunks of a previous version of the document are being deleted by filtering the meta data by the given ID",
+      "Reduce the active streams/items to just 1 to prevent the following nodes from double-processing",
+      "Retrieve all page contents/blocks",
+      "Reduce the active streams/items to just 1 to prevent the following nodes from double-processing",
+      "Embed item and store in Vector Store. Depending on the length the content is being split up into multiple chunks/embeds",
+      "Simple chat bot to ask specific questions while having access to the context of the Notion Knowledge Base which was stored in the Vector Store",
+      "Model used for both creating and reading embeddings",
+      "Process each page/document separately.",
+      "Store additional meta data with each embed, especially the Notion ID, which can be later used to find all belonging entries of one page, even if they got split into multiple embeds.",
+      "Using a manual approach for polling data from Notion for more accuracy.",
+      "## Select Database\nChoose the database which represents your Knowledge Base",
+      "Combine all contents to a single text formatted into one line which can be easily stored as an embed"
+    ],
+    "nodes": {
+      "node_9df1532f15": {
+        "n8n": "When chat message received",
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
+      },
+      "node_ad8aa8dc59": {
+        "n8n": "Schedule Trigger",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_3cd4689b18": {
+        "n8n": "Question and Answer Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainRetrievalQa"
+      },
+      "node_e451f6a233": {
+        "n8n": "Question and Answer Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainRetrievalQa"
+      },
+      "node_a43c1d74ba": {
+        "n8n": "Get updated pages",
+        "n8nType": "n8n-nodes-base.notion"
+      },
+      "node_22377d5911": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_17b2176de6": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_26b91d514a": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_29813f47b5": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_85417103f5": {
+        "n8n": "Delete old embeddings if exist",
+        "n8nType": "n8n-nodes-base.supabase"
+      },
+      "node_81912f9c7e": {
+        "n8n": "Delete old embeddings if exist",
+        "n8nType": "n8n-nodes-base.supabase"
+      },
+      "node_8b99133e63": {
+        "n8n": "Limit",
+        "n8nType": "n8n-nodes-base.limit"
+      },
+      "node_c6f2f74065": {
+        "n8n": "Get page blocks",
+        "n8nType": "n8n-nodes-base.notion"
+      },
+      "node_0ee5f95c45": {
+        "n8n": "Get page blocks",
+        "n8nType": "n8n-nodes-base.notion"
+      },
+      "node_5dec5db34c": {
+        "n8n": "Concatenate to single string",
+        "n8nType": "n8n-nodes-base.summarize"
+      },
+      "node_a54ccf1f79": {
+        "n8n": "Supabase Vector Store",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreSupabase"
+      },
+      "node_98ba577780": {
+        "n8n": "Supabase Vector Store",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreSupabase"
+      },
+      "node_3eeef7db2e": {
+        "n8n": "Limit1",
+        "n8nType": "n8n-nodes-base.limit"
+      },
+      "node_964d5e1725": {
+        "n8n": "Limit1",
+        "n8nType": "n8n-nodes-base.limit"
+      },
+      "node_62b84661f3": {
+        "n8n": "__end:Question and Answer Chain",
+        "n8nType": "synthetic"
+      },
+      "node_a349a9b7c6": {
+        "n8n": "__end:Loop Over Items",
+        "n8nType": "synthetic"
+      },
+      "node_be2f31b48d": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_f7518420ac": {
+        "n8n": "Question and Answer Chain",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

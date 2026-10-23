@@ -1,0 +1,757 @@
+{
+  "name": "Create dynamic Twitter profile banner",
+  "workflowSlug": "create-dynamic-twitter-profile-banner",
+  "description": "Automates the creation of dynamic Twitter profile banners.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_5c5c1973ec",
+      "actorId": "actor_5c5c1973ec",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_ea38aabe44",
+      "actorId": "actor_ea38aabe44",
+      "type": "NodeHttpRequest",
+      "label": "Fetch bg",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "{TEMPLATE_IMAGE_URL}"
+      }
+    },
+    {
+      "nodeId": "node_3e89c67b8e",
+      "actorId": "actor_3e89c67b8e",
+      "type": "NodeHttpRequest",
+      "label": "Fetch new followers",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://api.twitter.com/2/users/{{{yourUserId}}}/followers?user.fields=profile_image_url&max_results=3",
+        "headers": {
+          "Authorization": "Bearer {{xBearerToken}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_3ccb7cd72a",
+      "actorId": "actor_3ccb7cd72a",
+      "type": "NodeTransform",
+      "label": "Item Lists",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"data\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"data\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"data\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_e7966685da",
+      "actorId": "actor_e7966685da",
+      "type": "NodeHttpRequest",
+      "label": "Fetching images",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET"
+      }
+    },
+    {
+      "nodeId": "node_9b92d426e3",
+      "actorId": "actor_9b92d426e3",
+      "type": "NodeTransform",
+      "label": "URL: Fetching images",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request URL for \"Fetching images\".\nreturn ($json[\"profile_image_url\"].replace('normal','400x400'));"
+      }
+    },
+    {
+      "nodeId": "node_b9d27081e2",
+      "actorId": "actor_b9d27081e2",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-editing/YANTRA_IMAGE_EDIT_RESIZE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-editing",
+        "connectorLabel": "Image editing",
+        "action": "YANTRA_IMAGE_EDIT_RESIZE",
+        "params": {
+          "width": 200,
+          "height": 200
+        }
+      }
+    },
+    {
+      "nodeId": "node_40fb7eb6d2",
+      "actorId": "actor_40fb7eb6d2",
+      "type": "NodeTransform",
+      "label": "Crop: create",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// image create has no Yantra image-editing action.\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_5f01496bc4",
+      "actorId": "actor_5f01496bc4",
+      "type": "NodeTransform",
+      "label": "Crop: draw",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// image draw has no Yantra image-editing action.\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_ef926f3a20",
+      "actorId": "actor_ef926f3a20",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-editing/YANTRA_IMAGE_EDIT_COMPOSE",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-editing",
+        "connectorLabel": "Image editing",
+        "action": "YANTRA_IMAGE_EDIT_COMPOSE",
+        "params": {}
+      }
+    },
+    {
+      "nodeId": "node_fb86402d68",
+      "actorId": "actor_fb86402d68",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-editing/YANTRA_IMAGE_EDIT_RESIZE",
+      "color": "#6366F1",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-editing",
+        "connectorLabel": "Image editing",
+        "action": "YANTRA_IMAGE_EDIT_RESIZE",
+        "params": {
+          "width": 75,
+          "height": 75
+        }
+      }
+    },
+    {
+      "nodeId": "node_65152ee569",
+      "actorId": "actor_65152ee569",
+      "type": "NodeTransform",
+      "label": "Function",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Function node \"Function\".\nconst __one = (i) => (i && typeof i === 'object' && 'json' in i ? (i.binary && typeof i.binary === 'object' ? { ...i.json, binary: i.binary } : i.json) : i);\nconst __unwrap = (v) => Array.isArray(v) ? v.map(__one) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? __one(v) : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst items = $input.all();\nconst __out = (() => {\n  const binary = {};\n  for (let i=0; i < items.length; i++) {\n   binary[`data${i}`] = items[i].binary.avatar;\n  }\n  \n  return [\n   {\n   json: {\n   numIcons: items.length,\n   },\n   binary,\n   }\n  ];\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_8b07fb3ee9",
+      "actorId": "actor_8b07fb3ee9",
+      "type": "NodeSync",
+      "label": "Merge",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_5c2f5b13c0",
+      "actorId": "actor_5c2f5b13c0",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-editing/YANTRA_IMAGE_EDIT_COMPOSE",
+      "color": "#6366F1",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-editing",
+        "connectorLabel": "Image editing",
+        "action": "YANTRA_IMAGE_EDIT_COMPOSE",
+        "params": {}
+      }
+    },
+    {
+      "nodeId": "node_4627c6ec45",
+      "actorId": "actor_4627c6ec45",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-editing/YANTRA_IMAGE_EDIT_COMPOSE",
+      "color": "#6366F1",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-editing",
+        "connectorLabel": "Image editing",
+        "action": "YANTRA_IMAGE_EDIT_COMPOSE",
+        "params": {}
+      }
+    },
+    {
+      "nodeId": "node_8b246bc5ee",
+      "actorId": "actor_8b246bc5ee",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-editing/YANTRA_IMAGE_EDIT_COMPOSE",
+      "color": "#6366F1",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-editing",
+        "connectorLabel": "Image editing",
+        "action": "YANTRA_IMAGE_EDIT_COMPOSE",
+        "params": {}
+      }
+    },
+    {
+      "nodeId": "node_2a1eeb7c80",
+      "actorId": "actor_2a1eeb7c80",
+      "type": "NodeHttpRequest",
+      "label": "HTTP Request",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://api.twitter.com/1.1/account/update_profile_banner.json"
+      }
+    },
+    {
+      "nodeId": "node_bd49dda273",
+      "actorId": "actor_bd49dda273",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_c235ec59f1",
+      "actorId": "actor_c235ec59f1",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "yourUserId": "",
+          "xBearerToken": {
+            "$workflowSecret": "X_BEARER_TOKEN"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_9b92d426e3",
+      "target": "node_e7966685da",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_9b92d426e3",
+      "target": "node_e7966685da",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_40fb7eb6d2",
+      "target": "node_5f01496bc4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_40fb7eb6d2",
+      "target": "node_5f01496bc4",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5f01496bc4",
+      "target": "node_ef926f3a20",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_5c2f5b13c0",
+      "target": "node_4627c6ec45",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_4627c6ec45",
+      "target": "node_8b246bc5ee",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_5c5c1973ec",
+      "target": "node_3e89c67b8e",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_3e89c67b8e",
+      "target": "node_3ccb7cd72a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3e89c67b8e",
+      "target": "node_3ccb7cd72a",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3ccb7cd72a",
+      "target": "node_9b92d426e3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3ccb7cd72a",
+      "target": "node_9b92d426e3",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_65152ee569",
+      "target": "node_8b07fb3ee9",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_8b07fb3ee9",
+      "target": "node_5c2f5b13c0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_e7966685da",
+      "target": "node_b9d27081e2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ea38aabe44",
+      "target": "node_8b07fb3ee9",
+      "sourceOutput": "body",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_b9d27081e2",
+      "target": "node_40fb7eb6d2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b9d27081e2",
+      "target": "node_40fb7eb6d2",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ef926f3a20",
+      "target": "node_fb86402d68",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_8b246bc5ee",
+      "target": "node_2a1eeb7c80",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_fb86402d68",
+      "target": "node_65152ee569",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fb86402d68",
+      "target": "node_65152ee569",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5c5c1973ec",
+      "target": "node_ea38aabe44",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_2a1eeb7c80",
+      "target": "node_bd49dda273",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "social-media",
+    "categoryLabel": "Instagram, X and Social Media",
+    "department": "Marketing/Social Media",
+    "connectors": [
+      "yantra-image-editing"
+    ],
+    "setupVars": [
+      {
+        "key": "yourUserId",
+        "label": "Your User Id",
+        "type": "id",
+        "usedBy": [
+          "Fetch new followers"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "X_BEARER_TOKEN",
+        "label": "X (Twitter) app bearer token",
+        "host": "api.twitter.com",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "xBearerToken",
+        "usedBy": [
+          "Fetch new followers"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 12,
+      "yantraSteps": 17,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Instagram_Twitter_Social_Media/Create dynamic Twitter profile banner.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "http-auth-missing",
+        "node": "HTTP Request",
+        "detail": "api.twitter.com needs the oAuth1 credential"
+      },
+      {
+        "code": "hard-approximation",
+        "node": "Crop",
+        "detail": "image.multiStep -> yantra-image-editing"
+      }
+    ],
+    "setup": [
+      "\"HTTP Request\": api.twitter.com needs authentication (the original used oAuth1). Add the Authorization header, or replace the step with that service's connector.",
+      "\"Crop\" (image.multiStep) only approximates the original; review it before relying on the result.",
+      "Setup value yourUserId: Your User Id. Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret X_BEARER_TOKEN: X (Twitter) app bearer token for api.twitter.com (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Crop",
+          "n8n": "image.multiStep",
+          "action": "yantra-image-editing"
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "On clicking 'execute'",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Fetch new followers\" authenticated with headerAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Crop\": image operations create, draw have no Yantra action.",
+        "\"Merge\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was mergeByIndex).",
+        "\"HTTP Request\" authenticated with oAuth1 in the original; add the matching Authorization header (or use the service's connector).",
+        "\"HTTP Request\": the original signed requests with OAuth 1.0a (oAuth1); a static header cannot do that. Use the service's connector instead.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_5c5c1973ec": {
+        "n8n": "On clicking 'execute'",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_ea38aabe44": {
+        "n8n": "Fetch bg",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_3e89c67b8e": {
+        "n8n": "Fetch new followers",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "headerAuth"
+      },
+      "node_3ccb7cd72a": {
+        "n8n": "Item Lists",
+        "n8nType": "n8n-nodes-base.itemLists"
+      },
+      "node_e7966685da": {
+        "n8n": "Fetching images",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_9b92d426e3": {
+        "n8n": "Fetching images",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_b9d27081e2": {
+        "n8n": "Resize",
+        "n8nType": "n8n-nodes-base.editImage"
+      },
+      "node_40fb7eb6d2": {
+        "n8n": "Crop",
+        "n8nType": "n8n-nodes-base.editImage"
+      },
+      "node_5f01496bc4": {
+        "n8n": "Crop",
+        "n8nType": "n8n-nodes-base.editImage"
+      },
+      "node_ef926f3a20": {
+        "n8n": "Crop",
+        "n8nType": "n8n-nodes-base.editImage"
+      },
+      "node_fb86402d68": {
+        "n8n": "Resize1",
+        "n8nType": "n8n-nodes-base.editImage"
+      },
+      "node_65152ee569": {
+        "n8n": "Function",
+        "n8nType": "n8n-nodes-base.function"
+      },
+      "node_8b07fb3ee9": {
+        "n8n": "Merge",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_5c2f5b13c0": {
+        "n8n": "Edit Image",
+        "n8nType": "n8n-nodes-base.editImage"
+      },
+      "node_4627c6ec45": {
+        "n8n": "Edit Image",
+        "n8nType": "n8n-nodes-base.editImage"
+      },
+      "node_8b246bc5ee": {
+        "n8n": "Edit Image",
+        "n8nType": "n8n-nodes-base.editImage"
+      },
+      "node_2a1eeb7c80": {
+        "n8n": "HTTP Request",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "oAuth1"
+      },
+      "node_bd49dda273": {
+        "n8n": "__end:HTTP Request",
+        "n8nType": "synthetic"
+      },
+      "node_c235ec59f1": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

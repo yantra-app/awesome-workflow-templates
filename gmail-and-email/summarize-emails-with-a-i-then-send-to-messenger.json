@@ -1,0 +1,473 @@
+{
+  "name": "Summarize emails with A.I. then send to messenger",
+  "workflowSlug": "summarize-emails-with-a-i-then-send-to-messenger",
+  "description": "Converted from the n8n template \"Summarize emails with A.I. then send to messenger\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_bb3d6b8e62",
+      "actorId": "actor_bb3d6b8e62",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_FETCH_EMAILS",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Mailbox (IMAP original)",
+        "action": "GOOGLESUPER_FETCH_EMAILS",
+        "params": {
+          "query": "is:unread",
+          "max_results": 20
+        }
+      }
+    },
+    {
+      "nodeId": "node_fd9845675e",
+      "actorId": "actor_fd9845675e",
+      "type": "NodeLlmChain",
+      "label": "Send email to A.I. to summarize",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{llm_system_efa6b99143}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_efa6b99143",
+      "actorId": "actor_efa6b99143",
+      "type": "NodeTransform",
+      "label": "System: Send email to A.I. to summarize",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst items = __items.map((json) => ({ json }));\n// System: Send email to A.I. to summarize.\nconst __promptValue = (() => { const __b = (() => { const __v = `{\n \"model\": \"meta-llama/llama-3.1-70b-instruct:free\",\n \"messages\": [\n {\n \"role\": \"user\",\n \"content\": \"I want you to read and summarize all the emails. If it's not rimportant, just give me a short summary with less than 10 words.\\\\n\\\\nHighlight as important if it is, add an emoji to indicate it is urgent:\\\\nFor the relevant content, find any action items and deadlines. Sometimes I need to sign up before a certain date or pay before a certain date, please highlight that in the summary for me.\\\\n\\\\nPut the deadline in BOLD at the top. If the email is not important, keep the summary short to 1 sentence only.\\\\n\\\\nHere's the email content for you to read:\\\\nSender email address: ${encodeURIComponent($json.from)}\\\\nSubject: ${encodeURIComponent($json.subject)}\\\\n${encodeURIComponent($json.textHtml)}\"\n }\n ]\n}`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn (__b.messages || []).filter((m) => m?.role === 'system' || m?.role === 'developer').map((m) => __t(m.content)).join('\\n\\n'); })();\nreturn { \"llm_system_efa6b99143\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_3782381a57",
+      "actorId": "actor_3782381a57",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Send email to A.I. to summarize",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_6f59a25376",
+      "actorId": "actor_6f59a25376",
+      "type": "NodeTransform",
+      "label": "Prompt: Send email to A.I. to summarize",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst items = __items.map((json) => ({ json }));\n// Prompt: Send email to A.I. to summarize.\nconst __promptValue = (() => { const __b = (() => { const __v = `{\n \"model\": \"meta-llama/llama-3.1-70b-instruct:free\",\n \"messages\": [\n {\n \"role\": \"user\",\n \"content\": \"I want you to read and summarize all the emails. If it's not rimportant, just give me a short summary with less than 10 words.\\\\n\\\\nHighlight as important if it is, add an emoji to indicate it is urgent:\\\\nFor the relevant content, find any action items and deadlines. Sometimes I need to sign up before a certain date or pay before a certain date, please highlight that in the summary for me.\\\\n\\\\nPut the deadline in BOLD at the top. If the email is not important, keep the summary short to 1 sentence only.\\\\n\\\\nHere's the email content for you to read:\\\\nSender email address: ${encodeURIComponent($json.from)}\\\\nSubject: ${encodeURIComponent($json.subject)}\\\\n${encodeURIComponent($json.textHtml)}\"\n }\n ]\n}`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn (() => { const u = (__b.messages || []).filter((m) => m && m.role !== 'system' && m.role !== 'developer'); return __b.__raw ?? (u.length === 1 ? __t(u[0].content) : u.map((m) => m.role + ': ' + __t(m.content)).join('\\n\\n')); })(); })();\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_c4ff3ca51f",
+      "actorId": "actor_c4ff3ca51f",
+      "type": "NodeHttpRequest",
+      "label": "Send summarized content to messenger",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{lineChannelAccessToken}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_3471a088df",
+      "actorId": "actor_3471a088df",
+      "type": "NodeTransform",
+      "label": "Body: Send summarized content to messenger",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Send summarized content to messenger\".\nconst __body = `{\n \"to\": \"U3ec262c49811f30cdc2d2f2b0a0df99a\",\n \"messages\": [\n {\n \"type\": \"text\",\n \"text\": \"${$json.replace(/\\n/g, \"\\\\n\")}\"\n }\n ]\n}\n\n\n `;\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_74b0d88698",
+      "actorId": "actor_74b0d88698",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_7626c176a7",
+      "actorId": "actor_7626c176a7",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_595897ef98",
+      "actorId": "actor_595897ef98",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "lineChannelAccessToken": {
+            "$workflowSecret": "LINE_CHANNEL_ACCESS_TOKEN"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_6f9af421b7",
+      "actorId": "actor_6f9af421b7",
+      "type": "NodeChatModel",
+      "label": "Send email to A.I. to summarize: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openrouter",
+        "model": "meta-llama/llama-3.1-70b-instruct:free"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_efa6b99143",
+      "target": "node_3782381a57",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_efa6b99143",
+      "target": "node_3782381a57",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_3782381a57",
+      "target": "node_6f59a25376",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6f59a25376",
+      "target": "node_fd9845675e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_3471a088df",
+      "target": "node_c4ff3ca51f",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_3471a088df",
+      "target": "node_c4ff3ca51f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_bb3d6b8e62",
+      "target": "node_efa6b99143",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bb3d6b8e62",
+      "target": "node_efa6b99143",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bb3d6b8e62",
+      "target": "node_6f59a25376",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fd9845675e",
+      "target": "node_3471a088df",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fd9845675e",
+      "target": "node_3471a088df",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_74b0d88698",
+      "target": "node_bb3d6b8e62",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_c4ff3ca51f",
+      "target": "node_7626c176a7",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_6f9af421b7",
+      "target": "node_fd9845675e",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "gmail-and-email",
+    "categoryLabel": "Gmail and Email Automation",
+    "department": "",
+    "connectors": [
+      "googlesuper",
+      "openrouter"
+    ],
+    "setupSecrets": [
+      {
+        "key": "LINE_CHANNEL_ACCESS_TOKEN",
+        "label": "LINE channel access token",
+        "host": "api.line.me",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "lineChannelAccessToken",
+        "usedBy": [
+          "Send summarized content to messenger"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 3,
+      "yantraSteps": 9,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Gmail_and_Email_Automation/Summarize your emails with A.I. (via Openrouter) and send to Line messenger.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Summarize emails with A.I. then send to messenger"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Workflow secret LINE_CHANNEL_ACCESS_TOKEN: LINE channel access token for api.line.me (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openrouter connector (credential).",
+      "Provide run inputs: llm_system_efa6b99143."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Read emails (IMAP)",
+          "n8n": "email.read",
+          "action": "googlesuper/GOOGLESUPER_FETCH_EMAILS",
+          "soft": true
+        },
+        {
+          "node": "Send email to A.I. to summarize",
+          "n8n": "httpRequest.openai.chat",
+          "action": "NodeLlmChain",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [],
+      "hints": [
+        "\"Read emails (IMAP)\": the original used Mailbox (IMAP original); check the mapped googlesuper/GOOGLESUPER_FETCH_EMAILS params before running.",
+        "\"Send email to A.I. to summarize\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Send email to A.I. to summarize\" called the OpenRouter API (meta-llama/llama-3.1-70b-instruct:free) over HTTP; it now runs on LLMChain with a Chat Model and provider connector credential, and later steps read the answer text instead of the provider's JSON.",
+        "\"Send summarized content to messenger\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Summarize emails with A.I.\nYou can find out more about the [use case](https://rumjahn.com/how-a-i-saved-my-kids-school-life-and-my-marriage/)",
+      "Find your email server's IMAP Settings. \n- Link for [gmail](https://www.getmailspring.com/setup/access-gmail-via-imap-smtp)",
+      "For the A.I. you can use Openrouter.ai. \n- Set up a free account\n- The A.I. model selected is FREE to use.\n## Credentials\n- Use header auth\n- Username: Authorization\n- Password: Bearer {insert your API key}.\n- The password is \"Bearer\" space plus your API key.",
+      "Don't use the official Line node. It's outdated.\n## Credentials\n- Use header auth\n- Username: Authorization\n- Password: Bearer {channel access token}\n\nYou can find your channel access token at the [Line API console](https://developers.line.biz/console/). Go to Messaging API and scroll to the bottom."
+    ],
+    "nodes": {
+      "node_bb3d6b8e62": {
+        "n8n": "Read emails (IMAP)",
+        "n8nType": "n8n-nodes-base.emailReadImap",
+        "approximate": true
+      },
+      "node_fd9845675e": {
+        "n8n": "Send email to A.I. to summarize",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "llmProvider": "openrouter"
+      },
+      "node_efa6b99143": {
+        "n8n": "Send email to A.I. to summarize",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_3782381a57": {
+        "n8n": "Send email to A.I. to summarize",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_6f59a25376": {
+        "n8n": "Send email to A.I. to summarize",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_c4ff3ca51f": {
+        "n8n": "Send summarized content to messenger",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_3471a088df": {
+        "n8n": "Send summarized content to messenger",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_74b0d88698": {
+        "n8n": "__start",
+        "n8nType": "synthetic"
+      },
+      "node_7626c176a7": {
+        "n8n": "__end:Send summarized content to messenger",
+        "n8nType": "synthetic"
+      },
+      "node_595897ef98": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_6f9af421b7": {
+        "n8n": "Send email to A.I. to summarize",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

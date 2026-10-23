@@ -1,0 +1,269 @@
+{
+  "name": "chrome extension backend with AI",
+  "workflowSlug": "chrome-extension-backend-with-ai",
+  "description": "Analyzes TradingView charts using a Chrome extension, n8n, and OpenAI for automated insights.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_8c6f811d0b",
+      "actorId": "actor_8c6f811d0b",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_15a650833a",
+      "actorId": "actor_15a650833a",
+      "type": "NodeTransform",
+      "label": "Params: OpenAI",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for openai/OPENAI_CREATE_RESPONSE (n8n node \"OpenAI\").\nreturn {\n  \"model\": \"gpt-4o-mini\",\n  \"input\": [{ \"role\": \"user\", \"content\": [{ \"type\": \"input_text\", \"text\": \"You are an expert financial analyst tasked with providing an advanced technical analyses of a stock or crypto currency chart provided. Your analysis will be based on various technical indicators and will provide simple insights for novice traders. Just explain to traders were you expect the market is moving. Also warn them this is not a binding advice. Make sure to explain everything in infant language.\" }, { \"type\": \"input_image\", \"image_url\": ('data:' + ($json.mimeType || $json.mime_type || 'image/jpeg') + ';base64,' + ($json.data ?? $json.base64 ?? '')) }] }],\n};"
+      }
+    },
+    {
+      "nodeId": "node_0cc66a7278",
+      "actorId": "actor_0cc66a7278",
+      "type": "NodeCdeConnector",
+      "label": "openai/OPENAI_CREATE_RESPONSE",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "openai",
+        "connectorLabel": "OpenAI",
+        "action": "OPENAI_CREATE_RESPONSE"
+      }
+    },
+    {
+      "nodeId": "node_1d658607b9",
+      "actorId": "actor_1d658607b9",
+      "type": "NodeTransform",
+      "label": "OpenAI: answer",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The Responses API answer as the n8n image-analysis output ({ content }).\nconst __r = source?.data ?? source;\nconst __text = __r?.output_text ?? (__r?.output || []).flatMap((o) => o?.content || []).map((c) => c?.text || '').join('');\nreturn { content: __text, text: __text };"
+      }
+    },
+    {
+      "nodeId": "node_0c66ea1c22",
+      "actorId": "actor_0c66ea1c22",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_16cb2a1e72",
+      "actorId": "actor_16cb2a1e72",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {}
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_15a650833a",
+      "target": "node_0cc66a7278",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_15a650833a",
+      "target": "node_0cc66a7278",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_0cc66a7278",
+      "target": "node_1d658607b9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0cc66a7278",
+      "target": "node_1d658607b9",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8c6f811d0b",
+      "target": "node_15a650833a",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1d658607b9",
+      "target": "node_0c66ea1c22",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "ai-research-and-data",
+    "categoryLabel": "AI Research, RAG and Data Analysis",
+    "department": "Data Analysis",
+    "connectors": [
+      "openai"
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeEnd",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 3,
+      "yantraSteps": 4,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "AI_Research_RAG_and_Data_Analysis/Analyze tradingview.com charts with Chrome extension, N8N and OpenAI.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "chrome extension backend with AI"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Webhook",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Webhook\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Connect the openai connector (credential).",
+      "Provide run inputs: body, query, headers."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "OpenAI",
+          "n8n": "image.analyze",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Webhook",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /e9a97dd5-f1e7-4d5b-a6f1-be5f0c9eb96c). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "\"OpenAI\" (image.analyze): Vision call through OpenAI Responses (input_image as a data: URL); the previous step must hand over the image as base64 in `data`.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect openai: `cdecli credential create -n \"openai\" -p openai --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## N8N en OpenAI image analyser",
+      "## AI prompt\nYou are an expert financial analyst tasked with providing an advanced technical analyses of a stock or crypto currency chart provided. Your analysis will be based on various technical indicators and will provide simple insights for novice traders. Just explain to traders were you expect the market is moving. Also warn them this is not a binding advice. Make sure to explain everything in infant language."
+    ],
+    "nodes": {
+      "node_8c6f811d0b": {
+        "n8n": "Webhook",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_15a650833a": {
+        "n8n": "OpenAI",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_0cc66a7278": {
+        "n8n": "OpenAI",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_1d658607b9": {
+        "n8n": "OpenAI",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_0c66ea1c22": {
+        "n8n": "Respond to Webhook",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_16cb2a1e72": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

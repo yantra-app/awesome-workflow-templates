@@ -1,0 +1,120 @@
+{
+ "name": "fixture-jira-attachment",
+ "nodes": [
+  {
+   "name": "Start",
+   "type": "n8n-nodes-base.manualTrigger",
+   "typeVersion": 1,
+   "position": [
+    0,
+    0
+   ],
+   "parameters": {}
+  },
+  {
+   "name": "Retrieve Screenshot",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 1,
+   "position": [
+    220,
+    0
+   ],
+   "parameters": {
+    "url": "={{ $json.url }}",
+    "options": {}
+   }
+  },
+  {
+   "name": "Set Jira ID",
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 1,
+   "position": [
+    440,
+    0
+   ],
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {
+       "name": "key",
+       "value": "SEC-1",
+       "type": "string"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "Rename Screenshot",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 1,
+   "position": [
+    660,
+    0
+   ],
+   "parameters": {
+    "mode": "runOnceForEachItem",
+    "jsCode": "$('Retrieve Screenshot').item.binary.data.fileName = 'emailScreenshot.png'\n\nreturn $('Retrieve Screenshot').item;"
+   }
+  },
+  {
+   "name": "Attach",
+   "type": "n8n-nodes-base.jira",
+   "typeVersion": 1,
+   "position": [
+    880,
+    0
+   ],
+   "parameters": {
+    "resource": "issueAttachment",
+    "issueKey": "={{ $('Set Jira ID').item.json.key }}"
+   }
+  }
+ ],
+ "connections": {
+  "Start": {
+   "main": [
+    [
+     {
+      "node": "Retrieve Screenshot",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Retrieve Screenshot": {
+   "main": [
+    [
+     {
+      "node": "Set Jira ID",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Set Jira ID": {
+   "main": [
+    [
+     {
+      "node": "Rename Screenshot",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Rename Screenshot": {
+   "main": [
+    [
+     {
+      "node": "Attach",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ }
+}

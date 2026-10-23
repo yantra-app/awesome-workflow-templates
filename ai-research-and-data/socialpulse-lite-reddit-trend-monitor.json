@@ -1,0 +1,510 @@
+{
+  "name": "SocialPulse Lite - Reddit Trend Monitor",
+  "workflowSlug": "socialpulse-lite-reddit-trend-monitor",
+  "description": "Monitors Reddit subreddits for trending topics and analyzes them with OpenAI. Saves insights to Google Sheets for tracking emerging trends.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_d672f4f84d",
+      "actorId": "actor_d672f4f84d",
+      "type": "NodeCron",
+      "label": "Run Daily (9 AM)",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 9 * * *"
+      }
+    },
+    {
+      "nodeId": "node_902ec2bfa1",
+      "actorId": "actor_902ec2bfa1",
+      "type": "NodeHttpRequest",
+      "label": "Reddit: Fetch Posts",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "headers": {
+          "User-Agent": "SocialPulse/1.0"
+        }
+      }
+    },
+    {
+      "nodeId": "node_a07f697687",
+      "actorId": "actor_a07f697687",
+      "type": "NodeTransform",
+      "label": "URL: Reddit: Fetch Posts",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\n// n8n $env values come from the Workflow Configs initialContext (setup values and workflow secrets).\nconst __envCtx = {{ctx}};\nconst $env = { \"SOCIALPULSE_SUBREDDITS\": __envCtx[\"socialpulseSubreddits\"] };\n// Request URL for \"Reddit: Fetch Posts\".\nreturn `https://www.reddit.com/r/${$env.SOCIALPULSE_SUBREDDITS?.split(',')[0]?.trim() || 'SaaS'}/hot.json?limit=20`;"
+      }
+    },
+    {
+      "nodeId": "node_d947f8036f",
+      "actorId": "actor_d947f8036f",
+      "type": "NodeTransform",
+      "label": "Parse & Rank Posts",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Parse & Rank Posts\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  try {\n    const reddit = $input.first().json;\n    const posts = (reddit?.data?.children || []).map(c => ({ title: c.data?.title || '', score: c.data?.score || 0, comments: c.data?.num_comments || 0, url: 'https://reddit.com' + (c.data?.permalink || ''), subreddit: c.data?.subreddit || '' })).filter(p => p.score > 3).sort((a,b) => b.score - a.score).slice(0, 15);\n    return [{ json: { totalPosts: posts.length, posts, scannedAt: new Date().toISOString() } }];\n  } catch (e) {\n    throw new Error('Failed to parse Reddit data: ' + e.message);\n  }\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_4b93cebd93",
+      "actorId": "actor_4b93cebd93",
+      "type": "NodeLlmChain",
+      "label": "AI: Quick Analysis",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "Analyze these Reddit posts. Find 3 trending topics and suggest 2 content ideas. JSON: { \"trends\": [\"topic1\"], \"contentIdeas\": [{ \"idea\": \"...\", \"platform\": \"Twitter\" }], \"sentiment\": \"positive/neutral/negative\" }",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_062221fbb9",
+      "actorId": "actor_062221fbb9",
+      "type": "NodeTransform",
+      "label": "Prompt: AI: Quick Analysis",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: AI: Quick Analysis.\nconst __promptValue = `Top Reddit posts:\n${$json.posts.map((p,i) => (i+1) + '. ' + p.title + ' (score:' + p.score + ')').join('\\n')}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_ca9db9699c",
+      "actorId": "actor_ca9db9699c",
+      "type": "NodeTransform",
+      "label": "Merge Results",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Parse & Rank Posts\": {{steps.xf_d947f8036f.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Merge Results\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  try {\n    const data = $('Parse & Rank Posts').first().json;\n    const aiRaw = $input.first().json;\n    let ai;\n    try { ai = JSON.parse(aiRaw.message?.content || '{}'); } catch(e) { ai = { trends: [], contentIdeas: [], sentiment: 'unknown' }; }\n    return [{ json: { ...data, analysis: ai } }];\n  } catch (e) {\n    throw new Error('Failed to merge: ' + e.message);\n  }\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_0b8bc420e1",
+      "actorId": "actor_0b8bc420e1",
+      "type": "NodeTransform",
+      "label": "Params: Log to Sheets",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// n8n $env values come from the Workflow Configs initialContext (setup values and workflow secrets).\nconst __envCtx = {{ctx}};\nconst $env = { \"SOCIALPULSE_SHEET_ID\": __envCtx[\"socialpulseSheetId\"] };\n// Params for googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND (n8n node \"Log to Sheets\").\nreturn {\n  \"spreadsheetId\": ($env.SOCIALPULSE_SHEET_ID),\n  \"range\": \"Lite Log\",\n  \"values\": [[($json.scannedAt), ($json.totalPosts), (JSON.stringify($json.analysis.trends)), (JSON.stringify($json.analysis.contentIdeas)), ($json.analysis.sentiment)]],\n  \"valueInputOption\": \"USER_ENTERED\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_4d7b5c9b37",
+      "actorId": "actor_4d7b5c9b37",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_SPREADSHEETS_VALUES_APPEND"
+      }
+    },
+    {
+      "nodeId": "node_6c5e6d9e0b",
+      "actorId": "actor_6c5e6d9e0b",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_3af764086c",
+      "actorId": "actor_3af764086c",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "socialpulseSubreddits": "",
+          "socialpulseSheetId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_09d3bc5856",
+      "actorId": "actor_09d3bc5856",
+      "type": "NodeChatModel",
+      "label": "AI: Quick Analysis: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_a07f697687",
+      "target": "node_902ec2bfa1",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_a07f697687",
+      "target": "node_902ec2bfa1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_062221fbb9",
+      "target": "node_4b93cebd93",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_0b8bc420e1",
+      "target": "node_4d7b5c9b37",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_0b8bc420e1",
+      "target": "node_4d7b5c9b37",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d672f4f84d",
+      "target": "node_a07f697687",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d672f4f84d",
+      "target": "node_a07f697687",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_902ec2bfa1",
+      "target": "node_d947f8036f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_902ec2bfa1",
+      "target": "node_d947f8036f",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d947f8036f",
+      "target": "node_062221fbb9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d947f8036f",
+      "target": "node_062221fbb9",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4b93cebd93",
+      "target": "node_ca9db9699c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4b93cebd93",
+      "target": "node_ca9db9699c",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ca9db9699c",
+      "target": "node_0b8bc420e1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ca9db9699c",
+      "target": "node_0b8bc420e1",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4d7b5c9b37",
+      "target": "node_6c5e6d9e0b",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_09d3bc5856",
+      "target": "node_4b93cebd93",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "ai-research-and-data",
+    "categoryLabel": "AI Research, RAG and Data Analysis",
+    "department": "Data Analysis, Marketing",
+    "connectors": [
+      "googlesuper",
+      "openai"
+    ],
+    "setupVars": [
+      {
+        "key": "socialpulseSubreddits",
+        "label": "socialpulse subreddits (was the n8n environment variable SOCIALPULSE_SUBREDDITS)",
+        "type": "text",
+        "usedBy": [
+          "Reddit: Fetch Posts"
+        ]
+      },
+      {
+        "key": "socialpulseSheetId",
+        "label": "socialpulse sheet id (was the n8n environment variable SOCIALPULSE_SHEET_ID)",
+        "type": "id",
+        "usedBy": [
+          "Log to Sheets"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate socialpulse-lite-reddit-trend-monitor",
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 6,
+      "yantraSteps": 10,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "AI_Research_RAG_and_Data_Analysis/SocialPulse Lite - Reddit Trend Monitor.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "SocialPulse Lite - Single Source Monitor (Reddit Only)"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Setup value socialpulseSubreddits: socialpulse subreddits (was the n8n environment variable SOCIALPULSE_SUBREDDITS). Write it into the Workflow Configs initialContext before import.",
+      "Setup value socialpulseSheetId: socialpulse sheet id (was the n8n environment variable SOCIALPULSE_SHEET_ID). Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "After import, start the schedule: cdecli cron activate socialpulse-lite-reddit-trend-monitor."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Run Daily (9 AM)",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## SocialPulse Lite\n\nReddit-only monitoring.\nDaily scan, quick AI analysis.\nPerfect for testing before\nenabling full 3-source scan."
+    ],
+    "nodes": {
+      "node_d672f4f84d": {
+        "n8n": "Run Daily (9 AM)",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_902ec2bfa1": {
+        "n8n": "Reddit: Fetch Posts",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_a07f697687": {
+        "n8n": "Reddit: Fetch Posts",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_d947f8036f": {
+        "n8n": "Parse & Rank Posts",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_4b93cebd93": {
+        "n8n": "AI: Quick Analysis",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_062221fbb9": {
+        "n8n": "AI: Quick Analysis",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_ca9db9699c": {
+        "n8n": "Merge Results",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_0b8bc420e1": {
+        "n8n": "Log to Sheets",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_4d7b5c9b37": {
+        "n8n": "Log to Sheets",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_6c5e6d9e0b": {
+        "n8n": "__end:Log to Sheets",
+        "n8nType": "synthetic"
+      },
+      "node_3af764086c": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_09d3bc5856": {
+        "n8n": "AI: Quick Analysis",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

@@ -1,0 +1,208 @@
+{
+  "name": "Bilig WorkPaper MCP formula engine for n8n agents",
+  "workflowSlug": "bilig-workpaper-mcp-formula-engine-for-n8n-agents",
+  "description": "Calls Bilig's public MCP endpoint from n8n to write a spreadsheet formula, calculate the result, and verify restored readback without Excel UI automation.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_dc2524a2c8",
+      "actorId": "actor_dc2524a2c8",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_fbf36d045b",
+      "actorId": "actor_fbf36d045b",
+      "type": "NodeHttpRequest",
+      "label": "Bilig MCP: write formula and verify",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://bilig.proompteng.ai/mcp",
+        "headers": {
+          "content-type": "application/json",
+          "accept": "application/json, text/event-stream",
+          "mcp-protocol-version": "2025-11-25",
+          "Content-Type": "application/json"
+        },
+        "body": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"set_cell_contents\",\"arguments\":{\"sheetName\":\"Inputs\",\"address\":\"C2\",\"value\":\"=B2*B3\"}}}"
+      }
+    },
+    {
+      "nodeId": "node_2b4a06303b",
+      "actorId": "actor_2b4a06303b",
+      "type": "NodeTransform",
+      "label": "Extract formula proof",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Extract formula proof\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const response = $input.first().json;\n  const text = response?.result?.content?.[0]?.text;\n  if (!text) {\n    throw new Error('Bilig MCP did not return MCP text content.');\n  }\n  const proof = JSON.parse(text);\n  const displayValue = proof?.after?.displayValue;\n  const formula = proof?.after?.formula;\n  const restoredMatchesAfter = proof?.checks?.restoredMatchesAfter === true;\n  if (formula !== '=B2*B3') {\n    throw new Error('Unexpected formula readback: ' + String(formula));\n  }\n  if (displayValue !== '5') {\n    throw new Error('Unexpected calculated value: ' + String(displayValue));\n  }\n  if (!restoredMatchesAfter) {\n    throw new Error('Bilig MCP did not prove restored readback.');\n  }\n  return [{\n    json: {\n      summary: 'Bilig WorkPaper calculated =B2*B3 as 5 and proved restored readback.',\n      editedCell: proof.editedCell,\n      formula,\n      displayValue,\n      restoredMatchesAfter,\n      github: 'https://github.com/proompteng/bilig',\n      docs: 'https://proompteng.github.io/bilig/mcp-workpaper-tool-server.html',\n      mcpRegistry: 'https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.proompteng%2Fbilig-workpaper',\n      proof\n    }\n  }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_d958bfd9b4",
+      "actorId": "actor_d958bfd9b4",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_8df34dbe89",
+      "actorId": "actor_8df34dbe89",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": ""
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_dc2524a2c8",
+      "target": "node_fbf36d045b",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_fbf36d045b",
+      "target": "node_2b4a06303b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fbf36d045b",
+      "target": "node_2b4a06303b",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2b4a06303b",
+      "target": "node_d958bfd9b4",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "ai-research-and-data",
+    "categoryLabel": "AI Research, RAG and Data Analysis",
+    "department": "Engineering, AI Automation",
+    "connectors": [],
+    "nodeTypes": [
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 3,
+      "yantraSteps": 3,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "AI_Research_RAG_and_Data_Analysis/Bilig WorkPaper MCP formula engine for n8n agents.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Bilig WorkPaper MCP formula engine for n8n agents"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Manual Trigger",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "## Bilig WorkPaper MCP\n\nCalls the public Bilig WorkPaper MCP endpoint, writes a formula into a demo workbook, and verifies calculated readback + restore proof.\n\nNo Excel, browser automation, credentials, or local files required.\n\nRepo: https://github.com/proompteng/bilig"
+    ],
+    "nodes": {
+      "node_dc2524a2c8": {
+        "n8n": "Manual Trigger",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_fbf36d045b": {
+        "n8n": "Bilig MCP: write formula and verify",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_2b4a06303b": {
+        "n8n": "Extract formula proof",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_d958bfd9b4": {
+        "n8n": "__end:Extract formula proof",
+        "n8nType": "synthetic"
+      },
+      "node_8df34dbe89": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

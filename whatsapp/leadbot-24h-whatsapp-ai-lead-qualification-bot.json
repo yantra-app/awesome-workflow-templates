@@ -1,0 +1,509 @@
+{
+  "name": "LeadBot 24h - WhatsApp AI Lead Qualification Bot",
+  "workflowSlug": "leadbot-24h-whatsapp-ai-lead-qualification-bot",
+  "description": "AI-powered n8n workflow that captures WhatsApp leads, scores intent with AI, and routes hot prospects to sales - 24/7, no paid APIs. Self-hosted via n8n + free LLMs.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_44661d1de7",
+      "actorId": "actor_44661d1de7",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_12287e5b50",
+      "actorId": "actor_12287e5b50",
+      "type": "NodeCdeConnector",
+      "label": "whatsapp/WHATSAPP_SEND_TEMPLATE_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "whatsapp",
+        "connectorLabel": "WhatsApp",
+        "action": "WHATSAPP_SEND_TEMPLATE_MESSAGE",
+        "params": {
+          "to_number": "{{recipientPhone}}",
+          "template_name": "{{whatsappTemplateName}}",
+          "phone_number_id": "{{whatsappPhoneNumberId}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_2ca8befe37",
+      "actorId": "actor_2ca8befe37",
+      "type": "NodeTransform",
+      "label": "Normalize & Score Lead",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Normalize & Score Lead\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Normalize incoming WhatsApp payload to standard lead format\n  const msg = $input.first().json;\n  const lead = {\n    phone: msg.data?.from || msg.from || '',\n    message: msg.data?.body || msg.body || msg.text || '',\n    name: msg.data?.fromName || msg.data?.name || '',\n    timestamp: new Date().toISOString(),\n    source: 'whatsapp'};\n  \n  // Simple keyword-based urgency detection (no paid API required)\n  const urgentKeywords = ['preço', 'price', 'comprar', 'buy', 'contratar', 'urgente', 'orçamento', 'demissão', 'demissao', 'folha', 'payroll', 'admissão', 'admissao', 'férias'];\n  const msgLower = (lead.message || '').toLowerCase();\n  lead.intent_score = urgentKeywords.some(k => msgLower.includes(k)) ? 9 : 5;\n  lead.urgency = lead.intent_score >= 8 ? 'HOT' : 'WARM';\n  \n  return [{ json: lead }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_b4ec7f1960",
+      "actorId": "actor_b4ec7f1960",
+      "type": "NodeTransform",
+      "label": "Filter Hot Leads",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Filter Hot Leads\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Route hot leads to CRM / Google Sheets\n  const lead = $input.first().json;\n  if (lead.urgency === 'HOT') {\n    return [{ json: lead }];\n  }\n  return [];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_ccf6a93121",
+      "actorId": "actor_ccf6a93121",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+        "params": {
+          "values": [
+            [
+              "{{last.transformed.phone}}",
+              "{{last.transformed.name}}",
+              "{{last.transformed.message}}",
+              "{{last.transformed.intent_score}}",
+              "{{last.transformed.urgency}}"
+            ]
+          ],
+          "valueInputOption": "USER_ENTERED",
+          "range": "{{sheetName}}",
+          "spreadsheetId": "{{spreadsheetId}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_1bfdb68084",
+      "actorId": "actor_1bfdb68084",
+      "type": "NodeTransform",
+      "label": "Params: Notify Sales Team (Slack/Webhook)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// Params for slack/SLACK_CHAT_POST_MESSAGE (n8n node \"Notify Sales Team (Slack/Webhook)\").\nreturn (() => { const __b = (() => { const __v = null; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })(); return { \"channel\": \"{{slackChannel}}\", \"text\": __b.text ?? __b.__raw, \"blocks\": __b.blocks, \"attachments\": __b.attachments }; })();"
+      }
+    },
+    {
+      "nodeId": "node_c7c798ebfb",
+      "actorId": "actor_c7c798ebfb",
+      "type": "NodeCdeConnector",
+      "label": "slack/SLACK_CHAT_POST_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "slack",
+        "connectorLabel": "Slack",
+        "action": "SLACK_CHAT_POST_MESSAGE"
+      }
+    },
+    {
+      "nodeId": "node_6fde0bc9fb",
+      "actorId": "actor_6fde0bc9fb",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_385abdbed8",
+      "actorId": "actor_385abdbed8",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_dede4353de",
+      "actorId": "actor_dede4353de",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_e95152978d",
+      "actorId": "actor_e95152978d",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {},
+          "recipientPhone": "",
+          "whatsappTemplateName": "",
+          "whatsappPhoneNumberId": "",
+          "sheetName": "",
+          "spreadsheetId": "",
+          "slackChannel": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_1bfdb68084",
+      "target": "node_c7c798ebfb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_1bfdb68084",
+      "target": "node_c7c798ebfb",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_44661d1de7",
+      "target": "node_2ca8befe37",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2ca8befe37",
+      "target": "node_b4ec7f1960",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2ca8befe37",
+      "target": "node_b4ec7f1960",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b4ec7f1960",
+      "target": "node_ccf6a93121",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_b4ec7f1960",
+      "target": "node_1bfdb68084",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b4ec7f1960",
+      "target": "node_1bfdb68084",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_44661d1de7",
+      "target": "node_12287e5b50",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_12287e5b50",
+      "target": "node_6fde0bc9fb",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_ccf6a93121",
+      "target": "node_385abdbed8",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_c7c798ebfb",
+      "target": "node_dede4353de",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "whatsapp",
+    "categoryLabel": "WhatsApp",
+    "department": "Sales/Customer Service",
+    "connectors": [
+      "googlesuper",
+      "slack",
+      "whatsapp"
+    ],
+    "setupVars": [
+      {
+        "key": "recipientPhone",
+        "label": "Recipient phone number (E.164)",
+        "type": "text",
+        "example": "+15551234567",
+        "usedBy": [
+          "Send Auto-Reply (WhatsApp)"
+        ]
+      },
+      {
+        "key": "whatsappTemplateName",
+        "label": "WhatsApp message template name",
+        "type": "text",
+        "example": "hello_world",
+        "usedBy": [
+          "Send Auto-Reply (WhatsApp)"
+        ]
+      },
+      {
+        "key": "whatsappPhoneNumberId",
+        "label": "WhatsApp Business phone number id",
+        "type": "id",
+        "example": "123456789012345",
+        "usedBy": [
+          "Send Auto-Reply (WhatsApp)"
+        ]
+      },
+      {
+        "key": "sheetName",
+        "label": "Sheet tab name",
+        "type": "text",
+        "example": "Sheet1",
+        "usedBy": [
+          "Save Lead to Google Sheets"
+        ]
+      },
+      {
+        "key": "spreadsheetId",
+        "label": "Google Sheets spreadsheet id (from the sheet URL)",
+        "type": "id",
+        "example": "1AbC...xyz",
+        "usedBy": [
+          "Save Lead to Google Sheets"
+        ]
+      },
+      {
+        "key": "slackChannel",
+        "label": "Slack channel the incoming webhook posted to",
+        "type": "channel",
+        "example": "#alerts",
+        "usedBy": [
+          "Notify Sales Team (Slack/Webhook)"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeEnd",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 6,
+      "yantraSteps": 7,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "WhatsApp/LeadBot 24h - AI WhatsApp Lead Qualification.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "LeadBot 24h - WhatsApp AI Lead Qualification Bot"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "WhatsApp Webhook (WAHA)",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"WhatsApp Webhook (WAHA)\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value recipientPhone: Recipient phone number (E.164) (for example +15551234567). Write it into the Workflow Configs initialContext before import.",
+      "Setup value whatsappTemplateName: WhatsApp message template name (for example hello_world). Write it into the Workflow Configs initialContext before import.",
+      "Setup value whatsappPhoneNumberId: WhatsApp Business phone number id (for example 123456789012345). Write it into the Workflow Configs initialContext before import.",
+      "Setup value sheetName: Sheet tab name (for example Sheet1). Write it into the Workflow Configs initialContext before import.",
+      "Setup value spreadsheetId: Google Sheets spreadsheet id (from the sheet URL) (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
+      "Setup value slackChannel: Slack channel the incoming webhook posted to (for example #alerts). Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the slack connector (credential).",
+      "Connect the whatsapp connector (credential).",
+      "Provide run inputs: body, query, headers."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "WhatsApp Webhook (WAHA)",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /leadbot-24h). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "\"Notify Sales Team (Slack/Webhook)\" posted through a Slack incoming webhook; it now posts with the Slack connector to the channel in slackChannel.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect slack: `cdecli credential create -n \"slack\" -p slack --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect whatsapp: `cdecli credential create -n \"whatsapp\" -p whatsapp --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_44661d1de7": {
+        "n8n": "WhatsApp Webhook (WAHA)",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_12287e5b50": {
+        "n8n": "Send Auto-Reply (WhatsApp)",
+        "n8nType": "n8n-nodes-base.whatsApp"
+      },
+      "node_2ca8befe37": {
+        "n8n": "Normalize & Score Lead",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_b4ec7f1960": {
+        "n8n": "Filter Hot Leads",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_ccf6a93121": {
+        "n8n": "Save Lead to Google Sheets",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_1bfdb68084": {
+        "n8n": "Notify Sales Team (Slack/Webhook)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_c7c798ebfb": {
+        "n8n": "Notify Sales Team (Slack/Webhook)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_6fde0bc9fb": {
+        "n8n": "__end:Send Auto-Reply (WhatsApp)",
+        "n8nType": "synthetic"
+      },
+      "node_385abdbed8": {
+        "n8n": "__end:Save Lead to Google Sheets",
+        "n8nType": "synthetic"
+      },
+      "node_dede4353de": {
+        "n8n": "__end:Notify Sales Team (Slack/Webhook)",
+        "n8nType": "synthetic"
+      },
+      "node_e95152978d": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

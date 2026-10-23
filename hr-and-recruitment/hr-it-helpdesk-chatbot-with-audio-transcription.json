@@ -1,0 +1,935 @@
+{
+  "name": "HR & IT Helpdesk Chatbot with Audio Transcription",
+  "workflowSlug": "hr-it-helpdesk-chatbot-with-audio-transcription",
+  "description": "Converted from the n8n template \"HR & IT Helpdesk Chatbot with Audio Transcription\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_90e90961fc",
+      "actorId": "actor_90e90961fc",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_d3960f3c42",
+      "actorId": "actor_d3960f3c42",
+      "type": "NodeHttpRequest",
+      "label": "HTTP Request",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://s3.amazonaws.com/scschoolfiles/656/employee_handbook_print_1.pdf"
+      }
+    },
+    {
+      "nodeId": "node_52ba9c340c",
+      "actorId": "actor_52ba9c340c",
+      "type": "NodeTransform",
+      "label": "Verify Message Type: Text",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Object.prototype, { keys() { return Object.keys(this); } });\nreturn Boolean(((Array.isArray(($json.message.keys())) ? ($json.message.keys()) : []).includes(\"text\")));"
+      }
+    },
+    {
+      "nodeId": "node_d6ceb83275",
+      "actorId": "actor_d6ceb83275",
+      "type": "NodeBranch",
+      "label": "Verify Message Type: Text?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_2ba7fe38cf",
+      "actorId": "actor_2ba7fe38cf",
+      "type": "NodeTransform",
+      "label": "Verify Message Type: Audio",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Object.prototype, { keys() { return Object.keys(this); } });\nreturn Boolean(((Array.isArray(($json.message.keys())) ? ($json.message.keys()) : []).includes(\"voice\")));"
+      }
+    },
+    {
+      "nodeId": "node_e424cca898",
+      "actorId": "actor_e424cca898",
+      "type": "NodeBranch",
+      "label": "Verify Message Type: Audio?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_cb51d152b7",
+      "actorId": "actor_cb51d152b7",
+      "type": "NodeTransform",
+      "label": "Params: Extract from File",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for googlesuper/GOOGLESUPER_PARSE_FILE (n8n node \"Extract from File\").\nreturn {\n  \"file_id\": ($json.id ?? $json.file_id ?? $json.fileId),\n  \"mime_type\": \"application/pdf\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_46b9ccaf00",
+      "actorId": "actor_46b9ccaf00",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_PARSE_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive parse",
+        "action": "GOOGLESUPER_PARSE_FILE"
+      }
+    },
+    {
+      "nodeId": "node_fceefd02dc",
+      "actorId": "actor_fceefd02dc",
+      "type": "NodeTransform",
+      "label": "Edit Fields",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"text\"] = ($json.message.text);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_8a315e1b81",
+      "actorId": "actor_8a315e1b81",
+      "type": "NodeHttpRequest",
+      "label": "Telegram1",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET"
+      }
+    },
+    {
+      "nodeId": "node_dfbea4e8f7",
+      "actorId": "actor_dfbea4e8f7",
+      "type": "NodeTransform",
+      "label": "URL: Telegram1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request URL for \"Telegram1\".\nreturn `https://api.telegram.org/bot{{telegramBotToken}}/getFile?file_id=${$json.message.voice.file_id}`;"
+      }
+    },
+    {
+      "nodeId": "node_fc33b64c78",
+      "actorId": "actor_fc33b64c78",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_SEND_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_SEND_MESSAGE",
+        "params": {
+          "chat_id": "{{message.chat.id}}",
+          "text": "I'm not able to process this message type."
+        }
+      }
+    },
+    {
+      "nodeId": "node_dc130f5cbe",
+      "actorId": "actor_dc130f5cbe",
+      "type": "NodeTransform",
+      "label": "Params: Create HR Policies",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for supabase/SUPABASE_INSERT_ROW (n8n node \"Create HR Policies\").\nreturn {\n  \"table\": \"documents\",\n  \"fields\": { \"content\": ($json.pageContent ?? $json.content ?? $json.text), \"embedding\": ($json.embedding), \"metadata\": ($json.metadata) },\n  \"ref\": \"{{supabaseProjectRef}}\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_a96377f081",
+      "actorId": "actor_a96377f081",
+      "type": "NodeCdeConnector",
+      "label": "supabase/SUPABASE_INSERT_ROW",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "supabase",
+        "connectorLabel": "Supabase",
+        "action": "SUPABASE_INSERT_ROW"
+      }
+    },
+    {
+      "nodeId": "node_8ebe5229d9",
+      "actorId": "actor_8ebe5229d9",
+      "type": "NodeCdeConnector",
+      "label": "yantra-voicebox/YANTRA_VOICEBOX_TRANSCRIBE",
+      "color": "#6366F1",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-voicebox",
+        "connectorLabel": "Audio",
+        "action": "YANTRA_VOICEBOX_TRANSCRIBE",
+        "params": {
+          "audioUrl": "https://api.telegram.org/file/bot{{telegramBotToken}}/{{last.body.result.file_path}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_09265a037b",
+      "actorId": "actor_09265a037b",
+      "type": "NodeCdecliAgent",
+      "label": "AI Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "sessionId": "{{sessionId}}",
+        "system": "You are a helpful assistant for HR and employee policies",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_4a30bc9210",
+      "actorId": "actor_4a30bc9210",
+      "type": "NodeTransform",
+      "label": "Prompt: AI Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: AI Agent.\nconst __promptValue = ($json.text);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_462b7b60f0",
+      "actorId": "actor_462b7b60f0",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_SEND_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_SEND_MESSAGE",
+        "params": {
+          "chat_id": "{{message.chat.id}}",
+          "text": "{{last.text}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_7a01d63967",
+      "actorId": "actor_7a01d63967",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_5265a2c519",
+      "actorId": "actor_5265a2c519",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_0453510010",
+      "actorId": "actor_0453510010",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_2a208e3066",
+      "actorId": "actor_2a208e3066",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "event": {},
+          "sessionId": "",
+          "supabaseProjectRef": "",
+          "telegramBotToken": {
+            "$workflowSecret": "TELEGRAM_BOT_TOKEN"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_52ba9c340c",
+      "target": "node_d6ceb83275",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_52ba9c340c",
+      "target": "node_d6ceb83275",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_d6ceb83275",
+      "target": "node_2ba7fe38cf",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2ba7fe38cf",
+      "target": "node_e424cca898",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_2ba7fe38cf",
+      "target": "node_e424cca898",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_cb51d152b7",
+      "target": "node_46b9ccaf00",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_cb51d152b7",
+      "target": "node_46b9ccaf00",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_dfbea4e8f7",
+      "target": "node_8a315e1b81",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_dfbea4e8f7",
+      "target": "node_8a315e1b81",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_dc130f5cbe",
+      "target": "node_a96377f081",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_dc130f5cbe",
+      "target": "node_a96377f081",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_4a30bc9210",
+      "target": "node_09265a037b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_90e90961fc",
+      "target": "node_d3960f3c42",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_d3960f3c42",
+      "target": "node_cb51d152b7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d3960f3c42",
+      "target": "node_cb51d152b7",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_46b9ccaf00",
+      "target": "node_dc130f5cbe",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_46b9ccaf00",
+      "target": "node_dc130f5cbe",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_90e90961fc",
+      "target": "node_52ba9c340c",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d6ceb83275",
+      "target": "node_fceefd02dc",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e424cca898",
+      "target": "node_dfbea4e8f7",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e424cca898",
+      "target": "node_fc33b64c78",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_8ebe5229d9",
+      "target": "node_4a30bc9210",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8ebe5229d9",
+      "target": "node_4a30bc9210",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8a315e1b81",
+      "target": "node_8ebe5229d9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_09265a037b",
+      "target": "node_462b7b60f0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_fceefd02dc",
+      "target": "node_4a30bc9210",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fceefd02dc",
+      "target": "node_4a30bc9210",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fc33b64c78",
+      "target": "node_7a01d63967",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_a96377f081",
+      "target": "node_5265a2c519",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_462b7b60f0",
+      "target": "node_0453510010",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "hr-and-recruitment",
+    "categoryLabel": "HR and Recruitment",
+    "department": "",
+    "connectors": [
+      "googlesuper",
+      "supabase",
+      "telegram",
+      "yantra-voicebox"
+    ],
+    "setupVars": [
+      {
+        "key": "supabaseProjectRef",
+        "label": "Supabase project ref (Settings > General)",
+        "type": "id",
+        "example": "abcdefghijklmnopqrst",
+        "usedBy": [
+          "Create HR Policies"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "TELEGRAM_BOT_TOKEN",
+        "label": "Telegram bot token (from @BotFather)",
+        "host": "api.telegram.org",
+        "headerFormat": "URL path /bot<secret>/getFile",
+        "contextKey": "telegramBotToken",
+        "usedBy": [
+          "OpenAI",
+          "Telegram1"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 21,
+      "yantraSteps": 18,
+      "foldedHelpers": [
+        "Embeddings OpenAI",
+        "Default Data Loader",
+        "OpenAI Chat Model",
+        "Postgres Chat Memory",
+        "Answer questions with a vector store"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "HR_and_Recruitment/HR & IT Helpdesk Chatbot with Audio Transcription.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "HR & IT Helpdesk Chatbot with Audio Transcription"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Telegram Trigger",
+        "detail": "n8n-nodes-base.telegramTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Telegram Trigger\" (telegramTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value supabaseProjectRef: Supabase project ref (Settings > General) (for example abcdefghijklmnopqrst). Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret TELEGRAM_BOT_TOKEN: Telegram bot token (from @BotFather) for api.telegram.org (URL path /bot<secret>/getFile). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the supabase connector (credential).",
+      "Connect the telegram connector (credential).",
+      "Provide run inputs: event, sessionId, message."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Extract from File",
+          "n8n": "extractFromFile.pdf",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Telegram1",
+          "n8n": "telegram.file.get",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "OpenAI",
+          "n8n": "audio.transcribe",
+          "action": "yantra-voicebox/YANTRA_VOICEBOX_TRANSCRIBE",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "Embeddings OpenAI",
+          "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+          "into": "Create HR Policies",
+          "as": "ai_embedding"
+        },
+        {
+          "node": "Default Data Loader",
+          "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+          "into": "Create HR Policies",
+          "as": "ai_document"
+        },
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "AI Agent"
+        },
+        {
+          "node": "Postgres Chat Memory",
+          "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+          "into": "AI Agent",
+          "as": "ai_memory"
+        },
+        {
+          "node": "Answer questions with a vector store",
+          "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+          "into": "AI Agent",
+          "as": "ai_tool"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Telegram Trigger",
+          "type": "n8n-nodes-base.telegramTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from telegramTrigger; Yantra has no webhook slug for it, so run on demand, on a schedule (add a NodeCron), or via the workflow API with the event under the run input `event`.",
+        "\"Extract from File\" (extractFromFile.pdf): Parsed via googlesuper/GOOGLESUPER_PARSE_FILE; the file must live on Google Drive (upload first if the previous step only has bytes/base64).",
+        "\"Extract from File\": GOOGLESUPER_PARSE_FILE needs a Drive file_id (and googlesuper credential). If the upstream step only has file bytes, upload with GOOGLESUPER_CREATE_FILE_FROM_TEXT / Drive upload first, then parse.",
+        "\"Telegram1\" (telegram.file.get): Uses the Telegram Bot API getFile HTTP call with the bot token from a workflow secret; download file_path from the JSON result.",
+        "\"Telegram1\": the file itself is at https://api.telegram.org/file/bot<token>/<file_path>; the token is the TELEGRAM_BOT_TOKEN workflow secret.",
+        "\"Create HR Policies\" folded a document (documentDefaultDataLoader); retrieved text is expected on the upstream payload as context/documents.",
+        "\"Create HR Policies\": set the Supabase project ref on SUPABASE_INSERT_ROW. content, embedding, and metadata come from the upstream item.",
+        "\"OpenAI\" transcribes the Telegram voice file by URL (Bot API file path) with the platform Whisper; no OpenAI key needed.",
+        "\"AI Agent\" kept conversation memory (memoryPostgresChat); sessionId is set to the run-input sessionId.",
+        "\"AI Agent\" used agent tools in the original: Answer questions with a vector store (toolVectorStore). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect supabase: `cdecli credential create -n \"supabase\" -p supabase --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect telegram: `cdecli credential create -n \"telegram\" -p telegram --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## 1. Download & Extract Internal Policy Documents\n[Read more about the HTTP Request Tool](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.httprequest)\n\nBegin by importing the PDF documents that contain your internal policies and FAQs-these will become the knowledge base for your Internal Helpdesk Assistant. For example, you can store a company handbook or IT/HR policy PDFs on a shared drive or cloud storage and reference a direct download link here.\n\nIn this demonstration, we'll use the **HTTP Request node** to fetch the PDF file from a given URL and then parse its text contents using the **Extract from File node**. Once extracted, these text chunks will be used to build the vector store that underpins your helpdesk chatbot’s responses.\n\n[Example Employee Handbook with Policies](https://s3.amazonaws.com/scschoolfiles/656/employee_handbook_print_1.pdf)",
+      "## 2. Create Internal Policy Vector Store\n[Read more about the In-Memory Vector Store](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.vectorstoreinmemory/)\n\nVector stores power the retrieval process by matching a user's natural language questions to relevant chunks of text. We'll transform your extracted internal policy text into vector embeddings and store them in a database-like structure.\n\nWe will be using PostgreSQL which has production ready vector support.\n\n**How it works** \n1. The text extracted in Step 1 is split into manageable segments (chunks). \n2. An embedding model transforms these segments into numerical vectors. \n3. These vectors, along with metadata, are stored in PostgreSQL. \n4. When users ask a question, their query is embedded and matched to the most relevant vectors, improving the accuracy of the chatbot's response.",
+      "## 3. Handling Messages with Fallback Support\n\nThis workflow processes Telegram messages to handle **text** and **voice** inputs, with a fallback for unsupported message types. Here’s how it works:\n\n1. **Trigger Node**:\n - The workflow starts with a Telegram trigger that listens for incoming messages.\n\n2. **Message Type Check**:\n - The workflow verifies the type of message received:\n - **Text Message**: If the message contains `$json.message.text`, it is sent directly to the agent.\n - **Voice Message**: If the message contains `$json.message.voice`, the audio is transcribed into text using a transcription service, and the result is sent to the agent.\n\n3. **Fallback Path**:\n - If the message is neither text nor voice, a fallback response is returned:\n `\"Sorry, I couldn’t process your message. Please try again.\"`\n\n4. **Unified Output**:\n - Both text messages and transcribed voice messages are converted into the same format before sending to the agent, ensuring consistency in handling.",
+      "The setup needs to be run at the start or when data is changed",
+      "## 4. HR & IT AI Agent Provides Helpdesk Support \nn8n's AI agents allow you to create intelligent and interactive workflows that can access and retrieve data from internal knowledgebases. In this workflow, the AI agent is configured to provide answers for HR and IT queries by performing Retrieval-Augmented Generation (RAG) on internal documents.\n\n### How It Works:\n- **Internal Knowledgebase Access**: A **Vector store tool** is used to connect the agent to the HR & IT knowledgebase built earlier in the workflow. This enables the agent to fetch accurate and specific answers for employee queries.\n- **Chat Memory**: A **Chat memory subnode** tracks the conversation, allowing the agent to maintain context across multiple queries from the same user, creating a personalized and cohesive experience.\n- **Dynamic Query Responses**: Whether employees ask about policies, leave balances, or technical troubleshooting, the agent retrieves relevant data from the vector store and crafts a natural language response.\n\nBy integrating the AI agent with a vector store and chat memory, this workflow empowers your HR & IT helpdesk chatbot to provide quick, accurate, and conversational support to employees. \n\nPostgrSQL is used for all steps to simplify development in production.",
+      "## 5. Send Message\n\nThe simplest and most important part :)"
+    ],
+    "nodes": {
+      "node_90e90961fc": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger",
+        "also": [
+          "Telegram Trigger"
+        ]
+      },
+      "node_d3960f3c42": {
+        "n8n": "HTTP Request",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_52ba9c340c": {
+        "n8n": "Verify Message Type",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_d6ceb83275": {
+        "n8n": "Verify Message Type",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_2ba7fe38cf": {
+        "n8n": "Verify Message Type",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_e424cca898": {
+        "n8n": "Verify Message Type",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_cb51d152b7": {
+        "n8n": "Extract from File",
+        "n8nType": "n8n-nodes-base.extractFromFile"
+      },
+      "node_46b9ccaf00": {
+        "n8n": "Extract from File",
+        "n8nType": "n8n-nodes-base.extractFromFile"
+      },
+      "node_fceefd02dc": {
+        "n8n": "Edit Fields",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_8a315e1b81": {
+        "n8n": "Telegram1",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_dfbea4e8f7": {
+        "n8n": "Telegram1",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_fc33b64c78": {
+        "n8n": "Unsupported Message Type",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_dc130f5cbe": {
+        "n8n": "Create HR Policies",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStorePGVector"
+      },
+      "node_a96377f081": {
+        "n8n": "Create HR Policies",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStorePGVector"
+      },
+      "node_8ebe5229d9": {
+        "n8n": "OpenAI",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_09265a037b": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_4a30bc9210": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_462b7b60f0": {
+        "n8n": "Telegram",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_7a01d63967": {
+        "n8n": "__end:Unsupported Message Type",
+        "n8nType": "synthetic"
+      },
+      "node_5265a2c519": {
+        "n8n": "__end:Create HR Policies",
+        "n8nType": "synthetic"
+      },
+      "node_0453510010": {
+        "n8n": "__end:Telegram",
+        "n8nType": "synthetic"
+      },
+      "node_2a208e3066": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

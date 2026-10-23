@@ -1,0 +1,744 @@
+{
+  "name": "Hacker News Throwback Machine",
+  "workflowSlug": "hacker-news-throwback-machine",
+  "description": "Shows what was popular on Hacker News on this day in previous years.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_937ad68332",
+      "actorId": "actor_937ad68332",
+      "type": "NodeCron",
+      "label": "Schedule Trigger",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 21 * * *"
+      }
+    },
+    {
+      "nodeId": "node_f9b627d322",
+      "actorId": "actor_f9b627d322",
+      "type": "NodeTransform",
+      "label": "CreateYearsList",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"CreateYearsList\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  for (const item of $input.all()) {\n   const currentDateStr = item.json.timestamp.split('T')[0];\n   const currentDate = new Date(currentDateStr);\n   const currentYear = currentDate.getFullYear();\n   const currentMonth = currentDate.getMonth(); // 0 for January, 1 for February, etc.\n   const currentDay = currentDate.getDate();\n  \n   const datesToFetch = [];\n   for (let year = currentYear; year >= 2007; year--) {\n   let targetDate;\n   if (year === 2007) {\n   // Special handling for 2007 to start from Feb 19\n   if (currentMonth > 1 || (currentMonth === 1 && currentDay >= 19))\n   {\n   targetDate = new Date(2007, 1, 19); // Feb 19, 2007\n   } else {\n   continue; // Skip 2007 if currentDate is before Feb 19\n   }\n   } else {\n   targetDate = new Date(year, currentMonth, currentDay);\n   }\n   \n   // Format the date as YYYY-MM-DD\n   const formattedDate = targetDate.toISOString().split('T')[0];\n   datesToFetch.push(formattedDate);\n   }\n   item.json.datesToFetch = datesToFetch;\n  }\n  \n  return $input.all();\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_473714ea49",
+      "actorId": "actor_473714ea49",
+      "type": "NodeTransform",
+      "label": "CleanUpYearList",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"datesToFetch\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json.datesToFetch));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_ac9a8ce0ee",
+      "actorId": "actor_ac9a8ce0ee",
+      "type": "NodeTransform",
+      "label": "SplitOutYearList",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"datesToFetch\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"datesToFetch\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"datesToFetch\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_ada36f9944",
+      "actorId": "actor_ada36f9944",
+      "type": "NodeHttpRequest",
+      "label": "GetFrontPage",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://news.ycombinator.com/front?day={{last.transformed.datesToFetch}}"
+      }
+    },
+    {
+      "nodeId": "node_559cb838d6",
+      "actorId": "actor_559cb838d6",
+      "type": "NodeLlmChain",
+      "label": "ExtractDetails",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "headlines": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Every match: the text of the element(s) matching the CSS selector .titleline"
+            },
+            "date": {
+              "type": "string",
+              "description": "First match: the text of the element(s) matching the CSS selector .pagetop > font"
+            }
+          },
+          "required": [
+            "headlines",
+            "date"
+          ],
+          "additionalProperties": false
+        },
+        "system": "Extract values from the HTML page the way the given CSS selectors would. Copy text exactly as it appears in the page. Use an empty string or an empty array when nothing matches.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_e314e14d1a",
+      "actorId": "actor_e314e14d1a",
+      "type": "NodeTransform",
+      "label": "Prompt: ExtractDetails",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: ExtractDetails.\nconst __promptValue = `HTML page:\n${$json}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_1ab22956e7",
+      "actorId": "actor_1ab22956e7",
+      "type": "NodeTransform",
+      "label": "GetHeadlines",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"headlines\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json.headlines));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_8d789a2363",
+      "actorId": "actor_8d789a2363",
+      "type": "NodeTransform",
+      "label": "GetDate",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"date\"] = ($json.date);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_13d6e05d8d",
+      "actorId": "actor_13d6e05d8d",
+      "type": "NodeSync",
+      "label": "MergeHeadlinesDate",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_cb6448e310",
+      "actorId": "actor_cb6448e310",
+      "type": "NodeTransform",
+      "label": "SingleJson",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nreturn { \"data\": __items };"
+      }
+    },
+    {
+      "nodeId": "node_f748a6d76e",
+      "actorId": "actor_f748a6d76e",
+      "type": "NodeLlmChain",
+      "label": "Basic LLM Chain",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_812fe0e759",
+      "actorId": "actor_812fe0e759",
+      "type": "NodeTransform",
+      "label": "Prompt: Basic LLM Chain",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Basic LLM Chain.\nconst __promptValue = `You are a highly skilled news categorizer, specializing in indentifying interesting stuff from Hacker News front-page headlines.\n\nYou are provided with JSON data containing a list of dates and their corresponding top headlines from the Hacker News front page. Each headline will also include a URL linking to the original article or discussion. Importantly, the dates provided will be the SAME DAY across MULTIPLE YEARS (e.g., January 1st, 2023, January 1st, 2022, January 1st, 2021, etc.). You need to indentify key headlines and also analyze how the tech landscape has evolved over the years, as reflected in the headlines for this specific day.\n\nYour task is to indentify top 10-15 headlines from across the years from the given json data and return in Markdown formatted bullet points categorizing into themes and adding markdown hyperlinks to the source URL with Prefixing Year before the headline. Follow the Output Foramt Mentioned.\n\n**Input Format:**\n\n\\`\\`\\`json\n[\n {\n \"headlines\": [\n \"Headline 1 Title [URL1]\",\n \"Headline 2 Title [URL2]\",\n \"Headline 3 Title [URL3]\",\n ...\n ]\n \"date\": \"YYYY-MM-DD\",\n },\n {\n \"headlines\": [\n \"Headline 1 Title [URL1]\",\n \"Headline 2 Title [URL2]\",\n ...\n ]\n \"date\": \"YYYY-MM-DD\",\n },\n ...\n]\n\\`\\`\\`\n\n**Output Format In Markdown**\n\n\\`\\`\\`\n# HN Lookback <FullMonthName-DD> | <start YYYY> to <end YYYY> \n\n## [Theme 1]\n- YYYY [Headline 1](URL1)\n- YYYY [Headline 2](URL2)\n...\n\n## [Theme 2]\n- YYYY [Headline 1](URL1)\n- YYYY [Headline 2](URL2)\n...\n\n... \n\n## <this is optional>\n<if any interesing ternds emerge mention them in oneline>\n\\`\\`\\`\n\n**Here is the Json data for Hackernews Headlines across the years**\n\n\\`\\`\\`\n${JSON.stringify($json.data)}\n\\`\\`\\``;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_b495bccf4b",
+      "actorId": "actor_b495bccf4b",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_SEND_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_SEND_MESSAGE",
+        "params": {
+          "chat_id": "{{telegramChatId}}",
+          "text": "{{last.text}}",
+          "parse_mode": "Markdown"
+        }
+      }
+    },
+    {
+      "nodeId": "node_68fe60f692",
+      "actorId": "actor_68fe60f692",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_3bd479dd24",
+      "actorId": "actor_3bd479dd24",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "telegramChatId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_6d0d1e8095",
+      "actorId": "actor_6d0d1e8095",
+      "type": "NodeChatModel",
+      "label": "ExtractDetails: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2360,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    },
+    {
+      "nodeId": "node_e2a3dac510",
+      "actorId": "actor_e2a3dac510",
+      "type": "NodeChatModel",
+      "label": "Basic LLM Chain: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4260,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "gemini",
+        "model": "models/gemini-1.5-pro"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_e314e14d1a",
+      "target": "node_559cb838d6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_812fe0e759",
+      "target": "node_f748a6d76e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_f748a6d76e",
+      "target": "node_b495bccf4b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_937ad68332",
+      "target": "node_f9b627d322",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_937ad68332",
+      "target": "node_f9b627d322",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f9b627d322",
+      "target": "node_473714ea49",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f9b627d322",
+      "target": "node_473714ea49",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_473714ea49",
+      "target": "node_ac9a8ce0ee",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_473714ea49",
+      "target": "node_ac9a8ce0ee",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ac9a8ce0ee",
+      "target": "node_ada36f9944",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_ada36f9944",
+      "target": "node_e314e14d1a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ada36f9944",
+      "target": "node_e314e14d1a",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_559cb838d6",
+      "target": "node_1ab22956e7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_559cb838d6",
+      "target": "node_1ab22956e7",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_559cb838d6",
+      "target": "node_8d789a2363",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_559cb838d6",
+      "target": "node_8d789a2363",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1ab22956e7",
+      "target": "node_13d6e05d8d",
+      "sourceOutput": "transformed",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_8d789a2363",
+      "target": "node_13d6e05d8d",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_13d6e05d8d",
+      "target": "node_cb6448e310",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_13d6e05d8d",
+      "target": "node_cb6448e310",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cb6448e310",
+      "target": "node_812fe0e759",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cb6448e310",
+      "target": "node_812fe0e759",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b495bccf4b",
+      "target": "node_68fe60f692",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_6d0d1e8095",
+      "target": "node_559cb838d6",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_e2a3dac510",
+      "target": "node_f748a6d76e",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "other-integrations",
+    "categoryLabel": "Other Integrations and Use Cases",
+    "department": "Development/Community",
+    "connectors": [
+      "gemini",
+      "openai",
+      "telegram"
+    ],
+    "setupVars": [
+      {
+        "key": "telegramChatId",
+        "label": "Telegram chat id",
+        "type": "id",
+        "example": "123456789",
+        "usedBy": [
+          "Telegram"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate hacker-news-throwback-machine",
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 13,
+      "yantraSteps": 16,
+      "foldedHelpers": [
+        "Google Gemini Chat Model"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Other_Integrations_and_Use_Cases/Hacker News Throwback Machine - See What Was Hot on This Day, Every Year!.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Setup value telegramChatId: Telegram chat id (for example 123456789). Write it into the Workflow Configs initialContext before import.",
+      "Connect the gemini connector (credential).",
+      "Connect the openai connector (credential).",
+      "Connect the telegram connector (credential).",
+      "After import, start the schedule: cdecli cron activate hacker-news-throwback-machine."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "ExtractDetails",
+          "n8n": "html.extractHtmlContent",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "Google Gemini Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+          "into": "Basic LLM Chain",
+          "model": "models/gemini-1.5-pro"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Schedule Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "\"ExtractDetails\" (html.extractHtmlContent): CSS selectors become a structured-output LLM extract; verify results on a real page.",
+        "\"ExtractDetails\" extracted HTML with CSS selectors; on Yantra a structured-output step reads the page instead. Check the result on a real page, and trim very large pages before this step.",
+        "\"MergeHeadlinesDate\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect telegram: `cdecli credential create -n \"telegram\" -p telegram --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_937ad68332": {
+        "n8n": "Schedule Trigger",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_f9b627d322": {
+        "n8n": "CreateYearsList",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_473714ea49": {
+        "n8n": "CleanUpYearList",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_ac9a8ce0ee": {
+        "n8n": "SplitOutYearList",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_ada36f9944": {
+        "n8n": "GetFrontPage",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_559cb838d6": {
+        "n8n": "ExtractDetails",
+        "n8nType": "n8n-nodes-base.html"
+      },
+      "node_e314e14d1a": {
+        "n8n": "ExtractDetails",
+        "n8nType": "n8n-nodes-base.html"
+      },
+      "node_1ab22956e7": {
+        "n8n": "GetHeadlines",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_8d789a2363": {
+        "n8n": "GetDate",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_13d6e05d8d": {
+        "n8n": "MergeHeadlinesDate",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_cb6448e310": {
+        "n8n": "SingleJson",
+        "n8nType": "n8n-nodes-base.aggregate"
+      },
+      "node_f748a6d76e": {
+        "n8n": "Basic LLM Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_812fe0e759": {
+        "n8n": "Basic LLM Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_b495bccf4b": {
+        "n8n": "Telegram",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_68fe60f692": {
+        "n8n": "__end:Telegram",
+        "n8nType": "synthetic"
+      },
+      "node_3bd479dd24": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_6d0d1e8095": {
+        "n8n": "ExtractDetails",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_e2a3dac510": {
+        "n8n": "Basic LLM Chain",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

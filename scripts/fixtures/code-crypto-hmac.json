@@ -1,0 +1,63 @@
+{
+  "name": "fixture-code-crypto-hmac",
+  "nodes": [
+    {
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "name": "Verify signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst expected = crypto.createHmac('sha256', 'k').update(String($json.raw)).digest('hex');\nif ($json.sig !== expected) throw new Error('bad signature');\nreturn [{ json: { ok: true } }];"
+      },
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "name": "Make id",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nreturn [{ json: { id: crypto.randomUUID() } }];"
+      },
+      "position": [
+        440,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Verify signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify signature": {
+      "main": [
+        [
+          {
+            "node": "Make id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

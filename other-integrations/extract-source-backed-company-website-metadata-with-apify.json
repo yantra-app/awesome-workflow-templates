@@ -1,0 +1,325 @@
+{
+  "name": "Extract source-backed company website metadata with Apify",
+  "workflowSlug": "extract-source-backed-company-website-metadata-with-apify",
+  "description": "Validates one company domain, runs a cost-capped Apify Actor, and accepts exactly one website-metadata candidate result with provenance for human CRM review.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_ab64263bbd",
+      "actorId": "actor_ab64263bbd",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_367ea55bc8",
+      "actorId": "actor_367ea55bc8",
+      "type": "NodeTransform",
+      "label": "Set company domain",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"domain\"] = \"example.com\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_a85c59f236",
+      "actorId": "actor_a85c59f236",
+      "type": "NodeTransform",
+      "label": "Validate domain",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Ported from n8n Code node \"Validate domain\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const domain = String($json.domain || '').trim().toLowerCase();\n  if (domain.length > 253 || !domain.includes('.') || domain.includes('://') || domain.includes('/') || domain.includes(':') || domain.includes(' ') || domain.startsWith('.') || domain.endsWith('.') || domain.includes('..')) {\n    throw new Error('Use one bare company domain, for example example.com');\n  }\n  const labels = domain.split('.');\n  const labelPattern = /^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/;\n  if (labels.some((label) => label.length < 1 || label.length > 63 || !labelPattern.test(label)) || !/^[A-Za-z]{2,63}$/.test(labels.at(-1))) {\n    throw new Error('The company domain is invalid');\n  }\n  return [{ json: { domain, integrationSource: 'n8n-github-c9' } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_4d8c63ac87",
+      "actorId": "actor_4d8c63ac87",
+      "type": "NodeTransform",
+      "label": "Params: Extract metadata on Apify",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for apify/APIFY_RUN_ACTOR_SYNC_GET_DATASET_ITEMS (n8n node \"Extract metadata on Apify\").\nreturn (() => ({ \"actorId\": \"vivid_astronaut~company-enrichment\", \"input\": (() => { const __v = (JSON.stringify($json)); if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })() }))();"
+      }
+    },
+    {
+      "nodeId": "node_7a9fa5b2f9",
+      "actorId": "actor_7a9fa5b2f9",
+      "type": "NodeCdeConnector",
+      "label": "apify/APIFY_RUN_ACTOR_SYNC_GET_DATASET_ITEMS",
+      "color": "#6366F1",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "apify",
+        "connectorLabel": "Apify",
+        "action": "APIFY_RUN_ACTOR_SYNC_GET_DATASET_ITEMS"
+      }
+    },
+    {
+      "nodeId": "node_4d47e18032",
+      "actorId": "actor_4d47e18032",
+      "type": "NodeTransform",
+      "label": "Validate metadata result",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Run manually\": {{ctx}}, \"Set company domain\": {\"domain\":\"example.com\"}, \"Validate domain\": {{steps.xf_a85c59f236.result}}, \"Extract metadata on Apify\": {{steps.APIFY_RUN_ACTOR_SYNC_GET_DATASET_ITEMS.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Validate metadata result\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const expectedDomain = $('Validate domain').first().json.domain;\n  const rows = $input.all().flatMap((item) => Array.isArray(item.json) ? item.json : [item.json]);\n  if (rows.length !== 1) {\n    throw new Error('Expected exactly one company metadata result');\n  }\n  const row = rows[0];\n  if (row.success !== true || row.domain !== expectedDomain || row.integrationSource !== 'n8n-github-c9' || row.provenance?.method !== 'website_metadata_scrape') {\n    throw new Error('The Actor response failed semantic validation');\n  }\n  return [{ json: row }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_24deb84f55",
+      "actorId": "actor_24deb84f55",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_65b0cb93f4",
+      "actorId": "actor_65b0cb93f4",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": ""
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_4d8c63ac87",
+      "target": "node_7a9fa5b2f9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_4d8c63ac87",
+      "target": "node_7a9fa5b2f9",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ab64263bbd",
+      "target": "node_367ea55bc8",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_367ea55bc8",
+      "target": "node_a85c59f236",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_367ea55bc8",
+      "target": "node_a85c59f236",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a85c59f236",
+      "target": "node_4d8c63ac87",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a85c59f236",
+      "target": "node_4d8c63ac87",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7a9fa5b2f9",
+      "target": "node_4d47e18032",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7a9fa5b2f9",
+      "target": "node_4d47e18032",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4d47e18032",
+      "target": "node_24deb84f55",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "other-integrations",
+    "categoryLabel": "Other Integrations and Use Cases",
+    "department": "Sales/Ops",
+    "connectors": [
+      "apify"
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeEnd",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 5,
+      "yantraSteps": 6,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Other_Integrations_and_Use_Cases/Extract source-backed company website metadata with Apify.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Extract source-backed company website metadata with Apify"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Connect the apify connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Run manually",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Extract metadata on Apify\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect apify: `cdecli credential create -n \"apify\" -p apify --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "# Extract source-backed company website metadata with Apify\n\n## What it does\n\nAccepts one bare company domain, runs Brainiall's public Company Enrichment Actor on Apify, and returns one semantically validated website-metadata candidate item with provenance.\n\n## Setup\n\n1. Create a scoped Apify API token that can run Actors.\n2. On **Extract metadata on Apify**, select an n8n **Header Auth** credential. Use header name `Authorization` and value `Bearer YOUR_SCOPED_APIFY_TOKEN`. Never paste a token into workflow fields.\n3. Replace `example.com` in **Set company domain**.\n4. Review the live Actor pricing. The request caps results at one and total run charge at US$0.02.\n5. Run manually and review the candidate fields before updating a CRM.\n\nThe workflow is inactive by default. It rejects invalid domains and any response that is empty, failed, mismatched, or lacks website-scrape provenance. Candidate fields are not authoritative registry facts."
+    ],
+    "nodes": {
+      "node_ab64263bbd": {
+        "n8n": "Run manually",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_367ea55bc8": {
+        "n8n": "Set company domain",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_a85c59f236": {
+        "n8n": "Validate domain",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_4d8c63ac87": {
+        "n8n": "Extract metadata on Apify",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_7a9fa5b2f9": {
+        "n8n": "Extract metadata on Apify",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_4d47e18032": {
+        "n8n": "Validate metadata result",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_24deb84f55": {
+        "n8n": "__end:Validate metadata result",
+        "n8nType": "synthetic"
+      },
+      "node_65b0cb93f4": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

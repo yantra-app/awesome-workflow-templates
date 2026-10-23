@@ -1,0 +1,645 @@
+{
+  "name": "Fill PDF with JustFill",
+  "workflowSlug": "fill-pdf-with-justfill",
+  "description": "Fills an existing PDF from JSON using reviewed field names, rejecting unknown or ambiguous mappings before filling. Requires a JustFill API key and available PDF-processing allowance.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_06c4267dcf",
+      "actorId": "actor_06c4267dcf",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_1c32beaf3a",
+      "actorId": "actor_1c32beaf3a",
+      "type": "NodeTransform",
+      "label": "Config",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"apiKey\"] = \"jf_live_{{apiKey}}\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_52a8c80c07",
+      "actorId": "actor_52a8c80c07",
+      "type": "NodeHttpRequest",
+      "label": "Mint upload slot",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://justfill.app/api/mcp",
+        "headers": {
+          "Authorization": "Bearer {{steps.xf_1c32beaf3a.result.apiKey}}",
+          "Accept": "application/json, text/event-stream",
+          "Content-Type": "application/json"
+        },
+        "body": "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"request_file_upload\", \"arguments\": {}}}"
+      }
+    },
+    {
+      "nodeId": "node_569f47ecc7",
+      "actorId": "actor_569f47ecc7",
+      "type": "NodeTransform",
+      "label": "Prepare upload",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"On form submission\": {{ctx}}, \"Config\": {\"apiKey\":\"jf_live_{{apiKey}}\"}, \"Mint upload slot\": {{steps.http_52a8c80c07.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Prepare upload\".\nconst __one = (i) => (i && typeof i === 'object' && 'json' in i ? (i.binary && typeof i.binary === 'object' ? { ...i.json, binary: i.binary } : i.json) : i);\nconst __unwrap = (v) => Array.isArray(v) ? v.map(__one) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? __one(v) : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const rpc = $input.first().json;\n  if (rpc.error) throw new Error('MCP transport error: ' + JSON.stringify(rpc.error));\n  if (rpc.result && rpc.result.isError) throw new Error('MCP tool error: ' + ((rpc.result.content && rpc.result.content[0] && rpc.result.content[0].text) || 'unknown'));\n  // The slot JSON arrives as text inside the MCP tool result.\n  const slot = JSON.parse(rpc.result.content[0].text);\n  if (slot.error) throw new Error('request_file_upload: ' + slot.error);\n  const trigger = $('On form submission').first();\n  const binKey = Object.keys(trigger.binary || {})[0];\n  if (!binKey) throw new Error('No file arrived from the form.');\n  // Ready-made JSON-RPC body for the Open PDF node (building it here avoids\n  // n8n's expression parser tripping on `}}` inside inline object literals).\n  slot.openBody = {\n    jsonrpc: '2.0', id: 2, method: 'tools/call',\n    params: { name: 'open_pdf', arguments: { upload_token: slot.upload_token } },\n  };\n  return [{ json: slot, binary: { file: trigger.binary[binKey] } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_55e59e4391",
+      "actorId": "actor_55e59e4391",
+      "type": "NodeTransform",
+      "label": "Params: Upload PDF",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// The upstream file as { contentBase64 | fileUrl, filename, mimeType }: n8n binary data travels as base64 bytes or a file URL on Yantra.\nconst __b64 = (t) => { const b = new TextEncoder().encode(String(t)); let s = ''; for (let i = 0; i < b.length; i += 1) s += String.fromCharCode(b[i]); return btoa(s); };\nconst __fileRef = (v, prop) => {\n  const s = (x) => (typeof x === 'string' && x !== '' ? x : undefined);\n  let r = Array.isArray(v) ? v[0] : v;\n  const bin = r && typeof r === 'object' && r.binary && typeof r.binary === 'object' ? r.binary[prop] ?? Object.values(r.binary)[0] : undefined;\n  if (bin && s(bin.data)) return { contentBase64: bin.data, filename: s(r.filename) ?? s(bin.fileName) ?? 'file', mimeType: s(bin.mimeType) };\n  if (r && typeof r === 'object' && r.data && typeof r.data === 'object' && !Array.isArray(r.data)) r = { ...r, ...r.data };\n  const dl = r?.downloaded_file_content ?? r?.file;\n  const filename = s(r?.filename) ?? s(r?.fileName) ?? s(dl?.name) ?? s(r?.name) ?? 'file';\n  const mimeType = s(r?.mimeType) ?? s(r?.contentType) ?? s(dl?.mimetype) ?? s(r?.mimetype);\n  if (s(r?.bodyBase64)) return { contentBase64: r.bodyBase64, filename, mimeType };\n  const url = s(dl?.s3url) ?? s(r?.s3url) ?? s(r?.fileUrl) ?? s(r?.imageUrl) ?? s(r?.imageUrls?.[0]) ?? s(r?.audioUrl) ?? s(r?.videoUrl) ?? s(r?.secure_url);\n  if (url) return { fileUrl: url, filename, mimeType };\n  if (s(r?.data)) return { contentBase64: r.encoding !== 'base64' && /^(?:text\\/|application\\/(?:json|xml|javascript|x-tex))|\\+(?:xml|json)$/.test(mimeType ?? '') ? __b64(r.data) : r.data, filename, mimeType };\n  throw new Error('No file on the upstream step: expected file bytes (base64) or a file URL.');\n};\n// Params for yantra-storage/YANTRA_STORAGE_HTTP_SEND (n8n node \"Upload PDF\").\nreturn { \"url\": ($json.post_url), \"method\": \"POST\", \"bodyType\": \"multipart\", \"files\": [{ \"field\": \"file\", ...__fileRef(source, \"file\") }], \"responseType\": \"auto\" };"
+      }
+    },
+    {
+      "nodeId": "node_b5ad17cfe9",
+      "actorId": "actor_b5ad17cfe9",
+      "type": "NodeCdeConnector",
+      "label": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-storage",
+        "connectorLabel": "Yantra storage",
+        "action": "YANTRA_STORAGE_HTTP_SEND"
+      }
+    },
+    {
+      "nodeId": "node_e3507c20ad",
+      "actorId": "actor_e3507c20ad",
+      "type": "NodeTransform",
+      "label": "Upload PDF: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The response the way the n8n HTTP node handed it on: the parsed body; a file body is { bodyBase64, filename, mimeType }.\nconst __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' && 'status' in source.data ? source.data : source;\nconst __body = __r?.bodyBase64 !== undefined ? { bodyBase64: __r.bodyBase64, filename: __r.filename, mimeType: __r.contentType, bytes: __r.bytes } : __r?.bodyJson !== undefined ? __r.bodyJson : __r?.bodyText;\nreturn __body;"
+      }
+    },
+    {
+      "nodeId": "node_296c0e2484",
+      "actorId": "actor_296c0e2484",
+      "type": "NodeHttpRequest",
+      "label": "Open PDF",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://justfill.app/api/mcp",
+        "headers": {
+          "Authorization": "Bearer {{steps.xf_1c32beaf3a.result.apiKey}}",
+          "Accept": "application/json, text/event-stream",
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_6ef8777b98",
+      "actorId": "actor_6ef8777b98",
+      "type": "NodeTransform",
+      "label": "Body: Open PDF",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"On form submission\": {{ctx}}, \"Config\": {\"apiKey\":\"jf_live_{{apiKey}}\"}, \"Mint upload slot\": {{steps.http_52a8c80c07.result}}, \"Prepare upload\": {{steps.xf_569f47ecc7.result}}, \"Upload PDF\": {{steps.xf_e3507c20ad.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Open PDF\".\nconst __body = (JSON.stringify($('Prepare upload').item.json.openBody));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_1152e52827",
+      "actorId": "actor_1152e52827",
+      "type": "NodeTransform",
+      "label": "Map values to fields",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"On form submission\": {{ctx}}, \"Config\": {\"apiKey\":\"jf_live_{{apiKey}}\"}, \"Mint upload slot\": {{steps.http_52a8c80c07.result}}, \"Prepare upload\": {{steps.xf_569f47ecc7.result}}, \"Upload PDF\": {{steps.xf_e3507c20ad.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Map values to fields\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const rpc = $input.first().json;\n  if (rpc.error) throw new Error('MCP transport error: ' + JSON.stringify(rpc.error));\n  if (rpc.result && rpc.result.isError) throw new Error('MCP tool error: ' + ((rpc.result.content && rpc.result.content[0] && rpc.result.content[0].text) || 'unknown'));\n  const ws = JSON.parse(rpc.result.content[0].text);\n  if (ws.error) throw new Error('open_pdf: ' + ws.error);\n  if (!Array.isArray(ws.fields) || !ws.summary?.workspace_id) throw new Error('open_pdf returned no usable field list or workspace.');\n  \n  const raw = $('On form submission').first().json['Data JSON'];\n  let data;\n  try { data = JSON.parse(raw); }\n  catch { throw new Error('Data JSON must be a JSON object keyed by reviewed PDF field names.'); }\n  if (!data || Array.isArray(data) || typeof data !== 'object' || !Object.keys(data).length) {\n    throw new Error('Data JSON must be a non-empty object, not a list, null or a scalar.');\n  }\n  \n  // Exact normalized names only. Keep Unicode; never guess using substrings.\n  const norm = s => String(s ?? '').normalize('NFC').toLowerCase().replace(/[^\\p{L}\\p{M}\\p{N}]+/gu, '');\n  const values = Object.create(null), unmatched = [], usedIds = new Set();\n  for (const [k, v] of Object.entries(data)) {\n    const nk = norm(k);\n    if (!nk) throw new Error('Every JSON key must contain a letter or number.');\n    if (v !== null && (typeof v === 'object' || (typeof v === 'number' && !Number.isFinite(v)))) {\n      throw new Error('Field values must be text, finite numbers, booleans or null; nested values are not supported.');\n    }\n    const matches = ws.fields.filter(f => norm(f.name) === nk);\n    if (!matches.length) { unmatched.push(k); continue; }\n    if (matches.length !== 1) throw new Error('Ambiguous PDF field name: ' + k + '. Give each field a unique reviewed name.');\n    const f = matches[0];\n    if (typeof f.id !== 'string' || !f.id) throw new Error('A matched PDF field has no valid ID.');\n    if (usedIds.has(f.id)) throw new Error('Two JSON keys map to the same PDF field. Use one key per field.');\n    usedIds.add(f.id);\n    values[f.id] = v === null ? '' : String(v);\n  }\n  if (unmatched.length) {\n    throw new Error('Unmatched JSON keys: ' + unmatched.join(', ') + '. Rename the keys or review and save the PDF field names; no PDF was filled.');\n  }\n  if (!Object.keys(values).length) throw new Error('No data keys matched the template fields.');\n  \n  return [{ json: {\n    workspace_id: ws.summary.workspace_id,\n    source: ws.summary.source,\n    matched: Object.keys(values).length,\n    unmatched,\n    values,\n    fillBody: {\n      jsonrpc: '2.0', id: 3, method: 'tools/call',\n      params: { name: 'fill_pdf', arguments: { workspace_id: ws.summary.workspace_id, values } },\n    },\n  } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_07fab052b2",
+      "actorId": "actor_07fab052b2",
+      "type": "NodeHttpRequest",
+      "label": "Fill PDF",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://justfill.app/api/mcp",
+        "headers": {
+          "Authorization": "Bearer {{steps.xf_1c32beaf3a.result.apiKey}}",
+          "Accept": "application/json, text/event-stream",
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_e1c64bf096",
+      "actorId": "actor_e1c64bf096",
+      "type": "NodeTransform",
+      "label": "Body: Fill PDF",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Fill PDF\".\nconst __body = (JSON.stringify($json.fillBody));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_11cf7a517d",
+      "actorId": "actor_11cf7a517d",
+      "type": "NodeTransform",
+      "label": "Result",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Result\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const rpc = $input.first().json;\n  if (rpc.error) throw new Error('MCP transport error: ' + JSON.stringify(rpc.error));\n  if (rpc.result && rpc.result.isError) throw new Error('MCP tool error: ' + ((rpc.result.content && rpc.result.content[0] && rpc.result.content[0].text) || 'unknown'));\n  const out = JSON.parse(rpc.result.content[0].text);\n  if (out.error) throw new Error('fill_pdf: ' + out.error);\n  // download_url: plain GET, no auth, valid until the workspace expires (~24h).\n  return [{ json: {\n    download_url: out.download_url,\n    output_mode: out.output_mode,\n    filled_fields: out.filled_fields,\n    link_expires_at: out.link_expires_at,\n    warnings: out.warnings || null,\n  } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_0677e64cb1",
+      "actorId": "actor_0677e64cb1",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "PDF": "",
+          "Data JSON": "",
+          "apiKey": {
+            "$workflowSecret": "API_KEY"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_55e59e4391",
+      "target": "node_b5ad17cfe9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_55e59e4391",
+      "target": "node_b5ad17cfe9",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_b5ad17cfe9",
+      "target": "node_e3507c20ad",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b5ad17cfe9",
+      "target": "node_e3507c20ad",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6ef8777b98",
+      "target": "node_296c0e2484",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_6ef8777b98",
+      "target": "node_296c0e2484",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_e1c64bf096",
+      "target": "node_07fab052b2",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_e1c64bf096",
+      "target": "node_07fab052b2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_06c4267dcf",
+      "target": "node_1c32beaf3a",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1c32beaf3a",
+      "target": "node_52a8c80c07",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_52a8c80c07",
+      "target": "node_569f47ecc7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_52a8c80c07",
+      "target": "node_569f47ecc7",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_569f47ecc7",
+      "target": "node_55e59e4391",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_569f47ecc7",
+      "target": "node_55e59e4391",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e3507c20ad",
+      "target": "node_6ef8777b98",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e3507c20ad",
+      "target": "node_6ef8777b98",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_296c0e2484",
+      "target": "node_1152e52827",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_296c0e2484",
+      "target": "node_1152e52827",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1152e52827",
+      "target": "node_e1c64bf096",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1152e52827",
+      "target": "node_e1c64bf096",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_07fab052b2",
+      "target": "node_11cf7a517d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_07fab052b2",
+      "target": "node_11cf7a517d",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "pdf-and-documents",
+    "categoryLabel": "PDF and Document Processing",
+    "department": "Operations/Admin",
+    "connectors": [
+      "yantra-storage"
+    ],
+    "setupSecrets": [
+      {
+        "key": "API_KEY",
+        "label": "api key",
+        "headerFormat": "read inside the step code",
+        "contextKey": "apiKey",
+        "usedBy": [
+          "Config",
+          "Map values to fields",
+          "Open PDF",
+          "Prepare upload"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 10,
+      "yantraSteps": 13,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "PDF_and_Document_Processing/Fill PDF with JustFill.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Fill PDF with JustFill"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "On form submission",
+        "detail": "n8n-nodes-base.formTrigger became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Redirect to filled PDF",
+        "detail": "n8n-nodes-base.form became the Start node"
+      },
+      {
+        "code": "hard-approximation",
+        "node": "Upload PDF",
+        "detail": "httpRequest.multipart-form-data -> yantra-storage/YANTRA_STORAGE_HTTP_SEND: the file comes from \"On form submission\" (formTrigger), which starts the run; the Yantra start payload carries no uploaded file bytes"
+      },
+      {
+        "code": "action-pending-publish",
+        "node": "Upload PDF",
+        "detail": "yantra-storage/YANTRA_STORAGE_HTTP_SEND waits for the yantra-storage HTTP send and signatures patch (1.4.1) to be published"
+      }
+    ],
+    "setup": [
+      "\"On form submission\" (formTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Redirect to filled PDF\" (form) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Upload PDF\" (httpRequest.multipart-form-data): the file comes from \"On form submission\" (formTrigger), which starts the run; the Yantra start payload carries no uploaded file bytes; review it before relying on the result.",
+      "\"Upload PDF\": yantra-storage/YANTRA_STORAGE_HTTP_SEND comes from the yantra-storage HTTP send and signatures patch (1.4.1), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
+      "Workflow secret API_KEY: api key (read inside the step code). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Provide run inputs: PDF, Data JSON."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Upload PDF",
+          "n8n": "httpRequest.multipart-form-data",
+          "action": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+          "reason": "the file comes from \"On form submission\" (formTrigger), which starts the run; the Yantra start payload carries no uploaded file bytes"
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "On form submission",
+          "type": "n8n-nodes-base.formTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Redirect to filled PDF",
+          "type": "n8n-nodes-base.form",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from a form submission; pass the form fields as run inputs.",
+        "\"Upload PDF\" (httpRequest.multipart-form-data): the file comes from \"On form submission\" (formTrigger), which starts the run; the Yantra start payload carries no uploaded file bytes.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "### Fill an existing PDF from reviewed JSON data\n\nSetup and synthetic example:\nhttps://justfill.app/integrations/n8n-fill-pdf-forms?utm_source=github&utm_medium=referral&utm_campaign=b2b_pdf_automation_2026q3&utm_content=awesome_n8n_template\n\nThe workflow download is free. Running it calls JustFill's hosted API and consumes the account's PDF-processing allowance; this is not unlimited free processing.\n\nReview and save the exact recurring PDF's field names once. Then submit that PDF and a JSON object keyed by those names. The repeated mapping uses no AI model and rejects unknown or ambiguous names before filling.\n\nCreate a JustFill API key in Account and replace the placeholder in Config for a private test. Config stores it in plain text: use an n8n credential for production and never share an export containing a real key. Keep this form private or configure access control before activation.",
+      "### 1. Collect the document and values\n\nThe form accepts the recurring PDF plus a JSON object. Each JSON key should match a reviewed template field name, for example `company_name` or `invoice_number`.",
+      "### 2. Upload the PDF safely\n\nJustFill creates a one-time upload URL, and n8n sends the file as binary multipart data. The workflow never embeds the PDF as base64 inside a JSON-RPC request.",
+      "### 3. Reuse reviewed field names\n\nThe Code node uses exact normalized field names, preserves Unicode, and stops before filling on unknown keys, ambiguous names, nested values or duplicate targets. Null becomes a blank value. It does not guess from substrings.",
+      "### 4. Review the result before delivery\n\nJustFill returns a temporary download URL (about 24 hours), output_mode and warnings. The form redirects to that PDF. Check whether the result is clean or watermarked and review the output before sending it to anyone else. For production, replace the redirect with your own review and delivery step."
+    ],
+    "nodes": {
+      "node_06c4267dcf": {
+        "n8n": "On form submission",
+        "n8nType": "n8n-nodes-base.formTrigger",
+        "also": [
+          "Redirect to filled PDF"
+        ]
+      },
+      "node_1c32beaf3a": {
+        "n8n": "Config",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_52a8c80c07": {
+        "n8n": "Mint upload slot",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_569f47ecc7": {
+        "n8n": "Prepare upload",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_55e59e4391": {
+        "n8n": "Upload PDF",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_b5ad17cfe9": {
+        "n8n": "Upload PDF",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_e3507c20ad": {
+        "n8n": "Upload PDF",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_296c0e2484": {
+        "n8n": "Open PDF",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_6ef8777b98": {
+        "n8n": "Open PDF",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_1152e52827": {
+        "n8n": "Map values to fields",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_07fab052b2": {
+        "n8n": "Fill PDF",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_e1c64bf096": {
+        "n8n": "Fill PDF",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_11cf7a517d": {
+        "n8n": "Result",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_0677e64cb1": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

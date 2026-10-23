@@ -1,0 +1,783 @@
+{
+  "name": "ETL pipeline for text processing",
+  "workflowSlug": "etl-pipeline-for-text-processing",
+  "description": "This workflow implements an ETL pipeline for text processing, extracting data from Twitter, storing it in MongoDB and PostgreSQL, and sending alerts to Slack based on sentiment analysis.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_66cafa4660",
+      "actorId": "actor_66cafa4660",
+      "type": "NodeCron",
+      "label": "Cron",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 9 * * *"
+      }
+    },
+    {
+      "nodeId": "node_d81e8d050b",
+      "actorId": "actor_d81e8d050b",
+      "type": "NodeCdeConnector",
+      "label": "twitter/TWITTER_RECENT_SEARCH",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "twitter",
+        "connectorLabel": "X (Twitter)",
+        "action": "TWITTER_RECENT_SEARCH",
+        "params": {
+          "query": "#OnThisDay",
+          "max_results": 3
+        }
+      }
+    },
+    {
+      "nodeId": "node_6790da61f4",
+      "actorId": "actor_6790da61f4",
+      "type": "NodeCdeConnector",
+      "label": "mongodb/MONGODB_INSERT_MANY",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "mongodb",
+        "connectorLabel": "MongoDB",
+        "action": "MONGODB_INSERT_MANY",
+        "params": {
+          "collection": "tweets",
+          "documents": "text"
+        }
+      }
+    },
+    {
+      "nodeId": "node_23b4be0ff4",
+      "actorId": "actor_23b4be0ff4",
+      "type": "NodeLlmChain",
+      "label": "Google Cloud Natural Language",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "sentiment": {
+              "type": "string",
+              "enum": [
+                "Positive",
+                "Neutral",
+                "Negative"
+              ],
+              "description": "One of: Positive, Neutral, Negative"
+            }
+          },
+          "required": [
+            "sentiment"
+          ],
+          "additionalProperties": false
+        },
+        "system": "Classify the input into exactly one sentiment.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_3bc4eea1af",
+      "actorId": "actor_3bc4eea1af",
+      "type": "NodeTransform",
+      "label": "Prompt: Google Cloud Natural Language",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst $node = new Proxy({}, { get: () => ({ json: source, parameter: {} }) });\n// Prompt: Google Cloud Natural Language.\nconst __promptValue = ($node[\"MongoDB\"].json[\"text\"]);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_5ece2c13c8",
+      "actorId": "actor_5ece2c13c8",
+      "type": "NodeTransform",
+      "label": "Google Cloud Natural Language: sentiment = Positive",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.sentiment ?? '') === \"Positive\";"
+      }
+    },
+    {
+      "nodeId": "node_05cfc791f6",
+      "actorId": "actor_05cfc791f6",
+      "type": "NodeBranch",
+      "label": "Google Cloud Natural Language: sentiment = Positive?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_3437bb6bca",
+      "actorId": "actor_3437bb6bca",
+      "type": "NodeTransform",
+      "label": "Google Cloud Natural Language: sentiment = Neutral",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.sentiment ?? '') === \"Neutral\";"
+      }
+    },
+    {
+      "nodeId": "node_3179901355",
+      "actorId": "actor_3179901355",
+      "type": "NodeBranch",
+      "label": "Google Cloud Natural Language: sentiment = Neutral?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_a214675072",
+      "actorId": "actor_a214675072",
+      "type": "NodeTransform",
+      "label": "Google Cloud Natural Language: sentiment = Negative",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.sentiment ?? '') === \"Negative\";"
+      }
+    },
+    {
+      "nodeId": "node_698518eab4",
+      "actorId": "actor_698518eab4",
+      "type": "NodeBranch",
+      "label": "Google Cloud Natural Language: sentiment = Negative?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_b1cd85085f",
+      "actorId": "actor_b1cd85085f",
+      "type": "NodeTransform",
+      "label": "Set",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $node = new Proxy({}, { get: () => ({ json: source, parameter: {} }) });\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"score\"] = Number(($json[\"documentSentiment\"][\"score\"]));\n  out[\"magnitude\"] = Number(($json[\"documentSentiment\"][\"magnitude\"]));\n  out[\"text\"] = ($node[\"Twitter\"].json[\"text\"]);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_2e85f1e4c4",
+      "actorId": "actor_2e85f1e4c4",
+      "type": "NodeCdeConnector",
+      "label": "supabase/SUPABASE_INSERT_ROW",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "supabase",
+        "connectorLabel": "Postgres (via Supabase)",
+        "action": "SUPABASE_INSERT_ROW",
+        "params": {
+          "table": "tweets",
+          "fields": {
+            "text": "{{last.transformed.text}}",
+            "score": "{{last.transformed.score}}",
+            "magnitude": "{{last.transformed.magnitude}}"
+          },
+          "ref": "{{supabaseProjectRef}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_c4c152ba2c",
+      "actorId": "actor_c4c152ba2c",
+      "type": "NodeTransform",
+      "label": "IF: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((Number(($json[\"score\"])) > Number(null)));"
+      }
+    },
+    {
+      "nodeId": "node_eb8bda2c71",
+      "actorId": "actor_eb8bda2c71",
+      "type": "NodeBranch",
+      "label": "IF: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_860e6860ea",
+      "actorId": "actor_860e6860ea",
+      "type": "NodeCdeConnector",
+      "label": "slack/SLACK_CHAT_POST_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "slack",
+        "connectorLabel": "Slack",
+        "action": "SLACK_CHAT_POST_MESSAGE",
+        "params": {
+          "channel": "tweets",
+          "text": "🐦 NEW TWEET with sentiment score {{last.result.score}} and magnitude {{last.result.magnitude}} ⬇️\n{{last.result.text}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_3d251d4681",
+      "actorId": "actor_3d251d4681",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_fa563af597",
+      "actorId": "actor_fa563af597",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "supabaseProjectRef": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_6644880cd1",
+      "actorId": "actor_6644880cd1",
+      "type": "NodeChatModel",
+      "label": "Google Cloud Natural Language: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1600,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_3bc4eea1af",
+      "target": "node_23b4be0ff4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_23b4be0ff4",
+      "target": "node_5ece2c13c8",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_23b4be0ff4",
+      "target": "node_5ece2c13c8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5ece2c13c8",
+      "target": "node_05cfc791f6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_5ece2c13c8",
+      "target": "node_05cfc791f6",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_23b4be0ff4",
+      "target": "node_3437bb6bca",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_05cfc791f6",
+      "target": "node_3437bb6bca",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3437bb6bca",
+      "target": "node_3179901355",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_3437bb6bca",
+      "target": "node_3179901355",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_23b4be0ff4",
+      "target": "node_a214675072",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3179901355",
+      "target": "node_a214675072",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a214675072",
+      "target": "node_698518eab4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_a214675072",
+      "target": "node_698518eab4",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_c4c152ba2c",
+      "target": "node_eb8bda2c71",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_c4c152ba2c",
+      "target": "node_eb8bda2c71",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_d81e8d050b",
+      "target": "node_6790da61f4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_2e85f1e4c4",
+      "target": "node_c4c152ba2c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2e85f1e4c4",
+      "target": "node_c4c152ba2c",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6790da61f4",
+      "target": "node_3bc4eea1af",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6790da61f4",
+      "target": "node_3bc4eea1af",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_eb8bda2c71",
+      "target": "node_860e6860ea",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_05cfc791f6",
+      "target": "node_b1cd85085f",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6790da61f4",
+      "target": "node_b1cd85085f",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b1cd85085f",
+      "target": "node_2e85f1e4c4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_66cafa4660",
+      "target": "node_d81e8d050b",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_860e6860ea",
+      "target": "node_3d251d4681",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_6644880cd1",
+      "target": "node_23b4be0ff4",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "pdf-and-documents",
+    "categoryLabel": "PDF and Document Processing",
+    "department": "Data Analytics/IT",
+    "connectors": [
+      "mongodb",
+      "openai",
+      "slack",
+      "supabase",
+      "twitter"
+    ],
+    "setupVars": [
+      {
+        "key": "supabaseProjectRef",
+        "label": "Supabase project ref (Settings > General)",
+        "type": "id",
+        "example": "abcdefghijklmnopqrst",
+        "usedBy": [
+          "Postgres"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate etl-pipeline-for-text-processing",
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 9,
+      "yantraSteps": 17,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "PDF_and_Document_Processing/ETL pipeline for text processing.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "ETL pipeline"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Setup value supabaseProjectRef: Supabase project ref (Settings > General) (for example abcdefghijklmnopqrst). Write it into the Workflow Configs initialContext before import.",
+      "Connect the mongodb connector (credential).",
+      "Connect the openai connector (credential).",
+      "Connect the slack connector (credential).",
+      "Connect the supabase connector (credential).",
+      "Connect the twitter connector (credential).",
+      "After import, start the schedule: cdecli cron activate etl-pipeline-for-text-processing."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Postgres",
+          "n8n": "database.insert",
+          "action": "supabase/SUPABASE_INSERT_ROW",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Cron",
+          "type": "n8n-nodes-base.cron",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "\"Postgres\": the original ran on a Postgres credential; on Yantra it runs through the Supabase connector. Set the project ref on SUPABASE_INSERT_ROW.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect mongodb: `cdecli credential create -n \"mongodb\" -p mongodb --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect slack: `cdecli credential create -n \"slack\" -p slack --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect supabase: `cdecli credential create -n \"supabase\" -p supabase --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect twitter: `cdecli credential create -n \"twitter\" -p twitter --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_66cafa4660": {
+        "n8n": "Cron",
+        "n8nType": "n8n-nodes-base.cron"
+      },
+      "node_d81e8d050b": {
+        "n8n": "Twitter",
+        "n8nType": "n8n-nodes-base.twitter"
+      },
+      "node_6790da61f4": {
+        "n8n": "MongoDB",
+        "n8nType": "n8n-nodes-base.mongoDb"
+      },
+      "node_23b4be0ff4": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_3bc4eea1af": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_5ece2c13c8": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_05cfc791f6": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_3437bb6bca": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_3179901355": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_a214675072": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_698518eab4": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_b1cd85085f": {
+        "n8n": "Set",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_2e85f1e4c4": {
+        "n8n": "Postgres",
+        "n8nType": "n8n-nodes-base.postgres",
+        "approximate": true
+      },
+      "node_c4c152ba2c": {
+        "n8n": "IF",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_eb8bda2c71": {
+        "n8n": "IF",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_860e6860ea": {
+        "n8n": "Slack",
+        "n8nType": "n8n-nodes-base.slack"
+      },
+      "node_3d251d4681": {
+        "n8n": "__end:Slack",
+        "n8nType": "synthetic"
+      },
+      "node_fa563af597": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_6644880cd1": {
+        "n8n": "Google Cloud Natural Language",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

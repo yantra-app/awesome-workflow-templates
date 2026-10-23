@@ -1,0 +1,688 @@
+{
+  "name": "AI-Powered Children's English Storytelling on Telegram with OpenAI",
+  "workflowSlug": "ai-powered-children-s-english-storytelling-on-telegram-with-openai",
+  "description": "Creates and tells children's stories in English using OpenAI to engage young audiences in an interactive way.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_46983e0620",
+      "actorId": "actor_46983e0620",
+      "type": "NodeCron",
+      "label": "Schedule Trigger",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 */12 * * *"
+      }
+    },
+    {
+      "nodeId": "node_5f1467e105",
+      "actorId": "actor_5f1467e105",
+      "type": "NodeTransform",
+      "label": "Config",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"chatId\"] = \"-4170994782\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_922cfaa165",
+      "actorId": "actor_922cfaa165",
+      "type": "NodeLlmChain",
+      "label": "Create a story",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "Create a captivating short tale for kids, whisking them away to magical lands brimming with wisdom. Explore diverse themes in a fun and simple way, weaving in valuable messages. Dive into cultural adventures with lively language that sparks curiosity. Let your story inspire young minds through enchanting narratives that linger long after the last word. Begin crafting your imaginative tale now! (Approximately 900 characters)\n\n\n\"\"\n\nCONCISE SUMMARY:",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_17433aee04",
+      "actorId": "actor_17433aee04",
+      "type": "NodeTransform",
+      "label": "Prompt: Create a story",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Create a story.\nconst __promptValue = ($json);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_41df7c5528",
+      "actorId": "actor_41df7c5528",
+      "type": "NodeCdeConnector",
+      "label": "yantra-voicebox/YANTRA_VOICEBOX_SPEAK",
+      "color": "#6366F1",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-voicebox",
+        "connectorLabel": "Audio",
+        "action": "YANTRA_VOICEBOX_SPEAK",
+        "params": {
+          "text": "{{last.text}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_6a82cc7894",
+      "actorId": "actor_6a82cc7894",
+      "type": "NodeLlmChain",
+      "label": "Create a Prompt for DALL-E",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "Summarize the characters in this story based on their appearance and describe them if they are humans or animals and how they look like and what kind of are they, the prompt should be no-text in the picture, make sure the text is free from any prohibited or inappropriate content:\n\n\n\n\"\"\n\n\nCONCISE SUMMARY:",
+        "prompt": "{{last.text}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_6c2fbc2d41",
+      "actorId": "actor_6c2fbc2d41",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_SEND_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1600,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_SEND_MESSAGE",
+        "params": {
+          "chat_id": "{{steps.xf_5f1467e105.result.chatId}}",
+          "text": "{{last.text}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_a86324e389",
+      "actorId": "actor_a86324e389",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_SEND_DOCUMENT",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_SEND_DOCUMENT",
+        "params": {
+          "chat_id": "{{steps.xf_5f1467e105.result.chatId}}",
+          "document": "{{last.result.audioUrl}}",
+          "caption": "End of the Story for today ....."
+        }
+      }
+    },
+    {
+      "nodeId": "node_3db63ae921",
+      "actorId": "actor_3db63ae921",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-generation/YANTRA_GEMINI_IMAGE_GENERATE",
+      "color": "#6366F1",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-generation",
+        "connectorLabel": "Image generation",
+        "action": "YANTRA_GEMINI_IMAGE_GENERATE",
+        "params": {
+          "prompt": "Produce an image ensuring that no text is generated within the visual content. {{last.text}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_e3bae237ca",
+      "actorId": "actor_e3bae237ca",
+      "type": "NodeTransform",
+      "label": "Params: Send Story Picture",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Config\": {\"chatId\":\"{{telegramChatId}}\"}, \"Generate Audio for the story\": {{steps.YANTRA_VOICEBOX_SPEAK.result}}, \"Send Story Text\": {{steps.TELEGRAM_SEND_MESSAGE.result}}, \"Send Audio for the story\": {{steps.TELEGRAM_SEND_DOCUMENT.result}}, \"Generate a Picture for the story\": {{steps.YANTRA_GEMINI_IMAGE_GENERATE.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for telegram/TELEGRAM_SEND_PHOTO (n8n node \"Send Story Picture\").\nreturn {\n  \"chat_id\": ($('Config').item.json.chatId),\n  \"photo\": ($json.imageUrl ?? $json.imageUrls?.[0]),\n  \"caption\": null,\n  \"parse_mode\": null,\n};"
+      }
+    },
+    {
+      "nodeId": "node_7810ee7c08",
+      "actorId": "actor_7810ee7c08",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_SEND_PHOTO",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_SEND_PHOTO"
+      }
+    },
+    {
+      "nodeId": "node_8d8e2ed55f",
+      "actorId": "actor_8d8e2ed55f",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1980,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_7d141dd3ca",
+      "actorId": "actor_7d141dd3ca",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_3db863644b",
+      "actorId": "actor_3db863644b",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_dc56fecbf3",
+      "actorId": "actor_dc56fecbf3",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "telegramChatId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_dd822f9ffe",
+      "actorId": "actor_dd822f9ffe",
+      "type": "NodeChatModel",
+      "label": "Create a story: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-3.5-turbo-16k-0613"
+      }
+    },
+    {
+      "nodeId": "node_e3eee69c45",
+      "actorId": "actor_e3eee69c45",
+      "type": "NodeChatModel",
+      "label": "Create a Prompt for DALL-E: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 1020
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_17433aee04",
+      "target": "node_922cfaa165",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_e3bae237ca",
+      "target": "node_7810ee7c08",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_e3bae237ca",
+      "target": "node_7810ee7c08",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_46983e0620",
+      "target": "node_5f1467e105",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_46983e0620",
+      "target": "node_5f1467e105",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6a82cc7894",
+      "target": "node_3db63ae921",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_922cfaa165",
+      "target": "node_41df7c5528",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_922cfaa165",
+      "target": "node_6c2fbc2d41",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_41df7c5528",
+      "target": "node_a86324e389",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_3db63ae921",
+      "target": "node_e3bae237ca",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3db63ae921",
+      "target": "node_e3bae237ca",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5f1467e105",
+      "target": "node_17433aee04",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5f1467e105",
+      "target": "node_17433aee04",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6c2fbc2d41",
+      "target": "node_8d8e2ed55f",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_a86324e389",
+      "target": "node_7d141dd3ca",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_7810ee7c08",
+      "target": "node_3db863644b",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_dd822f9ffe",
+      "target": "node_922cfaa165",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_e3eee69c45",
+      "target": "node_6a82cc7894",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_922cfaa165",
+      "target": "node_6a82cc7894",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "telegram",
+    "categoryLabel": "Telegram",
+    "department": "Support",
+    "connectors": [
+      "openai",
+      "telegram",
+      "yantra-image-generation",
+      "yantra-voicebox"
+    ],
+    "setupVars": [
+      {
+        "key": "telegramChatId",
+        "label": "Telegram chat id",
+        "type": "id",
+        "example": "123456789",
+        "usedBy": [
+          "Send Story Picture"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate ai-powered-children-s-english-storytelling-on-telegram-with-openai",
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 12,
+      "yantraSteps": 13,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "Recursive Character Text Splitter",
+        "OpenAI Chat Model2"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Telegram/AI-Powered Children_s English Storytelling on Telegram with OpenAI.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Setup value telegramChatId: Telegram chat id (for example 123456789). Write it into the Workflow Configs initialContext before import.",
+      "Connect the openai connector (credential).",
+      "Connect the telegram connector (credential).",
+      "After import, start the schedule: cdecli cron activate ai-powered-children-s-english-storytelling-on-telegram-with-openai."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Generate Audio for the story",
+          "n8n": "audio.generate",
+          "action": "yantra-voicebox/YANTRA_VOICEBOX_SPEAK",
+          "soft": true
+        },
+        {
+          "node": "Send Audio for the story",
+          "n8n": "message.sendAudio",
+          "action": "telegram/TELEGRAM_SEND_DOCUMENT",
+          "soft": true
+        },
+        {
+          "node": "Send Story Picture",
+          "n8n": "message.sendPhoto",
+          "action": "telegram/TELEGRAM_SEND_PHOTO",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Create a story",
+          "model": "gpt-3.5-turbo-16k-0613"
+        },
+        {
+          "node": "Recursive Character Text Splitter",
+          "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+          "into": "Create a story",
+          "as": "ai_textSplitter"
+        },
+        {
+          "node": "OpenAI Chat Model2",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Create a Prompt for DALL-E"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Schedule Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "\"Generate Audio for the story\" used OpenAI text to speech; the platform voice speaks the text and returns audioUrl (a stored audio file) instead of binary audio.",
+        "\"Send Audio for the story\" sent the generated file by URL instead of as binary.",
+        "\"Send Story Picture\" sent the generated file by URL instead of as binary.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect telegram: `cdecli credential create -n \"telegram\" -p telegram --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "### Setting Up a Workflow for \"AI-Powered Children's English Storytelling on Telegram\"\n\nIn this guide, we will walk you through the process of setting up a workflow to create and share captivating children's stories using the provided configuration. Let's dive into the steps required to bring these imaginative tales to life on your Telegram channel:\n\n#### Steps to Setup the Workflow:\n1. **Import the Workflow:**\n - Copy the provided workflow JSON configuration.\n - In your n8n instance, go to Workflows and select \"Import from JSON.\"\n - Paste the configuration and import the workflow.\n\n2. **Configure Node Credentials:**\n - For nodes requiring API credentials (OpenAI and Telegram), create credentials with the appropriate API keys or tokens.\n\n3. **Set Node Parameters:**\n - Modify node parameters as needed, such as chat IDs, prompts, and intervals.\n - Change the chatId in Config node to the ID of the chat you want the story to be posted.\n\n4. **Ensure Data Flow:**\n - Check the connections between nodes to ensure a smooth flow of data and actions.\n\n5. **Execute Once:**\n - Activate the \"executeOnce\" option in nodes where necessary to trigger actions only once during setup.\n\n6. **Test the Workflow:**\n - Run the workflow to verify that each node functions correctly and data is processed as expected.\n\n7. **Enable Recurring Triggers:**\n - Confirm that the Schedule Trigger node is set to trigger the workflow at the desired interval (every 12 hours).\n\n8. **Initiate Workflow:**\n - Once everything is configured correctly, activate the workflow to start generating and sharing children's stories on Telegram.\n\nBy following these steps meticulously, you can seamlessly establish and operate the workflow designed to create captivating children's stories for your audience. Embrace the power of automation to inspire young minds and foster a love for storytelling through engaging narratives shared on Telegram.",
+      "### Use Case for Setting Up a Workflow for Children's Stories\n\nCheck this example: [https://t.me/st0ries95](https://t.me/st0ries95)\n\n\nThe workflow for children's stories serves as a valuable tool for content creators, educators, and parents looking to engage children with imaginative and educational storytelling. Here are some key use cases for this workflow:\n\n1. **Content Creation:** The workflow streamlines the process of creating captivating children's stories by providing a structured framework and automation for story generation, audio creation, and image production.\n\n2. **Educational Resources:** Teachers can use this workflow to develop educational materials that incorporate storytelling to make learning more engaging and interactive for students.\n\n3. **Parental Engagement:** Parents can utilize the workflow to share personalized stories with their children, fostering a love for reading and creativity while bonding over shared storytelling experiences.\n\n4. **Community Building:** Organizations and community groups can leverage the workflow to create and share children's stories as a way to connect with their audience and promote literacy and creativity.\n\n5. **Inspiring Young Minds:** By automating the process of creating and sharing enchanting children's stories, this workflow aims to inspire young minds, spark imagination, and instill a passion for storytelling in children.\n\nOverall, the use case for this workflow extends to various settings where storytelling plays a significant role in engaging, educating, and entertaining children, making it a versatile tool for enhancing the storytelling experience."
+    ],
+    "nodes": {
+      "node_46983e0620": {
+        "n8n": "Schedule Trigger",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_5f1467e105": {
+        "n8n": "Config",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_922cfaa165": {
+        "n8n": "Create a story",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainSummarization"
+      },
+      "node_17433aee04": {
+        "n8n": "Create a story",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainSummarization"
+      },
+      "node_41df7c5528": {
+        "n8n": "Generate Audio for the story",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_6a82cc7894": {
+        "n8n": "Create a Prompt for DALL-E",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainSummarization"
+      },
+      "node_6c2fbc2d41": {
+        "n8n": "Send Story Text",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_a86324e389": {
+        "n8n": "Send Audio for the story",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_3db63ae921": {
+        "n8n": "Generate a Picture for the story",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_e3bae237ca": {
+        "n8n": "Send Story Picture",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_7810ee7c08": {
+        "n8n": "Send Story Picture",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_8d8e2ed55f": {
+        "n8n": "__end:Send Story Text",
+        "n8nType": "synthetic"
+      },
+      "node_7d141dd3ca": {
+        "n8n": "__end:Send Audio for the story",
+        "n8nType": "synthetic"
+      },
+      "node_3db863644b": {
+        "n8n": "__end:Send Story Picture",
+        "n8nType": "synthetic"
+      },
+      "node_dc56fecbf3": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_dd822f9ffe": {
+        "n8n": "Create a story",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_e3eee69c45": {
+        "n8n": "Create a Prompt for DALL-E",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

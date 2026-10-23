@@ -1,0 +1,247 @@
+{
+  "name": "Extract license plate number from image uploaded via an n8n form",
+  "workflowSlug": "extract-license-plate-number-from-image-uploaded-via-an-n8n-form",
+  "description": "This workflow extracts license plate numbers from images uploaded via an n8n form using a Vision Language Model, then displays the extracted information.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_4f4363e24f",
+      "actorId": "actor_4f4363e24f",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_a7d5aacdc0",
+      "actorId": "actor_a7d5aacdc0",
+      "type": "NodeTransform",
+      "label": "Settings",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"model\"] = \"openai/gpt-4o\";\n  out[\"prompt\"] = \"Extract the number of the license plate on the front-most car depicted in the attached image and return only the extracted characters without any other text or structure.\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_b98667b1a1",
+      "actorId": "actor_b98667b1a1",
+      "type": "NodeLlmChain",
+      "label": "Basic LLM Chain",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "prompt": "{{last.transformed.prompt}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_91e48b9914",
+      "actorId": "actor_91e48b9914",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "Image": "",
+          "llmModel_b98667b1a1": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_88b224889d",
+      "actorId": "actor_88b224889d",
+      "type": "NodeChatModel",
+      "label": "Basic LLM Chain: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openrouter",
+        "model": "{{llmModel_b98667b1a1}}"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_4f4363e24f",
+      "target": "node_a7d5aacdc0",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_88b224889d",
+      "target": "node_b98667b1a1",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_a7d5aacdc0",
+      "target": "node_b98667b1a1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "pdf-and-documents",
+    "categoryLabel": "PDF and Document Processing",
+    "department": "Operations/Logistics",
+    "connectors": [
+      "openrouter"
+    ],
+    "setupVars": [
+      {
+        "key": "llmModel_b98667b1a1",
+        "label": "openrouter model ID for Basic LLM Chain (not recorded by the original conversion)",
+        "type": "text",
+        "usedBy": [
+          "Basic LLM Chain"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeChatModel",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 5,
+      "yantraSteps": 4,
+      "foldedHelpers": [
+        "OpenRouter LLM"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "PDF_and_Document_Processing/Extract license plate number from image uploaded via an n8n form.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Image to license plate number"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "FormResultPage",
+        "detail": "n8n-nodes-base.form became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "FromTrigger",
+        "detail": "n8n-nodes-base.formTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"FormResultPage\" (form) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"FromTrigger\" (formTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value llmModel_b98667b1a1: openrouter model ID for Basic LLM Chain (not recorded by the original conversion). Write it into the Workflow Configs initialContext before import.",
+      "Connect the openrouter connector (credential).",
+      "Provide run inputs: Image."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [
+        {
+          "node": "OpenRouter LLM",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+          "into": "Basic LLM Chain",
+          "model": "={{ $json.model }}"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "FromTrigger",
+          "type": "n8n-nodes-base.formTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "FormResultPage",
+          "type": "n8n-nodes-base.form",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from a form submission; pass the form fields as run inputs.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_4f4363e24f": {
+        "n8n": "FromTrigger",
+        "n8nType": "n8n-nodes-base.formTrigger",
+        "also": [
+          "FormResultPage"
+        ]
+      },
+      "node_a7d5aacdc0": {
+        "n8n": "Settings",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_b98667b1a1": {
+        "n8n": "Basic LLM Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_91e48b9914": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_88b224889d": {
+        "n8n": "Basic LLM Chain",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

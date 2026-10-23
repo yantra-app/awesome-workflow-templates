@@ -1,0 +1,12 @@
+{
+  "name": "fixture-llm-http-openai",
+  "nodes": [
+    { "name": "Webhook", "type": "n8n-nodes-base.webhook", "typeVersion": 2, "position": [0, 0], "parameters": { "path": "ask", "httpMethod": "POST" } },
+    { "name": "Ask GPT", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2, "position": [220, 0], "parameters": { "method": "POST", "url": "https://api.openai.com/v1/chat/completions", "authentication": "predefinedCredentialType", "nodeCredentialType": "openAiApi", "sendBody": true, "specifyBody": "json", "jsonBody": "={\n  \"model\": \"gpt-4o-mini\",\n  \"temperature\": 0.2,\n  \"messages\": [\n    { \"role\": \"system\", \"content\": \"You are terse.\" },\n    { \"role\": \"user\", \"content\": \"{{ $json.body.question }}\" }\n  ]\n}", "options": {} } },
+    { "name": "Answer", "type": "n8n-nodes-base.set", "typeVersion": 3.4, "position": [440, 0], "parameters": { "assignments": { "assignments": [{ "name": "answer", "type": "string", "value": "={{ $json.choices[0].message.content }}" }] } } }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Ask GPT", "type": "main", "index": 0 }]] },
+    "Ask GPT": { "main": [[{ "node": "Answer", "type": "main", "index": 0 }]] }
+  }
+}

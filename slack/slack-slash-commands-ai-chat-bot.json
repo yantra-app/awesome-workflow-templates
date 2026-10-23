@@ -1,0 +1,400 @@
+{
+  "name": "Slack slash commands AI Chat Bot",
+  "workflowSlug": "slack-slash-commands-ai-chat-bot",
+  "description": "Implements an AI chatbot accessible via Slack slash commands, processing user commands, interacting with an AI model, and responding within Slack.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_73a01884b4",
+      "actorId": "actor_73a01884b4",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_7eb7855982",
+      "actorId": "actor_7eb7855982",
+      "type": "NodeTransform",
+      "label": "Switch: ask",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.body.command) ?? '') === String(\"/ask\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_8814e361ab",
+      "actorId": "actor_8814e361ab",
+      "type": "NodeBranch",
+      "label": "Switch: ask?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_0522eb2820",
+      "actorId": "actor_0522eb2820",
+      "type": "NodeTransform",
+      "label": "Switch: another",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.body.command) ?? '') === String(\"/another\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_2974f9a6b1",
+      "actorId": "actor_2974f9a6b1",
+      "type": "NodeBranch",
+      "label": "Switch: another?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_55984bef10",
+      "actorId": "actor_55984bef10",
+      "type": "NodeLlmChain",
+      "label": "Basic LLM Chain",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "prompt": "{{body.text}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_d7144b0c12",
+      "actorId": "actor_d7144b0c12",
+      "type": "NodeCdeConnector",
+      "label": "slack/SLACK_CHAT_POST_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "slack",
+        "connectorLabel": "Slack",
+        "action": "SLACK_CHAT_POST_MESSAGE",
+        "params": {
+          "channel": "{{body.channel_id}}",
+          "text": "{{last.text}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_e56543cd0a",
+      "actorId": "actor_e56543cd0a",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_e8b31c6883",
+      "actorId": "actor_e8b31c6883",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {}
+        }
+      }
+    },
+    {
+      "nodeId": "node_73f063faaf",
+      "actorId": "actor_73f063faaf",
+      "type": "NodeChatModel",
+      "label": "Basic LLM Chain: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 680
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_7eb7855982",
+      "target": "node_8814e361ab",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_7eb7855982",
+      "target": "node_8814e361ab",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_8814e361ab",
+      "target": "node_0522eb2820",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0522eb2820",
+      "target": "node_2974f9a6b1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_0522eb2820",
+      "target": "node_2974f9a6b1",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_73a01884b4",
+      "target": "node_7eb7855982",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8814e361ab",
+      "target": "node_55984bef10",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_55984bef10",
+      "target": "node_d7144b0c12",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d7144b0c12",
+      "target": "node_e56543cd0a",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_73f063faaf",
+      "target": "node_55984bef10",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "slack",
+    "categoryLabel": "Slack",
+    "department": "IT",
+    "connectors": [
+      "openai",
+      "slack"
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 5,
+      "yantraSteps": 8,
+      "foldedHelpers": [
+        "OpenAI Chat Model"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Slack/Slack slash commands AI Chat Bot.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "My workflow 6"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Webhook",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Webhook\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Connect the openai connector (credential).",
+      "Connect the slack connector (credential).",
+      "Provide run inputs: body, query, headers."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Basic LLM Chain",
+          "model": "gpt-4o-mini"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Webhook",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /1bd05fcf-8286-491f-ae13-f0e6bff4aca6). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect slack: `cdecli credential create -n \"slack\" -p slack --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Command Trigger\n\nCopy the webhook URL, paste it into the Request URL of the Slack slash command, and complete the creation.\n\n\n웹훅 URL을 복사하여 슬랙 슬래시 커맨드의 Request URL에 붙이고 생성을 완료하세요.",
+      "## Command Switch\n\nSwitch each slash command.\n\n각 슬래시 커맨드를 분기하세요.",
+      "## Create AI Messages",
+      "## Send a Slack Message",
+      "## 슬랙 Slash Command와 채널 메시지로 챗봇 만들기 🤖\n\n이 튜토리얼에서는 n8n을 활용해 슬랙에서 동작하는 AI 챗봇을 만드는 방법을 알려드립니다. 슬래시 커맨드를 통한 개인 메시지부터 공개 채널에서의 자동 응답까지, 실용적인 챗봇 구현 방법을 단계별로 설명합니다. 슬랙 앱 설정부터 n8n 노드 구성, 웹훅 트리거 설정, AI 봇 연동까지 하나하나 자세히 다룹니다.\n\n유튜브 링크:\nhttps://www.youtube.com/watch?v=UpudYFCWaIM",
+      "## Create an AI chatbot with Slack slash commands! 🤖\n\nIn this tutorial, we'll show you how to create an AI chatbot that works in Slack using n8n. We'll explain step by step how to implement a practical chatbot, from personal messages through slash commands to automatic responses in public channels. We'll cover everything in detail, from Slack app configuration to n8n node setup, webhook trigger configuration, and AI bot integration.\n\nThe YouTube video is provided in Korean.\n\nYoutube Link:\nhttps://www.youtube.com/watch?v=UpudYFCWaIM"
+    ],
+    "nodes": {
+      "node_73a01884b4": {
+        "n8n": "Webhook",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_7eb7855982": {
+        "n8n": "Switch",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_8814e361ab": {
+        "n8n": "Switch",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_0522eb2820": {
+        "n8n": "Switch",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_2974f9a6b1": {
+        "n8n": "Switch",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_55984bef10": {
+        "n8n": "Basic LLM Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_d7144b0c12": {
+        "n8n": "Send a Message",
+        "n8nType": "n8n-nodes-base.slack"
+      },
+      "node_e56543cd0a": {
+        "n8n": "__end:Send a Message",
+        "n8nType": "synthetic"
+      },
+      "node_e8b31c6883": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_73f063faaf": {
+        "n8n": "Basic LLM Chain",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

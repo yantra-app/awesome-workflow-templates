@@ -1,0 +1,1197 @@
+{
+  "name": "News Extraction",
+  "workflowSlug": "news-extraction",
+  "description": "Scrapes and summarizes news posts without RSS feeds using AI, saving the output to NocoDB.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_35d003ff5b",
+      "actorId": "actor_35d003ff5b",
+      "type": "NodeCron",
+      "label": "Schedule Trigger each week",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "32 4 * * 3"
+      }
+    },
+    {
+      "nodeId": "node_6a5a516a06",
+      "actorId": "actor_6a5a516a06",
+      "type": "NodeHttpRequest",
+      "label": "Retrieve the web page for further processsing",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://www.colt.net/resources/type/news/"
+      }
+    },
+    {
+      "nodeId": "node_278b3191e8",
+      "actorId": "actor_278b3191e8",
+      "type": "NodeLlmChain",
+      "label": "Extract the HTML with the right css class",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Every match: the \"href\" attribute of the element(s) matching the CSS selector div:nth-child(9) > div:nth-child(3) > a:nth-child(2)"
+            }
+          },
+          "required": [
+            "data"
+          ],
+          "additionalProperties": false
+        },
+        "system": "Extract values from the HTML page the way the given CSS selectors would. Copy text exactly as it appears in the page. Use an empty string or an empty array when nothing matches.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_fb99083764",
+      "actorId": "actor_fb99083764",
+      "type": "NodeTransform",
+      "label": "Prompt: Extract the HTML with the right css class",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Extract the HTML with the right css class.\nconst __promptValue = `HTML page:\n${$json}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_713fcf7d20",
+      "actorId": "actor_713fcf7d20",
+      "type": "NodeLlmChain",
+      "label": "Extract date",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Every match: the text of the element(s) matching the CSS selector div:nth-child(9) > div:nth-child(2) > span:nth-child(1)"
+            }
+          },
+          "required": [
+            "data"
+          ],
+          "additionalProperties": false
+        },
+        "system": "Extract values from the HTML page the way the given CSS selectors would. Copy text exactly as it appears in the page. Use an empty string or an empty array when nothing matches.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_2f1fbc210c",
+      "actorId": "actor_2f1fbc210c",
+      "type": "NodeTransform",
+      "label": "Prompt: Extract date",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Extract date.\nconst __promptValue = `HTML page:\n${$json}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_9becfce174",
+      "actorId": "actor_9becfce174",
+      "type": "NodeTransform",
+      "label": "Create single link items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"data\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"data\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"data\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_13f54a22d4",
+      "actorId": "actor_13f54a22d4",
+      "type": "NodeTransform",
+      "label": "Create single date items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"data\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"data\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"data\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_968306aa11",
+      "actorId": "actor_968306aa11",
+      "type": "NodeSync",
+      "label": "Merge date & links",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_48e385d30f",
+      "actorId": "actor_48e385d30f",
+      "type": "NodeTransform",
+      "label": "Select posts of last 7 days",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst items = __items.map((json) => ({ json }));\n// Ported from n8n Code node \"Select posts of last 7 days\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const currentDate = new Date();\n  const sevenDaysAgo = new Date(currentDate.setDate(currentDate.getDate() - 70)); // Change the number of days going back to your liking (e.g. from -7 to -1) -> BUT sync with the cron job (first node)\n  \n  const filteredItems = items.filter(item => {\n   const postDate = new Date(item.json[\"Date\"]); // Assuming \"Date\" is the field name in the extracted html\n   return postDate >= sevenDaysAgo;\n  });\n  \n  return filteredItems;\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_a7bcef7994",
+      "actorId": "actor_a7bcef7994",
+      "type": "NodeHttpRequest",
+      "label": "HTTP Request1",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "{{last.transformed.Link}}"
+      }
+    },
+    {
+      "nodeId": "node_8a82adda86",
+      "actorId": "actor_8a82adda86",
+      "type": "NodeLlmChain",
+      "label": "Extract individual posts",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "description": "First match: the text of the element(s) matching the CSS selector h1.fl-heading > span:nth-child(1)"
+            },
+            "content": {
+              "type": "string",
+              "description": "First match: the text of the element(s) matching the CSS selector .fl-node-5c7574ae7d5c6 > div:nth-child(1)"
+            }
+          },
+          "required": [
+            "title",
+            "content"
+          ],
+          "additionalProperties": false
+        },
+        "system": "Extract values from the HTML page the way the given CSS selectors would. Copy text exactly as it appears in the page. Use an empty string or an empty array when nothing matches.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_1e2a2f3886",
+      "actorId": "actor_1e2a2f3886",
+      "type": "NodeTransform",
+      "label": "Prompt: Extract individual posts",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Extract individual posts.\nconst __promptValue = `HTML page:\n${$json}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_9cabb23add",
+      "actorId": "actor_9cabb23add",
+      "type": "NodeSync",
+      "label": "Merge Content with Date & Link",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_72c00ba906",
+      "actorId": "actor_72c00ba906",
+      "type": "NodeLlmChain",
+      "label": "Summary",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_1a850cebb0",
+      "actorId": "actor_1a850cebb0",
+      "type": "NodeTransform",
+      "label": "Prompt: Summary",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Summary.\nconst __promptValue = `Create a summary in less than 70 words ${$json[\"content\"]}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_602a2a249f",
+      "actorId": "actor_602a2a249f",
+      "type": "NodeLlmChain",
+      "label": "Keywords",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_598d0cedf4",
+      "actorId": "actor_598d0cedf4",
+      "type": "NodeTransform",
+      "label": "Prompt: Keywords",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Keywords.\nconst __promptValue = `name the 3 most important technical keywords in ${$json[\"content\"]} ? just name them without any explanations or other sentences`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_6bb37d14db",
+      "actorId": "actor_6bb37d14db",
+      "type": "NodeTransform",
+      "label": "Rename Summary",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"=summary\"] = ($json[\"message\"][\"content\"]);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_285e12d403",
+      "actorId": "actor_285e12d403",
+      "type": "NodeTransform",
+      "label": "Rename keywords",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"keywords\"] = ($json[\"message\"][\"content\"]);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_dd3dbc6488",
+      "actorId": "actor_dd3dbc6488",
+      "type": "NodeSync",
+      "label": "Merge",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_8f009c0dc5",
+      "actorId": "actor_8f009c0dc5",
+      "type": "NodeSync",
+      "label": "Merge ChatGPT output with Date & Link",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_c83fa8548c",
+      "actorId": "actor_c83fa8548c",
+      "type": "NodeCdeConnector",
+      "label": "nocodb/NOCODB_CREATE_ROW",
+      "color": "#6366F1",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "nocodb",
+        "connectorLabel": "NocoDB",
+        "action": "NOCODB_CREATE_ROW",
+        "params": {
+          "table_id": "mhbalmu9aaqcun6",
+          "base_id": "prqu4e8bjj4bv1j",
+          "News_Source": "Colt",
+          "Title": "{{last.data1.title}}",
+          "Date": "{{last.data1.Date}}",
+          "Link": "{{last.data1.Link}}",
+          "Summary": "{{last.data1.summary}}",
+          "Keywords": "{{last.data1.keywords}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_dda3fdb158",
+      "actorId": "actor_dda3fdb158",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_71acc1076a",
+      "actorId": "actor_71acc1076a",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": ""
+      }
+    },
+    {
+      "nodeId": "node_012860cf7b",
+      "actorId": "actor_012860cf7b",
+      "type": "NodeChatModel",
+      "label": "Extract the HTML with the right css class: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 720
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    },
+    {
+      "nodeId": "node_772f2a941f",
+      "actorId": "actor_772f2a941f",
+      "type": "NodeChatModel",
+      "label": "Extract date: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 980
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    },
+    {
+      "nodeId": "node_76a8ecbbc1",
+      "actorId": "actor_76a8ecbbc1",
+      "type": "NodeChatModel",
+      "label": "Extract individual posts: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3500,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    },
+    {
+      "nodeId": "node_ad931fcb09",
+      "actorId": "actor_ad931fcb09",
+      "type": "NodeChatModel",
+      "label": "Summary: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4640,
+        "y": 720
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4-1106-preview"
+      }
+    },
+    {
+      "nodeId": "node_02d3d318e8",
+      "actorId": "actor_02d3d318e8",
+      "type": "NodeChatModel",
+      "label": "Keywords: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4640,
+        "y": 980
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4-1106-preview"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_fb99083764",
+      "target": "node_278b3191e8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_2f1fbc210c",
+      "target": "node_713fcf7d20",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_1e2a2f3886",
+      "target": "node_8a82adda86",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_1a850cebb0",
+      "target": "node_72c00ba906",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_598d0cedf4",
+      "target": "node_602a2a249f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_278b3191e8",
+      "target": "node_9becfce174",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_278b3191e8",
+      "target": "node_9becfce174",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_72c00ba906",
+      "target": "node_6bb37d14db",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_72c00ba906",
+      "target": "node_6bb37d14db",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_602a2a249f",
+      "target": "node_285e12d403",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_602a2a249f",
+      "target": "node_285e12d403",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_285e12d403",
+      "target": "node_dd3dbc6488",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_6bb37d14db",
+      "target": "node_dd3dbc6488",
+      "sourceOutput": "transformed",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_dd3dbc6488",
+      "target": "node_8f009c0dc5",
+      "sourceOutput": "data1",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_713fcf7d20",
+      "target": "node_13f54a22d4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_713fcf7d20",
+      "target": "node_13f54a22d4",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_48e385d30f",
+      "target": "node_9cabb23add",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_48e385d30f",
+      "target": "node_a7bcef7994",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_968306aa11",
+      "target": "node_48e385d30f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_968306aa11",
+      "target": "node_48e385d30f",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a7bcef7994",
+      "target": "node_1e2a2f3886",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a7bcef7994",
+      "target": "node_1e2a2f3886",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9cabb23add",
+      "target": "node_1a850cebb0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9cabb23add",
+      "target": "node_1a850cebb0",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9cabb23add",
+      "target": "node_598d0cedf4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9cabb23add",
+      "target": "node_598d0cedf4",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9cabb23add",
+      "target": "node_8f009c0dc5",
+      "sourceOutput": "data1",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_8a82adda86",
+      "target": "node_9cabb23add",
+      "sourceOutput": "object",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_8f009c0dc5",
+      "target": "node_c83fa8548c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_6a5a516a06",
+      "target": "node_fb99083764",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6a5a516a06",
+      "target": "node_fb99083764",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6a5a516a06",
+      "target": "node_2f1fbc210c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6a5a516a06",
+      "target": "node_2f1fbc210c",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_35d003ff5b",
+      "target": "node_6a5a516a06",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_9becfce174",
+      "target": "node_968306aa11",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_13f54a22d4",
+      "target": "node_968306aa11",
+      "sourceOutput": "transformed",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_c83fa8548c",
+      "target": "node_dda3fdb158",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_012860cf7b",
+      "target": "node_278b3191e8",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_772f2a941f",
+      "target": "node_713fcf7d20",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_76a8ecbbc1",
+      "target": "node_8a82adda86",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_ad931fcb09",
+      "target": "node_72c00ba906",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_02d3d318e8",
+      "target": "node_602a2a249f",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "ai-research-and-data",
+    "categoryLabel": "AI Research, RAG and Data Analysis",
+    "department": "Content Curation, Data Management",
+    "connectors": [
+      "nocodb",
+      "openai"
+    ],
+    "activation": "cdecli cron activate news-extraction",
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 18,
+      "yantraSteps": 28,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "AI_Research_RAG_and_Data_Analysis/Scrape and summarize posts of a news site without RSS feed using AI and save them to a NocoDB.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "News Extraction"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Connect the nocodb connector (credential).",
+      "Connect the openai connector (credential).",
+      "After import, start the schedule: cdecli cron activate news-extraction."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Extract the HTML with the right css class",
+          "n8n": "html.extractHtmlContent",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Extract date",
+          "n8n": "html.extractHtmlContent",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Extract individual posts",
+          "n8n": "html.extractHtmlContent",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Schedule Trigger each week",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "\"Extract the HTML with the right css class\" (html.extractHtmlContent): CSS selectors become a structured-output LLM extract; verify results on a real page.",
+        "\"Extract the HTML with the right css class\" extracted HTML with CSS selectors; on Yantra a structured-output step reads the page instead. Check the result on a real page, and trim very large pages before this step.",
+        "\"Extract date\" (html.extractHtmlContent): CSS selectors become a structured-output LLM extract; verify results on a real page.",
+        "\"Extract date\" extracted HTML with CSS selectors; on Yantra a structured-output step reads the page instead. Check the result on a real page, and trim very large pages before this step.",
+        "\"Merge date & links\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "\"Extract individual posts\" (html.extractHtmlContent): CSS selectors become a structured-output LLM extract; verify results on a real page.",
+        "\"Extract individual posts\" extracted HTML with CSS selectors; on Yantra a structured-output step reads the page instead. Check the result on a real page, and trim very large pages before this step.",
+        "\"Merge Content with Date & Link\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "\"Merge\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "\"Merge ChatGPT output with Date & Link\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect nocodb: `cdecli credential create -n \"nocodb\" -p nocodb --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "Select only the newest news: todays date going back xy days",
+      "Extracting the individual links of the press release page in order to retrieve the individual posts on their respective **url**",
+      "Extracting the dates of the posts of the press release page.\nThe right CSS selector has to be chosen.\n[More info on datagrab.io](https://datagrab.io/blog/guide-to-css-selectors-for-web-scraping/)",
+      "# Scraping posts of a news site without RSS feed\n\n\nThe [News Site](https://www.colt.net/resources/type/news/) from Colt, a telecom company, does not offer an RSS feed, therefore web scraping is the \nchoice to extract and process the news.\n\nThe goal is to get only the newest posts, a summary of each post and their respective (technical) keywords.\n\nNote that the news site offers the links to each news post, but not the individual news. We collect first the links and dates of each post before extracting the newest ones.\n\nThe result is sent to a SQL database, in this case a NocoDB database.\n\nThis process happens each week thru a cron job.\n\n**Requirements**:\n- Basic understanding of CSS selectors and how to get them via browser (usually: right click &rarr; inspect)\n- ChatGPT API account - normal account is not sufficient\n- A NocoDB database - of course you may choose any type of output target\n\n**Assumptions**:\n- CSS selectors work on the news site\n- The post has a date with own CSS selector - meaning date is not part of the news content\n\n**\"Warnings\"**\n- Not every site likes to be scraped, especially not in high frequency\n- Each website is structured in different ways, the workflow may then need several adaptations.\n\n\nHappy about any suggestion to improve. You may contact me on **Mastodon**: https://bonn.social/@askans",
+      "Weekly cron job",
+      "The html of the news site is being retrieved: https://www.colt.net/resources/type/news/",
+      "As the extraction are returned as arrays, they transformed into individual JSON items to enable looping with other nodes",
+      "The links of the individual posts and the dates of the posts",
+      "Get the html of each individual **newest** post",
+      "Extracting the title & content (text) of each individual news post with the right CSS selector",
+      "Merge link to url, date with content (text) and title of each news psot",
+      "Create a summary of each news post with ChatGPT. You need a ChatGPT API account for this",
+      "Get the 3 keywords of each news post",
+      "Just a renaming of data fields and eliminating unnecessary ones",
+      "Merge summary and keywords of each news post",
+      "Add title, link and date to summary and keywords of each news post",
+      "## News summaries and keywords &rarr; database\n\n[NocoDB](https://nocodb.com/) is an SQL database, here we store the news summaries and keywords for further processing. Any other output target can be chosen here, e.g. e-mail, Excel etc.\n\nYou need first have that database structured before appending the news summaries and additional fields. The you can shape this node.\n\nSome fields may be edited in the database itself (e.g. relevance of the news to you) and may be filled therefore with a default value or not at all"
+    ],
+    "nodes": {
+      "node_35d003ff5b": {
+        "n8n": "Schedule Trigger each week",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_6a5a516a06": {
+        "n8n": "Retrieve the web page for further processsing",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_278b3191e8": {
+        "n8n": "Extract the HTML with the right css class",
+        "n8nType": "n8n-nodes-base.html"
+      },
+      "node_fb99083764": {
+        "n8n": "Extract the HTML with the right css class",
+        "n8nType": "n8n-nodes-base.html"
+      },
+      "node_713fcf7d20": {
+        "n8n": "Extract date",
+        "n8nType": "n8n-nodes-base.html"
+      },
+      "node_2f1fbc210c": {
+        "n8n": "Extract date",
+        "n8nType": "n8n-nodes-base.html"
+      },
+      "node_9becfce174": {
+        "n8n": "Create single link items",
+        "n8nType": "n8n-nodes-base.itemLists"
+      },
+      "node_13f54a22d4": {
+        "n8n": "Create single date items",
+        "n8nType": "n8n-nodes-base.itemLists"
+      },
+      "node_968306aa11": {
+        "n8n": "Merge date & links",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_48e385d30f": {
+        "n8n": "Select posts of last 7 days",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_a7bcef7994": {
+        "n8n": "HTTP Request1",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_8a82adda86": {
+        "n8n": "Extract individual posts",
+        "n8nType": "n8n-nodes-base.html"
+      },
+      "node_1e2a2f3886": {
+        "n8n": "Extract individual posts",
+        "n8nType": "n8n-nodes-base.html"
+      },
+      "node_9cabb23add": {
+        "n8n": "Merge Content with Date & Link",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_72c00ba906": {
+        "n8n": "Summary",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_1a850cebb0": {
+        "n8n": "Summary",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_602a2a249f": {
+        "n8n": "Keywords",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_598d0cedf4": {
+        "n8n": "Keywords",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_6bb37d14db": {
+        "n8n": "Rename Summary",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_285e12d403": {
+        "n8n": "Rename keywords",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_dd3dbc6488": {
+        "n8n": "Merge",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_8f009c0dc5": {
+        "n8n": "Merge ChatGPT output with Date & Link",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_c83fa8548c": {
+        "n8n": "NocoDB news database",
+        "n8nType": "n8n-nodes-base.nocoDb"
+      },
+      "node_dda3fdb158": {
+        "n8n": "__end:NocoDB news database",
+        "n8nType": "synthetic"
+      },
+      "node_71acc1076a": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_012860cf7b": {
+        "n8n": "Extract the HTML with the right css class",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_772f2a941f": {
+        "n8n": "Extract date",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_76a8ecbbc1": {
+        "n8n": "Extract individual posts",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_ad931fcb09": {
+        "n8n": "Summary",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_02d3d318e8": {
+        "n8n": "Keywords",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

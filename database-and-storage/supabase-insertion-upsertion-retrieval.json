@@ -1,0 +1,709 @@
+{
+  "name": "Supabase Insertion & Upsertion & Retrieval",
+  "workflowSlug": "supabase-insertion-upsertion-retrieval",
+  "description": "This workflow demonstrates how to perform insertion, upsertion, and retrieval operations with Supabase, specifically for handling vector embeddings and associated metadata.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_e556b67537",
+      "actorId": "actor_e556b67537",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_DOWNLOAD_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive",
+        "action": "GOOGLESUPER_DOWNLOAD_FILE",
+        "params": {
+          "file_id": "https://drive.google.com/file/d/{{driveFileId}}/view"
+        }
+      }
+    },
+    {
+      "nodeId": "node_e2a8931f94",
+      "actorId": "actor_e2a8931f94",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_4874a8d7a3",
+      "actorId": "actor_4874a8d7a3",
+      "type": "NodeTransform",
+      "label": "Placeholder (File/Content to Upsert)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields from JSON (n8n Set node, JSON mode): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const __raw = `{\n \"Date\": \"${$now.format('dd MMM yyyy')}\",\n \"Time\": \"${$now.format('HH:mm ZZZZ z')}\"\n}\n`;\n  let __obj;\n  try { __obj = typeof __raw === 'string' ? JSON.parse(__raw) : __raw; } catch (e) { throw new Error('Set node JSON is not valid JSON: ' + e.message); }\n  return __obj;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_edc5b8055d",
+      "actorId": "actor_edc5b8055d",
+      "type": "NodeCdeConnector",
+      "label": "supabase/SUPABASE_SELECT_ROWS",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "supabase",
+        "connectorLabel": "Supabase",
+        "action": "SUPABASE_SELECT_ROWS",
+        "params": {
+          "table": "n8n",
+          "ref": "{{supabaseProjectRef}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_f7ea42a9a8",
+      "actorId": "actor_f7ea42a9a8",
+      "type": "NodeTransform",
+      "label": "Params: Insert Documents",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for supabase/SUPABASE_INSERT_ROW (n8n node \"Insert Documents\").\nreturn {\n  \"table\": \"Kadampa\",\n  \"fields\": { \"content\": ($json.pageContent ?? $json.content ?? $json.text), \"embedding\": ($json.embedding), \"metadata\": ($json.metadata) },\n  \"ref\": \"{{supabaseProjectRef}}\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_59433b084e",
+      "actorId": "actor_59433b084e",
+      "type": "NodeCdeConnector",
+      "label": "supabase/SUPABASE_INSERT_ROW",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "supabase",
+        "connectorLabel": "Supabase",
+        "action": "SUPABASE_INSERT_ROW"
+      }
+    },
+    {
+      "nodeId": "node_471cc2bf4b",
+      "actorId": "actor_471cc2bf4b",
+      "type": "NodeLlmChain",
+      "label": "Question and Answer Chain",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{last.transformed}}",
+        "prompt": "{{chatInput}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_2b251f6ccf",
+      "actorId": "actor_2b251f6ccf",
+      "type": "NodeTransform",
+      "label": "System: Question and Answer Chain",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: Question and Answer Chain.\nconst __promptValue = `Answer the question using only the provided context. If the context is empty, say you do not know.\n\nContext:\n${$json.context || $json.documents || $json.text || ''}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_2c8669e403",
+      "actorId": "actor_2c8669e403",
+      "type": "NodeTransform",
+      "label": "Params: Update Documents",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for supabase/SUPABASE_SEARCH_ROWS (n8n node \"Update Documents\").\nreturn {\n  \"table\": \"n8n\",\n  \"embedding\": ($json.embedding || $json.vector || $json.query),\n  \"limit\": 4,\n  \"ref\": \"{{supabaseProjectRef}}\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_193880a50a",
+      "actorId": "actor_193880a50a",
+      "type": "NodeCdeConnector",
+      "label": "supabase/SUPABASE_SEARCH_ROWS",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "supabase",
+        "connectorLabel": "Supabase",
+        "action": "SUPABASE_SEARCH_ROWS"
+      }
+    },
+    {
+      "nodeId": "node_565d782eee",
+      "actorId": "actor_565d782eee",
+      "type": "NodeTransform",
+      "label": "Customize Response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"output\"] = ($json);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_87b94ccde9",
+      "actorId": "actor_87b94ccde9",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 840,
+        "y": 880
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f10885eeed",
+      "actorId": "actor_f10885eeed",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_c8f35abad0",
+      "actorId": "actor_c8f35abad0",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_3c8a7fdeb0",
+      "actorId": "actor_3c8a7fdeb0",
+      "type": "NodeEnd",
+      "label": "End 4",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_817ad41567",
+      "actorId": "actor_817ad41567",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 1140
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "chatInput": "",
+          "sessionId": "",
+          "supabaseProjectRef": "",
+          "driveFileId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_b70036f4fa",
+      "actorId": "actor_b70036f4fa",
+      "type": "NodeChatModel",
+      "label": "Question and Answer Chain: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 1280
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_f7ea42a9a8",
+      "target": "node_59433b084e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_f7ea42a9a8",
+      "target": "node_59433b084e",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_2b251f6ccf",
+      "target": "node_471cc2bf4b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_2c8669e403",
+      "target": "node_193880a50a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_2c8669e403",
+      "target": "node_193880a50a",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_e556b67537",
+      "target": "node_f7ea42a9a8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e556b67537",
+      "target": "node_f7ea42a9a8",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_471cc2bf4b",
+      "target": "node_565d782eee",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_471cc2bf4b",
+      "target": "node_565d782eee",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e2a8931f94",
+      "target": "node_2b251f6ccf",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4874a8d7a3",
+      "target": "node_2c8669e403",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4874a8d7a3",
+      "target": "node_2c8669e403",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e2a8931f94",
+      "target": "node_e556b67537",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_e2a8931f94",
+      "target": "node_4874a8d7a3",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e2a8931f94",
+      "target": "node_edc5b8055d",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_edc5b8055d",
+      "target": "node_87b94ccde9",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_59433b084e",
+      "target": "node_f10885eeed",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_193880a50a",
+      "target": "node_c8f35abad0",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_565d782eee",
+      "target": "node_3c8a7fdeb0",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_b70036f4fa",
+      "target": "node_471cc2bf4b",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "database-and-storage",
+    "categoryLabel": "Database and Storage",
+    "department": "Engineering",
+    "connectors": [
+      "googlesuper",
+      "openai",
+      "supabase"
+    ],
+    "setupVars": [
+      {
+        "key": "supabaseProjectRef",
+        "label": "Supabase project ref (Settings > General)",
+        "type": "id",
+        "example": "abcdefghijklmnopqrst",
+        "usedBy": [
+          "Insert Documents",
+          "Retrieve Rows from Table",
+          "Update Documents"
+        ]
+      },
+      {
+        "key": "driveFileId",
+        "label": "Google Drive file id",
+        "type": "id",
+        "example": "1AbC...xyz",
+        "usedBy": [
+          "Google Drive"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 16,
+      "yantraSteps": 12,
+      "foldedHelpers": [
+        "Default Data Loader",
+        "Embeddings OpenAI Insertion",
+        "OpenAI Chat Model",
+        "Vector Store Retriever",
+        "Embeddings OpenAI Upserting"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Database_and_Storage/Supabase Insertion & Upsertion & Retrieval.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "When chat message received",
+        "detail": "@n8n/n8n-nodes-langchain.chatTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"When chat message received\" (chatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value supabaseProjectRef: Supabase project ref (Settings > General) (for example abcdefghijklmnopqrst). Write it into the Workflow Configs initialContext before import.",
+      "Setup value driveFileId: Google Drive file id (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "Connect the supabase connector (credential).",
+      "Provide run inputs: chatInput, sessionId."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Question and Answer Chain",
+          "n8n": "chainRetrievalQa",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "Default Data Loader",
+          "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+          "into": "Insert Documents",
+          "as": "ai_document"
+        },
+        {
+          "node": "Embeddings OpenAI Insertion",
+          "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+          "into": "Insert Documents",
+          "as": "ai_embedding"
+        },
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Question and Answer Chain"
+        },
+        {
+          "node": "Vector Store Retriever",
+          "type": "@n8n/n8n-nodes-langchain.retrieverVectorStore",
+          "into": "Question and Answer Chain",
+          "as": "ai_retriever"
+        },
+        {
+          "node": "Embeddings OpenAI Upserting",
+          "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+          "into": "Update Documents",
+          "as": "ai_embedding"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When chat message received",
+          "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
+        "\"Retrieve Rows from Table\": set the Supabase project ref (Management API) on SUPABASE_SELECT_ROWS.",
+        "\"Insert Documents\" folded a document (documentDefaultDataLoader); retrieved text is expected on the upstream payload as context/documents.",
+        "\"Insert Documents\": set the Supabase project ref on SUPABASE_INSERT_ROW. content, embedding, and metadata come from the upstream item.",
+        "\"Question and Answer Chain\" folded a retriever (retrieverVectorStore); retrieved text is expected on the upstream payload as context/documents.",
+        "\"Question and Answer Chain\" (chainRetrievalQa): Retriever output should arrive as context/documents/text on the upstream payload.",
+        "\"Update Documents\": set the Supabase project ref on SUPABASE_SEARCH_ROWS. The query embedding comes from the upstream item.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect supabase: `cdecli credential create -n \"supabase\" -p supabase --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "# INSERTING\n\n- it's important to use the same embedding model when for any interaction with your vector database (inserting, upserting and retrieval)",
+      "# UPSERTING",
+      "# PREPARATION (in Supabase)\n\n- your database needs the extension 'pgvector' enabled -> select Database > Extension > Search for 'vector'\n- make sure you have a table that has the following columns (if not, use the query below in the Supabase SQL Editor)\n\n```\nALTER TABLE \"YOUR TABLE NAME\"\nADD COLUMN embedding VECTOR(1536), // check which number of dimensions you need (depends on the embed model)\nADD COLUMN metadata JSONB,\nADD COLUMN content TEXT;\n```\n\n- make sure you have the right policies set -> select Authentication > Policies\n- make sure you have the custom function `match_documents` set up in Supabase -> This is needed for the Vector Store Node (as query name) \n(if not, use the query below in the Supabase SQL Editor to create that function)\n- make sure you check the size of the AI model as it should be the same vector size for the table \n(e.g. OpenAI's Text-Embedding-3-Small uses 1536)\n\n```\nCREATE OR REPLACE FUNCTION public.match_documents(\n filter JSONB,\n match_count INT,\n query_embedding VECTOR(1536) // should match same dimensions as from insertion\n)\nRETURNS TABLE (\n id BIGINT,\n content TEXT,\n metadata JSONB,\n embedding VECTOR(1536), // should match same dimensions as from insertion\n similarity FLOAT\n)\nLANGUAGE plpgsql AS $$\nBEGIN\n RETURN QUERY\n SELECT\n v.id,\n v.content,\n v.metadata,\n v.embedding,\n 1 - (v.embedding <=> match_documents.query_embedding) AS similarity\n FROM \"YOUR TABLE NAME\" v\n WHERE v.metadata @> filter\n ORDER BY v.embedding <=> match_documents.query_embedding\n LIMIT match_count;\nEND;\n$$\n;\n```",
+      "# RETRIEVAL",
+      "# DELETION\n\nAt the moment n8n does not have a built-in Supabase Node to delete records in a Vector Database. For this you would typically use the HTTP Request node to make an authorized API call to Supabase. \n\n## HTTP Request Node\n\nUse this node to send a DELETE request to your Supabase instance.\n\n- Supabase API Endpoint: Use the appropriate URL for your Supabase project. The endpoint will typically look like this: [https://<your-supabase-ref>.supabase.co/rest/v1/<your-vector-table>](https://supabase.com/docs/guides/api). Replace `<your-supabase-ref>` and `<your-vector-table>` with your details.\n### HEADERS:\n- apikey: Your Supabase API key.\n- Authorization: Bearer token with your Supabase JWT.\n- Query Parameters: Use query parameters to specify which record(s) to delete. For example, `?id=eq.<your-record-id>` where `<your-record-id>` is the specific record ID you want to delete \n(You can also reference back to the **Retrieve Rows From Table** Node to get the ID dynamically)\n\nEnsure you have the necessary permissions set up in Supabase to delete records through the API.\n\nPlease refer to the official n8n documentation for more detailed information on using the [HTTP Request Node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.httprequest/).\n\n_Note:_ Deleting records is a sensitive operation, so make sure that your permissions are correctly configured and that you are targeting the correct records to avoid unwanted data loss."
+    ],
+    "nodes": {
+      "node_e556b67537": {
+        "n8n": "Google Drive",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_e2a8931f94": {
+        "n8n": "When chat message received",
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
+      },
+      "node_4874a8d7a3": {
+        "n8n": "Placeholder (File/Content to Upsert)",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_edc5b8055d": {
+        "n8n": "Retrieve Rows from Table",
+        "n8nType": "n8n-nodes-base.supabase"
+      },
+      "node_f7ea42a9a8": {
+        "n8n": "Insert Documents",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreSupabase"
+      },
+      "node_59433b084e": {
+        "n8n": "Insert Documents",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreSupabase"
+      },
+      "node_471cc2bf4b": {
+        "n8n": "Question and Answer Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainRetrievalQa"
+      },
+      "node_2b251f6ccf": {
+        "n8n": "Question and Answer Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainRetrievalQa"
+      },
+      "node_2c8669e403": {
+        "n8n": "Update Documents",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreSupabase"
+      },
+      "node_193880a50a": {
+        "n8n": "Update Documents",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreSupabase"
+      },
+      "node_565d782eee": {
+        "n8n": "Customize Response",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_87b94ccde9": {
+        "n8n": "__end:Retrieve Rows from Table",
+        "n8nType": "synthetic"
+      },
+      "node_f10885eeed": {
+        "n8n": "__end:Insert Documents",
+        "n8nType": "synthetic"
+      },
+      "node_c8f35abad0": {
+        "n8n": "__end:Update Documents",
+        "n8nType": "synthetic"
+      },
+      "node_3c8a7fdeb0": {
+        "n8n": "__end:Customize Response",
+        "n8nType": "synthetic"
+      },
+      "node_817ad41567": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_b70036f4fa": {
+        "n8n": "Question and Answer Chain",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

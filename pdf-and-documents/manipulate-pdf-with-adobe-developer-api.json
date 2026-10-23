@@ -1,0 +1,1976 @@
+{
+  "name": "Manipulate PDF with Adobe developer API",
+  "workflowSlug": "manipulate-pdf-with-adobe-developer-api",
+  "description": "Converted from the n8n template \"Manipulate PDF with Adobe developer API\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_42031d74c3",
+      "actorId": "actor_42031d74c3",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_964fca6641",
+      "actorId": "actor_964fca6641",
+      "type": "NodeCdeConnector",
+      "label": "dropbox/DROPBOX_READ_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "dropbox",
+        "connectorLabel": "Dropbox",
+        "action": "DROPBOX_READ_FILE",
+        "params": {
+          "path": "/valerian/w/prod/_freelance/ADEZIF/AI/Source data/Brochures pour GPT/Brochure 3M/3M_doc_emballage VERSION FINALE.pdf"
+        }
+      }
+    },
+    {
+      "nodeId": "node_4aa7d5a55c",
+      "actorId": "actor_4aa7d5a55c",
+      "type": "NodeTransform",
+      "label": "Adobe API Query",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"endpoint\"] = \"extractpdf\";\n  out[\"json_payload\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(({\n \"renditionsToExtract\": [\n \"tables\"\n ],\n \"elementsToExtract\": [\n \"text\",\n \"tables\"\n ]\n }));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_28cd3ba6fd",
+      "actorId": "actor_28cd3ba6fd",
+      "type": "NodeSync",
+      "label": "Query + File",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_490f1848b7",
+      "actorId": "actor_490f1848b7",
+      "type": "NodeCdeConnector",
+      "label": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-storage",
+        "connectorLabel": "Yantra storage",
+        "action": "YANTRA_STORAGE_HTTP_SEND",
+        "params": {
+          "url": "https://pdf-services.adobe.io/token",
+          "method": "POST",
+          "headers": {
+            "Authorization": "{{pdfServicesApiKey}}"
+          },
+          "bodyType": "form",
+          "responseType": "auto"
+        }
+      }
+    },
+    {
+      "nodeId": "node_0e5c47cccd",
+      "actorId": "actor_0e5c47cccd",
+      "type": "NodeTransform",
+      "label": "Authenticartion (get token): response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The response the way the n8n HTTP node handed it on: the parsed body; a file body is { bodyBase64, filename, mimeType }.\nconst __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' && 'status' in source.data ? source.data : source;\nconst __body = __r?.bodyBase64 !== undefined ? { bodyBase64: __r.bodyBase64, filename: __r.filename, mimeType: __r.contentType, bytes: __r.bytes } : __r?.bodyJson !== undefined ? __r.bodyJson : __r?.bodyText;\nreturn __body;"
+      }
+    },
+    {
+      "nodeId": "node_67509c6c5f",
+      "actorId": "actor_67509c6c5f",
+      "type": "NodeHttpRequest",
+      "label": "Create Asset",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://pdf-services.adobe.io/assets",
+        "headers": {
+          "Authorization": "Bearer {{last.transformed.access_token}}"
+        },
+        "body": {
+          "mediaType": "application/pdf"
+        }
+      }
+    },
+    {
+      "nodeId": "node_fd2699ee67",
+      "actorId": "actor_fd2699ee67",
+      "type": "NodeSync",
+      "label": "Query + File + Asset information",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_1ecb655e50",
+      "actorId": "actor_1ecb655e50",
+      "type": "NodeTransform",
+      "label": "Params: Upload PDF File (asset)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// The upstream file as { contentBase64 | fileUrl, filename, mimeType }: n8n binary data travels as base64 bytes or a file URL on Yantra.\nconst __b64 = (t) => { const b = new TextEncoder().encode(String(t)); let s = ''; for (let i = 0; i < b.length; i += 1) s += String.fromCharCode(b[i]); return btoa(s); };\nconst __fileRef = (v, prop) => {\n  const s = (x) => (typeof x === 'string' && x !== '' ? x : undefined);\n  let r = Array.isArray(v) ? v[0] : v;\n  const bin = r && typeof r === 'object' && r.binary && typeof r.binary === 'object' ? r.binary[prop] ?? Object.values(r.binary)[0] : undefined;\n  if (bin && s(bin.data)) return { contentBase64: bin.data, filename: s(r.filename) ?? s(bin.fileName) ?? 'file', mimeType: s(bin.mimeType) };\n  if (r && typeof r === 'object' && r.data && typeof r.data === 'object' && !Array.isArray(r.data)) r = { ...r, ...r.data };\n  const dl = r?.downloaded_file_content ?? r?.file;\n  const filename = s(r?.filename) ?? s(r?.fileName) ?? s(dl?.name) ?? s(r?.name) ?? 'file';\n  const mimeType = s(r?.mimeType) ?? s(r?.contentType) ?? s(dl?.mimetype) ?? s(r?.mimetype);\n  if (s(r?.bodyBase64)) return { contentBase64: r.bodyBase64, filename, mimeType };\n  const url = s(dl?.s3url) ?? s(r?.s3url) ?? s(r?.fileUrl) ?? s(r?.imageUrl) ?? s(r?.imageUrls?.[0]) ?? s(r?.audioUrl) ?? s(r?.videoUrl) ?? s(r?.secure_url);\n  if (url) return { fileUrl: url, filename, mimeType };\n  if (s(r?.data)) return { contentBase64: r.encoding !== 'base64' && /^(?:text\\/|application\\/(?:json|xml|javascript|x-tex))|\\+(?:xml|json)$/.test(mimeType ?? '') ? __b64(r.data) : r.data, filename, mimeType };\n  throw new Error('No file on the upstream step: expected file bytes (base64) or a file URL.');\n};\n// Params for yantra-storage/YANTRA_STORAGE_HTTP_SEND (n8n node \"Upload PDF File (asset)\").\nreturn { \"url\": `${$json.uploadUri}?`, \"method\": \"PUT\", \"bodyType\": \"binary\", \"file\": __fileRef(source, \"data\"), \"responseType\": \"auto\" };"
+      }
+    },
+    {
+      "nodeId": "node_e8bdf3c40d",
+      "actorId": "actor_e8bdf3c40d",
+      "type": "NodeCdeConnector",
+      "label": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-storage",
+        "connectorLabel": "Yantra storage",
+        "action": "YANTRA_STORAGE_HTTP_SEND"
+      }
+    },
+    {
+      "nodeId": "node_b4d872ed82",
+      "actorId": "actor_b4d872ed82",
+      "type": "NodeTransform",
+      "label": "Upload PDF File (asset): response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The response the way the n8n HTTP node handed it on: the parsed body; a file body is { bodyBase64, filename, mimeType }.\nconst __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' && 'status' in source.data ? source.data : source;\nconst __body = __r?.bodyBase64 !== undefined ? { bodyBase64: __r.bodyBase64, filename: __r.filename, mimeType: __r.contentType, bytes: __r.bytes } : __r?.bodyJson !== undefined ? __r.bodyJson : __r?.bodyText;\nreturn __body;"
+      }
+    },
+    {
+      "nodeId": "node_4368a9e060",
+      "actorId": "actor_4368a9e060",
+      "type": "NodeHttpRequest",
+      "label": "Process Query",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST"
+      }
+    },
+    {
+      "nodeId": "node_70dfc2d9bc",
+      "actorId": "actor_70dfc2d9bc",
+      "type": "NodeTransform",
+      "label": "URL: Process Query",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Query + File + Asset information\": __namedCtx.steps?.[\"Query + File + Asset information\"]?.[\"data1\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"Process Query\".\nreturn `https://pdf-services.adobe.io/operation/${$('Query + File + Asset information').item.json.endpoint}`;"
+      }
+    },
+    {
+      "nodeId": "node_ef1c6b5535",
+      "actorId": "actor_ef1c6b5535",
+      "type": "NodeTransform",
+      "label": "Headers: Process Query",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Authenticartion (get token)\": __namedCtx.steps?.[\"Authenticartion (get token): response\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request headers for \"Process Query\".\nreturn { \"Authorization\": `Bearer ${$('Authenticartion (get token)').first().json[\"access_token\"]}`, \"Content-Type\": \"application/json\" };"
+      }
+    },
+    {
+      "nodeId": "node_b00094e39e",
+      "actorId": "actor_b00094e39e",
+      "type": "NodeTransform",
+      "label": "Body: Process Query",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Query + File + Asset information\": __namedCtx.steps?.[\"Query + File + Asset information\"]?.[\"data1\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Process Query\".\nconst __body = ({\n...{ \"assetID\":$('Query + File + Asset information').first().json.assetID },\n...$('Query + File + Asset information').first().json.json_payload\n});\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_b39eefc37d",
+      "actorId": "actor_b39eefc37d",
+      "type": "NodeTransform",
+      "label": "Process Query: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "const ctx = {{ctx}};\nconst response = ctx.steps[\"Process Query\"];\nif (response.error && (response.statusCode == null || true)) throw new Error(response.error.message || 'HTTP check failed');\nreturn { body: response.body, headers: response.headers, statusCode: response.statusCode };"
+      }
+    },
+    {
+      "nodeId": "node_5255b166dd",
+      "actorId": "actor_5255b166dd",
+      "type": "NodeTransform",
+      "label": "Before repeat: Wait 5 second",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_f06b57ea65",
+      "actorId": "actor_f06b57ea65",
+      "type": "NodeRepeatUntil",
+      "label": "Repeat: Wait 5 second",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "delaySeconds": 0,
+        "maxAttempts": 30
+      }
+    },
+    {
+      "nodeId": "node_68ec1fe91e",
+      "actorId": "actor_68ec1fe91e",
+      "type": "NodeTransform",
+      "label": "Return to repeat: Wait 5 second",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11480,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_35a116a282",
+      "actorId": "actor_35a116a282",
+      "type": "NodeTransform",
+      "label": "Ready: Wait 5 second",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11860,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.ready;"
+      }
+    },
+    {
+      "nodeId": "node_ece6212244",
+      "actorId": "actor_ece6212244",
+      "type": "NodeTransform",
+      "label": "Check input: Wait 5 second",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "const ctx = {{ctx}};\nreturn ctx.steps?.[\"Repeat: Wait 5 second\"]?.[\"attempt\"] === 1 ? ctx.steps?.[\"Before repeat: Wait 5 second\"]?.[\"transformed\"] : ctx.steps?.[\"Return to repeat: Wait 5 second\"]?.[\"transformed\"]?.value;"
+      }
+    },
+    {
+      "nodeId": "node_59c1f53384",
+      "actorId": "actor_59c1f53384",
+      "type": "NodeTransform",
+      "label": "Failed: Repeat: Wait 5 second",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "throw Object.assign(new Error(source?.message || 'Repeat Until failed'), { name: source?.name || 'Error' });"
+      }
+    },
+    {
+      "nodeId": "node_080407dd39",
+      "actorId": "actor_080407dd39",
+      "type": "NodeTransform",
+      "label": "Before wait: Wait 5 second",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_ef7448c9ea",
+      "actorId": "actor_ef7448c9ea",
+      "type": "NodeTransform",
+      "label": "Seconds: Wait 5 second",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return Number(5) * 1;"
+      }
+    },
+    {
+      "nodeId": "node_38dbc4b96f",
+      "actorId": "actor_38dbc4b96f",
+      "type": "NodeRepeatUntil",
+      "label": "Wait 5 second",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 7680,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "delaySeconds": 0,
+        "maxAttempts": 2
+      }
+    },
+    {
+      "nodeId": "node_413c40e208",
+      "actorId": "actor_413c40e208",
+      "type": "NodeTransform",
+      "label": "Wait elapsed: Wait 5 second",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8060,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source === 2;"
+      }
+    },
+    {
+      "nodeId": "node_e361599a97",
+      "actorId": "actor_e361599a97",
+      "type": "NodeTransform",
+      "label": "Failed: Wait 5 second",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8060,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "throw Object.assign(new Error(source?.message || 'Repeat Until failed'), { name: source?.name || 'Error' });"
+      }
+    },
+    {
+      "nodeId": "node_0ce59b8271",
+      "actorId": "actor_0ce59b8271",
+      "type": "NodeHttpRequest",
+      "label": "Try to download the result",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 8820,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET"
+      }
+    },
+    {
+      "nodeId": "node_95da96847e",
+      "actorId": "actor_95da96847e",
+      "type": "NodeTransform",
+      "label": "URL: Try to download the result",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8060,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Process Query\": __namedCtx.steps?.[\"Process Query: response\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"Try to download the result\".\nreturn ($('Process Query').item.json[\"headers\"][\"location\"]);"
+      }
+    },
+    {
+      "nodeId": "node_ce81787624",
+      "actorId": "actor_ce81787624",
+      "type": "NodeTransform",
+      "label": "Headers: Try to download the result",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8440,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Authenticartion (get token)\": __namedCtx.steps?.[\"Authenticartion (get token): response\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request headers for \"Try to download the result\".\nreturn { \"Authorization\": `Bearer ${$('Authenticartion (get token)').first().json[\"access_token\"]}` };"
+      }
+    },
+    {
+      "nodeId": "node_1e64782337",
+      "actorId": "actor_1e64782337",
+      "type": "NodeTransform",
+      "label": "Try to download the result: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9200,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "const ctx = {{ctx}};\nconst response = ctx.steps[\"Try to download the result\"];\nif (response.error && (response.statusCode == null || true)) throw new Error(response.error.message || 'HTTP check failed');\nif (response.body == null) throw new Error('HTTP check returned an empty body');\nreturn response.body;"
+      }
+    },
+    {
+      "nodeId": "node_7e332b4d2e",
+      "actorId": "actor_7e332b4d2e",
+      "type": "NodeTransform",
+      "label": "Switch: in progress",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9580,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.status) ?? '') === String(\"in progress\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_caea448cc3",
+      "actorId": "actor_caea448cc3",
+      "type": "NodeBranch",
+      "label": "Switch: in progress?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 9960,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_ac4dace6a4",
+      "actorId": "actor_ac4dace6a4",
+      "type": "NodeTransform",
+      "label": "Switch: failed",
+      "color": "#F59E0B",
+      "position": {
+        "x": 10340,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.status) ?? '') === String(\"failed\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_998174f3e1",
+      "actorId": "actor_998174f3e1",
+      "type": "NodeBranch",
+      "label": "Switch: failed?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 10720,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_a4c25ecf82",
+      "actorId": "actor_a4c25ecf82",
+      "type": "NodeTransform",
+      "label": "Forward response to origin workflow",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7680,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_dbd7437a8b",
+      "actorId": "actor_dbd7437a8b",
+      "type": "NodeTransform",
+      "label": "Retry: Switch (0)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 10340,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return { ready: false, route: 0, value: source };"
+      }
+    },
+    {
+      "nodeId": "node_969d9cdacb",
+      "actorId": "actor_969d9cdacb",
+      "type": "NodeTransform",
+      "label": "Finish: Switch (1)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11100,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return { ready: true, route: 1, value: source };"
+      }
+    },
+    {
+      "nodeId": "node_30c8bf2864",
+      "actorId": "actor_30c8bf2864",
+      "type": "NodeTransform",
+      "label": "Exit 1: Wait 5 second",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.route === 1;"
+      }
+    },
+    {
+      "nodeId": "node_62140a0a48",
+      "actorId": "actor_62140a0a48",
+      "type": "NodeBranch",
+      "label": "Select exit 1: Wait 5 second",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6920,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_90fdb9638c",
+      "actorId": "actor_90fdb9638c",
+      "type": "NodeTransform",
+      "label": "Result 1: Wait 5 second",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.value;"
+      }
+    },
+    {
+      "nodeId": "node_243fd48b4b",
+      "actorId": "actor_243fd48b4b",
+      "type": "NodeTransform",
+      "label": "Finish: Switch (2)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 11100,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return { ready: true, route: 2, value: source };"
+      }
+    },
+    {
+      "nodeId": "node_a76d207164",
+      "actorId": "actor_a76d207164",
+      "type": "NodeTransform",
+      "label": "Exit 2: Wait 5 second",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.route === 2;"
+      }
+    },
+    {
+      "nodeId": "node_9ec7f77132",
+      "actorId": "actor_9ec7f77132",
+      "type": "NodeBranch",
+      "label": "Select exit 2: Wait 5 second",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6920,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_9bc17d9b62",
+      "actorId": "actor_9bc17d9b62",
+      "type": "NodeTransform",
+      "label": "Result 2: Wait 5 second",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.value;"
+      }
+    },
+    {
+      "nodeId": "node_d2a25ba82d",
+      "actorId": "actor_d2a25ba82d",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 8060,
+        "y": 880
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_c8887f57bd",
+      "actorId": "actor_c8887f57bd",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 1140
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "pdfServicesApiKey": {
+            "$workflowSecret": "PDF_SERVICES_API_KEY"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_490f1848b7",
+      "target": "node_0e5c47cccd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_490f1848b7",
+      "target": "node_0e5c47cccd",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1ecb655e50",
+      "target": "node_e8bdf3c40d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_1ecb655e50",
+      "target": "node_e8bdf3c40d",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_e8bdf3c40d",
+      "target": "node_b4d872ed82",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e8bdf3c40d",
+      "target": "node_b4d872ed82",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_70dfc2d9bc",
+      "target": "node_4368a9e060",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_70dfc2d9bc",
+      "target": "node_ef1c6b5535",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ef1c6b5535",
+      "target": "node_4368a9e060",
+      "sourceOutput": "transformed",
+      "targetInput": "headers",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_ef1c6b5535",
+      "target": "node_b00094e39e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b00094e39e",
+      "target": "node_4368a9e060",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_b00094e39e",
+      "target": "node_4368a9e060",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_4368a9e060",
+      "target": "node_b39eefc37d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5255b166dd",
+      "target": "node_f06b57ea65",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_68ec1fe91e",
+      "target": "node_35a116a282",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_68ec1fe91e",
+      "target": "node_35a116a282",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_35a116a282",
+      "target": "node_f06b57ea65",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_35a116a282",
+      "target": "node_f06b57ea65",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_68ec1fe91e",
+      "target": "node_f06b57ea65",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_f06b57ea65",
+      "target": "node_ece6212244",
+      "sourceOutput": "onCheck",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f06b57ea65",
+      "target": "node_59c1f53384",
+      "sourceOutput": "onError",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f06b57ea65",
+      "target": "node_59c1f53384",
+      "sourceOutput": "error",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_080407dd39",
+      "target": "node_ef7448c9ea",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_080407dd39",
+      "target": "node_ef7448c9ea",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ef7448c9ea",
+      "target": "node_38dbc4b96f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_ef7448c9ea",
+      "target": "node_38dbc4b96f",
+      "sourceOutput": "transformed",
+      "targetInput": "delaySeconds",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_38dbc4b96f",
+      "target": "node_413c40e208",
+      "sourceOutput": "onCheck",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_38dbc4b96f",
+      "target": "node_413c40e208",
+      "sourceOutput": "attempt",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_413c40e208",
+      "target": "node_38dbc4b96f",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_413c40e208",
+      "target": "node_38dbc4b96f",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_080407dd39",
+      "target": "node_38dbc4b96f",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_38dbc4b96f",
+      "target": "node_e361599a97",
+      "sourceOutput": "onError",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_38dbc4b96f",
+      "target": "node_e361599a97",
+      "sourceOutput": "error",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_95da96847e",
+      "target": "node_0ce59b8271",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_95da96847e",
+      "target": "node_ce81787624",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ce81787624",
+      "target": "node_0ce59b8271",
+      "sourceOutput": "transformed",
+      "targetInput": "headers",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_ce81787624",
+      "target": "node_0ce59b8271",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_0ce59b8271",
+      "target": "node_1e64782337",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7e332b4d2e",
+      "target": "node_caea448cc3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_7e332b4d2e",
+      "target": "node_caea448cc3",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_caea448cc3",
+      "target": "node_ac4dace6a4",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ac4dace6a4",
+      "target": "node_998174f3e1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_ac4dace6a4",
+      "target": "node_998174f3e1",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_42031d74c3",
+      "target": "node_964fca6641",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_42031d74c3",
+      "target": "node_4aa7d5a55c",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_67509c6c5f",
+      "target": "node_fd2699ee67",
+      "sourceOutput": "body",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_42031d74c3",
+      "target": "node_490f1848b7",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_4aa7d5a55c",
+      "target": "node_28cd3ba6fd",
+      "sourceOutput": "transformed",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_964fca6641",
+      "target": "node_28cd3ba6fd",
+      "sourceOutput": "result",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_28cd3ba6fd",
+      "target": "node_490f1848b7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_28cd3ba6fd",
+      "target": "node_fd2699ee67",
+      "sourceOutput": "data1",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_fd2699ee67",
+      "target": "node_1ecb655e50",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fd2699ee67",
+      "target": "node_1ecb655e50",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_38dbc4b96f",
+      "target": "node_95da96847e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_38dbc4b96f",
+      "target": "node_95da96847e",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1e64782337",
+      "target": "node_7e332b4d2e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1e64782337",
+      "target": "node_7e332b4d2e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1e64782337",
+      "target": "node_ac4dace6a4",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0e5c47cccd",
+      "target": "node_67509c6c5f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_b4d872ed82",
+      "target": "node_70dfc2d9bc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b4d872ed82",
+      "target": "node_70dfc2d9bc",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ece6212244",
+      "target": "node_080407dd39",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ece6212244",
+      "target": "node_080407dd39",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b39eefc37d",
+      "target": "node_5255b166dd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b39eefc37d",
+      "target": "node_5255b166dd",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_caea448cc3",
+      "target": "node_dbd7437a8b",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1e64782337",
+      "target": "node_dbd7437a8b",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dbd7437a8b",
+      "target": "node_68ec1fe91e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dbd7437a8b",
+      "target": "node_68ec1fe91e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_998174f3e1",
+      "target": "node_969d9cdacb",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1e64782337",
+      "target": "node_969d9cdacb",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_969d9cdacb",
+      "target": "node_68ec1fe91e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_969d9cdacb",
+      "target": "node_68ec1fe91e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f06b57ea65",
+      "target": "node_30c8bf2864",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f06b57ea65",
+      "target": "node_30c8bf2864",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_30c8bf2864",
+      "target": "node_62140a0a48",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_30c8bf2864",
+      "target": "node_62140a0a48",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_62140a0a48",
+      "target": "node_90fdb9638c",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f06b57ea65",
+      "target": "node_90fdb9638c",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_90fdb9638c",
+      "target": "node_a4c25ecf82",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_90fdb9638c",
+      "target": "node_a4c25ecf82",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_998174f3e1",
+      "target": "node_243fd48b4b",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1e64782337",
+      "target": "node_243fd48b4b",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_243fd48b4b",
+      "target": "node_68ec1fe91e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_243fd48b4b",
+      "target": "node_68ec1fe91e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f06b57ea65",
+      "target": "node_a76d207164",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f06b57ea65",
+      "target": "node_a76d207164",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a76d207164",
+      "target": "node_9ec7f77132",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_a76d207164",
+      "target": "node_9ec7f77132",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_9ec7f77132",
+      "target": "node_9bc17d9b62",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f06b57ea65",
+      "target": "node_9bc17d9b62",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9bc17d9b62",
+      "target": "node_a4c25ecf82",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9bc17d9b62",
+      "target": "node_a4c25ecf82",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a4c25ecf82",
+      "target": "node_d2a25ba82d",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "pdf-and-documents",
+    "categoryLabel": "PDF and Document Processing",
+    "department": "",
+    "connectors": [
+      "dropbox",
+      "yantra-storage"
+    ],
+    "setupSecrets": [
+      {
+        "key": "PDF_SERVICES_API_KEY",
+        "label": "pdf-services.adobe.io API credential header value (for example \"Bearer <key>\"; rename the header if the API expects another one)",
+        "host": "pdf-services.adobe.io",
+        "headerFormat": "Authorization: <secret>",
+        "contextKey": "pdfServicesApiKey",
+        "usedBy": [
+          "Authenticartion (get token)"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeRepeatUntil",
+      "NodeStart",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 14,
+      "yantraSteps": 45,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "PDF_and_Document_Processing/Manipulate PDF with Adobe developer API.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Execute Workflow Trigger",
+        "detail": "n8n-nodes-base.executeWorkflowTrigger became the Start node"
+      },
+      {
+        "code": "hard-approximation",
+        "node": "Upload PDF File (asset)",
+        "detail": "httpRequest.binaryData -> yantra-storage/YANTRA_STORAGE_HTTP_SEND: the file comes from \"When clicking ‘Test workflow’\" (manualTrigger), which starts the run with event metadata, not file bytes"
+      },
+      {
+        "code": "action-pending-publish",
+        "node": "Authenticartion (get token)",
+        "detail": "yantra-storage/YANTRA_STORAGE_HTTP_SEND waits for the yantra-storage HTTP send and signatures patch (1.4.1) to be published"
+      },
+      {
+        "code": "action-pending-publish",
+        "node": "Upload PDF File (asset)",
+        "detail": "yantra-storage/YANTRA_STORAGE_HTTP_SEND waits for the yantra-storage HTTP send and signatures patch (1.4.1) to be published"
+      }
+    ],
+    "setup": [
+      "\"Execute Workflow Trigger\" (executeWorkflowTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Upload PDF File (asset)\" (httpRequest.binaryData): the file comes from \"When clicking ‘Test workflow’\" (manualTrigger), which starts the run with event metadata, not file bytes; review it before relying on the result.",
+      "\"Authenticartion (get token)\": yantra-storage/YANTRA_STORAGE_HTTP_SEND comes from the yantra-storage HTTP send and signatures patch (1.4.1), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
+      "\"Upload PDF File (asset)\": yantra-storage/YANTRA_STORAGE_HTTP_SEND comes from the yantra-storage HTTP send and signatures patch (1.4.1), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
+      "Workflow secret PDF_SERVICES_API_KEY: pdf-services.adobe.io API credential header value (for example \"Bearer <key>\"; rename the header if the API expects another one) for pdf-services.adobe.io (Authorization: <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the dropbox connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Authenticartion (get token)",
+          "n8n": "httpRequest.form-urlencoded",
+          "action": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+          "soft": true
+        },
+        {
+          "node": "Upload PDF File (asset)",
+          "n8n": "httpRequest.binaryData",
+          "action": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+          "reason": "the file comes from \"When clicking ‘Test workflow’\" (manualTrigger), which starts the run with event metadata, not file bytes"
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Execute Workflow Trigger",
+          "type": "n8n-nodes-base.executeWorkflowTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original was a sub-workflow called by another workflow; pass its inputs as run inputs.",
+        "\"Query + File\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "\"Authenticartion (get token)\" authenticated with httpCustomAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Authenticartion (get token)\" sends its form-urlencoded body with yantra-storage HTTP_SEND (public https hosts only, 25 MB, 120 s).",
+        "\"Create Asset\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Query + File + Asset information\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "\"Upload PDF File (asset)\" (httpRequest.binaryData): the file comes from \"When clicking ‘Test workflow’\" (manualTrigger), which starts the run with event metadata, not file bytes.",
+        "\"Process Query\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Process Query\": a request field used $('OtherNode'); on Yantra $() resolves via the named upstream map when that node ran earlier, else the immediate upstream - check that expression.",
+        "\"Repeat: Wait 5 second\" uses NodeRepeatUntil: carry each retry's state, return readiness through NEXT, and resume the selected exit only after onDone. Original interval waits are preserved. The attempt limit defaults to 30; adjust maxAttempts for the service or retry budget. Exhaustion stops with an error.",
+        "\"Try to download the result\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Try to download the result\": a request field used $('OtherNode'); on Yantra $() resolves via the named upstream map when that node ran earlier, else the immediate upstream - check that expression.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect dropbox: `cdecli credential create -n \"dropbox\" -p dropbox --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "# Adobe API Wrapper\n\nSee Adobe documentation:\n- https://developer.adobe.com/document-services/docs/overview/pdf-services-api/howtos/\n- https://developer.adobe.com/document-services/docs/overview/pdf-extract-api/gettingstarted/\n\nIn short, this workflow does the following steps :\n\n- Authentication\n- Upload an asset (pdf) to adobe\n- Wait for the asset to be processed by Adobe\n- Download the result\n\n## Credential\n\nCredentials are not \"predefined\" and you'll have to create 2 custom credentials, detailed in the workflow.\n\n## Result\n\nThe result will depend on the transformation requested. It could be 1 of various files (json, zip...) accessible via download URL returned by the workflow.\n\nWorkflow can be tested with a PDF filed fetched with Dorpbox for example or any storage provider.",
+      "## Testing for development",
+      "## Wait for file do be processed",
+      "### 1- Credential for token request\n\nCreate a \"Custom Auth\" credential like this :\n\n```\n{\n \"headers\": {\n \"Content-Type\":\"application/x-www-form-urlencoded\"\n }, \n \"body\" : {\n \"client_id\": \"****\", \n \"client_secret\":\"****\"\n }\n}\n```",
+      "### 2- Credential for all other Queries\n\nCreate a \"Header Auth\" credential like this : \n\n```\nX-API-Key: **** (same value as client_id)\n```",
+      "## Workflow Input\n\n- endpoint: splitpdf, extractpdf, ...\n- json_payload : all endpoint payload except assetID which is handled in current workflow\n- **PDF Data as n8n Binary**\n\n\n### Example for **split** : \n\n```\n{\n \"endpoint\": \"splitpdf\",\n \"json_payload\": {\n \"splitoption\": \n { \"pageRanges\": [{\"start\": 1,\"end\": 2}]}\n }\n }\n}\n```\n\n### Example for **extractpdf**\n\n```\n{\n \"endpoint\": \"splitpdf\",\n \"json_payload\": {\n \"renditionsToExtract\": [\n \"tables\"\n ],\n \"elementsToExtract\": [\n \"text\",\n \"tables\"\n ]\n }\n}\n```"
+    ],
+    "nodes": {
+      "node_42031d74c3": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger",
+        "also": [
+          "Execute Workflow Trigger"
+        ]
+      },
+      "node_964fca6641": {
+        "n8n": "Load a test pdf file",
+        "n8nType": "n8n-nodes-base.dropbox"
+      },
+      "node_4aa7d5a55c": {
+        "n8n": "Adobe API Query",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_28cd3ba6fd": {
+        "n8n": "Query + File",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_490f1848b7": {
+        "n8n": "Authenticartion (get token)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_0e5c47cccd": {
+        "n8n": "Authenticartion (get token)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_67509c6c5f": {
+        "n8n": "Create Asset",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_fd2699ee67": {
+        "n8n": "Query + File + Asset information",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_1ecb655e50": {
+        "n8n": "Upload PDF File (asset)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_e8bdf3c40d": {
+        "n8n": "Upload PDF File (asset)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_b4d872ed82": {
+        "n8n": "Upload PDF File (asset)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_4368a9e060": {
+        "n8n": "Process Query",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_70dfc2d9bc": {
+        "n8n": "Process Query",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_ef1c6b5535": {
+        "n8n": "Process Query",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_b00094e39e": {
+        "n8n": "Process Query",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_b39eefc37d": {
+        "n8n": "Process Query",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_5255b166dd": {
+        "n8n": "Wait 5 second",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_f06b57ea65": {
+        "n8n": "Wait 5 second",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_68ec1fe91e": {
+        "n8n": "Wait 5 second",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_35a116a282": {
+        "n8n": "Wait 5 second",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_ece6212244": {
+        "n8n": "Wait 5 second",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_59c1f53384": {
+        "n8n": "Wait 5 second",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_080407dd39": {
+        "n8n": "Wait 5 second",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_ef7448c9ea": {
+        "n8n": "Wait 5 second",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_38dbc4b96f": {
+        "n8n": "Wait 5 second",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_413c40e208": {
+        "n8n": "Wait 5 second",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_e361599a97": {
+        "n8n": "Wait 5 second",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_0ce59b8271": {
+        "n8n": "Try to download the result",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_95da96847e": {
+        "n8n": "Try to download the result",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_ce81787624": {
+        "n8n": "Try to download the result",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_1e64782337": {
+        "n8n": "Try to download the result",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_7e332b4d2e": {
+        "n8n": "Switch",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_caea448cc3": {
+        "n8n": "Switch",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_ac4dace6a4": {
+        "n8n": "Switch",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_998174f3e1": {
+        "n8n": "Switch",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_a4c25ecf82": {
+        "n8n": "Forward response to origin workflow",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_dbd7437a8b": {
+        "n8n": "Wait 5 second",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_969d9cdacb": {
+        "n8n": "Wait 5 second",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_30c8bf2864": {
+        "n8n": "Wait 5 second",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_62140a0a48": {
+        "n8n": "Wait 5 second",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_90fdb9638c": {
+        "n8n": "Wait 5 second",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_243fd48b4b": {
+        "n8n": "Wait 5 second",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_a76d207164": {
+        "n8n": "Wait 5 second",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_9ec7f77132": {
+        "n8n": "Wait 5 second",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_9bc17d9b62": {
+        "n8n": "Wait 5 second",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_d2a25ba82d": {
+        "n8n": "__end:Forward response to origin workflow",
+        "n8nType": "synthetic"
+      },
+      "node_c8887f57bd": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

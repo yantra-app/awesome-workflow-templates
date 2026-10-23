@@ -1,0 +1,293 @@
+{
+  "name": "Live Web Research Agent with Superhighway",
+  "workflowSlug": "live-web-research-agent-with-superhighway",
+  "description": "Search the live web, get AI-ready results (title, URL, snippet) using Superhighway's free search API. No browser required - pure HTTP.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_94d0c4f4f8",
+      "actorId": "actor_94d0c4f4f8",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_ba61d47126",
+      "actorId": "actor_ba61d47126",
+      "type": "NodeTransform",
+      "label": "API Config",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"api_key\"] = \"{{apiKey}}\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_8aa8906dbc",
+      "actorId": "actor_8aa8906dbc",
+      "type": "NodeTransform",
+      "label": "Search Query",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"query\"] = \"latest AI agent frameworks 2026\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_d6e9774564",
+      "actorId": "actor_d6e9774564",
+      "type": "NodeHttpRequest",
+      "label": "Superhighway Search",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://superhighway.walls.sh/search?q={{steps.xf_8aa8906dbc.result.query}}&limit=5",
+        "headers": {
+          "X-Api-Key": "{{steps.xf_ba61d47126.result.api_key}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_360dc8bc40",
+      "actorId": "actor_360dc8bc40",
+      "type": "NodeTransform",
+      "label": "Format Results",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\nconst items = __items.map((json) => ({ json }));\n// Ported from n8n Code node \"Format Results\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Superhighway returns an array of results (commonly under `results`).\n  // Normalize to a clean list of { title, url, snippet } items.\n  const body = $input.first().json;\n  \n  const raw = Array.isArray(body)\n    ? body\n    : (body.results || body.data || body.items || []);\n  \n  return raw.map((r) => ({\n    json: {\n      title: r.title || r.name || '',\n      url: r.url || r.link || '',\n      snippet: r.snippet || r.description || r.content || r.text || ''\n    }\n  }));\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_164c4c4675",
+      "actorId": "actor_164c4c4675",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_215b6fa571",
+      "actorId": "actor_215b6fa571",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "apiKey": {
+            "$workflowSecret": "API_KEY"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_94d0c4f4f8",
+      "target": "node_ba61d47126",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ba61d47126",
+      "target": "node_8aa8906dbc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ba61d47126",
+      "target": "node_8aa8906dbc",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8aa8906dbc",
+      "target": "node_d6e9774564",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_d6e9774564",
+      "target": "node_360dc8bc40",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d6e9774564",
+      "target": "node_360dc8bc40",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_360dc8bc40",
+      "target": "node_164c4c4675",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "ai-research-and-data",
+    "categoryLabel": "AI Research, RAG and Data Analysis",
+    "department": "Research",
+    "connectors": [],
+    "setupSecrets": [
+      {
+        "key": "API_KEY",
+        "label": "api key (left empty in the original Set step)",
+        "headerFormat": "read inside the step code",
+        "contextKey": "apiKey",
+        "usedBy": [
+          "API Config"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 5,
+      "yantraSteps": 5,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "AI_Research_RAG_and_Data_Analysis/Live Web Research Agent with Superhighway.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Live Web Research Agent with Superhighway"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Workflow secret API_KEY: api key (left empty in the original Set step) (read inside the step code). Add it in the workflow editor's Secrets panel after import; never paste it in chat."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "## Setup - Superhighway Web Search\n\nSuperhighway is a web search API built for AI agents.\n\n**1/ Get a free API key** at https://superhighway.walls.sh\n\n**2/** Open the **API Config** node and paste your key into the `api_key` field.\n\n**3/** Open the **Search Query** node and set your `query`.\n\nThat's it - run the workflow with **Test workflow**.\n\nSearch is free with an API key (or $0.001/call). The same key works for `/news`, `/images`, `/scrape` and `/research`.",
+      "**Other Superhighway endpoints** (same auth header):\n\n- `GET /search?q=...&limit=5` - web search\n- `GET /news?q=...` - news search\n- `GET /images?q=...` - image search\n- `GET /scrape?url=...` - page → clean markdown\n- `GET /research?q=...&pages=3` - deep research"
+    ],
+    "nodes": {
+      "node_94d0c4f4f8": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_ba61d47126": {
+        "n8n": "API Config",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_8aa8906dbc": {
+        "n8n": "Search Query",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_d6e9774564": {
+        "n8n": "Superhighway Search",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_360dc8bc40": {
+        "n8n": "Format Results",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_164c4c4675": {
+        "n8n": "__end:Format Results",
+        "n8nType": "synthetic"
+      },
+      "node_215b6fa571": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

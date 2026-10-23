@@ -1,0 +1,1694 @@
+{
+  "name": "HR Job Posting and Evaluation with AI",
+  "workflowSlug": "hr-job-posting-and-evaluation-with-ai",
+  "description": "Converted from the n8n template \"HR Job Posting and Evaluation with AI\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_4176d0819a",
+      "actorId": "actor_4176d0819a",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_24e7dbb40f",
+      "actorId": "actor_24e7dbb40f",
+      "type": "NodeTransform",
+      "label": "Params: Upload CV to google drive",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst $workflow = { id: '', name: '', active: true }; const $execution = { id: '', mode: 'manual', resumeUrl: '' }; const $executionId = $execution.id;\nconst $runIndex = 0; const $itemIndex = 0; const $binary = {}; const $prevNode = { name: '', outputIndex: 0, runIndex: 0 }; const $parameter = {}; const $position = 0;\n// Params for googlesuper/GOOGLESUPER_CREATE_FILE (n8n node \"Upload CV to google drive\").\nreturn {\n  \"name\": ($binary.Upload_your_CV.fileName),\n  \"parents\": \"{{driveFolderId}}\",\n  \"mimeType\": null,\n  \"description\": null,\n};"
+      }
+    },
+    {
+      "nodeId": "node_b32b10f09d",
+      "actorId": "actor_b32b10f09d",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_CREATE_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive",
+        "action": "GOOGLESUPER_CREATE_FILE"
+      }
+    },
+    {
+      "nodeId": "node_f02fec791e",
+      "actorId": "actor_f02fec791e",
+      "type": "NodeTransform",
+      "label": "applicant details",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"On form submission\": {{ctx}}, \"Upload CV to google drive\": {{steps.GOOGLESUPER_CREATE_FILE.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"Name\"] = ($('On form submission').item.json['First Name'] + \" \" + $('On form submission').item.json['Last Name']);\n  out[\"Phone\"] = Number(($('On form submission').item.json.Phone));\n  out[\"email\"] = ($('On form submission').item.json.Email);\n  out[\"Experience\"] = Number(($('On form submission').item.json[\"Years of experience\"]));\n  out[\"Applied On\"] = ($('On form submission').item.json.submittedAt);\n  out[\"CV link\"] = ($json.webViewLink);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_f2a69880b5",
+      "actorId": "actor_f2a69880b5",
+      "type": "NodeTransform",
+      "label": "Params: Airtable",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for airtable/AIRTABLE_CREATE_RECORD (n8n node \"Airtable\").\nreturn {\n  \"baseId\": \"{{airtableBaseId}}\",\n  \"tableIdOrName\": \"{{airtableTableId}}\",\n  \"fields\": { \"Name\": ($json.Name), \"Phone\": ($json.Phone), \"CV Link\": ($json[\"CV link\"]), \"Applying for\": `[\"Automation Specialist\"]`, \"Email address\": ($json.email) },\n};"
+      }
+    },
+    {
+      "nodeId": "node_f454833cbe",
+      "actorId": "actor_f454833cbe",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_CREATE_RECORD",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_CREATE_RECORD"
+      }
+    },
+    {
+      "nodeId": "node_04e6758faf",
+      "actorId": "actor_04e6758faf",
+      "type": "NodeTransform",
+      "label": "Params: download CV",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for googlesuper/GOOGLESUPER_DOWNLOAD_FILE (n8n node \"download CV\").\nreturn {\n  \"file_id\": ($json.fields[\"CV Link\"]),\n};"
+      }
+    },
+    {
+      "nodeId": "node_77bec5479f",
+      "actorId": "actor_77bec5479f",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_DOWNLOAD_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive",
+        "action": "GOOGLESUPER_DOWNLOAD_FILE"
+      }
+    },
+    {
+      "nodeId": "node_be85952628",
+      "actorId": "actor_be85952628",
+      "type": "NodeTransform",
+      "label": "Params: Extract from File",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for googlesuper/GOOGLESUPER_PARSE_FILE (n8n node \"Extract from File\").\nreturn {\n  \"file_id\": ($json.id ?? $json.file_id ?? $json.fileId),\n  \"mime_type\": \"application/pdf\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_91477cd088",
+      "actorId": "actor_91477cd088",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_PARSE_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive parse",
+        "action": "GOOGLESUPER_PARSE_FILE"
+      }
+    },
+    {
+      "nodeId": "node_e240199e49",
+      "actorId": "actor_e240199e49",
+      "type": "NodeCdecliAgent",
+      "label": "AI Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "sessionId": "",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_8f79b9b89d",
+      "actorId": "actor_8f79b9b89d",
+      "type": "NodeTransform",
+      "label": "Prompt: AI Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: AI Agent.\nconst __promptValue = `Compare the following job description and resume. Assign a qualification score between 0 and 1, where 1 indicates the best match. Provide only the score and the reason for the score in less than 20 words.\nJob Description: Use Airtable tool to get the job description\nResume: \n${$json.text}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_cdf76bb92d",
+      "actorId": "actor_cdf76bb92d",
+      "type": "NodeTransform",
+      "label": "shortlisted?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((Number(($json.score)) >= Number(0.7)));"
+      }
+    },
+    {
+      "nodeId": "node_826434731b",
+      "actorId": "actor_826434731b",
+      "type": "NodeBranch",
+      "label": "shortlisted?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_584606a1c0",
+      "actorId": "actor_584606a1c0",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_UPDATE_RECORD",
+      "color": "#6366F1",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_UPDATE_RECORD",
+        "params": {
+          "baseId": "{{airtableBaseId}}",
+          "tableIdOrName": "{{airtableTableId}}",
+          "recordId": "{{steps.AIRTABLE_CREATE_RECORD.result.id}}",
+          "fields": {
+            "Stage": "Interviewing",
+            "JD CV score": "{{last.text.score}}",
+            "CV Score Notes": "{{last.text.reason}}"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_5a03c2258c",
+      "actorId": "actor_5a03c2258c",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_UPDATE_RECORD",
+      "color": "#6366F1",
+      "position": {
+        "x": 5400,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_UPDATE_RECORD",
+        "params": {
+          "baseId": "{{airtableBaseId}}",
+          "tableIdOrName": "{{airtableTableId}}",
+          "recordId": "{{steps.AIRTABLE_CREATE_RECORD.result.id}}",
+          "fields": {
+            "Stage": "No hire",
+            "JD CV score": "{{last.text.score}}",
+            "CV Score Notes": "{{last.text.reason}}"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_f810ed2b0e",
+      "actorId": "actor_f810ed2b0e",
+      "type": "NodeLlmChain",
+      "label": "generate questionnaires",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_06d327d970",
+      "actorId": "actor_06d327d970",
+      "type": "NodeTransform",
+      "label": "Prompt: generate questionnaires",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"On form submission\": {{ctx}}, \"Upload CV to google drive\": __namedCtx.steps?.[\"GOOGLESUPER_CREATE_FILE\"]?.[\"result\"], \"applicant details\": __namedCtx.steps?.[\"applicant details\"]?.[\"transformed\"], \"Airtable\": __namedCtx.steps?.[\"AIRTABLE_CREATE_RECORD\"]?.[\"result\"], \"download CV\": __namedCtx.steps?.[\"GOOGLESUPER_DOWNLOAD_FILE\"]?.[\"result\"], \"Extract from File\": __namedCtx.steps?.[\"GOOGLESUPER_PARSE_FILE\"]?.[\"result\"], \"AI Agent\": ((text) => ({ text, output: text, content: text, response: { text, output_text: text }, message: { content: text }, choices: [{ message: { content: text }, text }] }))(__namedCtx.steps?.[\"AI Agent\"]?.[\"text\"]), \"Potential Hire\": __namedCtx.steps?.[\"AIRTABLE_UPDATE_RECORD\"]?.[\"result\"], \"Rejected\": __namedCtx.steps?.[\"AIRTABLE_UPDATE_RECORD\"]?.[\"result\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: generate questionnaires.\nconst __promptValue = `Given the following job description and candidate CV, create 5 insightful interview questions to gather more information about the candidate's suitability for the role. The questions should focus on:\n\n Specific projects the candidate has worked on.\n Key responsibilities and achievements in their previous roles.\n Skills relevant to the job description.\n Problem-solving abilities and how they handled challenges.\n Alignment with the company’s goals and values.\n\nProvide the questions in a clear, concise format.\n\nJob Description:\nUse the airtable tool to get the job description\n\nCandidate CV:\n${$('Extract from File').item.json.text}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_0289e137e0",
+      "actorId": "actor_0289e137e0",
+      "type": "NodeTransform",
+      "label": "Params: update questionnaires",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"On form submission\": {{ctx}}, \"Upload CV to google drive\": {{steps.GOOGLESUPER_CREATE_FILE.result}}, \"applicant details\": {{steps.xf_f02fec791e.result}}, \"Airtable\": {{steps.AIRTABLE_CREATE_RECORD.result}}, \"download CV\": {{steps.GOOGLESUPER_DOWNLOAD_FILE.result}}, \"Extract from File\": {{steps.GOOGLESUPER_PARSE_FILE.result}}, \"Potential Hire\": {{steps.AIRTABLE_UPDATE_RECORD.result}}, \"Rejected\": {{steps.AIRTABLE_UPDATE_RECORD.result}}, \"questionnaires\": {{ctx}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for airtable/AIRTABLE_UPDATE_RECORD (n8n node \"update questionnaires\").\nreturn {\n  \"baseId\": \"{{airtableBaseId}}\",\n  \"tableIdOrName\": \"{{airtableTableId}}\",\n  \"recordId\": ($('Airtable').item.json.id),\n  \"fields\": { \"Questonnaires and responses\": `${$('generate questionnaires').item.json.message.content.interview_questions[0].question}: ${$json['Can you describe one of the most complex automation projects you worked on, particularly detailing your role and the technologies you used?']}\n\n\n${$('generate questionnaires').item.json.message.content.interview_questions[1].question}: ${$json['What specific achievements in your previous roles do you believe demonstrate your ability to meet the responsibilities listed in the Automation Specialist position?']}\n\n\n${$('generate questionnaires').item.json.message.content.interview_questions[2].question}: ${$json['Given your experience with automation tools like n8n and APIs, can you provide an example of how you\\'ve successfully integrated different systems to improve operational efficiency?']}\n\n\n${$('generate questionnaires').item.json.message.content.interview_questions[3].question}: ${$json['Describe a challenging situation you faced during a project, how you approached the problem, and what the outcome was.']}\n\n\n${$('generate questionnaires').item.json.message.content.interview_questions[4].question}: ${$json['How do your values and career goals align with our company\\'s mission to optimize and enhance automation solutions?']}\n\n` },\n};"
+      }
+    },
+    {
+      "nodeId": "node_cdf6c0b42a",
+      "actorId": "actor_cdf6c0b42a",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_UPDATE_RECORD",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_UPDATE_RECORD"
+      }
+    },
+    {
+      "nodeId": "node_cf21f96375",
+      "actorId": "actor_cf21f96375",
+      "type": "NodeLlmChain",
+      "label": "Personalize email",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "prompt": "Craft a personalized email to the interviewee, expressing interest in continuing the conversation over a phone call. The email should mention strengths or achievements from their CV or questionnaire responses, and include a polite request to have the phone conversation. Ensure the tone is professional and warm.\n\nProvide an output of \nTo:\nSubject:\nEmail Content:\n\nInputs:\n\n The candidate's CV.\n The job description.\n The candidate's questionnaire responses stored in Airtable.\n\n\nExample email:\nDear [Candidate's Name],\n\nThank you for submitting your application and responses to the questionnaire for the [Job Title] position. We were impressed by [specific strength or achievement from their CV or questionnaire, e.g., \"your experience in automating workflows using n8n, which aligns closely with our goals\"].\n\nWe’d love to continue the conversation to discuss your experience further. \n\nLooking forward to speaking with you soon.\n\n\n\nNOTE: \nSign off the email with\n\nRegards,\nFrancis",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_be3e67a7d3",
+      "actorId": "actor_be3e67a7d3",
+      "type": "NodeTransform",
+      "label": "Edit Fields",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"To\"] = ($json.message.content.To);\n  out[\"Subject\"] = ($json.message.content.Subject);\n  out[\"Email Content\"] = ($json.message.content['Email Content']);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_ee30d3f807",
+      "actorId": "actor_ee30d3f807",
+      "type": "NodeTransform",
+      "label": "Params: Send Email",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for googlesuper/GOOGLESUPER_SEND_EMAIL (n8n node \"Send Email\").\nreturn {\n  \"recipient_email\": ($json.To),\n  \"subject\": ($json.Subject),\n  \"body\": ($json['Email Content']),\n};"
+      }
+    },
+    {
+      "nodeId": "node_ec41a06ea7",
+      "actorId": "actor_ec41a06ea7",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (SMTP original)",
+        "action": "GOOGLESUPER_SEND_EMAIL"
+      }
+    },
+    {
+      "nodeId": "node_19a592ebf1",
+      "actorId": "actor_19a592ebf1",
+      "type": "NodeLlmChain",
+      "label": "Book Meeting",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_b0ad060e75",
+      "actorId": "actor_b0ad060e75",
+      "type": "NodeTransform",
+      "label": "Prompt: Book Meeting",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Prompt: Book Meeting.\nconst __promptValue = `Check the interviewer's calendar for available 30-minute time slots within working hours (8 AM - 5 PM) the next day. Schedule the meeting and confirm the time with the candidate. Ensure that the meeting time is aligned with the candidate's and interviewer's availability.\n\nInputs:\n\n The interviewer's calendar for scheduling.\n Today's date: ${$today}\n\nUse the calendar tool to book the meeting\n\n\nGive back the follwoing information:\nStart time:\nEnd time:`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_5031f18a75",
+      "actorId": "actor_5031f18a75",
+      "type": "NodeTransform",
+      "label": "Params: update phone meeting time",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"On form submission\": {{ctx}}, \"Upload CV to google drive\": {{steps.GOOGLESUPER_CREATE_FILE.result}}, \"applicant details\": {{steps.xf_f02fec791e.result}}, \"Airtable\": {{steps.AIRTABLE_CREATE_RECORD.result}}, \"download CV\": {{steps.GOOGLESUPER_DOWNLOAD_FILE.result}}, \"Extract from File\": {{steps.GOOGLESUPER_PARSE_FILE.result}}, \"Potential Hire\": {{steps.AIRTABLE_UPDATE_RECORD.result}}, \"Rejected\": {{steps.AIRTABLE_UPDATE_RECORD.result}}, \"questionnaires\": {{ctx}}, \"update questionnaires\": {{steps.AIRTABLE_UPDATE_RECORD.result}}, \"Personalize email\": {{steps.obj_cf21f96375.result}}, \"Edit Fields\": {{steps.xf_be3e67a7d3.result}}, \"Send Email\": {{steps.GOOGLESUPER_SEND_EMAIL.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for airtable/AIRTABLE_UPDATE_RECORD (n8n node \"update phone meeting time\").\nreturn {\n  \"baseId\": \"{{airtableBaseId}}\",\n  \"tableIdOrName\": \"{{airtableTableId}}\",\n  \"recordId\": ($('update questionnaires').item.json.id),\n  \"fields\": { \"Phone interview\": ($json.message.content['Start time']) },\n};"
+      }
+    },
+    {
+      "nodeId": "node_15aa4dd199",
+      "actorId": "actor_15aa4dd199",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_UPDATE_RECORD",
+      "color": "#6366F1",
+      "position": {
+        "x": 3880,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_UPDATE_RECORD"
+      }
+    },
+    {
+      "nodeId": "node_8889dff3e2",
+      "actorId": "actor_8889dff3e2",
+      "type": "NodeLlmChain",
+      "label": "Screening Questions",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_c064869694",
+      "actorId": "actor_c064869694",
+      "type": "NodeTransform",
+      "label": "Prompt: Screening Questions",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"On form submission\": {{ctx}}, \"Upload CV to google drive\": __namedCtx.steps?.[\"GOOGLESUPER_CREATE_FILE\"]?.[\"result\"], \"applicant details\": __namedCtx.steps?.[\"applicant details\"]?.[\"transformed\"], \"Airtable\": __namedCtx.steps?.[\"AIRTABLE_CREATE_RECORD\"]?.[\"result\"], \"download CV\": __namedCtx.steps?.[\"GOOGLESUPER_DOWNLOAD_FILE\"]?.[\"result\"], \"Extract from File\": __namedCtx.steps?.[\"GOOGLESUPER_PARSE_FILE\"]?.[\"result\"], \"AI Agent\": ((text) => ({ text, output: text, content: text, response: { text, output_text: text }, message: { content: text }, choices: [{ message: { content: text }, text }] }))(__namedCtx.steps?.[\"AI Agent\"]?.[\"text\"]), \"Potential Hire\": __namedCtx.steps?.[\"AIRTABLE_UPDATE_RECORD\"]?.[\"result\"], \"Rejected\": __namedCtx.steps?.[\"AIRTABLE_UPDATE_RECORD\"]?.[\"result\"], \"generate questionnaires\": ((output) => ({ ...output, output }))(__namedCtx.steps?.[\"generate questionnaires\"]?.[\"object\"]), \"questionnaires\": {{ctx}}, \"update questionnaires\": __namedCtx.steps?.[\"AIRTABLE_UPDATE_RECORD\"]?.[\"result\"], \"Personalize email\": ((output) => ({ ...output, output }))(__namedCtx.steps?.[\"Personalize email\"]?.[\"object\"]), \"Edit Fields\": __namedCtx.steps?.[\"Edit Fields\"]?.[\"transformed\"], \"Send Email\": __namedCtx.steps?.[\"GOOGLESUPER_SEND_EMAIL\"]?.[\"result\"], \"Book Meeting\": ((output) => ({ ...output, output }))(__namedCtx.steps?.[\"Book Meeting\"]?.[\"object\"]), \"update phone meeting time\": __namedCtx.steps?.[\"AIRTABLE_UPDATE_RECORD\"]?.[\"result\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Screening Questions.\nconst __promptValue = `Given the job description, along with the candidate's CV and their responses to the questionnaires, generate a list of screening questions that will help gauge the candidate's suitability for the role. The questions should focus on understanding the candidate’s relevant experience, skills, and cultural fit. The questions should take into account both the job description and the candidate's background and responses. Provide a minimum of 5 questions.\n\nUse the tools to get the job description and the applicant's responses to the questionnaires.\n\nApplicant's CV:\n${$('Extract from File').item.json.text}\n\n\nGive the output as various sentences as a paragraph with every new question in a new line:\nScreening Questions:`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_e206a3b298",
+      "actorId": "actor_e206a3b298",
+      "type": "NodeTransform",
+      "label": "Edit Fields1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"Screening Questions\"] = ($json.message.content['Screening Questions']);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_dc2483b5b9",
+      "actorId": "actor_dc2483b5b9",
+      "type": "NodeTransform",
+      "label": "Params: screening questions",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"On form submission\": {{ctx}}, \"Upload CV to google drive\": {{steps.GOOGLESUPER_CREATE_FILE.result}}, \"applicant details\": {{steps.xf_f02fec791e.result}}, \"Airtable\": {{steps.AIRTABLE_CREATE_RECORD.result}}, \"download CV\": {{steps.GOOGLESUPER_DOWNLOAD_FILE.result}}, \"Extract from File\": {{steps.GOOGLESUPER_PARSE_FILE.result}}, \"Potential Hire\": {{steps.AIRTABLE_UPDATE_RECORD.result}}, \"Rejected\": {{steps.AIRTABLE_UPDATE_RECORD.result}}, \"questionnaires\": {{ctx}}, \"update questionnaires\": {{steps.AIRTABLE_UPDATE_RECORD.result}}, \"Personalize email\": {{steps.obj_cf21f96375.result}}, \"Edit Fields\": {{steps.xf_be3e67a7d3.result}}, \"Send Email\": {{steps.GOOGLESUPER_SEND_EMAIL.result}}, \"update phone meeting time\": {{steps.AIRTABLE_UPDATE_RECORD.result}}, \"Edit Fields1\": {{steps.xf_e206a3b298.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for airtable/AIRTABLE_UPDATE_RECORD (n8n node \"screening questions\").\nreturn {\n  \"baseId\": \"{{airtableBaseId}}\",\n  \"tableIdOrName\": \"{{airtableTableId}}\",\n  \"recordId\": ($('update phone meeting time').item.json.id),\n  \"fields\": { \"Phne interview screening questions\": ($json['Screening Questions']) },\n};"
+      }
+    },
+    {
+      "nodeId": "node_7d30a8a04b",
+      "actorId": "actor_7d30a8a04b",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_UPDATE_RECORD",
+      "color": "#6366F1",
+      "position": {
+        "x": 5780,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_UPDATE_RECORD"
+      }
+    },
+    {
+      "nodeId": "node_1bcd68edd1",
+      "actorId": "actor_1bcd68edd1",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 5780,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_582e97ddf9",
+      "actorId": "actor_582e97ddf9",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 6160,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_0253a6c61f",
+      "actorId": "actor_0253a6c61f",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "First Name": "",
+          "Last Name": "",
+          "Email": "",
+          "Phone": "",
+          "Years of experience": "",
+          "Upload your CV": "",
+          "={{ $json.message.content.interview_questions[0].question }}": "",
+          "={{ $json.message.content.interview_questions[1].question }}": "",
+          "={{ $json.message.content.interview_questions[2].question }}": "",
+          "={{ $json.message.content.interview_questions[3].question }}": "",
+          "={{ $json.message.content.interview_questions[4].question }}": "",
+          "driveFolderId": "",
+          "airtableBaseId": "",
+          "airtableTableId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_55273b1d09",
+      "actorId": "actor_55273b1d09",
+      "type": "NodeChatModel",
+      "label": "generate questionnaires: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 6160,
+        "y": 720
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    },
+    {
+      "nodeId": "node_25844489da",
+      "actorId": "actor_25844489da",
+      "type": "NodeChatModel",
+      "label": "Personalize email: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 680
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o"
+      }
+    },
+    {
+      "nodeId": "node_6d7df2f145",
+      "actorId": "actor_6d7df2f145",
+      "type": "NodeChatModel",
+      "label": "Book Meeting: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3120,
+        "y": 680
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o"
+      }
+    },
+    {
+      "nodeId": "node_66dbff6eef",
+      "actorId": "actor_66dbff6eef",
+      "type": "NodeChatModel",
+      "label": "Screening Questions: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4640,
+        "y": 680
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_24e7dbb40f",
+      "target": "node_b32b10f09d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_24e7dbb40f",
+      "target": "node_b32b10f09d",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_f2a69880b5",
+      "target": "node_f454833cbe",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_f2a69880b5",
+      "target": "node_f454833cbe",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_04e6758faf",
+      "target": "node_77bec5479f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_04e6758faf",
+      "target": "node_77bec5479f",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_be85952628",
+      "target": "node_91477cd088",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_be85952628",
+      "target": "node_91477cd088",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_8f79b9b89d",
+      "target": "node_e240199e49",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_cdf76bb92d",
+      "target": "node_826434731b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_cdf76bb92d",
+      "target": "node_826434731b",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_06d327d970",
+      "target": "node_f810ed2b0e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_0289e137e0",
+      "target": "node_cdf6c0b42a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_0289e137e0",
+      "target": "node_cdf6c0b42a",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ee30d3f807",
+      "target": "node_ec41a06ea7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ee30d3f807",
+      "target": "node_ec41a06ea7",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_b0ad060e75",
+      "target": "node_19a592ebf1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_5031f18a75",
+      "target": "node_15aa4dd199",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_5031f18a75",
+      "target": "node_15aa4dd199",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_c064869694",
+      "target": "node_8889dff3e2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_dc2483b5b9",
+      "target": "node_7d30a8a04b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_dc2483b5b9",
+      "target": "node_7d30a8a04b",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_4176d0819a",
+      "target": "node_24e7dbb40f",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f454833cbe",
+      "target": "node_04e6758faf",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f454833cbe",
+      "target": "node_04e6758faf",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b32b10f09d",
+      "target": "node_f02fec791e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b32b10f09d",
+      "target": "node_f02fec791e",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f02fec791e",
+      "target": "node_f2a69880b5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f02fec791e",
+      "target": "node_f2a69880b5",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_77bec5479f",
+      "target": "node_be85952628",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_77bec5479f",
+      "target": "node_be85952628",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_91477cd088",
+      "target": "node_8f79b9b89d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_91477cd088",
+      "target": "node_8f79b9b89d",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e240199e49",
+      "target": "node_cdf76bb92d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e240199e49",
+      "target": "node_cdf76bb92d",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_826434731b",
+      "target": "node_584606a1c0",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_826434731b",
+      "target": "node_5a03c2258c",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_584606a1c0",
+      "target": "node_06d327d970",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_584606a1c0",
+      "target": "node_06d327d970",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4176d0819a",
+      "target": "node_0289e137e0",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cdf6c0b42a",
+      "target": "node_cf21f96375",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_cf21f96375",
+      "target": "node_be3e67a7d3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cf21f96375",
+      "target": "node_be3e67a7d3",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_be3e67a7d3",
+      "target": "node_ee30d3f807",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_be3e67a7d3",
+      "target": "node_ee30d3f807",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ec41a06ea7",
+      "target": "node_b0ad060e75",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ec41a06ea7",
+      "target": "node_b0ad060e75",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_19a592ebf1",
+      "target": "node_5031f18a75",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_19a592ebf1",
+      "target": "node_5031f18a75",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_15aa4dd199",
+      "target": "node_c064869694",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_15aa4dd199",
+      "target": "node_c064869694",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8889dff3e2",
+      "target": "node_e206a3b298",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8889dff3e2",
+      "target": "node_e206a3b298",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e206a3b298",
+      "target": "node_dc2483b5b9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e206a3b298",
+      "target": "node_dc2483b5b9",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5a03c2258c",
+      "target": "node_1bcd68edd1",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_7d30a8a04b",
+      "target": "node_582e97ddf9",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_55273b1d09",
+      "target": "node_f810ed2b0e",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_25844489da",
+      "target": "node_cf21f96375",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_6d7df2f145",
+      "target": "node_19a592ebf1",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_66dbff6eef",
+      "target": "node_8889dff3e2",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "hr-and-recruitment",
+    "categoryLabel": "HR and Recruitment",
+    "department": "",
+    "connectors": [
+      "airtable",
+      "googlesuper",
+      "openai"
+    ],
+    "setupVars": [
+      {
+        "key": "driveFolderId",
+        "label": "Drive Folder id",
+        "type": "id",
+        "example": "1AbC...xyz",
+        "usedBy": [
+          "Upload CV to google drive"
+        ]
+      },
+      {
+        "key": "airtableBaseId",
+        "label": "Airtable base id",
+        "type": "id",
+        "example": "appXXXX (from the base URL)",
+        "usedBy": [
+          "Airtable",
+          "Potential Hire",
+          "Rejected",
+          "screening questions",
+          "update phone meeting time",
+          "update questionnaires"
+        ]
+      },
+      {
+        "key": "airtableTableId",
+        "label": "Airtable table id",
+        "type": "id",
+        "example": "tblXXXX (from the table URL)",
+        "usedBy": [
+          "Airtable",
+          "Potential Hire",
+          "Rejected",
+          "screening questions",
+          "update phone meeting time",
+          "update questionnaires"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 30,
+      "yantraSteps": 37,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "Airtable1",
+        "Structured Output Parser",
+        "Airtable2",
+        "job_posting",
+        "candidate_insights",
+        "Google Calendar",
+        "job_posting1",
+        "candidate_insights1"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "HR_and_Recruitment/HR Job Posting and Evaluation with AI.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "HR Job Posting and Evaluation with AI"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "On form submission",
+        "detail": "n8n-nodes-base.formTrigger became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "questionnaires",
+        "detail": "n8n-nodes-base.form became the Start node"
+      }
+    ],
+    "setup": [
+      "\"On form submission\" (formTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"questionnaires\" (form) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value driveFolderId: Drive Folder id (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
+      "Setup value airtableBaseId: Airtable base id (for example appXXXX (from the base URL)). Write it into the Workflow Configs initialContext before import.",
+      "Setup value airtableTableId: Airtable table id (for example tblXXXX (from the table URL)). Write it into the Workflow Configs initialContext before import.",
+      "Connect the airtable connector (credential).",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "Provide run inputs: First Name, Last Name, Email, Phone, Years of experience, Upload your CV, ={{ $json.message.content.interview_questions[0].question }}, ={{ $json.message.content.interview_questions[1].question }}, ={{ $json.message.content.interview_questions[2].question }}, ={{ $json.message.content.interview_questions[3].question }}, ={{ $json.message.content.interview_questions[4].question }}."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Upload CV to google drive",
+          "n8n": "file.upload",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Extract from File",
+          "n8n": "extractFromFile.pdf",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "AI Agent"
+        },
+        {
+          "node": "Airtable1",
+          "type": "n8n-nodes-base.airtableTool",
+          "into": "AI Agent",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Structured Output Parser",
+          "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+          "into": "AI Agent",
+          "as": "ai_outputParser"
+        },
+        {
+          "node": "Airtable2",
+          "type": "n8n-nodes-base.airtableTool",
+          "into": "generate questionnaires",
+          "as": "ai_tool"
+        },
+        {
+          "node": "job_posting",
+          "type": "n8n-nodes-base.airtableTool",
+          "into": "Personalize email",
+          "as": "ai_tool"
+        },
+        {
+          "node": "candidate_insights",
+          "type": "n8n-nodes-base.airtableTool",
+          "into": "Personalize email",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Google Calendar",
+          "type": "n8n-nodes-base.googleCalendarTool",
+          "into": "Book Meeting",
+          "as": "ai_tool"
+        },
+        {
+          "node": "job_posting1",
+          "type": "n8n-nodes-base.airtableTool",
+          "into": "Screening Questions",
+          "as": "ai_tool"
+        },
+        {
+          "node": "candidate_insights1",
+          "type": "n8n-nodes-base.airtableTool",
+          "into": "Screening Questions",
+          "as": "ai_tool"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "On form submission",
+          "type": "n8n-nodes-base.formTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "questionnaires",
+          "type": "n8n-nodes-base.form",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from a form submission; pass the form fields as run inputs.",
+        "\"Upload CV to google drive\" (file.upload): Drive binary upload → GOOGLESUPER_CREATE_FILE; wire file bytes/base64 into the upload.",
+        "\"Extract from File\" (extractFromFile.pdf): Parsed via googlesuper/GOOGLESUPER_PARSE_FILE; the file must live on Google Drive (upload first if the previous step only has bytes/base64).",
+        "\"Extract from File\": GOOGLESUPER_PARSE_FILE needs a Drive file_id (and googlesuper credential). If the upstream step only has file bytes, upload with GOOGLESUPER_CREATE_FILE_FROM_TEXT / Drive upload first, then parse.",
+        "\"AI Agent\" used agent tools in the original: Airtable1 (airtableTool). The cdecli agent calls connectors directly; connect credentials for the services those tools reached. Prefer connectors: airtable.",
+        "\"generate questionnaires\" used agent tools in the original: Airtable2 (airtableTool). The cdecli agent calls connectors directly; connect credentials for the services those tools reached. Prefer connectors: airtable.",
+        "\"Personalize email\" used agent tools in the original: job_posting (airtableTool), candidate_insights (airtableTool). The cdecli agent calls connectors directly; connect credentials for the services those tools reached. Prefer connectors: airtable.",
+        "\"Book Meeting\" used agent tools in the original: Google Calendar (googleCalendarTool). The cdecli agent calls connectors directly; connect credentials for the services those tools reached. Prefer connectors: googlesuper.",
+        "\"Screening Questions\" used agent tools in the original: job_posting1 (airtableTool), candidate_insights1 (airtableTool). The cdecli agent calls connectors directly; connect credentials for the services those tools reached. Prefer connectors: airtable.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect airtable: `cdecli credential create -n \"airtable\" -p airtable --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Grab User Details and Update in Airtable",
+      "## Download the CV and get the job description and requirements.\n- ### Send the details to ChatGPT to score the viability of the candidate",
+      "## Update Airtable with score and reason for the score\n\n- ### if score is above 0.7, shortlist and continue flow.\n\n## Get questionnaires based on the JD and CV\n\n- ### Update the responses in Airtable",
+      "## Personalize email and send\n\n## Schedule Meeting and update meeting time in AIrtable",
+      "## Generate Screening Questions and post to Airtable",
+      "## Actions\n- ### Change the `Form Description` with the job description you are hiring for.\n- ### Make sure to check and change the prompts if need be to suit your use case.\n- ### Use the Simple Applicant Tracker template on Airtable to set up the tables required."
+    ],
+    "nodes": {
+      "node_4176d0819a": {
+        "n8n": "On form submission",
+        "n8nType": "n8n-nodes-base.formTrigger",
+        "also": [
+          "questionnaires"
+        ]
+      },
+      "node_24e7dbb40f": {
+        "n8n": "Upload CV to google drive",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_b32b10f09d": {
+        "n8n": "Upload CV to google drive",
+        "n8nType": "n8n-nodes-base.googleDrive",
+        "approximate": true
+      },
+      "node_f02fec791e": {
+        "n8n": "applicant details",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_f2a69880b5": {
+        "n8n": "Airtable",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_f454833cbe": {
+        "n8n": "Airtable",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_04e6758faf": {
+        "n8n": "download CV",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_77bec5479f": {
+        "n8n": "download CV",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_be85952628": {
+        "n8n": "Extract from File",
+        "n8nType": "n8n-nodes-base.extractFromFile"
+      },
+      "node_91477cd088": {
+        "n8n": "Extract from File",
+        "n8nType": "n8n-nodes-base.extractFromFile"
+      },
+      "node_e240199e49": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_8f79b9b89d": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_cdf76bb92d": {
+        "n8n": "shortlisted?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_826434731b": {
+        "n8n": "shortlisted?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_584606a1c0": {
+        "n8n": "Potential Hire",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_5a03c2258c": {
+        "n8n": "Rejected",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_f810ed2b0e": {
+        "n8n": "generate questionnaires",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_06d327d970": {
+        "n8n": "generate questionnaires",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_0289e137e0": {
+        "n8n": "update questionnaires",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_cdf6c0b42a": {
+        "n8n": "update questionnaires",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_cf21f96375": {
+        "n8n": "Personalize email",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_be3e67a7d3": {
+        "n8n": "Edit Fields",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_ee30d3f807": {
+        "n8n": "Send Email",
+        "n8nType": "n8n-nodes-base.emailSend"
+      },
+      "node_ec41a06ea7": {
+        "n8n": "Send Email",
+        "n8nType": "n8n-nodes-base.emailSend"
+      },
+      "node_19a592ebf1": {
+        "n8n": "Book Meeting",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_b0ad060e75": {
+        "n8n": "Book Meeting",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_5031f18a75": {
+        "n8n": "update phone meeting time",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_15aa4dd199": {
+        "n8n": "update phone meeting time",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_8889dff3e2": {
+        "n8n": "Screening Questions",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_c064869694": {
+        "n8n": "Screening Questions",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_e206a3b298": {
+        "n8n": "Edit Fields1",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_dc2483b5b9": {
+        "n8n": "screening questions",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_7d30a8a04b": {
+        "n8n": "screening questions",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_1bcd68edd1": {
+        "n8n": "__end:Rejected",
+        "n8nType": "synthetic"
+      },
+      "node_582e97ddf9": {
+        "n8n": "__end:screening questions",
+        "n8nType": "synthetic"
+      },
+      "node_0253a6c61f": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_55273b1d09": {
+        "n8n": "generate questionnaires",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_25844489da": {
+        "n8n": "Personalize email",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_6d7df2f145": {
+        "n8n": "Book Meeting",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_66dbff6eef": {
+        "n8n": "Screening Questions",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

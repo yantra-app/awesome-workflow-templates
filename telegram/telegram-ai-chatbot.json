@@ -1,0 +1,1152 @@
+{
+  "name": "Telegram AI Chatbot",
+  "workflowSlug": "telegram-ai-chatbot",
+  "description": "A general-purpose AI chatbot template for Telegram that can be customized for various use cases.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_025701257b",
+      "actorId": "actor_025701257b",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_7adf21168d",
+      "actorId": "actor_7adf21168d",
+      "type": "NodeTransform",
+      "label": "PreProcessing",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __set = (o, p, v) => { const ks = String(p).split('.'); let c = o; for (const k of ks.slice(0, -1)) { if (c[k] == null || typeof c[k] !== 'object') c[k] = {}; c = c[k]; } c[ks[ks.length - 1]] = v; return o; };\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  __set(out, \"message.text\", ($json?.message?.text || \"\"));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_8a56e2f9a6",
+      "actorId": "actor_8a56e2f9a6",
+      "type": "NodeTransform",
+      "label": "Settings",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"model_temperature\"] = Number(0.8);\n  out[\"token_length\"] = Number(500);\n  out[\"system_command\"] = `You are a friendly chatbot. User name is ${$json?.message?.from?.first_name}. User system language is ${$json?.message?.from?.language_code}. First, detect user text language. Next, provide your reply in the same language. Include several suitable emojis in your answer.`;\n  out[\"bot_typing\"] = ($json?.message?.text.startsWith('/image') ? \"upload_photo\" : \"typing\");\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_e47a0cc24e",
+      "actorId": "actor_e47a0cc24e",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_SEND_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_SEND_MESSAGE",
+        "params": {
+          "chat_id": "{{last.transformed.message.from.id}}",
+          "text": "..."
+        }
+      }
+    },
+    {
+      "nodeId": "node_6f6481a433",
+      "actorId": "actor_6f6481a433",
+      "type": "NodeSync",
+      "label": "Merge",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_84f95ee162",
+      "actorId": "actor_84f95ee162",
+      "type": "NodeTransform",
+      "label": "CheckCommand: rule 1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(!String(($json.message?.text) ?? '').startsWith(String(\"/\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_bb941ab8e4",
+      "actorId": "actor_bb941ab8e4",
+      "type": "NodeBranch",
+      "label": "CheckCommand: rule 1?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_65bab4fd93",
+      "actorId": "actor_65bab4fd93",
+      "type": "NodeTransform",
+      "label": "CheckCommand: rule 2",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(String(($json.message?.text) ?? '').startsWith(String(\"/start\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_5a5f2a99f7",
+      "actorId": "actor_5a5f2a99f7",
+      "type": "NodeBranch",
+      "label": "CheckCommand: rule 2?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_9bea291ec0",
+      "actorId": "actor_9bea291ec0",
+      "type": "NodeTransform",
+      "label": "CheckCommand: rule 3",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(String(($json.message?.text) ?? '').startsWith(String(`/image ` ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_49b6f8241f",
+      "actorId": "actor_49b6f8241f",
+      "type": "NodeBranch",
+      "label": "CheckCommand: rule 3?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_52e5e7923d",
+      "actorId": "actor_52e5e7923d",
+      "type": "NodeLlmChain",
+      "label": "Chat_mode",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3880,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{llm_system_7e72363d92}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_7e72363d92",
+      "actorId": "actor_7e72363d92",
+      "type": "NodeTransform",
+      "label": "System: Chat_mode",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: Chat_mode.\nconst __promptValue = ($json.system_command);\nreturn { \"llm_system_7e72363d92\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_32f56cb736",
+      "actorId": "actor_32f56cb736",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Chat_mode",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_31346cd2ff",
+      "actorId": "actor_31346cd2ff",
+      "type": "NodeTransform",
+      "label": "Prompt: Chat_mode",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Chat_mode.\nconst __promptValue = ($json.message.text);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_180f1beb13",
+      "actorId": "actor_180f1beb13",
+      "type": "NodeLlmChain",
+      "label": "Greeting",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{llm_system_0cc801ca16}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_0cc801ca16",
+      "actorId": "actor_0cc801ca16",
+      "type": "NodeTransform",
+      "label": "System: Greeting",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: Greeting.\nconst __promptValue = ($json.system_command);\nreturn { \"llm_system_0cc801ca16\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_9ac119a64c",
+      "actorId": "actor_9ac119a64c",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Greeting",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_c4eab65b56",
+      "actorId": "actor_c4eab65b56",
+      "type": "NodeTransform",
+      "label": "Prompt: Greeting",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Greeting.\nconst __promptValue = `This is the first message from a user. Please welcome a new user in \\`${$json.message.from.language_code}\\` language`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_ea335c8ae7",
+      "actorId": "actor_ea335c8ae7",
+      "type": "NodeTransform",
+      "label": "Params: Create an image",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for yantra-image-generation/YANTRA_GEMINI_IMAGE_GENERATE (n8n node \"Create an image\").\nreturn {\n  \"prompt\": ($json.message.text.split(' ').slice(1).join(' ')),\n};"
+      }
+    },
+    {
+      "nodeId": "node_d49dd2c5e9",
+      "actorId": "actor_d49dd2c5e9",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-generation/YANTRA_GEMINI_IMAGE_GENERATE",
+      "color": "#6366F1",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-generation",
+        "connectorLabel": "Image generation",
+        "action": "YANTRA_GEMINI_IMAGE_GENERATE"
+      }
+    },
+    {
+      "nodeId": "node_b748553965",
+      "actorId": "actor_b748553965",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_SEND_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 4260,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_SEND_MESSAGE",
+        "params": {
+          "chat_id": "{{last.data1.message.from.id}}",
+          "text": "Sorry, {{last.data1.message.from.first_name}}! This command is not supported yet. Please type some text to a chat bot or try this command:\n/image \\{{prompt}}\n\nEnter the command, then space and provide your request. Example:\n\n`/image a picture or a cute little kitten with big eyes. Miyazaki studio ghibli style`",
+          "parse_mode": "Markdown"
+        }
+      }
+    },
+    {
+      "nodeId": "node_75f08fe75f",
+      "actorId": "actor_75f08fe75f",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_SEND_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_SEND_MESSAGE",
+        "params": {
+          "chat_id": "{{steps.xf_8a56e2f9a6.result.message.from.id}}",
+          "text": "{{last.text}}",
+          "parse_mode": "Markdown"
+        }
+      }
+    },
+    {
+      "nodeId": "node_9bdb2c0944",
+      "actorId": "actor_9bdb2c0944",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_SEND_PHOTO",
+      "color": "#6366F1",
+      "position": {
+        "x": 5020,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_SEND_PHOTO",
+        "params": {
+          "chat_id": "{{steps.xf_8a56e2f9a6.result.message.from.id}}",
+          "photo": "{{last.result.url}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_6145ee5f84",
+      "actorId": "actor_6145ee5f84",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 4640,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_8947b1a5d0",
+      "actorId": "actor_8947b1a5d0",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_b761031107",
+      "actorId": "actor_b761031107",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 5400,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_11104b0724",
+      "actorId": "actor_11104b0724",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "event": {},
+          "prompt": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_ce6764326b",
+      "actorId": "actor_ce6764326b",
+      "type": "NodeChatModel",
+      "label": "Chat_mode: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3880,
+        "y": 980
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4"
+      }
+    },
+    {
+      "nodeId": "node_3d07f67353",
+      "actorId": "actor_3d07f67353",
+      "type": "NodeChatModel",
+      "label": "Greeting: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4640,
+        "y": 1020
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_84f95ee162",
+      "target": "node_bb941ab8e4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_84f95ee162",
+      "target": "node_bb941ab8e4",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_bb941ab8e4",
+      "target": "node_65bab4fd93",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_65bab4fd93",
+      "target": "node_5a5f2a99f7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_65bab4fd93",
+      "target": "node_5a5f2a99f7",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_5a5f2a99f7",
+      "target": "node_9bea291ec0",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9bea291ec0",
+      "target": "node_49b6f8241f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_9bea291ec0",
+      "target": "node_49b6f8241f",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_7e72363d92",
+      "target": "node_32f56cb736",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_7e72363d92",
+      "target": "node_32f56cb736",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_32f56cb736",
+      "target": "node_31346cd2ff",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_31346cd2ff",
+      "target": "node_52e5e7923d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_0cc801ca16",
+      "target": "node_9ac119a64c",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_0cc801ca16",
+      "target": "node_9ac119a64c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_9ac119a64c",
+      "target": "node_c4eab65b56",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c4eab65b56",
+      "target": "node_180f1beb13",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_ea335c8ae7",
+      "target": "node_d49dd2c5e9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ea335c8ae7",
+      "target": "node_d49dd2c5e9",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_025701257b",
+      "target": "node_7adf21168d",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bb941ab8e4",
+      "target": "node_7e72363d92",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6f6481a433",
+      "target": "node_7e72363d92",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6f6481a433",
+      "target": "node_31346cd2ff",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5a5f2a99f7",
+      "target": "node_0cc801ca16",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6f6481a433",
+      "target": "node_0cc801ca16",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6f6481a433",
+      "target": "node_c4eab65b56",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_49b6f8241f",
+      "target": "node_ea335c8ae7",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6f6481a433",
+      "target": "node_ea335c8ae7",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_49b6f8241f",
+      "target": "node_b748553965",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_8a56e2f9a6",
+      "target": "node_e47a0cc24e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_8a56e2f9a6",
+      "target": "node_6f6481a433",
+      "sourceOutput": "transformed",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_52e5e7923d",
+      "target": "node_75f08fe75f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_180f1beb13",
+      "target": "node_75f08fe75f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_e47a0cc24e",
+      "target": "node_6f6481a433",
+      "sourceOutput": "result",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_6f6481a433",
+      "target": "node_84f95ee162",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6f6481a433",
+      "target": "node_84f95ee162",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6f6481a433",
+      "target": "node_65bab4fd93",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6f6481a433",
+      "target": "node_9bea291ec0",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d49dd2c5e9",
+      "target": "node_9bdb2c0944",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_7adf21168d",
+      "target": "node_8a56e2f9a6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7adf21168d",
+      "target": "node_8a56e2f9a6",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b748553965",
+      "target": "node_6145ee5f84",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_75f08fe75f",
+      "target": "node_8947b1a5d0",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_9bdb2c0944",
+      "target": "node_b761031107",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_ce6764326b",
+      "target": "node_52e5e7923d",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_3d07f67353",
+      "target": "node_180f1beb13",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "telegram",
+    "categoryLabel": "Telegram",
+    "department": "Support",
+    "connectors": [
+      "openai",
+      "telegram",
+      "yantra-image-generation"
+    ],
+    "setupVars": [
+      {
+        "key": "prompt",
+        "label": "Prompt",
+        "type": "text",
+        "usedBy": [
+          "Send error message"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeSync",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 12,
+      "yantraSteps": 26,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Telegram/Telegram AI Chatbot.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Telegram AI-bot"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "missing-required-param",
+        "node": "Chat_mode",
+        "detail": "LLM input mismatch: prompt reads $json.message, which Merge does not produce"
+      },
+      {
+        "code": "missing-required-param",
+        "node": "Greeting",
+        "detail": "LLM input mismatch: prompt reads $json.message, which Merge does not produce"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Telegram Trigger",
+        "detail": "n8n-nodes-base.telegramTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Chat_mode\": wire the intended prompt data from \"Merge\" and correct $json.message before running.",
+      "\"Greeting\": wire the intended prompt data from \"Merge\" and correct $json.message before running.",
+      "\"Telegram Trigger\" (telegramTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value prompt: Prompt. Write it into the Workflow Configs initialContext before import.",
+      "Connect the openai connector (credential).",
+      "Connect the telegram connector (credential).",
+      "Provide run inputs: event, llm_system_0cc801ca16, llm_system_7e72363d92."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Telegram Trigger",
+          "type": "n8n-nodes-base.telegramTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from telegramTrigger; Yantra has no webhook slug for it, so run on demand, on a schedule (add a NodeCron), or via the workflow API with the event under the run input `event`.",
+        "\"Merge\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was chooseBranch).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect telegram: `cdecli credential create -n \"telegram\" -p telegram --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Error fallback for unsupported commands",
+      "## Chatbot mode by default\n### (when no command is provided)",
+      "## Welcome message\n### /start",
+      "## Create an image\n### /image + request"
+    ],
+    "nodes": {
+      "node_025701257b": {
+        "n8n": "Telegram Trigger",
+        "n8nType": "n8n-nodes-base.telegramTrigger"
+      },
+      "node_7adf21168d": {
+        "n8n": "PreProcessing",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_8a56e2f9a6": {
+        "n8n": "Settings",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_e47a0cc24e": {
+        "n8n": "Send Typing action",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_6f6481a433": {
+        "n8n": "Merge",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_84f95ee162": {
+        "n8n": "CheckCommand",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_bb941ab8e4": {
+        "n8n": "CheckCommand",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_65bab4fd93": {
+        "n8n": "CheckCommand",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_5a5f2a99f7": {
+        "n8n": "CheckCommand",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_9bea291ec0": {
+        "n8n": "CheckCommand",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_49b6f8241f": {
+        "n8n": "CheckCommand",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_52e5e7923d": {
+        "n8n": "Chat_mode",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_7e72363d92": {
+        "n8n": "Chat_mode",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_32f56cb736": {
+        "n8n": "Chat_mode",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_31346cd2ff": {
+        "n8n": "Chat_mode",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_180f1beb13": {
+        "n8n": "Greeting",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_0cc801ca16": {
+        "n8n": "Greeting",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_9ac119a64c": {
+        "n8n": "Greeting",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_c4eab65b56": {
+        "n8n": "Greeting",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_ea335c8ae7": {
+        "n8n": "Create an image",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_d49dd2c5e9": {
+        "n8n": "Create an image",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_b748553965": {
+        "n8n": "Send error message",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_75f08fe75f": {
+        "n8n": "Text reply",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_9bdb2c0944": {
+        "n8n": "Send image",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_6145ee5f84": {
+        "n8n": "__end:Send error message",
+        "n8nType": "synthetic"
+      },
+      "node_8947b1a5d0": {
+        "n8n": "__end:Text reply",
+        "n8nType": "synthetic"
+      },
+      "node_b761031107": {
+        "n8n": "__end:Send image",
+        "n8nType": "synthetic"
+      },
+      "node_11104b0724": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_ce6764326b": {
+        "n8n": "Chat_mode",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_3d07f67353": {
+        "n8n": "Greeting",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

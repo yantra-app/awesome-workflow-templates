@@ -1,0 +1,438 @@
+{
+  "name": "Use AI to organize your Todoist Inbox",
+  "workflowSlug": "use-ai-to-organize-your-todoist-inbox",
+  "description": "Automatically organizes tasks in Todoist using AI.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_f7b6a6a821",
+      "actorId": "actor_f7b6a6a821",
+      "type": "NodeCron",
+      "label": "Schedule Trigger",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 0 * * *"
+      }
+    },
+    {
+      "nodeId": "node_28da6e25af",
+      "actorId": "actor_28da6e25af",
+      "type": "NodeTransform",
+      "label": "Your Projects",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"projects\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(({\n apartment: 1,\n health: 2,\n german: 3\n}));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_d799e952d8",
+      "actorId": "actor_d799e952d8",
+      "type": "NodeCdeConnector",
+      "label": "todoist/TODOIST_GET_ALL_TASKS",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "todoist",
+        "connectorLabel": "Todoist",
+        "action": "TODOIST_GET_ALL_TASKS",
+        "params": {
+          "project_id": "938017196"
+        }
+      }
+    },
+    {
+      "nodeId": "node_74fec89822",
+      "actorId": "actor_74fec89822",
+      "type": "NodeTransform",
+      "label": "If task is not a subtask",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn __items.filter(($json) => Boolean((String(($json.parent_id) ?? '').trim() === '')));"
+      }
+    },
+    {
+      "nodeId": "node_5bb36270a2",
+      "actorId": "actor_5bb36270a2",
+      "type": "NodeLlmChain",
+      "label": "Categorize",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "Categorize the user's todo item to a project. Return the project name or just \"other\" if it does not belong to a project.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_242d51442f",
+      "actorId": "actor_242d51442f",
+      "type": "NodeTransform",
+      "label": "Prompt: Categorize",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Schedule Trigger\": __namedCtx.steps?.[\"Schedule Trigger\"]?.[\"payload\"], \"Your Projects\": __namedCtx.steps?.[\"Your Projects\"]?.[\"transformed\"], \"Get inbox tasks\": __namedCtx.steps?.[\"TODOIST_GET_ALL_TASKS\"]?.[\"result\"], \"If task is not a subtask\": __namedCtx.steps?.[\"If task is not a subtask\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Object.prototype, { keys() { return Object.keys(this); } });\n// Prompt: Categorize.\nconst __promptValue = `Projects:\n${$('Your Projects').first().json.projects.keys().join('\\n')}\n\nTodo item:\n${$('Get inbox tasks').item.json.content}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_42a9b205e0",
+      "actorId": "actor_42a9b205e0",
+      "type": "NodeTransform",
+      "label": "If other or ai hallucinates",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Your Projects\": {{steps.xf_28da6e25af.result}}, \"Get inbox tasks\": {{steps.TODOIST_GET_ALL_TASKS.result}}, \"If task is not a subtask\": {{steps.xf_74fec89822.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Object.prototype, { keys() { return Object.keys(this); } });\nreturn __items.filter(($json) => Boolean(((Array.isArray(($('Your Projects').first().json.projects.keys())) ? ($('Your Projects').first().json.projects.keys()) : []).includes(($json)))));"
+      }
+    },
+    {
+      "nodeId": "node_ae4d1e907b",
+      "actorId": "actor_ae4d1e907b",
+      "type": "NodeCdeConnector",
+      "label": "todoist/TODOIST_UPDATE_TASK",
+      "color": "#6366F1",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "todoist",
+        "connectorLabel": "Todoist",
+        "action": "TODOIST_UPDATE_TASK",
+        "params": {
+          "task_id": "{{steps.TODOIST_GET_ALL_TASKS.result.id}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_227f98074f",
+      "actorId": "actor_227f98074f",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_1d92f354e6",
+      "actorId": "actor_1d92f354e6",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": ""
+      }
+    },
+    {
+      "nodeId": "node_05b3be4997",
+      "actorId": "actor_05b3be4997",
+      "type": "NodeChatModel",
+      "label": "Categorize: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_242d51442f",
+      "target": "node_5bb36270a2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_f7b6a6a821",
+      "target": "node_28da6e25af",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f7b6a6a821",
+      "target": "node_28da6e25af",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d799e952d8",
+      "target": "node_74fec89822",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d799e952d8",
+      "target": "node_74fec89822",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_28da6e25af",
+      "target": "node_d799e952d8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_5bb36270a2",
+      "target": "node_42a9b205e0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5bb36270a2",
+      "target": "node_42a9b205e0",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_74fec89822",
+      "target": "node_242d51442f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_74fec89822",
+      "target": "node_242d51442f",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_42a9b205e0",
+      "target": "node_ae4d1e907b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ae4d1e907b",
+      "target": "node_227f98074f",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_05b3be4997",
+      "target": "node_5bb36270a2",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "other-integrations",
+    "categoryLabel": "Other Integrations and Use Cases",
+    "department": "Productivity",
+    "connectors": [
+      "openai",
+      "todoist"
+    ],
+    "activation": "cdecli cron activate use-ai-to-organize-your-todoist-inbox",
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 7,
+      "yantraSteps": 9,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Other_Integrations_and_Use_Cases/Use AI to organize your Todoist Inbox.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Connect the openai connector (credential).",
+      "Connect the todoist connector (credential).",
+      "After import, start the schedule: cdecli cron activate use-ai-to-organize-your-todoist-inbox."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Schedule Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect todoist: `cdecli credential create -n \"todoist\" -p todoist --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## 💫 To setup this template\n\n1. Add your Todoist credentials\n2. Add your OpenAI credentials\n3. Set your project names and add priority",
+      "👆🏽 Add your projects and priority here",
+      "👇🏽 Add your Todoist credentials here",
+      "👇🏽 Add your Todoist credentials here",
+      "👆🏽 Add your OpenAI credentials here"
+    ],
+    "nodes": {
+      "node_f7b6a6a821": {
+        "n8n": "Schedule Trigger",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_28da6e25af": {
+        "n8n": "Your Projects",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_d799e952d8": {
+        "n8n": "Get inbox tasks",
+        "n8nType": "n8n-nodes-base.todoist"
+      },
+      "node_74fec89822": {
+        "n8n": "If task is not a subtask",
+        "n8nType": "n8n-nodes-base.filter"
+      },
+      "node_5bb36270a2": {
+        "n8n": "Categorize",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_242d51442f": {
+        "n8n": "Categorize",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_42a9b205e0": {
+        "n8n": "If other or ai hallucinates",
+        "n8nType": "n8n-nodes-base.filter"
+      },
+      "node_ae4d1e907b": {
+        "n8n": "Update priority in todoist",
+        "n8nType": "n8n-nodes-base.todoist"
+      },
+      "node_227f98074f": {
+        "n8n": "__end:Update priority in todoist",
+        "n8nType": "synthetic"
+      },
+      "node_1d92f354e6": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_05b3be4997": {
+        "n8n": "Categorize",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

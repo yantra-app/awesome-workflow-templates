@@ -1,0 +1,402 @@
+{
+  "name": "Chat with GitHub OpenAPI Specification using RAG (Pinecone and OpenAI)",
+  "workflowSlug": "chat-with-github-openapi-specification-using-rag-pinecone-and-openai",
+  "description": "Implements a RAG-powered chatbot for interacting with GitHub API documentation using Pinecone and OpenAI.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_a5ca2eac2d",
+      "actorId": "actor_a5ca2eac2d",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_4b3a07d2c7",
+      "actorId": "actor_4b3a07d2c7",
+      "type": "NodeHttpRequest",
+      "label": "HTTP Request",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://raw.githubusercontent.com/github/rest-api-description/refs/heads/main/descriptions/api.github.com/api.github.com.json"
+      }
+    },
+    {
+      "nodeId": "node_02ef9106ed",
+      "actorId": "actor_02ef9106ed",
+      "type": "NodeCdecliAgent",
+      "label": "AI Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "sessionId": "{{sessionId}}",
+        "system": "You are a helpful assistant providing information about the GitHub API and how to use it based on the OpenAPI V3 specifications.",
+        "message": "{{chatInput}}"
+      }
+    },
+    {
+      "nodeId": "node_d7774a2674",
+      "actorId": "actor_d7774a2674",
+      "type": "NodeTransform",
+      "label": "Params: Pinecone Vector Store",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Params for pinecone/PINECONE_UPSERT_RECORDS_NAMESPACE (n8n node \"Pinecone Vector Store\").\nreturn {\n  \"index_host\": \"{{pineconeIndexHost}}\",\n  \"namespace\": \"{{pineconeNamespace}}\",\n  \"records\": (() => {\n  const __docs = __items.flatMap((d) => (Array.isArray(d) ? d : [d]));\n  return __docs.map((d) => {\n    const text = typeof d === 'string' ? d : d?.pageContent ?? d?.text ?? d?.content ?? d?.chunk ?? JSON.stringify(d);\n    const meta = d && typeof d === 'object' ? (d.metadata && typeof d.metadata === 'object' ? d.metadata : d) : {};\n    const flat = {};\n    for (const [k, v] of Object.entries(meta)) if (!['pageContent', 'text', '_id'].includes(k) && ['string', 'number', 'boolean'].includes(typeof v)) flat[k] = v;\n    return { ...flat, _id: String(d?.id ?? meta.id ?? crypto.randomUUID()), text: String(text) };\n  });\n})(),\n};"
+      }
+    },
+    {
+      "nodeId": "node_e78b2a1c61",
+      "actorId": "actor_e78b2a1c61",
+      "type": "NodeCdeConnector",
+      "label": "pinecone/PINECONE_UPSERT_RECORDS_NAMESPACE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "pinecone",
+        "connectorLabel": "Pinecone",
+        "action": "PINECONE_UPSERT_RECORDS_NAMESPACE"
+      }
+    },
+    {
+      "nodeId": "node_cc42c47b31",
+      "actorId": "actor_cc42c47b31",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_37241c1d24",
+      "actorId": "actor_37241c1d24",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_cd1228bc52",
+      "actorId": "actor_cd1228bc52",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "chatInput": "",
+          "sessionId": "",
+          "pineconeNamespace": "",
+          "pineconeIndexHost": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_d7774a2674",
+      "target": "node_e78b2a1c61",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d7774a2674",
+      "target": "node_e78b2a1c61",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_a5ca2eac2d",
+      "target": "node_4b3a07d2c7",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_4b3a07d2c7",
+      "target": "node_d7774a2674",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4b3a07d2c7",
+      "target": "node_d7774a2674",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a5ca2eac2d",
+      "target": "node_02ef9106ed",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_02ef9106ed",
+      "target": "node_cc42c47b31",
+      "sourceOutput": "text",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_e78b2a1c61",
+      "target": "node_37241c1d24",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "ai-research-and-data",
+    "categoryLabel": "AI Research, RAG and Data Analysis",
+    "department": "Development, AI Research",
+    "connectors": [
+      "pinecone"
+    ],
+    "setupVars": [
+      {
+        "key": "pineconeNamespace",
+        "label": "Pinecone namespace for this collection",
+        "type": "text",
+        "example": "documents",
+        "usedBy": [
+          "Pinecone Vector Store"
+        ]
+      },
+      {
+        "key": "pineconeIndexHost",
+        "label": "Pinecone index host (create the index with integrated embedding and field map text=text)",
+        "type": "url",
+        "example": "my-index-abc123.svc.aped-4627-b74a.pinecone.io",
+        "usedBy": [
+          "Pinecone Vector Store"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 14,
+      "yantraSteps": 5,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "Vector Store Tool",
+        "Window Buffer Memory",
+        "Default Data Loader",
+        "Generate Embeddings"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "AI_Research_RAG_and_Data_Analysis/Chat with GitHub API Documentation_ RAG-Powered Chatbot with Pinecone & OpenAI.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Chat with GitHub OpenAPI Specification using RAG (Pinecone and OpenAI)"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "When chat message received",
+        "detail": "@n8n/n8n-nodes-langchain.chatTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"When chat message received\" (chatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value pineconeNamespace: Pinecone namespace for this collection (for example documents). Write it into the Workflow Configs initialContext before import.",
+      "Setup value pineconeIndexHost: Pinecone index host (create the index with integrated embedding and field map text=text) (for example my-index-abc123.svc.aped-4627-b74a.pinecone.io). Write it into the Workflow Configs initialContext before import.",
+      "Connect the pinecone connector (credential).",
+      "Provide run inputs: chatInput, sessionId."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Pinecone Vector Store",
+          "n8n": "vectorStorePinecone.insert",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "AI Agent"
+        },
+        {
+          "node": "Vector Store Tool",
+          "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+          "into": "AI Agent",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Window Buffer Memory",
+          "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+          "into": "AI Agent",
+          "as": "ai_memory"
+        },
+        {
+          "node": "Default Data Loader",
+          "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+          "into": "Pinecone Vector Store",
+          "as": "ai_document"
+        },
+        {
+          "node": "Generate Embeddings",
+          "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+          "into": "Pinecone Vector Store",
+          "as": "ai_embedding"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "When chat message received",
+          "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
+        "\"AI Agent\" kept conversation memory (memoryBufferWindow); sessionId is set to the run-input sessionId.",
+        "\"AI Agent\" used agent tools in the original: Vector Store Tool (toolVectorStore). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
+        "\"Pinecone Vector Store\" folded a document (documentDefaultDataLoader); retrieved text is expected on the upstream payload as context/documents.",
+        "\"Pinecone Vector Store\" (vectorStorePinecone.insert): The original used a Pinecone index with a separate embeddings node; here the default vector store is a Pinecone index with integrated embedding (upsert records), so Pinecone embeds the text itself.",
+        "\"Pinecone Vector Store\": create a Pinecone index with integrated embedding (for example llama-text-embed-v2, field map text=text) and set pineconeIndexHost; the store uses the namespace \"{{pineconeNamespace}}\".",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect pinecone: `cdecli credential create -n \"pinecone\" -p pinecone --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Indexing content in the vector database\nThis part of the workflow is responsible for extracting content, generating embeddings and sending them to the Pinecone vector store.\n\nIt requests the OpenAPI specifications from GitHub using a HTTP request. Then, it splits the file in chunks, generating embeddings for each chunk using OpenAI, and saving them in Pinecone vector DB.",
+      "## Querying and response generation \n\nThis part of the workflow is responsible for the chat interface, querying the vector store and generating relevant responses.\n\nIt uses OpenAI GPT 4o-mini to generate responses.",
+      "## RAG workflow in n8n\n\nThis is an example of how to use RAG techniques to create a chatbot with n8n. It is an API documentation chatbot that can answer questions about the GitHub API. It uses OpenAI for generating embeddings, the gpt-4o-mini LLM for generating responses and Pinecone as a vector database.\n\n### Before using this template\n* create OpenAI and Pinecone accounts\n* obtain API keys OpenAI and Pinecone \n* configure credentials in n8n for both\n* ensure you have a Pinecone index named \"n8n-demo\" or adjust the workflow accordingly."
+    ],
+    "nodes": {
+      "node_a5ca2eac2d": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger",
+        "also": [
+          "When chat message received"
+        ]
+      },
+      "node_4b3a07d2c7": {
+        "n8n": "HTTP Request",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_02ef9106ed": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_d7774a2674": {
+        "n8n": "Pinecone Vector Store",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStorePinecone"
+      },
+      "node_e78b2a1c61": {
+        "n8n": "Pinecone Vector Store",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStorePinecone"
+      },
+      "node_cc42c47b31": {
+        "n8n": "__end:AI Agent",
+        "n8nType": "synthetic"
+      },
+      "node_37241c1d24": {
+        "n8n": "__end:Pinecone Vector Store",
+        "n8nType": "synthetic"
+      },
+      "node_cd1228bc52": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

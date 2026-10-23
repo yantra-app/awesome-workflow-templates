@@ -1,0 +1,859 @@
+{
+  "name": "Complete Youtube",
+  "workflowSlug": "complete-youtube",
+  "description": "Converted from the n8n template \"Complete Youtube\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_83ba7e593b",
+      "actorId": "actor_83ba7e593b",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_e5aeb9955e",
+      "actorId": "actor_e5aeb9955e",
+      "type": "NodeHttpRequest",
+      "label": "get_videos1",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=3&q=&key={{googleApiKey}}"
+      }
+    },
+    {
+      "nodeId": "node_0bae34f966",
+      "actorId": "actor_0bae34f966",
+      "type": "NodeCdecliAgent",
+      "label": "AI Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "sessionId": "{{sessionId}}",
+        "system": "You help youtube creators find trending videos based on a specific niche.\n\nVerify if the user informed a niche before doing anything. If not, then ask him for one by giving him suggestions for him to select from.\n\nAfter you know what type of content the user might produce, use the \"youtube_search\" tool up to 3 times with different search terms based on the user's content type and niche.\n\nThe tool will answer with a list of videos from the last 2 days that had the most amount of relevancy. It returns a list of json's covering each video's id, view count, like count, comment count, description, channel title, tags and channel id. Each video is separated by \"### NEXT VIDEO FOUND: ###\".\n\nYou should then proceed to understand the data received then provide the user with insightful data of what could be trending from the past 2 days. Provide the user links to the trending videos which should be in this structure:\n\nhttps://www.youtube.com/watch?v={video_id}\n\nto reach the channel's link you should use:\n\nhttps://www.youtube.com/channel/{channel_id}\n\nFind patterns in the tags, titles and especially in the related content for the videos found.\n\nYour mission isn't to find the trending videos. It's to provide the user with valuable information of what is trending in that niche in terms of content news. Remember to provide the user with the numbers of views, likes and comments while commenting about any video. So you should not talk about any particular video, focus rather in explaining the overall senario of all that was found.\n\nExample of response:\n\n\"It seems like what is trending in digital marketing right now is talking about mental triggers, since 3 of the most trending videos in the last 2 days were about...\"",
+        "message": "{{chatInput}}"
+      }
+    },
+    {
+      "nodeId": "node_bb382becd0",
+      "actorId": "actor_bb382becd0",
+      "type": "NodeTransform",
+      "label": "Items: loop_over_items1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_7c7f348fb8",
+      "actorId": "actor_7c7f348fb8",
+      "type": "NodeLoop",
+      "label": "loop_over_items1",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_5e0bbfa06c",
+      "actorId": "actor_5e0bbfa06c",
+      "type": "NodeTransform",
+      "label": "Item: loop_over_items1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_a522f7b674",
+      "actorId": "actor_a522f7b674",
+      "type": "NodeTransform",
+      "label": "Results: loop_over_items1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_f7516aa111",
+      "actorId": "actor_f7516aa111",
+      "type": "NodeTransform",
+      "label": "retrieve_data_from_memory1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __staticData = {}; const $getWorkflowStaticData = () => __staticData; // not persisted between runs on Yantra\n// Ported from n8n Code node \"retrieve_data_from_memory1\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const workflowStaticData = $getWorkflowStaticData('global');\n  \n  const lastExecution = workflowStaticData.lastExecution;\n  \n  return lastExecution;\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_87502b942a",
+      "actorId": "actor_87502b942a",
+      "type": "NodeHttpRequest",
+      "label": "find_video_data1",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET"
+      }
+    },
+    {
+      "nodeId": "node_397b584701",
+      "actorId": "actor_397b584701",
+      "type": "NodeTransform",
+      "label": "URL: find_video_data1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// n8n $env values come from the Workflow Configs initialContext (setup values and workflow secrets).\nconst $env = { \"GOOGLE_API_KEY\": \"{{googleApiKey}}\" };\n// Request URL for \"find_video_data1\".\nreturn `https://www.googleapis.com/youtube/v3/videos??key=${$env[\"GOOGLE_API_KEY\"]}&id=${$json.id.videoId}&part=contentDetails, snippet, statistics`;"
+      }
+    },
+    {
+      "nodeId": "node_3b661e0e3a",
+      "actorId": "actor_3b661e0e3a",
+      "type": "NodeTransform",
+      "label": "response1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"response\"] = ($input.all());\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_112dad457e",
+      "actorId": "actor_112dad457e",
+      "type": "NodeTransform",
+      "label": "if_longer_than_3_: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((((() => {\n const duration = $json.items[0].contentDetails.duration;\n\n // Helper function to convert ISO 8601 duration to seconds\n const iso8601ToSeconds = iso8601 => {\n const match = iso8601.match(/PT(?:(\\d+)H)?(?:(\\d+)M)?(?:(\\d+)S)?/);\n const hours = parseInt(match[1] || 0, 10);\n const minutes = parseInt(match[2] || 0, 10);\n const seconds = parseInt(match[3] || 0, 10);\n return hours * 3600 + minutes * 60 + seconds;\n };\n\n // Convert duration to seconds\n const durationInSeconds = iso8601ToSeconds(duration);\n\n // Check if greater than 210 seconds (3 minutes 30 seconds)\n return durationInSeconds > 210;\n })()\n)) === true || (((() => {\n const duration = $json.items[0].contentDetails.duration;\n\n // Helper function to convert ISO 8601 duration to seconds\n const iso8601ToSeconds = iso8601 => {\n const match = iso8601.match(/PT(?:(\\d+)H)?(?:(\\d+)M)?(?:(\\d+)S)?/);\n const hours = parseInt(match[1] || 0, 10);\n const minutes = parseInt(match[2] || 0, 10);\n const seconds = parseInt(match[3] || 0, 10);\n return hours * 3600 + minutes * 60 + seconds;\n };\n\n // Convert duration to seconds\n const durationInSeconds = iso8601ToSeconds(duration);\n\n // Check if greater than 210 seconds (3 minutes 30 seconds)\n return durationInSeconds > 210;\n })()\n)) === 'true'));"
+      }
+    },
+    {
+      "nodeId": "node_de3cafad00",
+      "actorId": "actor_de3cafad00",
+      "type": "NodeBranch",
+      "label": "if_longer_than_3_: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_920a5d8277",
+      "actorId": "actor_920a5d8277",
+      "type": "NodeTransform",
+      "label": "group_data1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"id\"] = ($json.items[0].id);\n  out[\"viewCount\"] = ($json.items[0].statistics.viewCount);\n  out[\"likeCount\"] = ($json.items[0].statistics.likeCount);\n  out[\"commentCount\"] = ($json.items[0].statistics.commentCount);\n  out[\"description\"] = ($json.items[0].snippet.description);\n  out[\"title\"] = ($json.items[0].snippet.title);\n  out[\"channelTitle\"] = ($json.items[0].snippet.channelTitle);\n  out[\"tags\"] = ($json.items[0].snippet.tags.join(', '));\n  out[\"channelId\"] = ($json.items[0].snippet.channelId);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_8026945ea7",
+      "actorId": "actor_8026945ea7",
+      "type": "NodeTransform",
+      "label": "save_data_to_memory1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\nconst __staticData = {}; const $getWorkflowStaticData = () => __staticData; // not persisted between runs on Yantra\n// Ported from n8n Code node \"save_data_to_memory1\" (run once for each item).\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __results = __items.map((__item) => {\n  const $json = __item;\n  const item = { json: __item };\n  const $input = { item: { json: __item }, first: () => ({ json: __item }), all: () => [{ json: __item }] };\n  return (() => {\n  const workflowStaticData = $getWorkflowStaticData('global');\n  \n  if (typeof workflowStaticData.lastExecution !== 'object') {\n   workflowStaticData.lastExecution = {\n   response: \"\"\n   };\n  }\n  \n  function removeEmojis(text) {\n   return text.replace(/[\\u{1F600}-\\u{1F64F}|\\u{1F300}-\\u{1F5FF}|\\u{1F680}-\\u{1F6FF}|\\u{2600}-\\u{26FF}|\\u{2700}-\\u{27BF}]/gu, '');\n  }\n  \n  function cleanDescription(description) {\n   return description\n   .replace(/https?:\\/\\/\\S+/g, '')\n   .replace(/www\\.\\S+/g, '')\n   .replace(/ +/g, ' ')\n   .trim();\n  }\n  \n  const currentItem = { ...$input.item };\n  \n  if (currentItem.description) {\n   currentItem.description = cleanDescription(currentItem.description);\n  }\n  \n  let sanitizedItem = JSON.stringify(currentItem)\n   .replace(/\\\\r/g, ' ')\n   .replace(/https?:\\/\\/\\S+/g, '')\n   .replace(/www\\.\\S+/g, '')\n   .replace(/\\\\n/g, ' ')\n   .replace(/\\n/g, ' ')\n   .replace(/\\\\/g, '')\n   .replace(/ +/g, ' ')\n   .trim();\n  \n  if (workflowStaticData.lastExecution.response) {\n   workflowStaticData.lastExecution.response += ' ### NEXT VIDEO FOUND: ### ';\n  }\n  \n  workflowStaticData.lastExecution.response += removeEmojis(sanitizedItem);\n  \n  return workflowStaticData.lastExecution;\n  \n  })();\n});\nreturn __single(__results.map(__unwrap));"
+      }
+    },
+    {
+      "nodeId": "node_d2626db15e",
+      "actorId": "actor_d2626db15e",
+      "type": "NodeTransform",
+      "label": "Return: save_data_to_memory1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_bdd146543c",
+      "actorId": "actor_bdd146543c",
+      "type": "NodeTransform",
+      "label": "Return: if_longer_than_3_",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_b3a7d54f3e",
+      "actorId": "actor_b3a7d54f3e",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_74016f65f6",
+      "actorId": "actor_74016f65f6",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_2328669353",
+      "actorId": "actor_2328669353",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "chatInput": "",
+          "sessionId": "",
+          "googleApiKey": {
+            "$workflowSecret": "GOOGLE_API_KEY"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_bb382becd0",
+      "target": "node_7c7f348fb8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_bb382becd0",
+      "target": "node_7c7f348fb8",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_7c7f348fb8",
+      "target": "node_5e0bbfa06c",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7c7f348fb8",
+      "target": "node_5e0bbfa06c",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7c7f348fb8",
+      "target": "node_a522f7b674",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7c7f348fb8",
+      "target": "node_a522f7b674",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_397b584701",
+      "target": "node_87502b942a",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_397b584701",
+      "target": "node_87502b942a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_112dad457e",
+      "target": "node_de3cafad00",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_112dad457e",
+      "target": "node_de3cafad00",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_83ba7e593b",
+      "target": "node_0bae34f966",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_87502b942a",
+      "target": "node_112dad457e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_87502b942a",
+      "target": "node_112dad457e",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e5aeb9955e",
+      "target": "node_bb382becd0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e5aeb9955e",
+      "target": "node_bb382becd0",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_920a5d8277",
+      "target": "node_8026945ea7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_920a5d8277",
+      "target": "node_8026945ea7",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f7516aa111",
+      "target": "node_3b661e0e3a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f7516aa111",
+      "target": "node_3b661e0e3a",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a522f7b674",
+      "target": "node_f7516aa111",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a522f7b674",
+      "target": "node_f7516aa111",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5e0bbfa06c",
+      "target": "node_397b584701",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5e0bbfa06c",
+      "target": "node_397b584701",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_de3cafad00",
+      "target": "node_920a5d8277",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_87502b942a",
+      "target": "node_920a5d8277",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8026945ea7",
+      "target": "node_d2626db15e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8026945ea7",
+      "target": "node_d2626db15e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d2626db15e",
+      "target": "node_7c7f348fb8",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_d2626db15e",
+      "target": "node_7c7f348fb8",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_de3cafad00",
+      "target": "node_bdd146543c",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_87502b942a",
+      "target": "node_bdd146543c",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bdd146543c",
+      "target": "node_7c7f348fb8",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_bdd146543c",
+      "target": "node_7c7f348fb8",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_83ba7e593b",
+      "target": "node_e5aeb9955e",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_0bae34f966",
+      "target": "node_b3a7d54f3e",
+      "sourceOutput": "text",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_3b661e0e3a",
+      "target": "node_74016f65f6",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "",
+    "connectors": [],
+    "setupSecrets": [
+      {
+        "key": "GOOGLE_API_KEY",
+        "label": "Google API key (YouTube Data API enabled)",
+        "host": "www.googleapis.com",
+        "headerFormat": "query parameter key=<secret>",
+        "contextKey": "googleApiKey",
+        "usedBy": [
+          "find_video_data1",
+          "get_videos1"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLoop",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 13,
+      "yantraSteps": 17,
+      "foldedHelpers": [
+        "openai_llm",
+        "youtube_search",
+        "window_buffer_memory"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/AI Youtube Trend Finder Based On Niche.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Complete Youtube"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "chat_message_received",
+        "detail": "@n8n/n8n-nodes-langchain.chatTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"chat_message_received\" (chatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Workflow secret GOOGLE_API_KEY: Google API key (YouTube Data API enabled) for www.googleapis.com (query parameter key=<secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Provide run inputs: chatInput, sessionId."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "get_videos1",
+          "n8n": "youTube.search",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "openai_llm",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "AI Agent"
+        },
+        {
+          "node": "youtube_search",
+          "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+          "into": "AI Agent",
+          "as": "ai_tool"
+        },
+        {
+          "node": "window_buffer_memory",
+          "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+          "into": "AI Agent",
+          "as": "ai_memory"
+        }
+      ],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "chat_message_received",
+          "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
+        "\"get_videos1\" (youTube.search): YouTube search via the Data API HTTP endpoint with a Google API key from a workflow secret.",
+        "\"AI Agent\" kept conversation memory (memoryBufferWindow); sessionId is set to the run-input sessionId.",
+        "\"AI Agent\" used agent tools in the original: youtube_search (toolWorkflow). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
+        "\"loop_over_items1\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "Main Workflow",
+      "This part should be abstracted to another workflow and called inside the \"youtube_search\" tool of the main AI Agent."
+    ],
+    "nodes": {
+      "node_83ba7e593b": {
+        "n8n": "chat_message_received",
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
+      },
+      "node_e5aeb9955e": {
+        "n8n": "get_videos1",
+        "n8nType": "n8n-nodes-base.youTube"
+      },
+      "node_0bae34f966": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_bb382becd0": {
+        "n8n": "loop_over_items1",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_7c7f348fb8": {
+        "n8n": "loop_over_items1",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_5e0bbfa06c": {
+        "n8n": "loop_over_items1",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_a522f7b674": {
+        "n8n": "loop_over_items1",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_f7516aa111": {
+        "n8n": "retrieve_data_from_memory1",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_87502b942a": {
+        "n8n": "find_video_data1",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_397b584701": {
+        "n8n": "find_video_data1",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_3b661e0e3a": {
+        "n8n": "response1",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_112dad457e": {
+        "n8n": "if_longer_than_3_",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_de3cafad00": {
+        "n8n": "if_longer_than_3_",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_920a5d8277": {
+        "n8n": "group_data1",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_8026945ea7": {
+        "n8n": "save_data_to_memory1",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_d2626db15e": {
+        "n8n": "save_data_to_memory1",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_bdd146543c": {
+        "n8n": "if_longer_than_3_",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_b3a7d54f3e": {
+        "n8n": "__end:AI Agent",
+        "n8nType": "synthetic"
+      },
+      "node_74016f65f6": {
+        "n8n": "__end:response1",
+        "n8nType": "synthetic"
+      },
+      "node_2328669353": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

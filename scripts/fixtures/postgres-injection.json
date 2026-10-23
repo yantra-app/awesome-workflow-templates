@@ -1,0 +1,74 @@
+{
+  "name": "fixture-postgres-injection",
+  "nodes": [
+    {
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "name": "Save note",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO notes (body, n) VALUES ('{{ $json.body }}', {{ $json.n }})"
+      },
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "name": "Insert static",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "parameters": {
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "people"
+        },
+        "columns": {
+          "value": {
+            "name": "O'Brien'); DROP TABLE people;--",
+            "email": "={{ $json.email }}"
+          }
+        }
+      },
+      "position": [
+        440,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Save note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save note": {
+      "main": [
+        [
+          {
+            "node": "Insert static",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

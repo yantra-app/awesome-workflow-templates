@@ -1,0 +1,1007 @@
+{
+  "name": "Visualize SQL Agent queries with OpenAI and Quickchart.io",
+  "workflowSlug": "visualize-sql-agent-queries-with-openai-and-quickchart-io",
+  "description": "Creates visualizations from SQL queries using OpenAI and Quickchart.io.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_05f16e55c1",
+      "actorId": "actor_05f16e55c1",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_5cb0eff4ec",
+      "actorId": "actor_5cb0eff4ec",
+      "type": "NodeLlmChain",
+      "label": "OpenAI - Generate Chart definition with Structured Output",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{llm_system_9a6b475da4}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_9a6b475da4",
+      "actorId": "actor_9a6b475da4",
+      "type": "NodeTransform",
+      "label": "System: OpenAI - Generate Chart definition with Structured O",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst items = __items.map((json) => ({ json }));\n// System: OpenAI - Generate Chart definition with Structured Output.\nconst __promptValue = (() => { const __b = (() => { const __v = `{\n \"model\": \"gpt-4o-2024-08-06\",\n \"messages\": [\n {\n \"role\": \"system\",\n \"content\": \"Based on the user request, generate a valid Chart.js definition. Important: - Be careful with the data scale and beginatzero that all data are visible. Example if ploted data 2 and 3 on a bar chart, the baseline should be 0. - Charts colors should be different only if there are multiple datasets. - Output valid JSON. In scales, min and max are numbers. Example: \\`{scales:{yAxes:[{ticks:{min:0,max:3}\\`\"\n },\n {\n \"role\": \"user\",\n \"content\": \"**User Request**: ${$json.user_question} \\\\n **Data to visualize**: ${$json.output.replaceAll('\\n', \" \").replaceAll('\"', \"\")}\"\n }\n ],\n \"response_format\": {\n \"type\": \"json_schema\",\n \"json_schema\": {\n \"name\": \"chart_configuration\",\n \"description\": \"Configuration schema for Chart.js charts\",\n \"strict\": true,\n \"schema\": {\n \"type\": \"object\",\n \"properties\": {\n \"type\": {\n \"type\": \"string\",\n \"enum\": [\"bar\", \"line\", \"radar\", \"pie\", \"doughnut\", \"polarArea\", \"bubble\", \"scatter\", \"area\"]\n },\n \"data\": {\n \"type\": \"object\",\n \"properties\": {\n \"labels\": {\n \"type\": \"array\",\n \"items\": {\n \"type\": \"string\"\n }\n },\n \"datasets\": {\n \"type\": \"array\",\n \"items\": {\n \"type\": \"object\",\n \"properties\": {\n \"label\": {\n \"type\": [\"string\", \"null\"]\n },\n \"data\": {\n \"type\": \"array\",\n \"items\": {\n \"type\": \"number\"\n }\n },\n \"backgroundColor\": {\n \"type\": [\"array\", \"null\"],\n \"items\": {\n \"type\": \"string\"\n }\n },\n \"borderColor\": {\n \"type\": [\"array\", \"null\"],\n \"items\": {\n \"type\": \"string\"\n }\n },\n \"borderWidth\": {\n \"type\": [\"number\", \"null\"]\n }\n },\n \"required\": [\"data\", \"label\", \"backgroundColor\", \"borderColor\", \"borderWidth\"],\n \"additionalProperties\": false\n }\n }\n },\n \"required\": [\"labels\", \"datasets\"],\n \"additionalProperties\": false\n },\n \"options\": {\n \"type\": \"object\",\n \"properties\": {\n \"scales\": {\n \"type\": [\"object\", \"null\"],\n \"properties\": {\n \"yAxes\": {\n \"type\": \"array\",\n \"items\": {\n \"type\": [\"object\", \"null\"],\n \"properties\": {\n \"ticks\": {\n \"type\": [\"object\", \"null\"],\n \"properties\": {\n \"max\": {\n \"type\": [\"number\", \"null\"]\n },\n \"min\": {\n \"type\": [\"number\", \"null\"]\n },\n \"stepSize\": {\n \"type\": [\"number\", \"null\"]\n },\n \"beginAtZero\": {\n \"type\": [\"boolean\", \"null\"]\n }\n },\n \"required\": [\"max\", \"min\", \"stepSize\", \"beginAtZero\"],\n \"additionalProperties\": false\n },\n \"stacked\": {\n \"type\": [\"boolean\", \"null\"]\n }\n },\n \"required\": [\"ticks\", \"stacked\"],\n \"additionalProperties\": false\n }},\n \"xAxes\": {\n \"type\": [\"object\", \"null\"],\n \"properties\": {\n \"stacked\": {\n \"type\": [\"boolean\", \"null\"]\n }\n },\n \"required\": [\"stacked\"],\n \"additionalProperties\": false\n }\n },\n \"required\": [\"yAxes\", \"xAxes\"],\n \"additionalProperties\": false\n },\n \"plugins\": {\n \"type\": [\"object\", \"null\"],\n \"properties\": {\n \"title\": {\n \"type\": [\"object\", \"null\"],\n \"properties\": {\n \"display\": {\n \"type\": [\"boolean\", \"null\"]\n },\n \"text\": {\n \"type\": [\"string\", \"null\"]\n }\n },\n \"required\": [\"display\", \"text\"],\n \"additionalProperties\": false\n },\n \"legend\": {\n \"type\": [\"object\", \"null\"],\n \"properties\": {\n \"display\": {\n \"type\": [\"boolean\", \"null\"]\n },\n \"position\": {\n \"type\": [\"string\", \"null\"],\n \"enum\": [\"top\", \"left\", \"bottom\", \"right\", null]\n }\n },\n \"required\": [\"display\", \"position\"],\n \"additionalProperties\": false\n }\n },\n \"required\": [\"title\", \"legend\"],\n \"additionalProperties\": false\n }\n },\n \"required\": [\"scales\", \"plugins\"],\n \"additionalProperties\": false\n }\n },\n \"required\": [\"type\", \"data\", \"options\"],\n \"additionalProperties\": false\n}\n}\n}\n}`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn (__b.messages || []).filter((m) => m?.role === 'system' || m?.role === 'developer').map((m) => __t(m.content)).join('\\n\\n'); })();\nreturn { \"llm_system_9a6b475da4\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_99692d1bfc",
+      "actorId": "actor_99692d1bfc",
+      "type": "NodeUpdateContext",
+      "label": "Save System: OpenAI - Generate Chart definition with Structu",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_626a39fbeb",
+      "actorId": "actor_626a39fbeb",
+      "type": "NodeTransform",
+      "label": "Prompt: OpenAI - Generate Chart definition with Structured O",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst items = __items.map((json) => ({ json }));\n// Prompt: OpenAI - Generate Chart definition with Structured Output.\nconst __promptValue = (() => { const __b = (() => { const __v = `{\n \"model\": \"gpt-4o-2024-08-06\",\n \"messages\": [\n {\n \"role\": \"system\",\n \"content\": \"Based on the user request, generate a valid Chart.js definition. Important: - Be careful with the data scale and beginatzero that all data are visible. Example if ploted data 2 and 3 on a bar chart, the baseline should be 0. - Charts colors should be different only if there are multiple datasets. - Output valid JSON. In scales, min and max are numbers. Example: \\`{scales:{yAxes:[{ticks:{min:0,max:3}\\`\"\n },\n {\n \"role\": \"user\",\n \"content\": \"**User Request**: ${$json.user_question} \\\\n **Data to visualize**: ${$json.output.replaceAll('\\n', \" \").replaceAll('\"', \"\")}\"\n }\n ],\n \"response_format\": {\n \"type\": \"json_schema\",\n \"json_schema\": {\n \"name\": \"chart_configuration\",\n \"description\": \"Configuration schema for Chart.js charts\",\n \"strict\": true,\n \"schema\": {\n \"type\": \"object\",\n \"properties\": {\n \"type\": {\n \"type\": \"string\",\n \"enum\": [\"bar\", \"line\", \"radar\", \"pie\", \"doughnut\", \"polarArea\", \"bubble\", \"scatter\", \"area\"]\n },\n \"data\": {\n \"type\": \"object\",\n \"properties\": {\n \"labels\": {\n \"type\": \"array\",\n \"items\": {\n \"type\": \"string\"\n }\n },\n \"datasets\": {\n \"type\": \"array\",\n \"items\": {\n \"type\": \"object\",\n \"properties\": {\n \"label\": {\n \"type\": [\"string\", \"null\"]\n },\n \"data\": {\n \"type\": \"array\",\n \"items\": {\n \"type\": \"number\"\n }\n },\n \"backgroundColor\": {\n \"type\": [\"array\", \"null\"],\n \"items\": {\n \"type\": \"string\"\n }\n },\n \"borderColor\": {\n \"type\": [\"array\", \"null\"],\n \"items\": {\n \"type\": \"string\"\n }\n },\n \"borderWidth\": {\n \"type\": [\"number\", \"null\"]\n }\n },\n \"required\": [\"data\", \"label\", \"backgroundColor\", \"borderColor\", \"borderWidth\"],\n \"additionalProperties\": false\n }\n }\n },\n \"required\": [\"labels\", \"datasets\"],\n \"additionalProperties\": false\n },\n \"options\": {\n \"type\": \"object\",\n \"properties\": {\n \"scales\": {\n \"type\": [\"object\", \"null\"],\n \"properties\": {\n \"yAxes\": {\n \"type\": \"array\",\n \"items\": {\n \"type\": [\"object\", \"null\"],\n \"properties\": {\n \"ticks\": {\n \"type\": [\"object\", \"null\"],\n \"properties\": {\n \"max\": {\n \"type\": [\"number\", \"null\"]\n },\n \"min\": {\n \"type\": [\"number\", \"null\"]\n },\n \"stepSize\": {\n \"type\": [\"number\", \"null\"]\n },\n \"beginAtZero\": {\n \"type\": [\"boolean\", \"null\"]\n }\n },\n \"required\": [\"max\", \"min\", \"stepSize\", \"beginAtZero\"],\n \"additionalProperties\": false\n },\n \"stacked\": {\n \"type\": [\"boolean\", \"null\"]\n }\n },\n \"required\": [\"ticks\", \"stacked\"],\n \"additionalProperties\": false\n }},\n \"xAxes\": {\n \"type\": [\"object\", \"null\"],\n \"properties\": {\n \"stacked\": {\n \"type\": [\"boolean\", \"null\"]\n }\n },\n \"required\": [\"stacked\"],\n \"additionalProperties\": false\n }\n },\n \"required\": [\"yAxes\", \"xAxes\"],\n \"additionalProperties\": false\n },\n \"plugins\": {\n \"type\": [\"object\", \"null\"],\n \"properties\": {\n \"title\": {\n \"type\": [\"object\", \"null\"],\n \"properties\": {\n \"display\": {\n \"type\": [\"boolean\", \"null\"]\n },\n \"text\": {\n \"type\": [\"string\", \"null\"]\n }\n },\n \"required\": [\"display\", \"text\"],\n \"additionalProperties\": false\n },\n \"legend\": {\n \"type\": [\"object\", \"null\"],\n \"properties\": {\n \"display\": {\n \"type\": [\"boolean\", \"null\"]\n },\n \"position\": {\n \"type\": [\"string\", \"null\"],\n \"enum\": [\"top\", \"left\", \"bottom\", \"right\", null]\n }\n },\n \"required\": [\"display\", \"position\"],\n \"additionalProperties\": false\n }\n },\n \"required\": [\"title\", \"legend\"],\n \"additionalProperties\": false\n }\n },\n \"required\": [\"scales\", \"plugins\"],\n \"additionalProperties\": false\n }\n },\n \"required\": [\"type\", \"data\", \"options\"],\n \"additionalProperties\": false\n}\n}\n}\n}`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn (() => { const u = (__b.messages || []).filter((m) => m && m.role !== 'system' && m.role !== 'developer'); return __b.__raw ?? (u.length === 1 ? __t(u[0].content) : u.map((m) => m.role + ': ' + __t(m.content)).join('\\n\\n')); })(); })();\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_9e383424c1",
+      "actorId": "actor_9e383424c1",
+      "type": "NodeLlmChain",
+      "label": "Information Extractor - User question",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "user_question": {
+              "type": "string",
+              "description": "Extract the question from the user, omitting everything related to charts."
+            }
+          },
+          "required": [
+            "user_question"
+          ],
+          "additionalProperties": false
+        },
+        "prompt": "{{chatInput}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_c152848799",
+      "actorId": "actor_c152848799",
+      "type": "NodeTransform",
+      "label": "Set response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"output\"] = (\"https://quickchart.io/chart?width=200&c=\" + encodeURIComponent($json)\n);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_b2ac3799a2",
+      "actorId": "actor_b2ac3799a2",
+      "type": "NodeCdecliAgent",
+      "label": "AI Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "gpt-4o",
+        "sessionId": "{{sessionId}}",
+        "message": "{{last.object.user_question}}"
+      }
+    },
+    {
+      "nodeId": "node_b22c849c92",
+      "actorId": "actor_b22c849c92",
+      "type": "NodeLlmChain",
+      "label": "Text Classifier - Chart required?",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string",
+              "enum": [
+                "chart_required",
+                "chart_not_required"
+              ],
+              "description": "One of: chart_required, chart_not_required"
+            }
+          },
+          "required": [
+            "category"
+          ],
+          "additionalProperties": false
+        },
+        "system": "Classify the input into exactly one category.\n- chart_required: If a chart can help the user understand the response (if there are multiple data to show) or if the user specifically request a chart. \n- chart_not_required: if a chart doesn't help the user understand the response (e.g a single data point that doesn't require visualization).\n\"I don't know\" does fall into this category",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_ddb797326c",
+      "actorId": "actor_ddb797326c",
+      "type": "NodeTransform",
+      "label": "Prompt: Text Classifier - Chart required?",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Execute \\\"Generate a chart\\\" tool\": {{ctx}}, \"When chat message received\": {{ctx}}, \"OpenAI - Generate Chart definition with Structured Output\": ((text) => ({ text, output: text, content: text, response: { text, output_text: text }, message: { content: text }, choices: [{ message: { content: text }, text }] }))(__namedCtx.steps?.[\"OpenAI - Generate Chart definition with Structured Output\"]?.[\"text\"]), \"Information Extractor - User question\": ((output) => ({ ...output, output }))(__namedCtx.steps?.[\"Information Extractor - User question\"]?.[\"object\"]), \"Set response\": __namedCtx.steps?.[\"Set response\"]?.[\"transformed\"], \"AI Agent\": ((text) => ({ text, output: text, content: text, response: { text, output_text: text }, message: { content: text }, choices: [{ message: { content: text }, text }] }))(__namedCtx.steps?.[\"AI Agent\"]?.[\"text\"]) };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Text Classifier - Chart required?.\nconst __promptValue = `**User Request**: ${$('When chat message received').item.json.chatInput}\n**Data to visualize**: ${$json}\n`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_b000b3db7a",
+      "actorId": "actor_b000b3db7a",
+      "type": "NodeTransform",
+      "label": "Text Classifier - Chart required?: category = chart_required",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.category ?? '') === \"chart_required\";"
+      }
+    },
+    {
+      "nodeId": "node_90b238aad7",
+      "actorId": "actor_90b238aad7",
+      "type": "NodeBranch",
+      "label": "Text Classifier - Chart required?: category = chart_required 2",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_93cf8716b8",
+      "actorId": "actor_93cf8716b8",
+      "type": "NodeTransform",
+      "label": "Text Classifier - Chart required?: category = chart_not_requ",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.category ?? '') === \"chart_not_required\";"
+      }
+    },
+    {
+      "nodeId": "node_626e46f43d",
+      "actorId": "actor_626e46f43d",
+      "type": "NodeBranch",
+      "label": "Text Classifier - Chart required?: category = chart_not_requ 2",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_44a6eb2da2",
+      "actorId": "actor_44a6eb2da2",
+      "type": "NodeTransform",
+      "label": "User question + Agent initial response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Execute \\\"Generate a chart\\\" tool\": {{ctx}}, \"When chat message received\": {{ctx}}, \"Information Extractor - User question\": {{steps.obj_9e383424c1.result}}, \"Set response\": {{steps.xf_c152848799.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"user_question\"] = ($('When chat message received').item.json.chatInput);\n  out[\"output\"] = ($json);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_0c841e624a",
+      "actorId": "actor_0c841e624a",
+      "type": "NodeTransform",
+      "label": "Set Text output",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Execute \\\"Generate a chart\\\" tool\": {{ctx}}, \"When chat message received\": {{ctx}}, \"Information Extractor - User question\": {{steps.obj_9e383424c1.result}}, \"Set response\": {{steps.xf_c152848799.result}}, \"User question + Agent initial response\": {{steps.xf_44a6eb2da2.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"output\"] = ($('AI Agent').item.json.output);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_030d2e93ad",
+      "actorId": "actor_030d2e93ad",
+      "type": "NodeTransform",
+      "label": "Execute Workflow",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst $workflow = { id: '', name: '', active: true }; const $execution = { id: '', mode: 'manual', resumeUrl: '' }; const $executionId = $execution.id;\nconst $runIndex = 0; const $itemIndex = 0; const $binary = {}; const $prevNode = { name: '', outputIndex: 0, runIndex: 0 }; const $parameter = {}; const $position = 0;\n// executeWorkflow: compose the subflow manually (original workflow: ={{ $workflow.id }}).\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_a490a963c9",
+      "actorId": "actor_a490a963c9",
+      "type": "NodeTransform",
+      "label": "Set Text + Chart output",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Execute \\\"Generate a chart\\\" tool\": {{ctx}}, \"When chat message received\": {{ctx}}, \"Information Extractor - User question\": {{steps.obj_9e383424c1.result}}, \"Set response\": {{steps.xf_c152848799.result}}, \"User question + Agent initial response\": {{steps.xf_44a6eb2da2.result}}, \"Set Text output\": {{steps.xf_0c841e624a.result}}, \"Execute Workflow\": {{steps.xf_030d2e93ad.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"output\"] = `${$('AI Agent').item.json.output}\n\n![image](${$json.output})`;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_6a0c72c9a5",
+      "actorId": "actor_6a0c72c9a5",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_e5cb5c6a9e",
+      "actorId": "actor_e5cb5c6a9e",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_4803e78da3",
+      "actorId": "actor_4803e78da3",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_e304a8f88c",
+      "actorId": "actor_e304a8f88c",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "chatInput": "",
+          "sessionId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_8027a6db09",
+      "actorId": "actor_8027a6db09",
+      "type": "NodeChatModel",
+      "label": "OpenAI - Generate Chart definition with Structured Output: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1600,
+        "y": 720
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-2024-08-06"
+      }
+    },
+    {
+      "nodeId": "node_d7d5b140c3",
+      "actorId": "actor_d7d5b140c3",
+      "type": "NodeChatModel",
+      "label": "Information Extractor - User question: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 680
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o"
+      }
+    },
+    {
+      "nodeId": "node_e0d8c8c70a",
+      "actorId": "actor_e0d8c8c70a",
+      "type": "NodeChatModel",
+      "label": "Text Classifier - Chart required?: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 680
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_9a6b475da4",
+      "target": "node_99692d1bfc",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_9a6b475da4",
+      "target": "node_99692d1bfc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_99692d1bfc",
+      "target": "node_626a39fbeb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_626a39fbeb",
+      "target": "node_5cb0eff4ec",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_ddb797326c",
+      "target": "node_b22c849c92",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_b22c849c92",
+      "target": "node_b000b3db7a",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b22c849c92",
+      "target": "node_b000b3db7a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b000b3db7a",
+      "target": "node_90b238aad7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_b000b3db7a",
+      "target": "node_90b238aad7",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_b22c849c92",
+      "target": "node_93cf8716b8",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_90b238aad7",
+      "target": "node_93cf8716b8",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_93cf8716b8",
+      "target": "node_626e46f43d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_93cf8716b8",
+      "target": "node_626e46f43d",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_030d2e93ad",
+      "target": "node_a490a963c9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_030d2e93ad",
+      "target": "node_a490a963c9",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_05f16e55c1",
+      "target": "node_9a6b475da4",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5cb0eff4ec",
+      "target": "node_c152848799",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5cb0eff4ec",
+      "target": "node_c152848799",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_05f16e55c1",
+      "target": "node_9e383424c1",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_b2ac3799a2",
+      "target": "node_ddb797326c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b2ac3799a2",
+      "target": "node_ddb797326c",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_90b238aad7",
+      "target": "node_44a6eb2da2",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b2ac3799a2",
+      "target": "node_44a6eb2da2",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_626e46f43d",
+      "target": "node_0c841e624a",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b2ac3799a2",
+      "target": "node_0c841e624a",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_44a6eb2da2",
+      "target": "node_030d2e93ad",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_44a6eb2da2",
+      "target": "node_030d2e93ad",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c152848799",
+      "target": "node_6a0c72c9a5",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_0c841e624a",
+      "target": "node_e5cb5c6a9e",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_a490a963c9",
+      "target": "node_4803e78da3",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_8027a6db09",
+      "target": "node_5cb0eff4ec",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_d7d5b140c3",
+      "target": "node_9e383424c1",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_e0d8c8c70a",
+      "target": "node_b22c849c92",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_9e383424c1",
+      "target": "node_b2ac3799a2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeCdecliAgent"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "other-integrations",
+    "categoryLabel": "Other Integrations and Use Cases",
+    "department": "Data Analysis/Visualization",
+    "connectors": [
+      "openai"
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdecliAgent",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 14,
+      "yantraSteps": 21,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "OpenAI Chat Model",
+        "Window Buffer Memory",
+        "OpenAI Chat Model Classifier"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Other_Integrations_and_Use_Cases/Visualize your SQL Agent queries with OpenAI and Quickchart.io.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Execute \"Generate a chart\" tool",
+        "detail": "n8n-nodes-base.executeWorkflowTrigger became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "When chat message received",
+        "detail": "@n8n/n8n-nodes-langchain.chatTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Execute \"Generate a chart\" tool\" (executeWorkflowTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"When chat message received\" (chatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Connect the openai connector (credential).",
+      "Provide run inputs: chatInput, sessionId, llm_system_9a6b475da4."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "OpenAI - Generate Chart definition with Structured Output",
+          "n8n": "httpRequest.openai.chat",
+          "action": "NodeLlmChain",
+          "soft": true
+        },
+        {
+          "node": "Execute Workflow",
+          "n8n": "executeWorkflow",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Information Extractor - User question",
+          "model": "gpt-4o"
+        },
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "AI Agent",
+          "model": "gpt-4o"
+        },
+        {
+          "node": "Window Buffer Memory",
+          "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+          "into": "AI Agent",
+          "as": "ai_memory"
+        },
+        {
+          "node": "OpenAI Chat Model Classifier",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Text Classifier - Chart required?"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Execute \"Generate a chart\" tool",
+          "type": "n8n-nodes-base.executeWorkflowTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "When chat message received",
+          "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original was a sub-workflow called by another workflow; pass its inputs as run inputs.",
+        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
+        "\"OpenAI - Generate Chart definition with Structured Output\" authenticated with openAiApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"OpenAI - Generate Chart definition with Structured Output\": the original asked OpenAI for JSON output; the platform model gets the same prompt, so check the answer parses as JSON.",
+        "\"OpenAI - Generate Chart definition with Structured Output\" called the OpenAI API (gpt-4o-2024-08-06) over HTTP; it now runs on LLMChain with a Chat Model and provider connector credential, and later steps read the answer text instead of the provider's JSON.",
+        "\"AI Agent\" kept conversation memory (memoryBufferWindow); sessionId is set to the run-input sessionId.",
+        "\"Execute Workflow\" (executeWorkflow): Sub-workflow calls are not imported automatically; compose the child graph by hand or paste its steps inline.",
+        "\"Execute Workflow\" called another n8n workflow (={{ $workflow.id }}); on Yantra, open that workflow as its own template (or rebuild it) and replace this passthrough with a call into it.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "### Overview \n- This workflow aims to provide data visualization capabilities to a native SQL Agent. \n- Together, they can help foster data analysis and data visualization within a team. \n- It uses the native SQL Agent that works well and adds visualization capabilities thanks to OpenAI’s Structured Output and Quickchart.io. \n\n### How it works \n1. Information Extraction: \n - The Information Extractor identifies and extracts the user's question. \n - If the question includes a visualization aspect, the SQL Agent alone may not respond accurately. \n2. SQL Querying: \n - It leverages a regular SQL Agent: it connects to a database, queries it, and translates the response into a human-readable format. \n3. Chart Decision: \n - The Text Classifier determines whether the user would benefit from a chart to support the SQL Agent's response. \n4. Chart Generation: \n - If a chart is needed, the sub-workflow dynamically generates a chart and appends it to the SQL Agent’s response. \n - If not, the SQL Agent’s response is output as is. \n5. Calling OpenAI for Chart Definition: \n - The sub-workflow calls OpenAI via the HTTP Request node to retrieve a chart definition. \n6. Building and Returning the Chart: \n - In the \"Set Response\" node, the chart definition is appended to a Quickchart.io URL, generating the final chart image. \n - The AI Agent returns the response along with the chart. \n\n### How to use it \n- Use an existing database or create a new one. \n- For example, I've used [this Kaggle dataset](https://www.kaggle.com/datasets/ihelon/coffee-sales/versions/15?resource=download) and uploaded it to a Supabase DB. \n- Add the PostgreSQL or MySQL credentials. \n- Alternatively, you can use SQLite binary files (check [this template](https://n8n.io/workflows/2292-talk-to-your-sqlite-database-with-a-langchain-ai-agent/)). \n- Activate the workflow. \n- Start chatting with the AI SQL Agent. \n- If the Text Classifier determines a chart would be useful, it will generate one in addition to the SQL Agent's response. \n\n### Notes \n- The full Quickchart.io specifications have not been fully integrated, so there may be some glitches (e.g., radar graphs may not display properly due to size limitations).",
+      "## Generate a Quickchart definition \n[Original template](https://n8n.io/workflows/2400-ai-agent-with-charts-capabilities-using-openai-structured-output-and-quickchart/)\n\n**HTTP Request node**\n- Send the chart query to OpenAI, with a defined JSON response format - *using HTTP Request node as it has not yet been implemented in the OpenAI nodes*\n- The JSON structure is based on ChartJS and Quickchart.io definitions, that let us create nice looking graphs.\n- The output is a JSON containing the chart definition that is passed to the next node.\n\n**Set Response node**\n- Adds the chart definition at the end of a Quickchart.io URL ([see documentation](https://quickchart.io/documentation/usage/parameters/))\n- Note that in the parameters, we specify the width to 250 in order to be properly displayed in the chart interface.",
+      "### Information Extractor \n- This Information Extractor is added to extract the user's question\n- In some cases, if the question contains a visualization aspect, the SQL Agent may not responding accurately.\n\n### SQL Agent\n- This SQL Agent is connected to a Database.\n- It queries the Database for each user message.\n- In this example, the prompt has been slightly changed to address an issue with querying a Supabase DB. Feel free to change the `Prefix Prompt` to suit your needs.\n- This example uses the data from this [Kaggle dataset](https://www.kaggle.com/datasets/ihelon/coffee-sales/versions/15?resource=download)",
+      "### Respond with a text only or also include a chart \n- The text classifier determines if the response from the SQL Agent would benefit from a chart\n- If it does, then it executes the subworkflow to dynamically generate a chart, and append the chart to the response from the SQL Agent\n- If it doesn't, then the SQL Agent response is directly outputted.",
+      "## Demo\n![Demo SQL Agent](https://media.licdn.com/dms/image/v2/D4E22AQERT4FEXEUncw/feedshare-shrink_800/feedshare-shrink_800/0/1731433289953?e=1741824000&v=beta&t=e6xUqjcsSq5U_NELeD-nn1mFROGYZLazkYC0eELTv5Y)"
+    ],
+    "nodes": {
+      "node_05f16e55c1": {
+        "n8n": "Execute \"Generate a chart\" tool",
+        "n8nType": "n8n-nodes-base.executeWorkflowTrigger",
+        "also": [
+          "When chat message received"
+        ]
+      },
+      "node_5cb0eff4ec": {
+        "n8n": "OpenAI - Generate Chart definition with Structured Output",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "llmProvider": "openai"
+      },
+      "node_9a6b475da4": {
+        "n8n": "OpenAI - Generate Chart definition with Structured Output",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_99692d1bfc": {
+        "n8n": "OpenAI - Generate Chart definition with Structured Output",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_626a39fbeb": {
+        "n8n": "OpenAI - Generate Chart definition with Structured Output",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_9e383424c1": {
+        "n8n": "Information Extractor - User question",
+        "n8nType": "@n8n/n8n-nodes-langchain.informationExtractor"
+      },
+      "node_c152848799": {
+        "n8n": "Set response",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_b2ac3799a2": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_b22c849c92": {
+        "n8n": "Text Classifier - Chart required?",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_ddb797326c": {
+        "n8n": "Text Classifier - Chart required?",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_b000b3db7a": {
+        "n8n": "Text Classifier - Chart required?",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_90b238aad7": {
+        "n8n": "Text Classifier - Chart required?",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_93cf8716b8": {
+        "n8n": "Text Classifier - Chart required?",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_626e46f43d": {
+        "n8n": "Text Classifier - Chart required?",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_44a6eb2da2": {
+        "n8n": "User question + Agent initial response",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_0c841e624a": {
+        "n8n": "Set Text output",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_030d2e93ad": {
+        "n8n": "Execute Workflow",
+        "n8nType": "n8n-nodes-base.executeWorkflow"
+      },
+      "node_a490a963c9": {
+        "n8n": "Set Text + Chart output",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_6a0c72c9a5": {
+        "n8n": "__end:Set response",
+        "n8nType": "synthetic"
+      },
+      "node_e5cb5c6a9e": {
+        "n8n": "__end:Set Text output",
+        "n8nType": "synthetic"
+      },
+      "node_4803e78da3": {
+        "n8n": "__end:Set Text + Chart output",
+        "n8nType": "synthetic"
+      },
+      "node_e304a8f88c": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_8027a6db09": {
+        "n8n": "OpenAI - Generate Chart definition with Structured Output",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_d7d5b140c3": {
+        "n8n": "Information Extractor - User question",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_e0d8c8c70a": {
+        "n8n": "Text Classifier - Chart required?",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

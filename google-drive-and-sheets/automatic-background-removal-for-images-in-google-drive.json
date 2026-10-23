@@ -1,0 +1,1127 @@
+{
+  "name": "Automatic Background Removal for Images in Google Drive",
+  "workflowSlug": "automatic-background-removal-for-images-in-google-drive",
+  "description": "Automatically removes backgrounds from images stored in Google Drive, preparing them for various uses like product catalogs or marketing materials.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_b1df6c0c76",
+      "actorId": "actor_b1df6c0c76",
+      "type": "NodeCdeWebhookTrigger",
+      "label": "Webhook: googlesuper/GOOGLESUPER_FILE_CREATED_TRIGGER",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "connector": "googlesuper",
+        "webhookEndpointId": "",
+        "triggerSlug": "GOOGLESUPER_FILE_CREATED_TRIGGER",
+        "connectedAccountId": "",
+        "config": {},
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "nodeId": "node_13ffd0d795",
+      "actorId": "actor_13ffd0d795",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_DOWNLOAD_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive",
+        "action": "GOOGLESUPER_DOWNLOAD_FILE",
+        "params": {
+          "file_id": "{{last.payload.id}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_d3a99f7aa8",
+      "actorId": "actor_d3a99f7aa8",
+      "type": "NodeTransform",
+      "label": "Config",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"bg_color\"] = \"white\";\n  out[\"padding\"] = \"5%\";\n  out[\"keepInputSize\"] = ((v) => v === true || v === 'true')(true);\n  out[\"outputSize\"] = \"1600x1600\";\n  out[\"inputFileName\"] = ($json.originalFilename);\n  out[\"OutputDriveFolder\"] = \"ENTER GOOGLE DRIVE FOLDER URL\";\n  out[\"api-key\"] = \"ENTER API KEY\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_d40f61f404",
+      "actorId": "actor_d40f61f404",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-editing/YANTRA_IMAGE_EDIT_CONVERT",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-editing",
+        "connectorLabel": "Image editing",
+        "action": "YANTRA_IMAGE_EDIT_CONVERT",
+        "params": {}
+      }
+    },
+    {
+      "nodeId": "node_6954e25adb",
+      "actorId": "actor_6954e25adb",
+      "type": "NodeTransform",
+      "label": "Split Out",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"Geometry\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"Geometry\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"Geometry\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_a02881ff42",
+      "actorId": "actor_a02881ff42",
+      "type": "NodeSync",
+      "label": "Merge",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_2d280b7d7d",
+      "actorId": "actor_2d280b7d7d",
+      "type": "NodeTransform",
+      "label": "Items: loop all over your images",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_650bdbdc71",
+      "actorId": "actor_650bdbdc71",
+      "type": "NodeLoop",
+      "label": "loop all over your images",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_392a277475",
+      "actorId": "actor_392a277475",
+      "type": "NodeTransform",
+      "label": "Item: loop all over your images",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_4b7c4209e8",
+      "actorId": "actor_4b7c4209e8",
+      "type": "NodeTransform",
+      "label": "Results: loop all over your images",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_d9cc7555f1",
+      "actorId": "actor_d9cc7555f1",
+      "type": "NodeTransform",
+      "label": "check which output size method is used: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.keepInputSize)) === false || (($json.keepInputSize)) === 'false'));"
+      }
+    },
+    {
+      "nodeId": "node_3942cb03b2",
+      "actorId": "actor_3942cb03b2",
+      "type": "NodeBranch",
+      "label": "check which output size method is used: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_d3a1a3818c",
+      "actorId": "actor_d3a1a3818c",
+      "type": "NodeTransform",
+      "label": "Params: remove background fixed size",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// The upstream file as { contentBase64 | fileUrl, filename, mimeType }: n8n binary data travels as base64 bytes or a file URL on Yantra.\nconst __b64 = (t) => { const b = new TextEncoder().encode(String(t)); let s = ''; for (let i = 0; i < b.length; i += 1) s += String.fromCharCode(b[i]); return btoa(s); };\nconst __fileRef = (v, prop) => {\n  const s = (x) => (typeof x === 'string' && x !== '' ? x : undefined);\n  let r = Array.isArray(v) ? v[0] : v;\n  const bin = r && typeof r === 'object' && r.binary && typeof r.binary === 'object' ? r.binary[prop] ?? Object.values(r.binary)[0] : undefined;\n  if (bin && s(bin.data)) return { contentBase64: bin.data, filename: s(r.filename) ?? s(bin.fileName) ?? 'file', mimeType: s(bin.mimeType) };\n  if (r && typeof r === 'object' && r.data && typeof r.data === 'object' && !Array.isArray(r.data)) r = { ...r, ...r.data };\n  const dl = r?.downloaded_file_content ?? r?.file;\n  const filename = s(r?.filename) ?? s(r?.fileName) ?? s(dl?.name) ?? s(r?.name) ?? 'file';\n  const mimeType = s(r?.mimeType) ?? s(r?.contentType) ?? s(dl?.mimetype) ?? s(r?.mimetype);\n  if (s(r?.bodyBase64)) return { contentBase64: r.bodyBase64, filename, mimeType };\n  const url = s(dl?.s3url) ?? s(r?.s3url) ?? s(r?.fileUrl) ?? s(r?.imageUrl) ?? s(r?.imageUrls?.[0]) ?? s(r?.audioUrl) ?? s(r?.videoUrl) ?? s(r?.secure_url);\n  if (url) return { fileUrl: url, filename, mimeType };\n  if (s(r?.data)) return { contentBase64: r.encoding !== 'base64' && /^(?:text\\/|application\\/(?:json|xml|javascript|x-tex))|\\+(?:xml|json)$/.test(mimeType ?? '') ? __b64(r.data) : r.data, filename, mimeType };\n  throw new Error('No file on the upstream step: expected file bytes (base64) or a file URL.');\n};\n// Params for yantra-storage/YANTRA_STORAGE_HTTP_SEND (n8n node \"remove background fixed size\").\nreturn { \"url\": \"https://image-api.photoroom.com/v2/edit\", \"method\": \"POST\", \"headers\": { \"x-api-key\": ($json['api-key']) }, \"bodyType\": \"multipart\", \"fields\": { \"background.color\": ($json.bg_color), \"padding\": ($json.padding), \"outputSize\": ($json.outputSize) }, \"files\": [{ \"field\": \"imageFile\", ...__fileRef({{steps.GOOGLESUPER_DOWNLOAD_FILE.result}}, \"data\") }], \"responseType\": \"base64\" };"
+      }
+    },
+    {
+      "nodeId": "node_2a5732aa35",
+      "actorId": "actor_2a5732aa35",
+      "type": "NodeCdeConnector",
+      "label": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-storage",
+        "connectorLabel": "Yantra storage",
+        "action": "YANTRA_STORAGE_HTTP_SEND"
+      }
+    },
+    {
+      "nodeId": "node_e3af16ba9c",
+      "actorId": "actor_e3af16ba9c",
+      "type": "NodeTransform",
+      "label": "remove background fixed size: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The response the way the n8n HTTP node handed it on: the parsed body; a file body is { bodyBase64, filename, mimeType }.\nconst __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' && 'status' in source.data ? source.data : source;\nconst __body = __r?.bodyBase64 !== undefined ? { bodyBase64: __r.bodyBase64, filename: __r.filename, mimeType: __r.contentType, bytes: __r.bytes } : __r?.bodyJson !== undefined ? __r.bodyJson : __r?.bodyText;\nreturn __body;"
+      }
+    },
+    {
+      "nodeId": "node_22b399edec",
+      "actorId": "actor_22b399edec",
+      "type": "NodeTransform",
+      "label": "Params: remove background",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// The upstream file as { contentBase64 | fileUrl, filename, mimeType }: n8n binary data travels as base64 bytes or a file URL on Yantra.\nconst __b64 = (t) => { const b = new TextEncoder().encode(String(t)); let s = ''; for (let i = 0; i < b.length; i += 1) s += String.fromCharCode(b[i]); return btoa(s); };\nconst __fileRef = (v, prop) => {\n  const s = (x) => (typeof x === 'string' && x !== '' ? x : undefined);\n  let r = Array.isArray(v) ? v[0] : v;\n  const bin = r && typeof r === 'object' && r.binary && typeof r.binary === 'object' ? r.binary[prop] ?? Object.values(r.binary)[0] : undefined;\n  if (bin && s(bin.data)) return { contentBase64: bin.data, filename: s(r.filename) ?? s(bin.fileName) ?? 'file', mimeType: s(bin.mimeType) };\n  if (r && typeof r === 'object' && r.data && typeof r.data === 'object' && !Array.isArray(r.data)) r = { ...r, ...r.data };\n  const dl = r?.downloaded_file_content ?? r?.file;\n  const filename = s(r?.filename) ?? s(r?.fileName) ?? s(dl?.name) ?? s(r?.name) ?? 'file';\n  const mimeType = s(r?.mimeType) ?? s(r?.contentType) ?? s(dl?.mimetype) ?? s(r?.mimetype);\n  if (s(r?.bodyBase64)) return { contentBase64: r.bodyBase64, filename, mimeType };\n  const url = s(dl?.s3url) ?? s(r?.s3url) ?? s(r?.fileUrl) ?? s(r?.imageUrl) ?? s(r?.imageUrls?.[0]) ?? s(r?.audioUrl) ?? s(r?.videoUrl) ?? s(r?.secure_url);\n  if (url) return { fileUrl: url, filename, mimeType };\n  if (s(r?.data)) return { contentBase64: r.encoding !== 'base64' && /^(?:text\\/|application\\/(?:json|xml|javascript|x-tex))|\\+(?:xml|json)$/.test(mimeType ?? '') ? __b64(r.data) : r.data, filename, mimeType };\n  throw new Error('No file on the upstream step: expected file bytes (base64) or a file URL.');\n};\n// Params for yantra-storage/YANTRA_STORAGE_HTTP_SEND (n8n node \"remove background\").\nreturn { \"url\": \"https://image-api.photoroom.com/v2/edit\", \"method\": \"POST\", \"headers\": { \"x-api-key\": ($json['api-key']) }, \"bodyType\": \"multipart\", \"fields\": { \"background.color\": ($json.bg_color), \"padding\": ($json.padding), \"outputSize\": ($json.Geometry) }, \"files\": [{ \"field\": \"imageFile\", ...__fileRef({{steps.GOOGLESUPER_DOWNLOAD_FILE.result}}, \"data\") }], \"responseType\": \"base64\" };"
+      }
+    },
+    {
+      "nodeId": "node_fa7789c4f9",
+      "actorId": "actor_fa7789c4f9",
+      "type": "NodeCdeConnector",
+      "label": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-storage",
+        "connectorLabel": "Yantra storage",
+        "action": "YANTRA_STORAGE_HTTP_SEND"
+      }
+    },
+    {
+      "nodeId": "node_47c5d97ef4",
+      "actorId": "actor_47c5d97ef4",
+      "type": "NodeTransform",
+      "label": "remove background: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The response the way the n8n HTTP node handed it on: the parsed body; a file body is { bodyBase64, filename, mimeType }.\nconst __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' && 'status' in source.data ? source.data : source;\nconst __body = __r?.bodyBase64 !== undefined ? { bodyBase64: __r.bodyBase64, filename: __r.filename, mimeType: __r.contentType, bytes: __r.bytes } : __r?.bodyJson !== undefined ? __r.bodyJson : __r?.bodyText;\nreturn __body;"
+      }
+    },
+    {
+      "nodeId": "node_1a03b5a57b",
+      "actorId": "actor_1a03b5a57b",
+      "type": "NodeTransform",
+      "label": "Params: Upload Picture to Google Drive",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// The upstream file as { contentBase64 | fileUrl, filename, mimeType }: n8n binary data travels as base64 bytes or a file URL on Yantra.\nconst __b64 = (t) => { const b = new TextEncoder().encode(String(t)); let s = ''; for (let i = 0; i < b.length; i += 1) s += String.fromCharCode(b[i]); return btoa(s); };\nconst __fileRef = (v, prop) => {\n  const s = (x) => (typeof x === 'string' && x !== '' ? x : undefined);\n  let r = Array.isArray(v) ? v[0] : v;\n  const bin = r && typeof r === 'object' && r.binary && typeof r.binary === 'object' ? r.binary[prop] ?? Object.values(r.binary)[0] : undefined;\n  if (bin && s(bin.data)) return { contentBase64: bin.data, filename: s(r.filename) ?? s(bin.fileName) ?? 'file', mimeType: s(bin.mimeType) };\n  if (r && typeof r === 'object' && r.data && typeof r.data === 'object' && !Array.isArray(r.data)) r = { ...r, ...r.data };\n  const dl = r?.downloaded_file_content ?? r?.file;\n  const filename = s(r?.filename) ?? s(r?.fileName) ?? s(dl?.name) ?? s(r?.name) ?? 'file';\n  const mimeType = s(r?.mimeType) ?? s(r?.contentType) ?? s(dl?.mimetype) ?? s(r?.mimetype);\n  if (s(r?.bodyBase64)) return { contentBase64: r.bodyBase64, filename, mimeType };\n  const url = s(dl?.s3url) ?? s(r?.s3url) ?? s(r?.fileUrl) ?? s(r?.imageUrl) ?? s(r?.imageUrls?.[0]) ?? s(r?.audioUrl) ?? s(r?.videoUrl) ?? s(r?.secure_url);\n  if (url) return { fileUrl: url, filename, mimeType };\n  if (s(r?.data)) return { contentBase64: r.encoding !== 'base64' && /^(?:text\\/|application\\/(?:json|xml|javascript|x-tex))|\\+(?:xml|json)$/.test(mimeType ?? '') ? __b64(r.data) : r.data, filename, mimeType };\n  throw new Error('No file on the upstream step: expected file bytes (base64) or a file URL.');\n};\n// Params for googlesuper/GOOGLESUPER_UPLOAD_FILE (n8n node \"Upload Picture to Google Drive\").\nreturn Object.assign({ \"file_name\": `BG-Removed-${$json.inputFileName.split('.').slice(0, -1).join('.')}.png`, \"parent_id\": ($json.OutputDriveFolder) }, (() => { const __f = __fileRef(source, \"data\"); return __f.contentBase64 !== undefined ? { \"content_base64\": __f.contentBase64, \"mime_type\": __f.mimeType } : { \"file_url\": __f.fileUrl, \"mime_type\": __f.mimeType }; })());"
+      }
+    },
+    {
+      "nodeId": "node_7f0d472598",
+      "actorId": "actor_7f0d472598",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_UPLOAD_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive",
+        "action": "GOOGLESUPER_UPLOAD_FILE"
+      }
+    },
+    {
+      "nodeId": "node_b37a91154f",
+      "actorId": "actor_b37a91154f",
+      "type": "NodeTransform",
+      "label": "Params: Upload Picture to Google Drive1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// The upstream file as { contentBase64 | fileUrl, filename, mimeType }: n8n binary data travels as base64 bytes or a file URL on Yantra.\nconst __b64 = (t) => { const b = new TextEncoder().encode(String(t)); let s = ''; for (let i = 0; i < b.length; i += 1) s += String.fromCharCode(b[i]); return btoa(s); };\nconst __fileRef = (v, prop) => {\n  const s = (x) => (typeof x === 'string' && x !== '' ? x : undefined);\n  let r = Array.isArray(v) ? v[0] : v;\n  const bin = r && typeof r === 'object' && r.binary && typeof r.binary === 'object' ? r.binary[prop] ?? Object.values(r.binary)[0] : undefined;\n  if (bin && s(bin.data)) return { contentBase64: bin.data, filename: s(r.filename) ?? s(bin.fileName) ?? 'file', mimeType: s(bin.mimeType) };\n  if (r && typeof r === 'object' && r.data && typeof r.data === 'object' && !Array.isArray(r.data)) r = { ...r, ...r.data };\n  const dl = r?.downloaded_file_content ?? r?.file;\n  const filename = s(r?.filename) ?? s(r?.fileName) ?? s(dl?.name) ?? s(r?.name) ?? 'file';\n  const mimeType = s(r?.mimeType) ?? s(r?.contentType) ?? s(dl?.mimetype) ?? s(r?.mimetype);\n  if (s(r?.bodyBase64)) return { contentBase64: r.bodyBase64, filename, mimeType };\n  const url = s(dl?.s3url) ?? s(r?.s3url) ?? s(r?.fileUrl) ?? s(r?.imageUrl) ?? s(r?.imageUrls?.[0]) ?? s(r?.audioUrl) ?? s(r?.videoUrl) ?? s(r?.secure_url);\n  if (url) return { fileUrl: url, filename, mimeType };\n  if (s(r?.data)) return { contentBase64: r.encoding !== 'base64' && /^(?:text\\/|application\\/(?:json|xml|javascript|x-tex))|\\+(?:xml|json)$/.test(mimeType ?? '') ? __b64(r.data) : r.data, filename, mimeType };\n  throw new Error('No file on the upstream step: expected file bytes (base64) or a file URL.');\n};\n// Params for googlesuper/GOOGLESUPER_UPLOAD_FILE (n8n node \"Upload Picture to Google Drive1\").\nreturn Object.assign({ \"file_name\": `BG-Removed-${$json.inputFileName.split('.').slice(0, -1).join('.')}.png`, \"parent_id\": ($json.OutputDriveFolder) }, (() => { const __f = __fileRef(source, \"data\"); return __f.contentBase64 !== undefined ? { \"content_base64\": __f.contentBase64, \"mime_type\": __f.mimeType } : { \"file_url\": __f.fileUrl, \"mime_type\": __f.mimeType }; })());"
+      }
+    },
+    {
+      "nodeId": "node_b91f484274",
+      "actorId": "actor_b91f484274",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_UPLOAD_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 5400,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive",
+        "action": "GOOGLESUPER_UPLOAD_FILE"
+      }
+    },
+    {
+      "nodeId": "node_4c2f371e45",
+      "actorId": "actor_4c2f371e45",
+      "type": "NodeTransform",
+      "label": "Return: Upload Picture to Google Drive",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_83883458dc",
+      "actorId": "actor_83883458dc",
+      "type": "NodeTransform",
+      "label": "Return: Upload Picture to Google Drive1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_beaa0871d9",
+      "actorId": "actor_beaa0871d9",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f229899993",
+      "actorId": "actor_f229899993",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": ""
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_2d280b7d7d",
+      "target": "node_650bdbdc71",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_2d280b7d7d",
+      "target": "node_650bdbdc71",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_650bdbdc71",
+      "target": "node_392a277475",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_650bdbdc71",
+      "target": "node_392a277475",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_650bdbdc71",
+      "target": "node_4b7c4209e8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_650bdbdc71",
+      "target": "node_4b7c4209e8",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d9cc7555f1",
+      "target": "node_3942cb03b2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_d9cc7555f1",
+      "target": "node_3942cb03b2",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_d3a1a3818c",
+      "target": "node_2a5732aa35",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d3a1a3818c",
+      "target": "node_2a5732aa35",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_2a5732aa35",
+      "target": "node_e3af16ba9c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2a5732aa35",
+      "target": "node_e3af16ba9c",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_22b399edec",
+      "target": "node_fa7789c4f9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_22b399edec",
+      "target": "node_fa7789c4f9",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_fa7789c4f9",
+      "target": "node_47c5d97ef4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fa7789c4f9",
+      "target": "node_47c5d97ef4",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1a03b5a57b",
+      "target": "node_7f0d472598",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_1a03b5a57b",
+      "target": "node_7f0d472598",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_b37a91154f",
+      "target": "node_b91f484274",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_b37a91154f",
+      "target": "node_b91f484274",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d3a99f7aa8",
+      "target": "node_a02881ff42",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_47c5d97ef4",
+      "target": "node_b37a91154f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_47c5d97ef4",
+      "target": "node_b37a91154f",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6954e25adb",
+      "target": "node_a02881ff42",
+      "sourceOutput": "transformed",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_e3af16ba9c",
+      "target": "node_1a03b5a57b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e3af16ba9c",
+      "target": "node_1a03b5a57b",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a02881ff42",
+      "target": "node_2d280b7d7d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a02881ff42",
+      "target": "node_2d280b7d7d",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_13ffd0d795",
+      "target": "node_d40f61f404",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d40f61f404",
+      "target": "node_6954e25adb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d40f61f404",
+      "target": "node_6954e25adb",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b1df6c0c76",
+      "target": "node_13ffd0d795",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_b1df6c0c76",
+      "target": "node_d3a99f7aa8",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b1df6c0c76",
+      "target": "node_d3a99f7aa8",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3942cb03b2",
+      "target": "node_d3a1a3818c",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_392a277475",
+      "target": "node_d3a1a3818c",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3942cb03b2",
+      "target": "node_22b399edec",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_392a277475",
+      "target": "node_22b399edec",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_392a277475",
+      "target": "node_d9cc7555f1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_392a277475",
+      "target": "node_d9cc7555f1",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7f0d472598",
+      "target": "node_4c2f371e45",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7f0d472598",
+      "target": "node_4c2f371e45",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4c2f371e45",
+      "target": "node_650bdbdc71",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_4c2f371e45",
+      "target": "node_650bdbdc71",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_b91f484274",
+      "target": "node_83883458dc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b91f484274",
+      "target": "node_83883458dc",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_83883458dc",
+      "target": "node_650bdbdc71",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_83883458dc",
+      "target": "node_650bdbdc71",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_4b7c4209e8",
+      "target": "node_beaa0871d9",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "google-drive-and-sheets",
+    "categoryLabel": "Google Drive and Google Sheets",
+    "department": "Marketing",
+    "connectors": [
+      "googlesuper",
+      "yantra-image-editing",
+      "yantra-storage"
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeCdeWebhookTrigger",
+      "NodeEnd",
+      "NodeLoop",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 12,
+      "yantraSteps": 24,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Google_Drive_and_Google_Sheets/Automatic Background Removal for Images in Google Drive.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Remove Advanced Background from Google Drive Images"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "webhook-registration",
+        "node": "Watch for new images",
+        "detail": "webhook trigger googlesuper/GOOGLESUPER_FILE_CREATED_TRIGGER needs webhookEndpointId, connectedAccountId"
+      },
+      {
+        "code": "action-pending-publish",
+        "node": "remove background",
+        "detail": "yantra-storage/YANTRA_STORAGE_HTTP_SEND waits for the yantra-storage HTTP send and signatures patch (1.4.1) to be published"
+      },
+      {
+        "code": "action-pending-publish",
+        "node": "remove background fixed size",
+        "detail": "yantra-storage/YANTRA_STORAGE_HTTP_SEND waits for the yantra-storage HTTP send and signatures patch (1.4.1) to be published"
+      },
+      {
+        "code": "action-pending-publish",
+        "node": "Upload Picture to Google Drive",
+        "detail": "googlesuper/GOOGLESUPER_UPLOAD_FILE waits for the googlesuper Drive content upload patch (12.1.10) to be published"
+      },
+      {
+        "code": "action-pending-publish",
+        "node": "Upload Picture to Google Drive1",
+        "detail": "googlesuper/GOOGLESUPER_UPLOAD_FILE waits for the googlesuper Drive content upload patch (12.1.10) to be published"
+      }
+    ],
+    "setup": [
+      "\"Watch for new images\": after import, register the googlesuper webhook (`cdecli webhook endpoint create -c googlesuper`, then `cdecli trigger instance upsert --slug GOOGLESUPER_FILE_CREATED_TRIGGER`) and set webhookEndpointId, connectedAccountId on the trigger node.",
+      "\"remove background\": yantra-storage/YANTRA_STORAGE_HTTP_SEND comes from the yantra-storage HTTP send and signatures patch (1.4.1), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
+      "\"remove background fixed size\": yantra-storage/YANTRA_STORAGE_HTTP_SEND comes from the yantra-storage HTTP send and signatures patch (1.4.1), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
+      "\"Upload Picture to Google Drive\": googlesuper/GOOGLESUPER_UPLOAD_FILE comes from the googlesuper Drive content upload patch (12.1.10), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
+      "\"Upload Picture to Google Drive1\": googlesuper/GOOGLESUPER_UPLOAD_FILE comes from the googlesuper Drive content upload patch (12.1.10), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
+      "Connect the googlesuper connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "remove background fixed size",
+          "n8n": "httpRequest.multipart-form-data",
+          "action": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+          "soft": true
+        },
+        {
+          "node": "remove background",
+          "n8n": "httpRequest.multipart-form-data",
+          "action": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+          "soft": true
+        },
+        {
+          "node": "Upload Picture to Google Drive",
+          "n8n": "file.upload",
+          "action": "googlesuper/GOOGLESUPER_UPLOAD_FILE",
+          "soft": true
+        },
+        {
+          "node": "Upload Picture to Google Drive1",
+          "n8n": "file.upload",
+          "action": "googlesuper/GOOGLESUPER_UPLOAD_FILE",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "Watch for new images",
+          "type": "n8n-nodes-base.googleDriveTrigger",
+          "as": "NodeCdeWebhookTrigger"
+        }
+      ],
+      "hints": [
+        "\"Watch for new images\" is a provider webhook (googlesuper/GOOGLESUPER_FILE_CREATED_TRIGGER). Create the endpoint and trigger instance, then paste the we_… id and connected account into this node before the first run: `cdecli webhook endpoint create -c googlesuper --client-id <id>`, `cdecli webhook endpoint set-data <we_id> --signing-secret <secret>`, `cdecli trigger instance upsert --slug GOOGLESUPER_FILE_CREATED_TRIGGER --account <connectedAccountId>`.",
+        "\"Merge\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "\"loop all over your images\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "\"remove background fixed size\" sends its multipart-form-data body and reads the response as a file with yantra-storage HTTP_SEND (public https hosts only, 25 MB, 120 s); the file comes from \"Download Image\".",
+        "\"remove background\" sends its multipart-form-data body and reads the response as a file with yantra-storage HTTP_SEND (public https hosts only, 25 MB, 120 s); the file comes from \"Download Image\".",
+        "\"Upload Picture to Google Drive\" uploads the file from \"remove background fixed size\" to Google Drive (bytes or URL) with GOOGLESUPER_UPLOAD_FILE.",
+        "\"Upload Picture to Google Drive1\" uploads the file from \"remove background\" to Google Drive (bytes or URL) with GOOGLESUPER_UPLOAD_FILE.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## About this worfklow \n\n## How it works\nThis workflow does watch out for new images uploaded within Google Drive. \nOnce there are new images it will download the image. And then run some logic, remove the background and add some padding to the output image. \n**By default Images are saved as .png**\nOnce done upload it to Google Drive again.\n## Features* Select Google Drive Credentials within the Google Drive Nodes\n### This workflow supports\n* Remove Background\n* Transparent Background\n* Coloured Background (1 Color)\n* Add Padding\n* Choose Output Size\n\n## Customize it!\n* Feel free to customize the workflow to your needs\n* Speed up the workflow: Using fixed output size\n### Examples \n* Send Final Images to another service\n* For Products: Let ChatGPT Analyze the Product Type\n* Add Text with the \"Edit Image\" Node\n\n### Photroom API Playground\n[Click me](https://www.photoroom.com/api/playground)",
+      "## Setup\n\n### Requirements\n* Photoroom API Key [Click me](https://docs.photoroom.com/getting-started/how-can-i-get-my-api-key)\n* Google Drive Credential Setup\n\n\n## Config\n* Select Google Drive Credentials within the Google Drive Nodes\n\n* **Please refer to the \"Config\" Node**\n\nFor the API Key you can also setup an Header Authentication",
+      "Select Input Folder",
+      "### Configuration\n* Provide Your API Key\n* Set Background Color\n-HEX or values like white, transparent...\n* Select if Output Size / or Original Size should be used \n* Output Drive Folder\n ->Copy URL\n* Padding (Default 5%)"
+    ],
+    "nodes": {
+      "node_b1df6c0c76": {
+        "n8n": "Watch for new images",
+        "n8nType": "n8n-nodes-base.googleDriveTrigger"
+      },
+      "node_13ffd0d795": {
+        "n8n": "Download Image",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_d3a99f7aa8": {
+        "n8n": "Config",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_d40f61f404": {
+        "n8n": "Get Image Size",
+        "n8nType": "n8n-nodes-base.editImage"
+      },
+      "node_6954e25adb": {
+        "n8n": "Split Out",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_a02881ff42": {
+        "n8n": "Merge",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_2d280b7d7d": {
+        "n8n": "loop all over your images",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_650bdbdc71": {
+        "n8n": "loop all over your images",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_392a277475": {
+        "n8n": "loop all over your images",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_4b7c4209e8": {
+        "n8n": "loop all over your images",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_d9cc7555f1": {
+        "n8n": "check which output size method is used",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_3942cb03b2": {
+        "n8n": "check which output size method is used",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_d3a1a3818c": {
+        "n8n": "remove background fixed size",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_2a5732aa35": {
+        "n8n": "remove background fixed size",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_e3af16ba9c": {
+        "n8n": "remove background fixed size",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_22b399edec": {
+        "n8n": "remove background",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_fa7789c4f9": {
+        "n8n": "remove background",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_47c5d97ef4": {
+        "n8n": "remove background",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_1a03b5a57b": {
+        "n8n": "Upload Picture to Google Drive",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_7f0d472598": {
+        "n8n": "Upload Picture to Google Drive",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_b37a91154f": {
+        "n8n": "Upload Picture to Google Drive1",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_b91f484274": {
+        "n8n": "Upload Picture to Google Drive1",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_4c2f371e45": {
+        "n8n": "Upload Picture to Google Drive",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_83883458dc": {
+        "n8n": "Upload Picture to Google Drive1",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_beaa0871d9": {
+        "n8n": "__end:loop all over your images",
+        "n8nType": "synthetic"
+      },
+      "node_f229899993": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

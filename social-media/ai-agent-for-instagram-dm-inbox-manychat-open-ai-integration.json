@@ -1,0 +1,344 @@
+{
+  "name": "AI agent for Instagram DM_inbox. Manychat + Open AI integration",
+  "workflowSlug": "ai-agent-for-instagram-dm-inbox-manychat-open-ai-integration",
+  "description": "Integrates Manychat with OpenAI to create an AI agent for managing Instagram direct messages.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_7c7b9ba4d8",
+      "actorId": "actor_7c7b9ba4d8",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_dda8344921",
+      "actorId": "actor_dda8344921",
+      "type": "NodeTransform",
+      "label": "Set your system promt for AI",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"prompt\"] = `Persona: You are a instagram influencer.\nContext: You receive a messages from your subscribers\nTask: Answer questions in your writing style and patterns according to your previous posts text. Use your post only for style and patterns reference.\nStyle rules:\nsimple answers`;\n  out[\"sessionId\"] = ($json.body.session_id);\n  out[\"chatInput\"] = ($json.body.text);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_c44aba5183",
+      "actorId": "actor_c44aba5183",
+      "type": "NodeCdecliAgent",
+      "label": "AI Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "sessionId": "{{sessionId}}",
+        "system": "{{llm_system_251eaf3be8}}",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_251eaf3be8",
+      "actorId": "actor_251eaf3be8",
+      "type": "NodeTransform",
+      "label": "System: AI Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: AI Agent.\nconst __promptValue = ($json.prompt);\nreturn { \"llm_system_251eaf3be8\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_ab8741607e",
+      "actorId": "actor_ab8741607e",
+      "type": "NodeUpdateContext",
+      "label": "Save System: AI Agent",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_86dc698766",
+      "actorId": "actor_86dc698766",
+      "type": "NodeTransform",
+      "label": "Prompt: AI Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: AI Agent.\nconst __promptValue = ($json.chatInput);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_c20eaf9b8a",
+      "actorId": "actor_c20eaf9b8a",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_5cc7ddbd75",
+      "actorId": "actor_5cc7ddbd75",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {},
+          "sessionId": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_251eaf3be8",
+      "target": "node_ab8741607e",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_251eaf3be8",
+      "target": "node_ab8741607e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_ab8741607e",
+      "target": "node_86dc698766",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_86dc698766",
+      "target": "node_c44aba5183",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_dda8344921",
+      "target": "node_251eaf3be8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dda8344921",
+      "target": "node_251eaf3be8",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dda8344921",
+      "target": "node_86dc698766",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7c7b9ba4d8",
+      "target": "node_dda8344921",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c44aba5183",
+      "target": "node_c20eaf9b8a",
+      "sourceOutput": "text",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "social-media",
+    "categoryLabel": "Instagram, X and Social Media",
+    "department": "Marketing/Customer Service/AI",
+    "connectors": [],
+    "nodeTypes": [
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeStart",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 6,
+      "yantraSteps": 6,
+      "foldedHelpers": [
+        "ChatGPT model",
+        "Local n8n memory"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Instagram_Twitter_Social_Media/AI agent for Instagram DM_inbox. Manychat + Open AI integration.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "InstaTest"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Getting message from Instagram",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Getting message from Instagram\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Provide run inputs: body, query, headers, sessionId, llm_system_251eaf3be8."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [
+        {
+          "node": "ChatGPT model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "AI Agent"
+        },
+        {
+          "node": "Local n8n memory",
+          "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+          "into": "AI Agent",
+          "as": "ai_memory"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Getting message from Instagram",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /instagram_chat). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "\"AI Agent\" kept conversation memory (memoryBufferWindow); sessionId is set to the run-input sessionId.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "## Easy Instagram(via ManyChat) bot\n---\n### Description:\nThis template is a main part of Entire solution. It's getting new message from Instagram via ManyChat(Extra No-Code tool for getting and sending message in Instagram). Generating message using ChatGPT and send back to ManyChat that sends it to Instagrtam.\n\n### Logic:\n1. Getting message from Instagram(from ManyChat)\n2. Set you system prompt for AI\n3. Create simple answer for message in AI block\n4. Send answer to Instagram(to ManyChat)\n\n---\n*Helpful links:*\n- [Guide in Notion how to create full bot](https://shadowed-pound-d6e.notion.site/Instagram-GPT-light-version-Manychat-X-N8N-176293bddff880899a9ac255585d29f7?pvs=4)\n- [ManyChat](https://manychat.partnerlinks.io/vm4wkw8j81tc)",
+      "## 3) AI block\n---\nThere is 3 nodes:\n- AI Agent\n- Chat GPT model\n- Memory for history messages\n\n### To do:\n- in ChatGPT node you can choose the best model for you\n- in Memory Block you can change number of messages in history",
+      "## 1) HTTP Post webhook\n\n**To do:**\nJust copy production link from this node and insert to custom action in ManyChat\n\nNo edits needed",
+      "## 2) Edit prompt\n\n**To do:**\nGo inside and change input",
+      "## 4) Respond webhook\n\nNo edits needed"
+    ],
+    "nodes": {
+      "node_7c7b9ba4d8": {
+        "n8n": "Getting message from Instagram",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_dda8344921": {
+        "n8n": "Set your system promt for AI",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_c44aba5183": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_251eaf3be8": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_ab8741607e": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_86dc698766": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_c20eaf9b8a": {
+        "n8n": "Send respond ",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_5cc7ddbd75": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

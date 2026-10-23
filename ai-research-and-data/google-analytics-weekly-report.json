@@ -1,0 +1,804 @@
+{
+  "name": "Google Analytics: Weekly Report",
+  "workflowSlug": "google-analytics-weekly-report",
+  "description": "Generates Google Analytics data reports using AI and sends them via email and Telegram.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_8432892e06",
+      "actorId": "actor_8432892e06",
+      "type": "NodeCron",
+      "label": "Schedule Trigger",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 7 * * 1"
+      }
+    },
+    {
+      "nodeId": "node_ccff77fcd9",
+      "actorId": "actor_ccff77fcd9",
+      "type": "NodeCdeConnector",
+      "label": "google-analytics/GOOGLE_ANALYTICS_RUN_REPORT",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "google-analytics",
+        "connectorLabel": "Google Analytics",
+        "action": "GOOGLE_ANALYTICS_RUN_REPORT",
+        "params": {
+          "property": "{{gaPropertyId}}",
+          "dateRanges": [
+            {
+              "startDate": "7daysAgo",
+              "endDate": "today"
+            }
+          ],
+          "metrics": [
+            {
+              "name": "screenPageViews"
+            },
+            {
+              "name": "totalUsers"
+            },
+            {
+              "name": "sessions"
+            },
+            {
+              "name": "sessionsPerUser"
+            },
+            {
+              "name": "averageSessionDuration"
+            },
+            {
+              "name": "ecommercePurchases"
+            },
+            {
+              "name": "averagePurchaseRevenue"
+            },
+            {
+              "name": "purchaseRevenue"
+            }
+          ],
+          "dimensions": [
+            {
+              "name": "date"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_f415885384",
+      "actorId": "actor_f415885384",
+      "type": "NodeTransform",
+      "label": "Assign data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"Aufrufe\"] = Number(($json.screenPageViews));\n  out[\"Nutzer\"] = Number(($json.totalUsers));\n  out[\"Sitzungen\"] = Number(($json.sessions));\n  out[\"Sitzungen pro Nutzer\"] = Number(($json.sessionsPerUser));\n  out[\"Sitzungsdauer\"] = Number(($json.averageSessionDuration));\n  out[\"=Käufe\"] = Number(($json.ecommercePurchases));\n  out[\"Revenue pro Kauf\"] = Number(($json.averagePurchaseRevenue));\n  out[\"Revenue\"] = Number(($json.purchaseRevenue));\n  out[\"date\"] = ($json.date);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_ba7381aa28",
+      "actorId": "actor_ba7381aa28",
+      "type": "NodeTransform",
+      "label": "Summarize Data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Object.prototype, { values() { return Object.values(this); } });\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Summarize (n8n Summarize node): sum of Aufrufe, sum of Nutzer, sum of Sitzungen, average of Sitzungen pro Nutzer, average of Sitzungsdauer, sum of Käufe, average of Revenue pro Kauf, sum of Revenue, count of date.\nconst __fields = [{ field: \"Aufrufe\", aggregation: \"sum\", separateBy: \",\" }, { field: \"Nutzer\", aggregation: \"sum\", separateBy: \",\" }, { field: \"Sitzungen\", aggregation: \"sum\", separateBy: \",\" }, { field: \"Sitzungen pro Nutzer\", aggregation: \"average\", separateBy: \",\" }, { field: \"Sitzungsdauer\", aggregation: \"average\", separateBy: \",\" }, { field: \"Käufe\", aggregation: \"sum\", separateBy: \",\" }, { field: \"Revenue pro Kauf\", aggregation: \"average\", separateBy: \",\" }, { field: \"Revenue\", aggregation: \"sum\", separateBy: \",\" }, { field: \"date\", aggregation: \"count\", separateBy: \",\" }];\nconst __splitBy = [];\nconst __summarize = (rows) => {\n  const out = {};\n  for (const f of __fields) {\n    const vals = rows.map((r) => __get(r, f.field)).filter((v) => v !== undefined && v !== null && v !== '');\n    const nums = vals.map(Number).filter((n) => !Number.isNaN(n));\n    const key = (f.aggregation === 'concatenate' ? 'concatenated' : f.aggregation) + '_' + f.field;\n    switch (f.aggregation) {\n      case 'count': out[key] = vals.length; break;\n      case 'countUnique': out[key] = new Set(vals.map((v) => JSON.stringify(v))).size; break;\n      case 'sum': out[key] = nums.reduce((a, b) => a + b, 0); break;\n      case 'average': out[key] = nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null; break;\n      case 'min': out[key] = nums.length ? Math.min(...nums) : null; break;\n      case 'max': out[key] = nums.length ? Math.max(...nums) : null; break;\n      case 'append': out[key] = vals; break;\n      case 'concatenate': out[key] = vals.join(f.separateBy); break;\n      default: out[key] = vals;\n    }\n  }\n  return out;\n};\nif (!__splitBy.length) return [__summarize(__items)];\nconst __groups = new Map();\nfor (const r of __items) {\n  const k = __splitBy.map((f) => JSON.stringify(__get(r, f))).join('|');\n  if (!__groups.has(k)) __groups.set(k, []);\n  __groups.get(k).push(r);\n}\nreturn [...__groups.values()].map((rows) => ({ ...Object.fromEntries(__splitBy.map((f) => [f, __get(rows[0], f)])), ...__summarize(rows) }));"
+      }
+    },
+    {
+      "nodeId": "node_24242a2849",
+      "actorId": "actor_24242a2849",
+      "type": "NodeTransform",
+      "label": "Calculation same period previous year",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// Ported from n8n Code node \"Calculation same period previous year\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  return {\n   // Berechnung des Startdatums: Vorjahr, gleiche Woche, 7 Tage zurück\n   startDate: (() => {\n   const date = new Date();\n   date.setFullYear(date.getFullYear() - 1); // Zurück ins Vorjahr\n   date.setDate(date.getDate() - 7); // 7 Tage zurück\n   return date.toISOString().split('T')[0];\n   })(),\n   \n   // Berechnung des Enddatums: Vorjahr, heutiges Datum\n   endDate: (() => {\n   const date = new Date();\n   date.setFullYear(date.getFullYear() - 1); // Zurück ins Vorjahr\n   return date.toISOString().split('T')[0];\n   })(),\n  };\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_ca20761215",
+      "actorId": "actor_ca20761215",
+      "type": "NodeCdeConnector",
+      "label": "google-analytics/GOOGLE_ANALYTICS_RUN_REPORT",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "google-analytics",
+        "connectorLabel": "Google Analytics",
+        "action": "GOOGLE_ANALYTICS_RUN_REPORT",
+        "params": {
+          "property": "{{gaPropertyId}}",
+          "dateRanges": [
+            {
+              "startDate": "{{last.transformed.startDate}}",
+              "endDate": "{{last.transformed.endDate}}"
+            }
+          ],
+          "metrics": [
+            {
+              "name": "screenPageViews"
+            },
+            {
+              "name": "totalUsers"
+            },
+            {
+              "name": "sessions"
+            },
+            {
+              "name": "sessionsPerUser"
+            },
+            {
+              "name": "averageSessionDuration"
+            },
+            {
+              "name": "ecommercePurchases"
+            },
+            {
+              "name": "averagePurchaseRevenue"
+            },
+            {
+              "name": "purchaseRevenue"
+            }
+          ],
+          "dimensions": [
+            {
+              "name": "date"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_e0a80f6223",
+      "actorId": "actor_e0a80f6223",
+      "type": "NodeTransform",
+      "label": "Assign data1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"Aufrufe\"] = Number(($json.screenPageViews));\n  out[\"Nutzer\"] = Number(($json.totalUsers));\n  out[\"Sitzungen\"] = Number(($json.sessions));\n  out[\"Sitzungen pro Nutzer\"] = Number(($json.sessionsPerUser));\n  out[\"Sitzungsdauer\"] = Number(($json.averageSessionDuration));\n  out[\"=Käufe\"] = Number(($json.ecommercePurchases));\n  out[\"Revenue pro Kauf\"] = Number(($json.averagePurchaseRevenue));\n  out[\"Revenue\"] = Number(($json.purchaseRevenue));\n  out[\"=date\"] = ($json.date);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_1e1a4ee852",
+      "actorId": "actor_1e1a4ee852",
+      "type": "NodeTransform",
+      "label": "Summarize Data1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Object.prototype, { values() { return Object.values(this); } });\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Summarize (n8n Summarize node): sum of Aufrufe, sum of Nutzer, sum of Sitzungen, average of Sitzungen pro Nutzer, average of Sitzungsdauer, sum of Käufe, average of Revenue pro Kauf, sum of Revenue, count of date.\nconst __fields = [{ field: \"Aufrufe\", aggregation: \"sum\", separateBy: \",\" }, { field: \"Nutzer\", aggregation: \"sum\", separateBy: \",\" }, { field: \"Sitzungen\", aggregation: \"sum\", separateBy: \",\" }, { field: \"Sitzungen pro Nutzer\", aggregation: \"average\", separateBy: \",\" }, { field: \"Sitzungsdauer\", aggregation: \"average\", separateBy: \",\" }, { field: \"Käufe\", aggregation: \"sum\", separateBy: \",\" }, { field: \"Revenue pro Kauf\", aggregation: \"average\", separateBy: \",\" }, { field: \"Revenue\", aggregation: \"sum\", separateBy: \",\" }, { field: \"date\", aggregation: \"count\", separateBy: \",\" }];\nconst __splitBy = [];\nconst __summarize = (rows) => {\n  const out = {};\n  for (const f of __fields) {\n    const vals = rows.map((r) => __get(r, f.field)).filter((v) => v !== undefined && v !== null && v !== '');\n    const nums = vals.map(Number).filter((n) => !Number.isNaN(n));\n    const key = (f.aggregation === 'concatenate' ? 'concatenated' : f.aggregation) + '_' + f.field;\n    switch (f.aggregation) {\n      case 'count': out[key] = vals.length; break;\n      case 'countUnique': out[key] = new Set(vals.map((v) => JSON.stringify(v))).size; break;\n      case 'sum': out[key] = nums.reduce((a, b) => a + b, 0); break;\n      case 'average': out[key] = nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null; break;\n      case 'min': out[key] = nums.length ? Math.min(...nums) : null; break;\n      case 'max': out[key] = nums.length ? Math.max(...nums) : null; break;\n      case 'append': out[key] = vals; break;\n      case 'concatenate': out[key] = vals.join(f.separateBy); break;\n      default: out[key] = vals;\n    }\n  }\n  return out;\n};\nif (!__splitBy.length) return [__summarize(__items)];\nconst __groups = new Map();\nfor (const r of __items) {\n  const k = __splitBy.map((f) => JSON.stringify(__get(r, f))).join('|');\n  if (!__groups.has(k)) __groups.set(k, []);\n  __groups.get(k).push(r);\n}\nreturn [...__groups.values()].map((rows) => ({ ...Object.fromEntries(__splitBy.map((f) => [f, __get(rows[0], f)])), ...__summarize(rows) }));"
+      }
+    },
+    {
+      "nodeId": "node_2e862d276a",
+      "actorId": "actor_2e862d276a",
+      "type": "NodeLlmChain",
+      "label": "Processing for email",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_d9f457e3ba",
+      "actorId": "actor_d9f457e3ba",
+      "type": "NodeTransform",
+      "label": "Prompt: Processing for email",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Schedule Trigger\": __namedCtx.steps?.[\"Schedule Trigger\"]?.[\"payload\"], \"Google Analytics Letzte 7 Tage\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Assign data\": __namedCtx.steps?.[\"Assign data\"]?.[\"transformed\"], \"Summarize Data\": __namedCtx.steps?.[\"Summarize Data\"]?.[\"transformed\"], \"Calculation same period previous year\": __namedCtx.steps?.[\"Calculation same period previous year\"]?.[\"transformed\"], \"Google Analytics: Past 7 days of the previous year\": __namedCtx.steps?.[\"GOOGLE_ANALYTICS_RUN_REPORT\"]?.[\"result\"], \"Assign data1\": __namedCtx.steps?.[\"Assign data1\"]?.[\"transformed\"], \"Summarize Data1\": __namedCtx.steps?.[\"Summarize Data1\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Processing for email.\nconst __promptValue = `Please analyze the following data and output the results in tabular form:\n\n| Metrics | Last 7 days | Previous year | Percentage change |\n|-------------------------------|---------------|---------|\n| Total page views | ${$('Summarize Data').item.json.sum_Aufrufe} | ${$('Summarize Data1').item.json.sum_Aufrufe} | Percentage change |\n| total users | ${$('Summarize Data').item.json.sum_Nutzer} | ${$('Summarize Data1').item.json.sum_Nutzer} | Percentage change |\n| Total sessions | ${$('Summarize Data').item.json.sum_Sitzungen} | ${$('Summarize Data1').item.json.sum_Sitzungen} | Percentage change |\n| Average sessions/user | ${$('Summarize Data').item.json.average_Sitzungen_pro_Nutzer} | ${$('Summarize Data1').item.json.average_Sitzungen_pro_Nutzer} | Percentage change |\n| Average session duration | ${$('Summarize Data').item.json.average_Sitzungsdauer} | ${$('Summarize Data1').item.json.average_Sitzungsdauer} | Percentage change |\n| Total purchases | ${$('Summarize Data').item.json['sum_Käufe']} | ${$('Summarize Data1').item.json['sum_Käufe']} | Percentage change |\n| Average revenue/purchase | ${$('Summarize Data').item.json.average_Revenue_pro_Kauf} | ${$('Summarize Data1').item.json.average_Revenue_pro_Kauf} | Percentage change |\n| Total revenue | ${$('Summarize Data').item.json.sum_Revenue} | ${$('Summarize Data1').item.json.sum_Revenue} | Percentage change |\n\nFormat for numbers:\n- Dot (.) for numbers in thousands (e.g. 4,000)\n- Comma (,) for decimal numbers (e.g. 3.4)\n- Conversion of average session duration in minutes instead of seconds\n- Average turnover/purchase and total turnover in €\n\nPlease write a short summary of the analyzed data above the table (in a maximum of 3 sentences!)\n\nPlease format to a sleek and modern HTML format so that the result can be sent as HTML mail!\n\nStructure of the e-mail:\n\n“Hello! Here is the Weekly Report: Google Analytics of the last 7 days!\n[Summary]\n[Table]”`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_62debab304",
+      "actorId": "actor_62debab304",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (SMTP original)",
+        "action": "GOOGLESUPER_SEND_EMAIL",
+        "params": {
+          "recipient_email": "{{recipientEmail}}",
+          "subject": "Weekly Report: Google Analytics: Last 7 days",
+          "body": "{{last.text}}",
+          "is_html": true
+        }
+      }
+    },
+    {
+      "nodeId": "node_4419065c62",
+      "actorId": "actor_4419065c62",
+      "type": "NodeLlmChain",
+      "label": "Processing for Telegram",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "prompt": "Convert the following text from HTML to normal text:\n\n{{last.text}}\n\nPlease format the table so that each metric is a separate paragraph!\n\nExample:\n\nTotal views: xx.xxx\nTotal views previous year: xx,xxx\nDifference: x.xx %\n\nTotal users: xx,xxx\nTotal users previous year: xx,xxx\nDifference: -x.xx %",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_2903a0924c",
+      "actorId": "actor_2903a0924c",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_SEND_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_SEND_MESSAGE",
+        "params": {
+          "chat_id": "{{telegramChatId}}",
+          "text": "{{last.text}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_e47fc36866",
+      "actorId": "actor_e47fc36866",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_7358af1c91",
+      "actorId": "actor_7358af1c91",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_07430fe7d2",
+      "actorId": "actor_07430fe7d2",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "gaPropertyId": "",
+          "recipientEmail": "",
+          "telegramChatId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_bcccdf5765",
+      "actorId": "actor_bcccdf5765",
+      "type": "NodeChatModel",
+      "label": "Processing for email: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3500,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o"
+      }
+    },
+    {
+      "nodeId": "node_ec2dfc51da",
+      "actorId": "actor_ec2dfc51da",
+      "type": "NodeChatModel",
+      "label": "Processing for Telegram: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4260,
+        "y": 720
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_d9f457e3ba",
+      "target": "node_2e862d276a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_8432892e06",
+      "target": "node_ccff77fcd9",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ccff77fcd9",
+      "target": "node_f415885384",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ccff77fcd9",
+      "target": "node_f415885384",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4419065c62",
+      "target": "node_2903a0924c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ca20761215",
+      "target": "node_e0a80f6223",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ca20761215",
+      "target": "node_e0a80f6223",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ba7381aa28",
+      "target": "node_24242a2849",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ba7381aa28",
+      "target": "node_24242a2849",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1e1a4ee852",
+      "target": "node_d9f457e3ba",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1e1a4ee852",
+      "target": "node_d9f457e3ba",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_24242a2849",
+      "target": "node_ca20761215",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_f415885384",
+      "target": "node_ba7381aa28",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f415885384",
+      "target": "node_ba7381aa28",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e0a80f6223",
+      "target": "node_1e1a4ee852",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e0a80f6223",
+      "target": "node_1e1a4ee852",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2e862d276a",
+      "target": "node_62debab304",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_62debab304",
+      "target": "node_e47fc36866",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_2903a0924c",
+      "target": "node_7358af1c91",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_bcccdf5765",
+      "target": "node_2e862d276a",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_ec2dfc51da",
+      "target": "node_4419065c62",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_2e862d276a",
+      "target": "node_4419065c62",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "ai-research-and-data",
+    "categoryLabel": "AI Research, RAG and Data Analysis",
+    "department": "Data Analysis, Marketing",
+    "connectors": [
+      "google-analytics",
+      "googlesuper",
+      "openai",
+      "telegram"
+    ],
+    "setupVars": [
+      {
+        "key": "gaPropertyId",
+        "label": "Google Analytics 4 property id",
+        "type": "id",
+        "example": "properties/123456789",
+        "usedBy": [
+          "Google Analytics Letzte 7 Tage",
+          "Google Analytics: Past 7 days of the previous year"
+        ]
+      },
+      {
+        "key": "recipientEmail",
+        "label": "Recipient email address",
+        "type": "email",
+        "example": "you@example.com",
+        "usedBy": [
+          "Send Email"
+        ]
+      },
+      {
+        "key": "telegramChatId",
+        "label": "Telegram chat id",
+        "type": "id",
+        "example": "123456789",
+        "usedBy": [
+          "Telegram"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate google-analytics-weekly-report",
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 13,
+      "yantraSteps": 15,
+      "foldedHelpers": [
+        "Calculator"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "AI_Research_RAG_and_Data_Analysis/Create a Google Analytics Data Report with AI and sent it to E-Mail and Telegram.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Google Analytics: Weekly Report"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Setup value gaPropertyId: Google Analytics 4 property id (for example properties/123456789). Write it into the Workflow Configs initialContext before import.",
+      "Setup value recipientEmail: Recipient email address (for example you@example.com). Write it into the Workflow Configs initialContext before import.",
+      "Setup value telegramChatId: Telegram chat id (for example 123456789). Write it into the Workflow Configs initialContext before import.",
+      "Connect the google-analytics connector (credential).",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "Connect the telegram connector (credential).",
+      "After import, start the schedule: cdecli cron activate google-analytics-weekly-report."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [
+        {
+          "node": "Calculator",
+          "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+          "into": "Processing for email",
+          "as": "ai_tool"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Schedule Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "\"Processing for email\" used agent tools in the original: Calculator (toolCalculator). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect google-analytics: `cdecli credential create -n \"google-analytics\" -p google-analytics --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect telegram: `cdecli credential create -n \"telegram\" -p telegram --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "Welcome to my Google Analytics Weekly Report Workflow!\n\nThis workflow has the following sequence:\n\n1. time trigger (e.g. every Monday at 7 a.m.)\n2. retrieval of Google Analytics data from the last 7 days\n3. assignment and summary of the data\n4. retrieval of Google Analytics data from the last 7 days of the previous year\n5. allocation and summary of the data\n6. preparation in tabular form and brief analysis by AI.\n7. sending the report as an email\n8. preparation in short form by AI for Telegram (optional)\n9. sending as Telegram message.\n\nThe following accesses are required for the workflow:\n- Google Analytics (via Google Analytics API): https://docs.n8n.io/integrations/builtin/credentials/google/\n- AI API access (e.g. via OpenAI, Anthropic, Google or Ollama)\n- SMTP access data (for sending the mail)\n- Telegram access data (optional for sending as Telegram message): https://docs.n8n.io/integrations/builtin/credentials/telegram/\n\nYou can contact me via LinkedIn, if you have any questions: https://www.linkedin.com/in/friedemann-schuetz"
+    ],
+    "nodes": {
+      "node_8432892e06": {
+        "n8n": "Schedule Trigger",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_ccff77fcd9": {
+        "n8n": "Google Analytics Letzte 7 Tage",
+        "n8nType": "n8n-nodes-base.googleAnalytics"
+      },
+      "node_f415885384": {
+        "n8n": "Assign data",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_ba7381aa28": {
+        "n8n": "Summarize Data",
+        "n8nType": "n8n-nodes-base.summarize"
+      },
+      "node_24242a2849": {
+        "n8n": "Calculation same period previous year",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_ca20761215": {
+        "n8n": "Google Analytics: Past 7 days of the previous year",
+        "n8nType": "n8n-nodes-base.googleAnalytics"
+      },
+      "node_e0a80f6223": {
+        "n8n": "Assign data1",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_1e1a4ee852": {
+        "n8n": "Summarize Data1",
+        "n8nType": "n8n-nodes-base.summarize"
+      },
+      "node_2e862d276a": {
+        "n8n": "Processing for email",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_d9f457e3ba": {
+        "n8n": "Processing for email",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_62debab304": {
+        "n8n": "Send Email",
+        "n8nType": "n8n-nodes-base.emailSend"
+      },
+      "node_4419065c62": {
+        "n8n": "Processing for Telegram",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_2903a0924c": {
+        "n8n": "Telegram",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_e47fc36866": {
+        "n8n": "__end:Send Email",
+        "n8nType": "synthetic"
+      },
+      "node_7358af1c91": {
+        "n8n": "__end:Telegram",
+        "n8nType": "synthetic"
+      },
+      "node_07430fe7d2": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_bcccdf5765": {
+        "n8n": "Processing for email",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_ec2dfc51da": {
+        "n8n": "Processing for Telegram",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

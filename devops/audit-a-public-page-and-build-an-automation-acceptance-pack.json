@@ -1,0 +1,524 @@
+{
+  "name": "Audit a Public Page and Build an Automation Acceptance Pack",
+  "workflowSlug": "audit-a-public-page-and-build-an-automation-acceptance-pack",
+  "description": "Validate one public URL, collect bounded integration-readiness evidence, generate launch gates and acceptance tests, and route the result for implementation or review.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_5340d29edf",
+      "actorId": "actor_5340d29edf",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_d63203fd44",
+      "actorId": "actor_d63203fd44",
+      "type": "NodeTransform",
+      "label": "Set Target and Objective",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"targetUrl\"] = \"https://example.com\";\n  out[\"objective\"] = \"Verify this public page before implementing an automation or integration.\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_b8f0069324",
+      "actorId": "actor_b8f0069324",
+      "type": "NodeTransform",
+      "label": "Validate Public Target",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Validate Public Target\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const config = $input.first().json;\n  const rawTarget = String(config.targetUrl || '').trim();\n  const objective = String(config.objective || '').trim();\n  \n  if (!rawTarget) throw new Error('targetUrl is required');\n  if (!objective) throw new Error('objective is required');\n  if (objective.length > 500) throw new Error('objective must be 500 characters or fewer');\n  \n  let target;\n  try {\n    target = new URL(rawTarget);\n  } catch {\n    throw new Error('targetUrl must be a valid public HTTP or HTTPS URL');\n  }\n  if (!['http:', 'https:'].includes(target.protocol)) {\n    throw new Error('targetUrl must use HTTP or HTTPS');\n  }\n  const hostname = target.hostname.toLowerCase();\n  const privateHost = hostname === 'localhost'\n    || hostname.endsWith('.local')\n    || hostname === '0.0.0.0'\n    || hostname === '127.0.0.1'\n    || hostname === '::1'\n    || /^10\\./.test(hostname)\n    || /^192\\.168\\./.test(hostname)\n    || /^169\\.254\\./.test(hostname)\n    || /^172\\.(1[6-9]|2\\d|3[01])\\./.test(hostname);\n  if (privateHost) throw new Error('targetUrl must resolve to a public host');\n  \n  return [{ json: { targetUrl: target.toString(), objective } }];\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_a41f077827",
+      "actorId": "actor_a41f077827",
+      "type": "NodeHttpRequest",
+      "label": "Build Acceptance Pack",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://automation-integration-preflight.p.rapidapi.com/rapidapi/analyze",
+        "headers": {
+          "x-rapidapi-host": "automation-integration-preflight.p.rapidapi.com",
+          "Content-Type": "application/json",
+          "x-rapidapi-key": "{{rapidapiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_95b06e8c3c",
+      "actorId": "actor_95b06e8c3c",
+      "type": "NodeTransform",
+      "label": "Body: Build Acceptance Pack",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Build Acceptance Pack\".\nconst __body = (JSON.stringify({ url: $json.targetUrl, mode: 'acceptance-pack', objective: $json.objective }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_966cf8fae7",
+      "actorId": "actor_966cf8fae7",
+      "type": "NodeTransform",
+      "label": "Summarize Evidence",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Summarize Evidence\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const report = $input.first().json;\n  const readiness = report.readiness && typeof report.readiness === 'object' ? report.readiness : {};\n  const pack = report.acceptance_pack && typeof report.acceptance_pack === 'object' ? report.acceptance_pack : {};\n  const gate = pack.launch_gate && typeof pack.launch_gate === 'object' ? pack.launch_gate : {};\n  const score = Number(readiness.score || 0);\n  const riskFlags = Array.isArray(readiness.risk_flags) ? readiness.risk_flags : [];\n  const acceptanceTests = Array.isArray(pack.acceptance_tests) ? pack.acceptance_tests : [];\n  const backlog = Array.isArray(pack.prioritized_backlog) ? pack.prioritized_backlog : [];\n  const requiresAttention = gate.decision !== 'ready' || score < 80 || riskFlags.length > 0;\n  \n  return [{ json: {\n    targetUrl: report.target?.final_url || report.target?.requested_url || null,\n    objective: pack.objective || null,\n    readinessScore: score,\n    readinessGrade: readiness.grade || null,\n    launchDecision: gate.decision || 'unknown',\n    riskFlags,\n    acceptanceTestCount: acceptanceTests.length,\n    backlogCount: backlog.length,\n    requiresAttention,\n    acceptancePack: pack,\n    evidence: {\n      target: report.target || null,\n      page: report.page || null,\n      security: report.security_headers || null,\n      readiness\n    }\n  } }];\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_13ae67ac27",
+      "actorId": "actor_13ae67ac27",
+      "type": "NodeTransform",
+      "label": "Needs Attention?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.requiresAttention)) === true || (($json.requiresAttention)) === 'true'));"
+      }
+    },
+    {
+      "nodeId": "node_839ec27a31",
+      "actorId": "actor_839ec27a31",
+      "type": "NodeBranch",
+      "label": "Needs Attention?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_bc49a605db",
+      "actorId": "actor_bc49a605db",
+      "type": "NodeTransform",
+      "label": "Mark Needs Review",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\nconst items = __items.map((json) => ({ json }));\n// Ported from n8n Code node \"Mark Needs Review\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  return $input.all().map((item) => ({ json: { ...item.json, workflowDecision: 'NEEDS_REVIEW', nextStep: 'Work through the P0 and P1 backlog items, then rerun the preflight.' } }));\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_21a46cc38e",
+      "actorId": "actor_21a46cc38e",
+      "type": "NodeTransform",
+      "label": "Mark Ready to Implement",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Mark Ready to Implement\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  return $input.all().map((item) => ({ json: { ...item.json, workflowDecision: 'READY_TO_IMPLEMENT', nextStep: 'Use the acceptance tests as the implementation and launch checklist.' } }));\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_d5bfbac5d5",
+      "actorId": "actor_d5bfbac5d5",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_ba8e5bf1ab",
+      "actorId": "actor_ba8e5bf1ab",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_2b35721028",
+      "actorId": "actor_2b35721028",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "rapidapiKey": {
+            "$workflowSecret": "RAPIDAPI_KEY"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_95b06e8c3c",
+      "target": "node_a41f077827",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_95b06e8c3c",
+      "target": "node_a41f077827",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_13ae67ac27",
+      "target": "node_839ec27a31",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_13ae67ac27",
+      "target": "node_839ec27a31",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_5340d29edf",
+      "target": "node_d63203fd44",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d63203fd44",
+      "target": "node_b8f0069324",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d63203fd44",
+      "target": "node_b8f0069324",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b8f0069324",
+      "target": "node_95b06e8c3c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b8f0069324",
+      "target": "node_95b06e8c3c",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a41f077827",
+      "target": "node_966cf8fae7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a41f077827",
+      "target": "node_966cf8fae7",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_966cf8fae7",
+      "target": "node_13ae67ac27",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_966cf8fae7",
+      "target": "node_13ae67ac27",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_839ec27a31",
+      "target": "node_bc49a605db",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_966cf8fae7",
+      "target": "node_bc49a605db",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_839ec27a31",
+      "target": "node_21a46cc38e",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_966cf8fae7",
+      "target": "node_21a46cc38e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bc49a605db",
+      "target": "node_d5bfbac5d5",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_21a46cc38e",
+      "target": "node_ba8e5bf1ab",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "devops",
+    "categoryLabel": "DevOps and Server Automation",
+    "department": "Engineering",
+    "connectors": [],
+    "setupSecrets": [
+      {
+        "key": "RAPIDAPI_KEY",
+        "label": "RapidAPI key",
+        "host": "automation-integration-preflight.p.rapidapi.com",
+        "headerFormat": "x-rapidapi-key: <secret>",
+        "contextKey": "rapidapiKey",
+        "usedBy": [
+          "Build Acceptance Pack"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 8,
+      "yantraSteps": 10,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "devops/Audit a Public Page and Build an Automation Acceptance Pack.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Audit a Public Page and Build an Automation Acceptance Pack"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Workflow secret RAPIDAPI_KEY: RapidAPI key for automation-integration-preflight.p.rapidapi.com (x-rapidapi-key: <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Run Workflow",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Build Acceptance Pack\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "## Public-page automation preflight\n\n1. Subscribe to Automation Integration Preflight on RapidAPI. The BASIC plan includes a small free request allowance.\n2. In n8n, create a Header Auth credential with header name `x-rapidapi-key` and your RapidAPI application key.\n3. Select that credential on **Build Acceptance Pack**.\n4. Edit **Set Target and Objective**, then run the workflow.\n\nThe workflow reads public server-rendered HTML only. It does not log in, submit forms, execute page JavaScript, or bypass access controls. The output keeps the evidence, launch gate, acceptance tests, and prioritized backlog together for implementation review.\n\nAPI: https://rapidapi.com/tinyopsstudio/api/automation-integration-preflight"
+    ],
+    "nodes": {
+      "node_5340d29edf": {
+        "n8n": "Run Workflow",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_d63203fd44": {
+        "n8n": "Set Target and Objective",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_b8f0069324": {
+        "n8n": "Validate Public Target",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_a41f077827": {
+        "n8n": "Build Acceptance Pack",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_95b06e8c3c": {
+        "n8n": "Build Acceptance Pack",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_966cf8fae7": {
+        "n8n": "Summarize Evidence",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_13ae67ac27": {
+        "n8n": "Needs Attention?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_839ec27a31": {
+        "n8n": "Needs Attention?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_bc49a605db": {
+        "n8n": "Mark Needs Review",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_21a46cc38e": {
+        "n8n": "Mark Ready to Implement",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_d5bfbac5d5": {
+        "n8n": "__end:Mark Needs Review",
+        "n8nType": "synthetic"
+      },
+      "node_ba8e5bf1ab": {
+        "n8n": "__end:Mark Ready to Implement",
+        "n8nType": "synthetic"
+      },
+      "node_2b35721028": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

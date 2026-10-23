@@ -1,0 +1,602 @@
+{
+  "name": "Auto-label incoming Gmail messages with AI nodes",
+  "workflowSlug": "auto-label-incoming-gmail-messages-with-ai-nodes",
+  "description": "Automatically labels incoming Gmail messages using AI. The workflow retrieves message content, suggests labels like Partnership or Inquiry, and assigns them for better organization.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_538945b70c",
+      "actorId": "actor_538945b70c",
+      "type": "NodeCdeWebhookTrigger",
+      "label": "Webhook: googlesuper/GOOGLESUPER_NEW_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "connector": "googlesuper",
+        "webhookEndpointId": "",
+        "triggerSlug": "GOOGLESUPER_NEW_MESSAGE",
+        "connectedAccountId": "",
+        "config": {},
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "nodeId": "node_62f7e1513c",
+      "actorId": "actor_62f7e1513c",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_FETCH_MESSAGE_BY_MESSAGE_ID",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_FETCH_MESSAGE_BY_MESSAGE_ID",
+        "params": {
+          "message_id": "{{last.payload.id}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_1ae8d63f86",
+      "actorId": "actor_1ae8d63f86",
+      "type": "NodeLlmChain",
+      "label": "Assign labels for message",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "labels": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "Inquiry",
+                  "Partnership",
+                  "Notification"
+                ]
+              }
+            }
+          },
+          "required": [
+            "labels"
+          ]
+        },
+        "system": "Your task is to categorize the message according to the following labels.\n\nPartnership - email about sponsored content, cooperation etc.\nInquiry - email about products, services.\nNotification - email that doesn't require response. \n\nOne email can have more than one label. Return only label names in JSON format, nothing else. Do not make things up. ",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_af766cd32a",
+      "actorId": "actor_af766cd32a",
+      "type": "NodeTransform",
+      "label": "Prompt: Assign labels for message",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Assign labels for message.\nconst __promptValue = ($json.text);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_4c6f23d06d",
+      "actorId": "actor_4c6f23d06d",
+      "type": "NodeTransform",
+      "label": "Set label values",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"labels\"] = ($json.labels);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_bf14503c15",
+      "actorId": "actor_bf14503c15",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_LIST_LABELS",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_LIST_LABELS",
+        "params": {}
+      }
+    },
+    {
+      "nodeId": "node_b494322955",
+      "actorId": "actor_b494322955",
+      "type": "NodeTransform",
+      "label": "Split out assigned labels",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"labels\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"labels\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"labels\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_17a3b2131b",
+      "actorId": "actor_17a3b2131b",
+      "type": "NodeSync",
+      "label": "Merge corresponding labels",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_304e1821c8",
+      "actorId": "actor_304e1821c8",
+      "type": "NodeTransform",
+      "label": "Aggregate label IDs",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\nreturn {\n  \"label_ids\": __items.map((i) => __get(i, \"id\")),\n};"
+      }
+    },
+    {
+      "nodeId": "node_ad34e8978b",
+      "actorId": "actor_ad34e8978b",
+      "type": "NodeTransform",
+      "label": "Params: Add labels to message",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Get message content\": {{steps.GOOGLESUPER_FETCH_MESSAGE_BY_MESSAGE_ID.result}}, \"Set label values\": {{steps.xf_4c6f23d06d.result}}, \"Get all labels\": {{steps.GOOGLESUPER_LIST_LABELS.result}}, \"Split out assigned labels\": {{steps.xf_b494322955.result}}, \"Aggregate label IDs\": {{steps.xf_304e1821c8.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL (n8n node \"Add labels to message\").\nreturn {\n  \"message_id\": ($('Gmail trigger').item.json[\"id\"]),\n  \"add_label_ids\": ($json.label_ids),\n};"
+      }
+    },
+    {
+      "nodeId": "node_f1a4d1a367",
+      "actorId": "actor_f1a4d1a367",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_ADD_LABEL_TO_EMAIL"
+      }
+    },
+    {
+      "nodeId": "node_8bd343d44f",
+      "actorId": "actor_8bd343d44f",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_c70fbdc944",
+      "actorId": "actor_c70fbdc944",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": ""
+      }
+    },
+    {
+      "nodeId": "node_0064c96ffa",
+      "actorId": "actor_0064c96ffa",
+      "type": "NodeChatModel",
+      "label": "Assign labels for message: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4-turbo-preview"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_af766cd32a",
+      "target": "node_1ae8d63f86",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_ad34e8978b",
+      "target": "node_f1a4d1a367",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ad34e8978b",
+      "target": "node_f1a4d1a367",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_538945b70c",
+      "target": "node_62f7e1513c",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_62f7e1513c",
+      "target": "node_af766cd32a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_62f7e1513c",
+      "target": "node_af766cd32a",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4c6f23d06d",
+      "target": "node_bf14503c15",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_4c6f23d06d",
+      "target": "node_b494322955",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4c6f23d06d",
+      "target": "node_b494322955",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bf14503c15",
+      "target": "node_17a3b2131b",
+      "sourceOutput": "result",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_b494322955",
+      "target": "node_17a3b2131b",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_17a3b2131b",
+      "target": "node_304e1821c8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_17a3b2131b",
+      "target": "node_304e1821c8",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_304e1821c8",
+      "target": "node_ad34e8978b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_304e1821c8",
+      "target": "node_ad34e8978b",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1ae8d63f86",
+      "target": "node_4c6f23d06d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1ae8d63f86",
+      "target": "node_4c6f23d06d",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f1a4d1a367",
+      "target": "node_8bd343d44f",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_0064c96ffa",
+      "target": "node_1ae8d63f86",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "gmail-and-email",
+    "categoryLabel": "Gmail and Email Automation",
+    "department": "Ops",
+    "connectors": [
+      "googlesuper",
+      "openai"
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeCdeWebhookTrigger",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 11,
+      "yantraSteps": 12,
+      "foldedHelpers": [
+        "OpenAI Chat",
+        "JSON Parser"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Gmail_and_Email_Automation/Auto-label incoming Gmail messages with AI nodes.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "webhook-registration",
+        "node": "Gmail trigger",
+        "detail": "webhook trigger googlesuper/GOOGLESUPER_NEW_MESSAGE needs webhookEndpointId, connectedAccountId"
+      }
+    ],
+    "setup": [
+      "\"Gmail trigger\": after import, register the googlesuper webhook (`cdecli webhook endpoint create -c googlesuper`, then `cdecli trigger instance upsert --slug GOOGLESUPER_NEW_MESSAGE`) and set webhookEndpointId, connectedAccountId on the trigger node.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [
+        {
+          "node": "OpenAI Chat",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Assign labels for message",
+          "model": "gpt-4-turbo-preview"
+        },
+        {
+          "node": "JSON Parser",
+          "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+          "into": "Assign labels for message",
+          "as": "ai_outputParser"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Gmail trigger",
+          "type": "n8n-nodes-base.gmailTrigger",
+          "as": "NodeCdeWebhookTrigger"
+        }
+      ],
+      "hints": [
+        "\"Gmail trigger\" is a provider webhook (googlesuper/GOOGLESUPER_NEW_MESSAGE). Create the endpoint and trigger instance, then paste the we_… id and connected account into this node before the first run: `cdecli webhook endpoint create -c googlesuper --client-id <id>`, `cdecli webhook endpoint set-data <we_id> --signing-secret <secret>`, `cdecli trigger instance upsert --slug GOOGLESUPER_NEW_MESSAGE --account <connectedAccountId>`.",
+        "\"Merge corresponding labels\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Add AI labels to Gmail messages\nWith this workflow you can automatically set labels for your Gmail message according to its content. \n\nIn this workflow available are 3 labels: \"Partnership\", \"Inquiry\" and \"Notification\". Feel free to adjust labels according to your needs. \n\n**Please remember to set label names both in your Gmail account and workflow.**",
+      "## ⚠️ Note\n\n1. Complete video guide for this workflow is available [on my YouTube](https://youtu.be/a8Dhj3Zh9vQ). \n2. Remember to add your credentials and configure nodes (covered in the video guide).\n3. If you like this workflow, please subscribe to [my YouTube channel](https://www.youtube.com/@workfloows) and/or [my newsletter](https://workfloows.com/).\n\n**Thank you for your support!**",
+      "### Gmail Trigger\nReceive data from Gmail about new incoming message. \n\n⚠️ Set polling interval according to your needs.",
+      "###\n\n\n\n\n\n\n\n\n\n\n### JSON schema\nEdit JSON schema and label names according to your needs.\n\n⚠️ **Label names in system prompt and JSON schema should be the same.**",
+      "### Merge labels\nCombine labels retrieved from Gmail account and assigned by AI together.",
+      "### Aggregarte labels and add to message\nCreate array of label IDs and add to the desired email message in Gmail.",
+      "### Get message content\nBased on Gmail message ID retrieve body content of the email and pass it to AI chain.",
+      "### Assign labels\nLet the AI decide which labels suit the best content of the message.\n\n⚠️ **Remember to edit system prompt** - modify label names and instructions according to your needs."
+    ],
+    "nodes": {
+      "node_538945b70c": {
+        "n8n": "Gmail trigger",
+        "n8nType": "n8n-nodes-base.gmailTrigger"
+      },
+      "node_62f7e1513c": {
+        "n8n": "Get message content",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_1ae8d63f86": {
+        "n8n": "Assign labels for message",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_af766cd32a": {
+        "n8n": "Assign labels for message",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_4c6f23d06d": {
+        "n8n": "Set label values",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_bf14503c15": {
+        "n8n": "Get all labels",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_b494322955": {
+        "n8n": "Split out assigned labels",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_17a3b2131b": {
+        "n8n": "Merge corresponding labels",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_304e1821c8": {
+        "n8n": "Aggregate label IDs",
+        "n8nType": "n8n-nodes-base.aggregate"
+      },
+      "node_ad34e8978b": {
+        "n8n": "Add labels to message",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_f1a4d1a367": {
+        "n8n": "Add labels to message",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_8bd343d44f": {
+        "n8n": "__end:Add labels to message",
+        "n8nType": "synthetic"
+      },
+      "node_c70fbdc944": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_0064c96ffa": {
+        "n8n": "Assign labels for message",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

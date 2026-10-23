@@ -1,0 +1,846 @@
+{
+  "name": "Automate Content Generator for WordPress with DeepSeek R1",
+  "workflowSlug": "automate-content-generator-for-wordpress-with-deepseek-r1",
+  "description": "This workflow automates content generation for WordPress using the DeepSeek R1 AI model, enabling rapid content creation.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_fae70999a2",
+      "actorId": "actor_fae70999a2",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_a16a4190cc",
+      "actorId": "actor_a16a4190cc",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_BATCH_GET",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_BATCH_GET",
+        "params": {
+          "spreadsheet_id": "YOURDOCUMENT",
+          "ranges": [
+            "Sheet1"
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_2ea34354d8",
+      "actorId": "actor_2ea34354d8",
+      "type": "NodeTransform",
+      "label": "Set your prompt",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"prompt\"] = ($json.PROMPT);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_dce1a23994",
+      "actorId": "actor_dce1a23994",
+      "type": "NodeLlmChain",
+      "label": "Generate article with DeepSeek",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_e59b584329",
+      "actorId": "actor_e59b584329",
+      "type": "NodeTransform",
+      "label": "Prompt: Generate article with DeepSeek",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Generate article with DeepSeek.\nconst __promptValue = `You are an SEO expert, write an article based on this topic:\n${$json.prompt}\n\nInstructions:\n- In the introduction, introduce the topic that will be explored in the rest of the text\n- The introduction should be about 120 words\n- The conclusions should be about 120 words\n- Use the conclusions to summarize everything said in the article and offer a conclusion to the reader\n- Write a maximum of 4-5 chapters and argue them.\n- The chapters should follow a logical flow and not repeat the same concepts.\n- The chapters should be related to each other and not isolated blocks of text. The text should flow and follow a linear logic.\n- Do not start chapters with \"Chapter 1\", \"Chapter 2\", \"Chapter 3\" ... write only the chapter title\n- For the text, use HTML for formatting, but limit yourself to bold, italics, paragraphs and lists.\n- Don't put the output in \\`\\`\\`html but only text\n- Don't use markdown for formatting.\n- Go deeper into the topic you're talking about, don't just throw superficial information there\n- In output I want only the HTML format`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_a69d0d806b",
+      "actorId": "actor_a69d0d806b",
+      "type": "NodeLlmChain",
+      "label": "Generate title with DeepSeek",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "prompt": "You are an SEO Copywriter and you need to think of a title of maximum 60 characters for the following article:\n{{last.text}}\n\nInstructions:\n- Use keywords contained in the article\n- Do not use any HTML characters\n- Output only the string containing the title.\n- Do not use quotation marks. The only special characters allowed are \":\" and \",\"",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_04c96f5701",
+      "actorId": "actor_04c96f5701",
+      "type": "NodeTransform",
+      "label": "Params: Create post on Wordpress",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When clicking ‘Test workflow’\": {{ctx}}, \"Get Ideas\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Set your prompt\": {{steps.xf_2ea34354d8.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for wordpress/WORDPRESS_CREATE_POST (n8n node \"Create post on Wordpress\").\nreturn {\n  \"title\": ($json),\n  \"content\": ($('Generate article with DeepSeek').item.json.message.content),\n  \"status\": \"draft\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_49e671d3bc",
+      "actorId": "actor_49e671d3bc",
+      "type": "NodeCdeConnector",
+      "label": "wordpress/WORDPRESS_CREATE_POST",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "wordpress",
+        "connectorLabel": "WordPress",
+        "action": "WORDPRESS_CREATE_POST"
+      }
+    },
+    {
+      "nodeId": "node_ecf93e7092",
+      "actorId": "actor_ecf93e7092",
+      "type": "NodeTransform",
+      "label": "Params: Generate Image with DALL-E",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When clicking ‘Test workflow’\": {{ctx}}, \"Get Ideas\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Set your prompt\": {{steps.xf_2ea34354d8.result}}, \"Create post on Wordpress\": {{steps.WORDPRESS_CREATE_POST.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for yantra-image-generation/YANTRA_GEMINI_IMAGE_GENERATE (n8n node \"Generate Image with DALL-E\").\nreturn {\n  \"prompt\": `Generate a real photographic image used as a cover for a blog post:\n\nImage prompt:\n${$('Generate title with DeepSeek').item.json.message.content}, photography, realistic, sigma 85mm f/1.4`,\n};"
+      }
+    },
+    {
+      "nodeId": "node_bb02fdf6e4",
+      "actorId": "actor_bb02fdf6e4",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-generation/YANTRA_GEMINI_IMAGE_GENERATE",
+      "color": "#6366F1",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-generation",
+        "connectorLabel": "Image generation",
+        "action": "YANTRA_GEMINI_IMAGE_GENERATE"
+      }
+    },
+    {
+      "nodeId": "node_58206e895b",
+      "actorId": "actor_58206e895b",
+      "type": "NodeTransform",
+      "label": "Params: Upload image",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When clicking ‘Test workflow’\": {{ctx}}, \"Get Ideas\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Set your prompt\": {{steps.xf_2ea34354d8.result}}, \"Create post on Wordpress\": {{steps.WORDPRESS_CREATE_POST.result}}, \"Generate Image with DALL-E\": {{steps.YANTRA_GEMINI_IMAGE_GENERATE.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// The upstream file as { contentBase64 | fileUrl, filename, mimeType }: n8n binary data travels as base64 bytes or a file URL on Yantra.\nconst __b64 = (t) => { const b = new TextEncoder().encode(String(t)); let s = ''; for (let i = 0; i < b.length; i += 1) s += String.fromCharCode(b[i]); return btoa(s); };\nconst __fileRef = (v, prop) => {\n  const s = (x) => (typeof x === 'string' && x !== '' ? x : undefined);\n  let r = Array.isArray(v) ? v[0] : v;\n  const bin = r && typeof r === 'object' && r.binary && typeof r.binary === 'object' ? r.binary[prop] ?? Object.values(r.binary)[0] : undefined;\n  if (bin && s(bin.data)) return { contentBase64: bin.data, filename: s(r.filename) ?? s(bin.fileName) ?? 'file', mimeType: s(bin.mimeType) };\n  if (r && typeof r === 'object' && r.data && typeof r.data === 'object' && !Array.isArray(r.data)) r = { ...r, ...r.data };\n  const dl = r?.downloaded_file_content ?? r?.file;\n  const filename = s(r?.filename) ?? s(r?.fileName) ?? s(dl?.name) ?? s(r?.name) ?? 'file';\n  const mimeType = s(r?.mimeType) ?? s(r?.contentType) ?? s(dl?.mimetype) ?? s(r?.mimetype);\n  if (s(r?.bodyBase64)) return { contentBase64: r.bodyBase64, filename, mimeType };\n  const url = s(dl?.s3url) ?? s(r?.s3url) ?? s(r?.fileUrl) ?? s(r?.imageUrl) ?? s(r?.imageUrls?.[0]) ?? s(r?.audioUrl) ?? s(r?.videoUrl) ?? s(r?.secure_url);\n  if (url) return { fileUrl: url, filename, mimeType };\n  if (s(r?.data)) return { contentBase64: r.encoding !== 'base64' && /^(?:text\\/|application\\/(?:json|xml|javascript|x-tex))|\\+(?:xml|json)$/.test(mimeType ?? '') ? __b64(r.data) : r.data, filename, mimeType };\n  throw new Error('No file on the upstream step: expected file bytes (base64) or a file URL.');\n};\n// Params for yantra-storage/YANTRA_STORAGE_HTTP_SEND (n8n node \"Upload image\").\nreturn { \"url\": \"https://YOURSITE.com/wp-json/wp/v2/media\", \"method\": \"POST\", \"headers\": { \"Content-Disposition\": `attachment; filename=\"copertina-${$('Create post on Wordpress').item.json.id}.jpg\"`, \"Authorization\": \"Basic {{yoursiteBasicAuth}}\" }, \"bodyType\": \"binary\", \"file\": __fileRef(source, \"data\"), \"responseType\": \"auto\" };"
+      }
+    },
+    {
+      "nodeId": "node_5820d29dcf",
+      "actorId": "actor_5820d29dcf",
+      "type": "NodeCdeConnector",
+      "label": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-storage",
+        "connectorLabel": "Yantra storage",
+        "action": "YANTRA_STORAGE_HTTP_SEND"
+      }
+    },
+    {
+      "nodeId": "node_3e7749443c",
+      "actorId": "actor_3e7749443c",
+      "type": "NodeTransform",
+      "label": "Upload image: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The response the way the n8n HTTP node handed it on: the parsed body; a file body is { bodyBase64, filename, mimeType }.\nconst __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' && 'status' in source.data ? source.data : source;\nconst __body = __r?.bodyBase64 !== undefined ? { bodyBase64: __r.bodyBase64, filename: __r.filename, mimeType: __r.contentType, bytes: __r.bytes } : __r?.bodyJson !== undefined ? __r.bodyJson : __r?.bodyText;\nreturn __body;"
+      }
+    },
+    {
+      "nodeId": "node_0e44bf0565",
+      "actorId": "actor_0e44bf0565",
+      "type": "NodeHttpRequest",
+      "label": "Set Image",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://wp.test.7hype.com/wp-json/wp/v2/posts/{{steps.WORDPRESS_CREATE_POST.result.id}}?featured_media={{last.transformed.id}}",
+        "headers": {
+          "Authorization": "Basic {{wpBasicAuth}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_509a294141",
+      "actorId": "actor_509a294141",
+      "type": "NodeTransform",
+      "label": "Params: Update Sheet",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When clicking ‘Test workflow’\": {{ctx}}, \"Get Ideas\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Set your prompt\": {{steps.xf_2ea34354d8.result}}, \"Create post on Wordpress\": {{steps.WORDPRESS_CREATE_POST.result}}, \"Generate Image with DALL-E\": {{steps.YANTRA_GEMINI_IMAGE_GENERATE.result}}, \"Upload image\": {{steps.xf_3e7749443c.result}}, \"Set Image\": {{steps.http_0e44bf0565.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Params for googlesuper/GOOGLESUPER_BATCH_UPDATE (n8n node \"Update Sheet\").\nreturn {\n  \"spreadsheet_id\": \"{{spreadsheetId}}\",\n  \"sheet_name\": \"Foglio1\",\n  \"values\": [[($now.format('dd/LL/yyyy')), ($('Generate title with DeepSeek').item.json.message.content), ($('Create post on Wordpress').item.json.id), ($('Get Ideas').item.json.row_number)]],\n};"
+      }
+    },
+    {
+      "nodeId": "node_fbf03778ca",
+      "actorId": "actor_fbf03778ca",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_BATCH_UPDATE",
+      "color": "#6366F1",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_BATCH_UPDATE"
+      }
+    },
+    {
+      "nodeId": "node_cb5b8202cc",
+      "actorId": "actor_cb5b8202cc",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_be07c8239e",
+      "actorId": "actor_be07c8239e",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "spreadsheetId": "",
+          "yoursiteBasicAuth": {
+            "$workflowSecret": "YOURSITE_BASIC_AUTH"
+          },
+          "wpBasicAuth": {
+            "$workflowSecret": "WP_BASIC_AUTH"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_a660ff4641",
+      "actorId": "actor_a660ff4641",
+      "type": "NodeChatModel",
+      "label": "Generate article with DeepSeek: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1600,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    },
+    {
+      "nodeId": "node_cbc25cf272",
+      "actorId": "actor_cbc25cf272",
+      "type": "NodeChatModel",
+      "label": "Generate title with DeepSeek: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2360,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_e59b584329",
+      "target": "node_dce1a23994",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_04c96f5701",
+      "target": "node_49e671d3bc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_04c96f5701",
+      "target": "node_49e671d3bc",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ecf93e7092",
+      "target": "node_bb02fdf6e4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ecf93e7092",
+      "target": "node_bb02fdf6e4",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_58206e895b",
+      "target": "node_5820d29dcf",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_58206e895b",
+      "target": "node_5820d29dcf",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_5820d29dcf",
+      "target": "node_3e7749443c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5820d29dcf",
+      "target": "node_3e7749443c",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_509a294141",
+      "target": "node_fbf03778ca",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_509a294141",
+      "target": "node_fbf03778ca",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_fae70999a2",
+      "target": "node_a16a4190cc",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_a16a4190cc",
+      "target": "node_2ea34354d8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a16a4190cc",
+      "target": "node_2ea34354d8",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2ea34354d8",
+      "target": "node_e59b584329",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2ea34354d8",
+      "target": "node_e59b584329",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_49e671d3bc",
+      "target": "node_ecf93e7092",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_49e671d3bc",
+      "target": "node_ecf93e7092",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3e7749443c",
+      "target": "node_0e44bf0565",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_0e44bf0565",
+      "target": "node_509a294141",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0e44bf0565",
+      "target": "node_509a294141",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a69d0d806b",
+      "target": "node_04c96f5701",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a69d0d806b",
+      "target": "node_04c96f5701",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bb02fdf6e4",
+      "target": "node_58206e895b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bb02fdf6e4",
+      "target": "node_58206e895b",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fbf03778ca",
+      "target": "node_cb5b8202cc",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_a660ff4641",
+      "target": "node_dce1a23994",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_cbc25cf272",
+      "target": "node_a69d0d806b",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_dce1a23994",
+      "target": "node_a69d0d806b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "wordpress",
+    "categoryLabel": "WordPress",
+    "department": "Marketing/Content",
+    "connectors": [
+      "googlesuper",
+      "openai",
+      "wordpress",
+      "yantra-image-generation",
+      "yantra-storage"
+    ],
+    "setupVars": [
+      {
+        "key": "spreadsheetId",
+        "label": "Spreadsheet id",
+        "type": "id",
+        "example": "1AbC...xyz",
+        "usedBy": [
+          "Update Sheet"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "YOURSITE_BASIC_AUTH",
+        "label": "yoursite.com WordPress application password as Basic auth (base64 of \"user:app-password\")",
+        "host": "yoursite.com",
+        "headerFormat": "Authorization: Basic <secret>",
+        "contextKey": "yoursiteBasicAuth",
+        "usedBy": [
+          "Upload image"
+        ]
+      },
+      {
+        "key": "WP_BASIC_AUTH",
+        "label": "wp.test.7hype.com WordPress application password as Basic auth (base64 of \"user:app-password\")",
+        "host": "wp.test.7hype.com",
+        "headerFormat": "Authorization: Basic <secret>",
+        "contextKey": "wpBasicAuth",
+        "usedBy": [
+          "Set Image"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 10,
+      "yantraSteps": 18,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "WordPress/Automate Content Generator for WordPress with DeepSeek R1.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Automate Content Generator for WordPress with DeepSeek R1"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "action-pending-publish",
+        "node": "Upload image",
+        "detail": "yantra-storage/YANTRA_STORAGE_HTTP_SEND waits for the yantra-storage HTTP send and signatures patch (1.4.1) to be published"
+      }
+    ],
+    "setup": [
+      "\"Upload image\": yantra-storage/YANTRA_STORAGE_HTTP_SEND comes from the yantra-storage HTTP send and signatures patch (1.4.1), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
+      "Setup value spreadsheetId: Spreadsheet id (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret YOURSITE_BASIC_AUTH: yoursite.com WordPress application password as Basic auth (base64 of \"user:app-password\") for yoursite.com (Authorization: Basic <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Workflow secret WP_BASIC_AUTH: wp.test.7hype.com WordPress application password as Basic auth (base64 of \"user:app-password\") for wp.test.7hype.com (Authorization: Basic <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "Connect the wordpress connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Upload image",
+          "n8n": "httpRequest.binaryData",
+          "action": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Upload image\" authenticated with wordpressApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Upload image\" sends its binaryData body with yantra-storage HTTP_SEND (public https hosts only, 25 MB, 120 s); the file comes from \"Generate Image with DALL-E\".",
+        "\"Set Image\" authenticated with wordpressApi in the original; add the matching Authorization header (or use the service's connector).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect wordpress: `cdecli credential create -n \"wordpress\" -p wordpress --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Target\nThis workflow is designed to automatically generate seo-friendly content for wordpress through DeepSeek R1 by giving input ideas on how to structure the article. A cover image is also generated and uploaded with OpenAI DALL-E 3. This flow is designed to be executed automatically (ad \"On a schedule\" node) and thus have a complete editorial plan.\n\nThis process is useful for blog managers who want to automate content creation and publishing.\n\n## Preliminary step\nCreate a google sheet with the following columns:\n- Date\n- Prompt\n- Title\n- Post ID\n\nFill in only the \"Prompt\" column with basic ideas that DeepSeek will work on to generate the content.",
+      "Connect with your Google Sheet. This node select only rows for which no content has been generated yet in WordPress",
+      "Add your DeepSeek API credential. If you want you can change the model with \"deepseek-chat\"",
+      "Add your WordPress API credential",
+      "Add your OpenAI API credential",
+      "Upload the image on your WordPress via APIs",
+      "Set the uploaded image with the newly created article"
+    ],
+    "nodes": {
+      "node_fae70999a2": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_a16a4190cc": {
+        "n8n": "Get Ideas",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_2ea34354d8": {
+        "n8n": "Set your prompt",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_dce1a23994": {
+        "n8n": "Generate article with DeepSeek",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_e59b584329": {
+        "n8n": "Generate article with DeepSeek",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_a69d0d806b": {
+        "n8n": "Generate title with DeepSeek",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_04c96f5701": {
+        "n8n": "Create post on Wordpress",
+        "n8nType": "n8n-nodes-base.wordpress"
+      },
+      "node_49e671d3bc": {
+        "n8n": "Create post on Wordpress",
+        "n8nType": "n8n-nodes-base.wordpress"
+      },
+      "node_ecf93e7092": {
+        "n8n": "Generate Image with DALL-E",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_bb02fdf6e4": {
+        "n8n": "Generate Image with DALL-E",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_58206e895b": {
+        "n8n": "Upload image",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_5820d29dcf": {
+        "n8n": "Upload image",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_3e7749443c": {
+        "n8n": "Upload image",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_0e44bf0565": {
+        "n8n": "Set Image",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "wordpressApi"
+      },
+      "node_509a294141": {
+        "n8n": "Update Sheet",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_fbf03778ca": {
+        "n8n": "Update Sheet",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_cb5b8202cc": {
+        "n8n": "__end:Update Sheet",
+        "n8nType": "synthetic"
+      },
+      "node_be07c8239e": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_a660ff4641": {
+        "n8n": "Generate article with DeepSeek",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_cbc25cf272": {
+        "n8n": "Generate title with DeepSeek",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

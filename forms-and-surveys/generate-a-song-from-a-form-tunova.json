@@ -1,0 +1,406 @@
+{
+  "name": "Generate a Song from a Form (Tunova)",
+  "workflowSlug": "generate-a-song-from-a-form-tunova",
+  "description": "A hosted n8n Form collects a text prompt, then Tunova generates an original Suno AI song (v5.5) and returns the audio URL. Core HTTP node - runs on any n8n. Free API key at tunova.ai.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_12b3c5c36e",
+      "actorId": "actor_12b3c5c36e",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_258c91b1e2",
+      "actorId": "actor_258c91b1e2",
+      "type": "NodeHttpRequest",
+      "label": "Tunova: start generation",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://api.tunova.ai/api/generate",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "{{tunovaApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_a0d03f16ba",
+      "actorId": "actor_a0d03f16ba",
+      "type": "NodeTransform",
+      "label": "Body: Tunova: start generation",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Tunova: start generation\".\nconst __body = `{\n  \"prompt\": ${JSON.stringify($json.Prompt)},\n  \"instrumental\": ${$json.Instrumental === 'Yes'}\n}`;\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_733bb3070d",
+      "actorId": "actor_733bb3070d",
+      "type": "NodeTransform",
+      "label": "Wait for render (~2 min)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The original waited here (120 seconds).\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_c81bf24b66",
+      "actorId": "actor_c81bf24b66",
+      "type": "NodeHttpRequest",
+      "label": "Tunova: get result",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "headers": {
+          "Authorization": "{{tunovaApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_a641c0a109",
+      "actorId": "actor_a641c0a109",
+      "type": "NodeTransform",
+      "label": "URL: Tunova: get result",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"On form submission\": {{ctx}}, \"Wait for render (~2 min)\": {{steps.xf_733bb3070d.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"Tunova: get result\".\nreturn `https://api.tunova.ai/api/jobs/${$('Tunova: start generation').item.json.job_id}`;"
+      }
+    },
+    {
+      "nodeId": "node_12a568b8cd",
+      "actorId": "actor_12a568b8cd",
+      "type": "NodeTransform",
+      "label": "Your track",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"status\"] = ($json.status);\n  out[\"audio_url\"] = ($json.clips?.[0]?.audio_url);\n  out[\"title\"] = ($json.clips?.[0]?.title);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_3c4b5a9219",
+      "actorId": "actor_3c4b5a9219",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_4a5e527992",
+      "actorId": "actor_4a5e527992",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "Prompt": "",
+          "Instrumental": "",
+          "tunovaApiKey": {
+            "$workflowSecret": "TUNOVA_API_KEY"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_a0d03f16ba",
+      "target": "node_258c91b1e2",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_a0d03f16ba",
+      "target": "node_258c91b1e2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_a641c0a109",
+      "target": "node_c81bf24b66",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_a641c0a109",
+      "target": "node_c81bf24b66",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_12b3c5c36e",
+      "target": "node_a0d03f16ba",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_258c91b1e2",
+      "target": "node_733bb3070d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_258c91b1e2",
+      "target": "node_733bb3070d",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_733bb3070d",
+      "target": "node_a641c0a109",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_733bb3070d",
+      "target": "node_a641c0a109",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c81bf24b66",
+      "target": "node_12a568b8cd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c81bf24b66",
+      "target": "node_12a568b8cd",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_12a568b8cd",
+      "target": "node_3c4b5a9219",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "forms-and-surveys",
+    "categoryLabel": "Forms and Surveys",
+    "department": "Marketing/Creative",
+    "connectors": [],
+    "setupSecrets": [
+      {
+        "key": "TUNOVA_API_KEY",
+        "label": "api.tunova.ai API credential header value (for example \"Bearer <key>\"; rename the header if the API expects another one)",
+        "host": "api.tunova.ai",
+        "headerFormat": "Authorization: <secret>",
+        "contextKey": "tunovaApiKey",
+        "usedBy": [
+          "Tunova: get result",
+          "Tunova: start generation"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 5,
+      "yantraSteps": 7,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Forms_and_Surveys/Tunova - Generate a song from a form.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Tunova - Generate a song from a form"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "On form submission",
+        "detail": "n8n-nodes-base.formTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"On form submission\" (formTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Workflow secret TUNOVA_API_KEY: api.tunova.ai API credential header value (for example \"Bearer <key>\"; rename the header if the API expects another one) for api.tunova.ai (Authorization: <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Provide run inputs: Prompt, Instrumental."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Wait for render (~2 min)",
+          "n8n": "wait",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "On form submission",
+          "type": "n8n-nodes-base.formTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from a form submission; pass the form fields as run inputs.",
+        "\"Tunova: start generation\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Wait for render (~2 min)\" paused the original (120 seconds); Yantra has no delay node, so this step passes data straight through.",
+        "\"Wait for render (~2 min)\" (wait): Wait/delay is a soft passthrough; add a schedule or external delay if timing matters.",
+        "\"Tunova: get result\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Tunova: get result\": a request field used $('OtherNode'); on Yantra $() resolves via the named upstream map when that node ran earlier, else the immediate upstream - check that expression.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_12b3c5c36e": {
+        "n8n": "On form submission",
+        "n8nType": "n8n-nodes-base.formTrigger"
+      },
+      "node_258c91b1e2": {
+        "n8n": "Tunova: start generation",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_a0d03f16ba": {
+        "n8n": "Tunova: start generation",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_733bb3070d": {
+        "n8n": "Wait for render (~2 min)",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_c81bf24b66": {
+        "n8n": "Tunova: get result",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_a641c0a109": {
+        "n8n": "Tunova: get result",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_12a568b8cd": {
+        "n8n": "Your track",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_3c4b5a9219": {
+        "n8n": "__end:Your track",
+        "n8nType": "synthetic"
+      },
+      "node_4a5e527992": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

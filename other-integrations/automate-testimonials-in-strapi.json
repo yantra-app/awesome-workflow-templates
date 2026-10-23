@@ -1,0 +1,1372 @@
+{
+  "name": "Automate testimonials in Strapi",
+  "workflowSlug": "automate-testimonials-in-strapi",
+  "description": "Automates the process of collecting and managing testimonials in Strapi.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_d5c7b94c24",
+      "actorId": "actor_d5c7b94c24",
+      "type": "NodeCron",
+      "label": "Every 30 Minutes",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "interval": 1800
+      }
+    },
+    {
+      "nodeId": "node_dd9ce804bc",
+      "actorId": "actor_dd9ce804bc",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_7647097caa",
+      "actorId": "actor_7647097caa",
+      "type": "NodeCdeConnector",
+      "label": "twitter/TWITTER_RECENT_SEARCH",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "twitter",
+        "connectorLabel": "X (Twitter)",
+        "action": "TWITTER_RECENT_SEARCH",
+        "params": {
+          "query": "(strapi OR n8n.io) AND lang:en"
+        }
+      }
+    },
+    {
+      "nodeId": "node_b2a6919a9c",
+      "actorId": "actor_b2a6919a9c",
+      "type": "NodeTransform",
+      "label": "Simplify Webhook Result",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"Content\"] = ($json[\"body\"][\"data\"][\"fields\"][1][\"value\"]);\n  out[\"Author\"] = ($json[\"body\"][\"data\"][\"fields\"][0][\"value\"]);\n  out[\"Created\"] = (new Date().toISOString());\n  out[\"URL\"] = null;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_3e457585a4",
+      "actorId": "actor_3e457585a4",
+      "type": "NodeTransform",
+      "label": "Simplify Result",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"Content\"] = ($json[\"full_text\"].replace(/(?:https?|ftp):\\/\\/[\\n\\S]+/g, ''));\n  out[\"Author\"] = `${$json[\"user\"][\"name\"]} (@${$json[\"user\"][\"screen_name\"]})`;\n  out[\"Created\"] = (new Date($json[\"created_at\"]).toISOString());\n  out[\"URL\"] = `https://twitter.com/${$json[\"user\"][\"screen_name\"]}/status/${$json[\"id_str\"]}`;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_196de8bca8",
+      "actorId": "actor_196de8bca8",
+      "type": "NodeLlmChain",
+      "label": "Analyze Form Submission",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "sentiment": {
+              "type": "string",
+              "enum": [
+                "Positive",
+                "Neutral",
+                "Negative"
+              ],
+              "description": "One of: Positive, Neutral, Negative"
+            }
+          },
+          "required": [
+            "sentiment"
+          ],
+          "additionalProperties": false
+        },
+        "system": "Classify the input into exactly one sentiment.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_7cb0e9bfc9",
+      "actorId": "actor_7cb0e9bfc9",
+      "type": "NodeTransform",
+      "label": "Prompt: Analyze Form Submission",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Analyze Form Submission.\nconst __promptValue = ($json[\"Content\"]);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_70b76f1dbc",
+      "actorId": "actor_70b76f1dbc",
+      "type": "NodeTransform",
+      "label": "Analyze Form Submission: sentiment = Positive",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.sentiment ?? '') === \"Positive\";"
+      }
+    },
+    {
+      "nodeId": "node_94c6d227ee",
+      "actorId": "actor_94c6d227ee",
+      "type": "NodeBranch",
+      "label": "Analyze Form Submission: sentiment = Positive?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_d13c564d5e",
+      "actorId": "actor_d13c564d5e",
+      "type": "NodeTransform",
+      "label": "Analyze Form Submission: sentiment = Neutral",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.sentiment ?? '') === \"Neutral\";"
+      }
+    },
+    {
+      "nodeId": "node_0bec6ffb8e",
+      "actorId": "actor_0bec6ffb8e",
+      "type": "NodeBranch",
+      "label": "Analyze Form Submission: sentiment = Neutral?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_2ec2cbfb6e",
+      "actorId": "actor_2ec2cbfb6e",
+      "type": "NodeTransform",
+      "label": "Analyze Form Submission: sentiment = Negative",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.sentiment ?? '') === \"Negative\";"
+      }
+    },
+    {
+      "nodeId": "node_ae7691bce0",
+      "actorId": "actor_ae7691bce0",
+      "type": "NodeBranch",
+      "label": "Analyze Form Submission: sentiment = Negative?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_9996f05caa",
+      "actorId": "actor_9996f05caa",
+      "type": "NodeTransform",
+      "label": "Is Retweet or Old?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json[\"Content\"]) ?? '').startsWith(String(\"RT @\" ?? ''))) || (new Date(($json[\"Created\"])) < new Date((new Date(new Date().getTime() - 30 * 60 * 1000)))));"
+      }
+    },
+    {
+      "nodeId": "node_fef3dd0a0a",
+      "actorId": "actor_fef3dd0a0a",
+      "type": "NodeBranch",
+      "label": "Is Retweet or Old?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_d8467c5b41",
+      "actorId": "actor_d8467c5b41",
+      "type": "NodeSync",
+      "label": "Merge Form Sentiment with Source",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_a15a349519",
+      "actorId": "actor_a15a349519",
+      "type": "NodeLlmChain",
+      "label": "Analyze Tweet",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "sentiment": {
+              "type": "string",
+              "enum": [
+                "Positive",
+                "Neutral",
+                "Negative"
+              ],
+              "description": "One of: Positive, Neutral, Negative"
+            }
+          },
+          "required": [
+            "sentiment"
+          ],
+          "additionalProperties": false
+        },
+        "system": "Classify the input into exactly one sentiment.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_22e6f02118",
+      "actorId": "actor_22e6f02118",
+      "type": "NodeTransform",
+      "label": "Prompt: Analyze Tweet",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Analyze Tweet.\nconst __promptValue = ($json[\"Content\"]);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_93b9fa7b69",
+      "actorId": "actor_93b9fa7b69",
+      "type": "NodeTransform",
+      "label": "Analyze Tweet: sentiment = Positive",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.sentiment ?? '') === \"Positive\";"
+      }
+    },
+    {
+      "nodeId": "node_7d66634dd6",
+      "actorId": "actor_7d66634dd6",
+      "type": "NodeBranch",
+      "label": "Analyze Tweet: sentiment = Positive?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_30577505ef",
+      "actorId": "actor_30577505ef",
+      "type": "NodeTransform",
+      "label": "Analyze Tweet: sentiment = Neutral",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.sentiment ?? '') === \"Neutral\";"
+      }
+    },
+    {
+      "nodeId": "node_134b7e739c",
+      "actorId": "actor_134b7e739c",
+      "type": "NodeBranch",
+      "label": "Analyze Tweet: sentiment = Neutral?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_dfa43af1b0",
+      "actorId": "actor_dfa43af1b0",
+      "type": "NodeTransform",
+      "label": "Analyze Tweet: sentiment = Negative",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.sentiment ?? '') === \"Negative\";"
+      }
+    },
+    {
+      "nodeId": "node_34ead1e98a",
+      "actorId": "actor_34ead1e98a",
+      "type": "NodeBranch",
+      "label": "Analyze Tweet: sentiment = Negative?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_f3f35f6606",
+      "actorId": "actor_f3f35f6606",
+      "type": "NodeTransform",
+      "label": "Positive Form Sentiment?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((Number(($json[\"documentSentiment\"][\"score\"])) > Number(0.4)));"
+      }
+    },
+    {
+      "nodeId": "node_8d0ad8a9d7",
+      "actorId": "actor_8d0ad8a9d7",
+      "type": "NodeBranch",
+      "label": "Positive Form Sentiment?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_0198077bb4",
+      "actorId": "actor_0198077bb4",
+      "type": "NodeSync",
+      "label": "Merge Tweet Sentiment with Source",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 880
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_d92e2fbac3",
+      "actorId": "actor_d92e2fbac3",
+      "type": "NodeCdeConnector",
+      "label": "strapi/STRAPI_CREATE_ENTRY",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "strapi",
+        "connectorLabel": "Strapi",
+        "action": "STRAPI_CREATE_ENTRY",
+        "params": {
+          "content_type": "posts",
+          "data": "Content,Author,Created,URL"
+        }
+      }
+    },
+    {
+      "nodeId": "node_909360d19f",
+      "actorId": "actor_909360d19f",
+      "type": "NodeTransform",
+      "label": "Positive Tweet Sentiment?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((Number(($json[\"documentSentiment\"][\"score\"])) > Number(0.3)));"
+      }
+    },
+    {
+      "nodeId": "node_3820d7e653",
+      "actorId": "actor_3820d7e653",
+      "type": "NodeBranch",
+      "label": "Positive Tweet Sentiment?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 880
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_7a97acfbff",
+      "actorId": "actor_7a97acfbff",
+      "type": "NodeCdeConnector",
+      "label": "strapi/STRAPI_CREATE_ENTRY",
+      "color": "#6366F1",
+      "position": {
+        "x": 2360,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "strapi",
+        "connectorLabel": "Strapi",
+        "action": "STRAPI_CREATE_ENTRY",
+        "params": {
+          "content_type": "posts",
+          "data": "Content,Author,Created,URL"
+        }
+      }
+    },
+    {
+      "nodeId": "node_9759ee28af",
+      "actorId": "actor_9759ee28af",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 880
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_0fd3813ce0",
+      "actorId": "actor_0fd3813ce0",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 2740,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_082c753245",
+      "actorId": "actor_082c753245",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 1140
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {}
+        }
+      }
+    },
+    {
+      "nodeId": "node_29fb786c58",
+      "actorId": "actor_29fb786c58",
+      "type": "NodeChatModel",
+      "label": "Analyze Form Submission: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 1320
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    },
+    {
+      "nodeId": "node_b679931c2a",
+      "actorId": "actor_b679931c2a",
+      "type": "NodeChatModel",
+      "label": "Analyze Tweet: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2360,
+        "y": 1280
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_7cb0e9bfc9",
+      "target": "node_196de8bca8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_196de8bca8",
+      "target": "node_70b76f1dbc",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_196de8bca8",
+      "target": "node_70b76f1dbc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_70b76f1dbc",
+      "target": "node_94c6d227ee",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_70b76f1dbc",
+      "target": "node_94c6d227ee",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_196de8bca8",
+      "target": "node_d13c564d5e",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_94c6d227ee",
+      "target": "node_d13c564d5e",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d13c564d5e",
+      "target": "node_0bec6ffb8e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_d13c564d5e",
+      "target": "node_0bec6ffb8e",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_196de8bca8",
+      "target": "node_2ec2cbfb6e",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0bec6ffb8e",
+      "target": "node_2ec2cbfb6e",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2ec2cbfb6e",
+      "target": "node_ae7691bce0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_2ec2cbfb6e",
+      "target": "node_ae7691bce0",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_9996f05caa",
+      "target": "node_fef3dd0a0a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_9996f05caa",
+      "target": "node_fef3dd0a0a",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_22e6f02118",
+      "target": "node_a15a349519",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_a15a349519",
+      "target": "node_93b9fa7b69",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a15a349519",
+      "target": "node_93b9fa7b69",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_93b9fa7b69",
+      "target": "node_7d66634dd6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_93b9fa7b69",
+      "target": "node_7d66634dd6",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_a15a349519",
+      "target": "node_30577505ef",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7d66634dd6",
+      "target": "node_30577505ef",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_30577505ef",
+      "target": "node_134b7e739c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_30577505ef",
+      "target": "node_134b7e739c",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_a15a349519",
+      "target": "node_dfa43af1b0",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_134b7e739c",
+      "target": "node_dfa43af1b0",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dfa43af1b0",
+      "target": "node_34ead1e98a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_dfa43af1b0",
+      "target": "node_34ead1e98a",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_f3f35f6606",
+      "target": "node_8d0ad8a9d7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_f3f35f6606",
+      "target": "node_8d0ad8a9d7",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_909360d19f",
+      "target": "node_3820d7e653",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_909360d19f",
+      "target": "node_3820d7e653",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_3e457585a4",
+      "target": "node_9996f05caa",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3e457585a4",
+      "target": "node_9996f05caa",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d5c7b94c24",
+      "target": "node_7647097caa",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_fef3dd0a0a",
+      "target": "node_22e6f02118",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3e457585a4",
+      "target": "node_22e6f02118",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3e457585a4",
+      "target": "node_0198077bb4",
+      "sourceOutput": "transformed",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_7647097caa",
+      "target": "node_3e457585a4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7647097caa",
+      "target": "node_3e457585a4",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dd9ce804bc",
+      "target": "node_b2a6919a9c",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b2a6919a9c",
+      "target": "node_7cb0e9bfc9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b2a6919a9c",
+      "target": "node_7cb0e9bfc9",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b2a6919a9c",
+      "target": "node_d8467c5b41",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_b2a6919a9c",
+      "target": "node_d8467c5b41",
+      "sourceOutput": "transformed",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_3e457585a4",
+      "target": "node_0198077bb4",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_d8467c5b41",
+      "target": "node_f3f35f6606",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d8467c5b41",
+      "target": "node_f3f35f6606",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0198077bb4",
+      "target": "node_909360d19f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0198077bb4",
+      "target": "node_909360d19f",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8d0ad8a9d7",
+      "target": "node_d92e2fbac3",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_3820d7e653",
+      "target": "node_7a97acfbff",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d92e2fbac3",
+      "target": "node_9759ee28af",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_7a97acfbff",
+      "target": "node_0fd3813ce0",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_29fb786c58",
+      "target": "node_196de8bca8",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_b679931c2a",
+      "target": "node_a15a349519",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "other-integrations",
+    "categoryLabel": "Other Integrations and Use Cases",
+    "department": "Marketing/Content",
+    "connectors": [
+      "openai",
+      "strapi",
+      "twitter"
+    ],
+    "activation": "cdecli cron activate automate-testimonials-in-strapi",
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 14,
+      "yantraSteps": 33,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Other_Integrations_and_Use_Cases/Automate testimonials in Strapi with n8n.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Webhook",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Webhook\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Connect the openai connector (credential).",
+      "Connect the strapi connector (credential).",
+      "Connect the twitter connector (credential).",
+      "After import, start the schedule: cdecli cron activate automate-testimonials-in-strapi.",
+      "Provide run inputs: body, query, headers."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Every 30 Minutes",
+          "type": "n8n-nodes-base.interval",
+          "as": "NodeCron"
+        },
+        {
+          "node": "Webhook",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /6f833370-9068-44ef-8e56-4ceb563a851e). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "\"Merge Form Sentiment with Source\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was mergeByIndex).",
+        "\"Merge Tweet Sentiment with Source\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was mergeByIndex).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect strapi: `cdecli credential create -n \"strapi\" -p strapi --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect twitter: `cdecli credential create -n \"twitter\" -p twitter --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_d5c7b94c24": {
+        "n8n": "Every 30 Minutes",
+        "n8nType": "n8n-nodes-base.interval"
+      },
+      "node_dd9ce804bc": {
+        "n8n": "Webhook",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_7647097caa": {
+        "n8n": "Search Tweets",
+        "n8nType": "n8n-nodes-base.twitter"
+      },
+      "node_b2a6919a9c": {
+        "n8n": "Simplify Webhook Result",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_3e457585a4": {
+        "n8n": "Simplify Result",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_196de8bca8": {
+        "n8n": "Analyze Form Submission",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_7cb0e9bfc9": {
+        "n8n": "Analyze Form Submission",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_70b76f1dbc": {
+        "n8n": "Analyze Form Submission",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_94c6d227ee": {
+        "n8n": "Analyze Form Submission",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_d13c564d5e": {
+        "n8n": "Analyze Form Submission",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_0bec6ffb8e": {
+        "n8n": "Analyze Form Submission",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_2ec2cbfb6e": {
+        "n8n": "Analyze Form Submission",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_ae7691bce0": {
+        "n8n": "Analyze Form Submission",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_9996f05caa": {
+        "n8n": "Is Retweet or Old?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_fef3dd0a0a": {
+        "n8n": "Is Retweet or Old?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_d8467c5b41": {
+        "n8n": "Merge Form Sentiment with Source",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_a15a349519": {
+        "n8n": "Analyze Tweet",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_22e6f02118": {
+        "n8n": "Analyze Tweet",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_93b9fa7b69": {
+        "n8n": "Analyze Tweet",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_7d66634dd6": {
+        "n8n": "Analyze Tweet",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_30577505ef": {
+        "n8n": "Analyze Tweet",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_134b7e739c": {
+        "n8n": "Analyze Tweet",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_dfa43af1b0": {
+        "n8n": "Analyze Tweet",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_34ead1e98a": {
+        "n8n": "Analyze Tweet",
+        "n8nType": "n8n-nodes-base.googleCloudNaturalLanguage"
+      },
+      "node_f3f35f6606": {
+        "n8n": "Positive Form Sentiment?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_8d0ad8a9d7": {
+        "n8n": "Positive Form Sentiment?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_0198077bb4": {
+        "n8n": "Merge Tweet Sentiment with Source",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_d92e2fbac3": {
+        "n8n": "Store Form Submission in Strapi",
+        "n8nType": "n8n-nodes-base.strapi"
+      },
+      "node_909360d19f": {
+        "n8n": "Positive Tweet Sentiment?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_3820d7e653": {
+        "n8n": "Positive Tweet Sentiment?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_7a97acfbff": {
+        "n8n": "Store in Strapi",
+        "n8nType": "n8n-nodes-base.strapi"
+      },
+      "node_9759ee28af": {
+        "n8n": "__end:Store Form Submission in Strapi",
+        "n8nType": "synthetic"
+      },
+      "node_0fd3813ce0": {
+        "n8n": "__end:Store in Strapi",
+        "n8nType": "synthetic"
+      },
+      "node_082c753245": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_29fb786c58": {
+        "n8n": "Analyze Form Submission",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_b679931c2a": {
+        "n8n": "Analyze Tweet",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

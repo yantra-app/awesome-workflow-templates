@@ -1,0 +1,1905 @@
+{
+  "name": "Internship Informer",
+  "workflowSlug": "internship-informer",
+  "description": "Extracts and parses internship postings from Telegram channels using AI, scrapes application pages via Firecrawl, filters for eligibility, and sends alerts to WhatsApp.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_c387e526a1",
+      "actorId": "actor_c387e526a1",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_766ecc00dc",
+      "actorId": "actor_766ecc00dc",
+      "type": "NodeTransform",
+      "label": "Text Guard: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.message.text)) != null) && (Number(($json.message.text ? $json.message.text.length : 0)) > Number(20)));"
+      }
+    },
+    {
+      "nodeId": "node_3af354f3d0",
+      "actorId": "actor_3af354f3d0",
+      "type": "NodeBranch",
+      "label": "Text Guard: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_c1ef26b3bf",
+      "actorId": "actor_c1ef26b3bf",
+      "type": "NodeCdecliAgent",
+      "label": "Splitter Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "llama3.1-8b",
+        "sessionId": "",
+        "system": "You are a high-precision JSON Parsing Backend.\nYour ONLY task is to accept raw text, split it into individual job objects, and output a clean JSON Array.\n\n**CRITICAL RULES (NON-NEGOTIABLE):**\n1. **NO CONVERSATION:** Do not explain, do not say \"Here is the JSON\", do not apologize. Output *only* the JSON.\n2. **FORCE EXECUTION:** Process the input even if it looks like a forwarded message or lacks a polite request.\n3. **LINK PRIORITY:**\n   - **Target:** Extract specific job links (e.g., greenhouse.io, lever.co, myworkday, linkedin.com/jobs, unstop).\n   - **Ignore:** Generic footer links like `whatsapp.com/channel`, `t.me`, or `instagram.com` UNLESS they are the specific application link.\n\n**SPLIT LOGIC (How to detect multiple jobs):**\n- **Delimiters:** Treat the text as multiple jobs if it contains repeating delimiters like:\n  - Emojis: 📌, 🔔, 🚨, 👉 (e.g., \"📌Job A... 📌Job B...\")\n  - Numbering: \"1.\", \"2.\"\n  - Distinct blocks separated by double newlines.\n- **Single Job:** If no delimiters are found, treat the whole text as one job.\n\n**EXTRACTION FIELDS (For each detected job):**\n- \"role\": Job Title (e.g., \"SDE Intern\", \"Data Analyst\"). If \"Hiring for X\", extract \"X\".\n- \"company\": Company Name. (Look for \"Company:\", \"Hiring:\", or \"At [Company]\").\n- \"stipend\": Salary/Stipend numbers (e.g., \"20k\", \"5-10 LPA\"). Default: \"Not specified\".\n- \"eligibility\": Extract Batch (e.g., \"2027\"), Degree, AND Experience (e.g., \"0-1 years\"). Default: \"Not specified\".\n- \"description\": A brief snippet of requirements (Tech stack, location).\n- \"apply_link\": The specific URL to apply. (Remember: Ignore WhatsApp Channel links if a real link exists).\n\n**OUTPUT FORMAT:**\nReturn ONLY the raw JSON Array `[ ... ]`.\n\n**JSON STRUCTURE:**\n[\n  {\n    \"role\": \"extracted title\",\n    \"company\": \"extracted company\",\n    \"stipend\": \"extracted stipend\",\n    \"eligibility\": \"extracted eligibility (include batch & experience)\",\n    \"description\": \"extracted description\",\n    \"apply_link\": \"extracted link\"\n  }\n]",
+        "message": "Analyze the following raw input text and extract all job opportunities into a structured JSON Array.\n\n**RAW INPUT DATA:**\n\"\"\"\n{{message.text}}\n\"\"\"\n\n**PROCESSING INSTRUCTIONS:**\n1. **Split Check:** If the text lists multiple roles (e.g., separated by \"📌\" or \"1.\", \"2.\"), extract them as SEPARATE objects in the array.\n2. **Link Check:** Do NOT capture \"Join our WhatsApp/Telegram\" channel links as the `apply_link`. Look for the actual application URL (Workday, LinkedIn, Greenhouse, etc.).\n3. **Output:** Return ONLY the JSON Array. No other text."
+      }
+    },
+    {
+      "nodeId": "node_f8f54be197",
+      "actorId": "actor_f8f54be197",
+      "type": "NodeTransform",
+      "label": "JSON Format Fixer",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\nconst items = __items.map((json) => ({ json }));\n// Ported from n8n Code node \"JSON Format Fixer\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // 1. Get the raw output from the AI model\n  const rawContent = $input.first().json || \"\";\n  \n  // 2. Clean the string: Remove Markdown code blocks (```json ... ```)\n  const cleanJson = rawContent.replace(/^```json\\s*/i, \"\").replace(/\\s*```$/, \"\");\n  \n  // 3. Parse the string into a real JavaScript Array\n  let jobsArray = [];\n  try {\n    jobsArray = JSON.parse(cleanJson);\n  } catch (error) {\n    console.log(\"JSON Parse Error:\", error);\n    jobsArray = [];\n  }\n  \n  // 4. Return separate items for n8n to process\n  return jobsArray.map(job => {\n    return {\n      json: job\n    };\n  });\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_c026410da5",
+      "actorId": "actor_c026410da5",
+      "type": "NodeTransform",
+      "label": "Notify User",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// executeWorkflow: compose the subflow manually (original workflow: Lw76eTw28vUAiCBb).\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_d921991340",
+      "actorId": "actor_d921991340",
+      "type": "NodeTransform",
+      "label": "Items: Loop Over Each Link",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_1055c968c9",
+      "actorId": "actor_1055c968c9",
+      "type": "NodeLoop",
+      "label": "Loop Over Each Link",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_d2fa075d96",
+      "actorId": "actor_d2fa075d96",
+      "type": "NodeTransform",
+      "label": "Item: Loop Over Each Link",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_b926d7a389",
+      "actorId": "actor_b926d7a389",
+      "type": "NodeTransform",
+      "label": "Results: Loop Over Each Link",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_4e55269455",
+      "actorId": "actor_4e55269455",
+      "type": "NodeHttpRequest",
+      "label": "Firecrawl Scrape",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://your-deployment/firecrawl/v1/scrape",
+        "body": {
+          "url": "{{last.transformed.apply_link}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_85ee5a644f",
+      "actorId": "actor_85ee5a644f",
+      "type": "NodeTransform",
+      "label": "Pre-Check",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Telegram Trigger\": {{ctx}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst items = __items.map((json) => ({ json }));\n// Ported from n8n Code node \"Pre-Check\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // ============================================================\n  // Pre-Check Node - FIXED for blocked ATS sites (Workday etc.)\n  // ============================================================\n  \n  const CONFIG = {\n    wrong_years: /\\b(2020|2021|2022|2023|2024|2025|2026)\\b/,\n    target_year: /2027/,\n    blocked_domains: []\n  };\n  \n  return items.map(item => {\n    const rawMarkdown = (item.json.data?.markdown || \"\").substring(0, 30000);\n    const telegramText = $('Telegram Trigger').first().json.message.text || \"\";\n    const url = (item.json.apply_link || \"\").toLowerCase();\n    const isBlockedDomain = CONFIG.blocked_domains.some(domain => url.includes(domain));\n    const scrapeSucceeded = rawMarkdown.length > 150 && !isBlockedDomain;\n    const scrape_failed = !scrapeSucceeded;\n  \n    const scraped_markdown = scrapeSucceeded\n      ? rawMarkdown\n      : `[Scraping unavailable - site blocked automated access (${isBlockedDomain ? 'known blocked ATS domain' : 'empty response'}). Using original Telegram job post for analysis below.]\\n\\n${telegramText}`;\n  \n    const combinedText = [\n      item.json.role,\n      item.json.company,\n      item.json.eligibility,\n      scraped_markdown,\n      telegramText\n    ].filter(Boolean).join(\" \").toLowerCase();\n  \n    let status = \"PASS\";\n    let rejectReason = \"N/A\";\n  \n    if (CONFIG.wrong_years.test(combinedText) && !CONFIG.target_year.test(combinedText)) {\n      status = \"REJECT\";\n      rejectReason = \"Hard Filter: Explicit Old Batch (Mentioned older years but not 2027)\";\n    }\n  \n    const debug = {\n      markdown_length: rawMarkdown.length,\n      scrape_failed: scrape_failed,\n      using_fallback: scrape_failed,\n      is_blocked_domain: isBlockedDomain,\n      apply_link: item.json.apply_link || \"\",\n      telegram_text_found: !!telegramText,\n      years_found: combinedText.match(CONFIG.wrong_years) || \"None\",\n      target_found: CONFIG.target_year.test(combinedText)\n    };\n  \n    return {\n      json: {\n        ...item.json,\n        scraped_markdown: scraped_markdown,\n        pre_filter_status: status,\n        rejection_reason: rejectReason,\n        debug_log: debug\n      }\n    };\n  });\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_b5976a4c4e",
+      "actorId": "actor_b5976a4c4e",
+      "type": "NodeTransform",
+      "label": "For 2027?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.pre_filter_status) ?? '') === String(\"PASS\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_ba41ae60b0",
+      "actorId": "actor_ba41ae60b0",
+      "type": "NodeBranch",
+      "label": "For 2027?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_08c5aeaae6",
+      "actorId": "actor_08c5aeaae6",
+      "type": "NodeCdecliAgent",
+      "label": "Analyst Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "llama-3.3-70b-versatile",
+        "sessionId": "",
+        "system": "You are a backend JSON Data Processing Engine.\nYour ONLY function is to analyze job data and output a JSON response.\n\n**CORE OBJECTIVE:**\nIdentify valid **TECHNICAL** internship opportunities for **Pre-final Year Students (Batch of 2027)**.\n\n**STRICT DEFINITIONS:**\n- **Valid Role:** \"Intern\", \"Summer Analyst\", \"Trainee\" (only if <1 yr exp).\n- **Invalid Role:** \"Full Time\", \"FTE\", \"Software Engineer\" (without 'Intern'), \"Associate\", \"SDE-1\".\n- **Valid Batch:** 2027, Pre-final year, Penultimate year.\n\n**SCRAPING FAILURE HANDLING:**\n- If the JOB PAGE MARKDOWN starts with \"[Scraping unavailable\", the job site blocked automated access (common for Workday, Greenhouse, Lever).\n- In this case, base your analysis ONLY on the INPUT DATA fields (Title, Company, Eligibility, Stipend, Link) and the Telegram text included in the fallback message.\n- Do NOT reject a job solely because the page couldn't be scraped. Apply the same eligibility logic using available text.\n\n**EXECUTION PROTOCOL (STRICT ORDER - DO NOT SKIP):**\n\n**STEP 1: MANDATORY DUPLICATE CHECK (BLOCKING)**\n- **Action:** You MUST call the tool `check_duplicate` first.\n- **Input:** Use the job link provided in the prompt.\n- **Logic:**\n  - If tool returns `true`: **STOP IMMEDIATELY.** Output `{\"send_whatsapp\": false, \"reason\": \"Duplicate\"}`.\n\n**STEP 2: EXCLUSION LOGIC (THE \"KILL SWITCH\")**\n- Read the Markdown text. If ANY of these are true, **STOP and REJECT**.\n\n  - **A. DOMAIN FILTER:**\n    - Is the role Finance, HR, Sales, Marketing, Operations, Customer Support?\n    - -> **REJECT** (Reason: \"Non-technical\").\n\n  - **B. EXPLICIT WRONG BATCH (CRITICAL):**\n    - Does the text mention specific years (e.g., \"2023\", \"2024\", \"2025\", \"2026\") BUT NOT \"2027\"?\n    - *Example:* \"Hiring 2025 & 2026 grads\" -> **REJECT**.\n    - *Example:* \"For 2023/24 batch\" -> **REJECT**.\n    - *Logic:* If years are present, 2027 MUST be one of them.\n\n  - **C. EXPERIENCE FILTER:**\n    - Does it require \"1+ years\", \"1-3 years\", or \"Graduates from [past year]\"?\n    - -> **REJECT** (Reason: \"Experience required\").\n\n  - **D. FTE TRAP:**\n    - Is the title \"Software Engineer\", \"Developer\", or \"SDE\" (with NO mention of \"Intern\" or \"Trainee\")?\n    - -> **REJECT** (Reason: \"Full-time role\").\n\n**STEP 3: VALIDATION SCAN (POSITIVE MATCH)**\n- *Only runs if Step 2 passed.*\n- **CHECK A:** Does text contain \"2027\"? -> **VALID**.\n- **CHECK B:** Does text contain \"Pre-final\" or \"Penultimate\"? -> **VALID**.\n- **CHECK C:** Is it a generic \"Intern\" role (e.g., \"SDE Intern\") with NO year mentioned? -> **SEARCH REQUIRED** (Go to Step 4).\n\n**STEP 4: FALLBACK SEARCH (LAST RESORT)**\n- *Only runs if text is ambiguous (e.g., \"SDE Intern\" with no year).*\n- **Action:** Call `serpapi_request`.\n- **Input Schema:** `{ \"query\": \"Company Role 2027 eligibility\" }`\n\n**STEP 5: DEADLINE EXTRACTION**\n- Scan the text for keywords like \"Apply by\", \"Deadline\", \"Last Date\", \"Closes on\", or \"Test Date\".\n- If a date is found, convert it strictly to `YYYY-MM-DD` format (e.g., \"March 15th 2026\" becomes \"2026-03-15\").\n- If no specific date is mentioned, set the JSON value to `null`.\n\n**WHATSAPP MESSAGE TEMPLATE:**\n   `*New Internship Alert!*`\n   ` `\n   `*Title:* <Job Title>`\n   `*Company:* <Company Name>`\n   `*Eligibility:* <Short Batch Info>`\n   `*Deadline:* <Date or 'Not Specified'>`\n   ` `\n   `*Apply Link:* <Link>`\n\n**OUTPUT INSTRUCTION:**\nReturn ONLY the raw JSON object inside a code block.\nFinal Answer:\n```json\n{\n  \"send_whatsapp\": boolean,\n  \"reason\": \"...\",\n  \"whatsapp_message\": \"...\",\n  \"deadline\": \"YYYY-MM-DD or Not Specified\"\n}",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_dd04eb5825",
+      "actorId": "actor_dd04eb5825",
+      "type": "NodeTransform",
+      "label": "Prompt: Analyst Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"JSON Format Fixer\": __namedCtx.steps?.[\"JSON Format Fixer\"]?.[\"transformed\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Analyst Agent.\nconst __promptValue = `Process the following job opportunity data and extract the structured output.\n\n**TASK:**\n1. Analyze the \"JOB PAGE MARKDOWN\" below to determine eligibility.\n2. IF the text is missing the Batch Year (e.g., just says \"Student\" or \"Intern\"), use \\`serpapi_search\\` to verify if it is for 2027 graduates.\n3. NOTE: If the JOB PAGE MARKDOWN starts with \"[Scraping unavailable\", it means the job page could not be scraped (blocked ATS like Workday/Greenhouse). In this case, rely entirely on the Telegram text provided after that label and the INPUT DATA fields above.\n\n**INPUT DATA:**\nTitle: ${$('JSON Format Fixer').item.json.role}\nCompany: ${$('JSON Format Fixer').item.json.company}\nEligibilty : ${$('JSON Format Fixer').item.json.eligibility}\nStipend : ${$('JSON Format Fixer').item.json.stipend}\nLink: ${$('JSON Format Fixer').item.json.apply_link}\n\n**JOB PAGE MARKDOWN (SOURCE):**\n\"\"\"\n${$json.scraped_markdown}\n\"\"\"\n\n**OUTPUT REQUIREMENTS:**\n- Verify strict eligibility for **Batch of 2027** (Pre-final year).\n- Return the final JSON using the \"Final Answer\" format defined in the system message.`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_6412883990",
+      "actorId": "actor_6412883990",
+      "type": "NodeTransform",
+      "label": "Output Parser",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Telegram Trigger\": {{ctx}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst items = __items.map((json) => ({ json }));\n// Ported from n8n Code node \"Output Parser\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // 1. Get the raw text output safely\n  const rawText = items[0]?.json?.output;\n  \n  if (!rawText) {\n    return [{ json: { error: \"No output received from Analyst Agent\" } }];\n  }\n  \n  // 2. Try to find JSON inside markdown blocks\n  const markdownMatch = rawText.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  \n  // 3. Robust JSON Extraction\n  const firstOpen = rawText.indexOf('{');\n  const lastClose = rawText.lastIndexOf('}');\n  \n  let finalJson = {};\n  \n  try {\n    if (markdownMatch) {\n      finalJson = JSON.parse(markdownMatch[1]);\n    } else if (firstOpen !== -1 && lastClose !== -1 && lastClose > firstOpen) {\n      const jsonString = rawText.substring(firstOpen, lastClose + 1);\n      finalJson = JSON.parse(jsonString);\n    } else {\n      throw new Error(\"No JSON structure found\");\n    }\n  } catch (error) {\n    finalJson = {\n      send_whatsapp: false,\n      reason: \"JSON Parsing Failed\",\n      org_text: $('Telegram Trigger').first().json.message.text || \"Text unavailable\",\n      error_details: error.message,\n      raw_output: rawText\n    };\n  }\n  \n  return [{ json: finalJson }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_f9e20a5dcf",
+      "actorId": "actor_f9e20a5dcf",
+      "type": "NodeTransform",
+      "label": "Wait",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The original waited here (2 minutes).\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_ab7105ac74",
+      "actorId": "actor_ab7105ac74",
+      "type": "NodeTransform",
+      "label": "Check for duplicate valid",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n Data Table (get) - pass through.\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_3c84691368",
+      "actorId": "actor_3c84691368",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_SEND_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 5780,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_SEND_MESSAGE",
+        "params": {
+          "chat_id": "{{message.chat.id}}",
+          "text": "{{message.text}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_47d3ab95bc",
+      "actorId": "actor_47d3ab95bc",
+      "type": "NodeTransform",
+      "label": "Not Duplicate?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Output Parser\": {{steps.xf_6412883990.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((Boolean(($('Output Parser').item.json.send_whatsapp)) === Boolean(true)) && ((($json.title)) == null));"
+      }
+    },
+    {
+      "nodeId": "node_1c3023d43e",
+      "actorId": "actor_1c3023d43e",
+      "type": "NodeBranch",
+      "label": "Not Duplicate?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_f2f86b7b55",
+      "actorId": "actor_f2f86b7b55",
+      "type": "NodeTransform",
+      "label": "Deadline Exists?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Output Parser\": {{steps.xf_6412883990.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Output Parser').item.json.deadline) ?? '') !== String(\"Not Specified\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_175a071653",
+      "actorId": "actor_175a071653",
+      "type": "NodeBranch",
+      "label": "Deadline Exists?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_6bf5fb248b",
+      "actorId": "actor_6bf5fb248b",
+      "type": "NodeTransform",
+      "label": "Merge",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6920,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_4358e9f86e",
+      "actorId": "actor_4358e9f86e",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_CREATE_EVENT",
+      "color": "#6366F1",
+      "position": {
+        "x": 7680,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Calendar",
+        "action": "GOOGLESUPER_CREATE_EVENT",
+        "params": {
+          "calendar_id": "{{email}}@gmail.com",
+          "start_datetime": "{{steps.xf_6412883990.result.deadline}}T09:00:00Z",
+          "summary": "🚨 APPLY TODAY: {{steps.xf_f8f54be197.result.role}} at {{steps.xf_f8f54be197.result.company}}",
+          "description": "Link : {{steps.xf_f8f54be197.result.apply_link}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_0d91291b06",
+      "actorId": "actor_0d91291b06",
+      "type": "NodeTransform",
+      "label": "Params: Append Rejected",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Telegram Trigger\": {{ctx}}, \"Loop Over Each Link\": __namedCtx.steps?.[\"Item: Loop Over Each Link\"]?.[\"transformed\"], \"Output Parser\": {{steps.xf_6412883990.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Params for googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND (n8n node \"Append Rejected\").\nreturn {\n  \"spreadsheetId\": \"{{yourSpreadsheetId}}\",\n  \"range\": \"False Classification\",\n  \"values\": [[($now), ($json.rejection_reason || $('Output Parser').item.json.reason || \"duplicate found\"), ($('Loop Over Each Link').item.json.apply_link), ($('Telegram Trigger').item.json.message.text)]],\n  \"valueInputOption\": \"USER_ENTERED\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_75814fc635",
+      "actorId": "actor_75814fc635",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 7680,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_SPREADSHEETS_VALUES_APPEND"
+      }
+    },
+    {
+      "nodeId": "node_07ec3ea609",
+      "actorId": "actor_07ec3ea609",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_BATCH_GET",
+      "color": "#6366F1",
+      "position": {
+        "x": 8060,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_BATCH_GET",
+        "params": {
+          "spreadsheet_id": "{{yourSpreadsheetId}}",
+          "ranges": [
+            "Mobile Numbers"
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_3cecacd9ef",
+      "actorId": "actor_3cecacd9ef",
+      "type": "NodeTransform",
+      "label": "Items: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8440,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_4dab81a049",
+      "actorId": "actor_4dab81a049",
+      "type": "NodeLoop",
+      "label": "Loop Over Items",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 8820,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_442a8838bd",
+      "actorId": "actor_442a8838bd",
+      "type": "NodeTransform",
+      "label": "Item: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9200,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_49ef43a3ab",
+      "actorId": "actor_49ef43a3ab",
+      "type": "NodeTransform",
+      "label": "Results: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9200,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_a927aa3c5e",
+      "actorId": "actor_a927aa3c5e",
+      "type": "NodeTransform",
+      "label": "Params: Append Valid",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9580,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Telegram Trigger\": {{ctx}}, \"Loop Over Each Link\": __namedCtx.steps?.[\"Item: Loop Over Each Link\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Params for googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND (n8n node \"Append Valid\").\nreturn {\n  \"spreadsheetId\": \"{{yourSpreadsheetId}}\",\n  \"range\": \"True Classification\",\n  \"values\": [[($now), ($('Telegram Trigger').item.json.message.text), ($('Loop Over Each Link').item.json.role), ($('Loop Over Each Link').item.json.company), ($('Loop Over Each Link').item.json.eligibility), ($('Loop Over Each Link').item.json.apply_link), \"Pending\"]],\n  \"valueInputOption\": \"USER_ENTERED\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_f69b9c3853",
+      "actorId": "actor_f69b9c3853",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 9960,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_SPREADSHEETS_VALUES_APPEND"
+      }
+    },
+    {
+      "nodeId": "node_d8b34ec06b",
+      "actorId": "actor_d8b34ec06b",
+      "type": "NodeHttpRequest",
+      "label": "Send Whatsapp Message",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 9960,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://your-deployment/send"
+      }
+    },
+    {
+      "nodeId": "node_cbbf5d26d2",
+      "actorId": "actor_cbbf5d26d2",
+      "type": "NodeTransform",
+      "label": "Body: Send Whatsapp Message",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9580,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Output Parser\": {{steps.xf_6412883990.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Send Whatsapp Message\".\nconst __body = { \"to\": `+${$json['Phone Number']}`, \"message\": ($('Output Parser').item.json.whatsapp_message) };\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_272f5fc1e4",
+      "actorId": "actor_272f5fc1e4",
+      "type": "NodeTransform",
+      "label": "Insert row",
+      "color": "#F59E0B",
+      "position": {
+        "x": 10340,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n Data Table (row) - pass through.\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_5f03b45826",
+      "actorId": "actor_5f03b45826",
+      "type": "NodeTransform",
+      "label": "Return: Insert row",
+      "color": "#F59E0B",
+      "position": {
+        "x": 10720,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_34cd6439ca",
+      "actorId": "actor_34cd6439ca",
+      "type": "NodeTransform",
+      "label": "Return: Append Rejected",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8060,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_8ee69cf1cf",
+      "actorId": "actor_8ee69cf1cf",
+      "type": "NodeTransform",
+      "label": "Return: Resend failed message",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_082a950e82",
+      "actorId": "actor_082a950e82",
+      "type": "NodeTransform",
+      "label": "Return: Send Whatsapp Message",
+      "color": "#F59E0B",
+      "position": {
+        "x": 10340,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_08bc2ad446",
+      "actorId": "actor_08bc2ad446",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_087e31dcb9",
+      "actorId": "actor_087e31dcb9",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_989f19e5ce",
+      "actorId": "actor_989f19e5ce",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "event": {},
+          "email": "",
+          "yourSpreadsheetId": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_766ecc00dc",
+      "target": "node_3af354f3d0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_766ecc00dc",
+      "target": "node_3af354f3d0",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_d921991340",
+      "target": "node_1055c968c9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_d921991340",
+      "target": "node_1055c968c9",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_1055c968c9",
+      "target": "node_d2fa075d96",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1055c968c9",
+      "target": "node_d2fa075d96",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1055c968c9",
+      "target": "node_b926d7a389",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1055c968c9",
+      "target": "node_b926d7a389",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b5976a4c4e",
+      "target": "node_ba41ae60b0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_b5976a4c4e",
+      "target": "node_ba41ae60b0",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_dd04eb5825",
+      "target": "node_08c5aeaae6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_47d3ab95bc",
+      "target": "node_1c3023d43e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_47d3ab95bc",
+      "target": "node_1c3023d43e",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_f2f86b7b55",
+      "target": "node_175a071653",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_f2f86b7b55",
+      "target": "node_175a071653",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_0d91291b06",
+      "target": "node_75814fc635",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_0d91291b06",
+      "target": "node_75814fc635",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_3cecacd9ef",
+      "target": "node_4dab81a049",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_3cecacd9ef",
+      "target": "node_4dab81a049",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_4dab81a049",
+      "target": "node_442a8838bd",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4dab81a049",
+      "target": "node_442a8838bd",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4dab81a049",
+      "target": "node_49ef43a3ab",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4dab81a049",
+      "target": "node_49ef43a3ab",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a927aa3c5e",
+      "target": "node_f69b9c3853",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_a927aa3c5e",
+      "target": "node_f69b9c3853",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_cbbf5d26d2",
+      "target": "node_d8b34ec06b",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_cbbf5d26d2",
+      "target": "node_d8b34ec06b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_c387e526a1",
+      "target": "node_766ecc00dc",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3af354f3d0",
+      "target": "node_c1ef26b3bf",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_c1ef26b3bf",
+      "target": "node_f8f54be197",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c1ef26b3bf",
+      "target": "node_f8f54be197",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c1ef26b3bf",
+      "target": "node_c026410da5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c1ef26b3bf",
+      "target": "node_c026410da5",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f8f54be197",
+      "target": "node_d921991340",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f8f54be197",
+      "target": "node_d921991340",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d2fa075d96",
+      "target": "node_4e55269455",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_4e55269455",
+      "target": "node_85ee5a644f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4e55269455",
+      "target": "node_85ee5a644f",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_85ee5a644f",
+      "target": "node_b5976a4c4e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_85ee5a644f",
+      "target": "node_b5976a4c4e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ba41ae60b0",
+      "target": "node_dd04eb5825",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_85ee5a644f",
+      "target": "node_dd04eb5825",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ba41ae60b0",
+      "target": "node_6bf5fb248b",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_85ee5a644f",
+      "target": "node_6bf5fb248b",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_08c5aeaae6",
+      "target": "node_6412883990",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_08c5aeaae6",
+      "target": "node_6412883990",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_08c5aeaae6",
+      "target": "node_f9e20a5dcf",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_08c5aeaae6",
+      "target": "node_f9e20a5dcf",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6412883990",
+      "target": "node_ab7105ac74",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6412883990",
+      "target": "node_ab7105ac74",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ab7105ac74",
+      "target": "node_47d3ab95bc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ab7105ac74",
+      "target": "node_47d3ab95bc",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1c3023d43e",
+      "target": "node_f2f86b7b55",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ab7105ac74",
+      "target": "node_f2f86b7b55",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1c3023d43e",
+      "target": "node_6bf5fb248b",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ab7105ac74",
+      "target": "node_6bf5fb248b",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_175a071653",
+      "target": "node_4358e9f86e",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_175a071653",
+      "target": "node_07ec3ea609",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_4358e9f86e",
+      "target": "node_07ec3ea609",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_07ec3ea609",
+      "target": "node_3cecacd9ef",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_07ec3ea609",
+      "target": "node_3cecacd9ef",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_49ef43a3ab",
+      "target": "node_a927aa3c5e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_49ef43a3ab",
+      "target": "node_a927aa3c5e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_442a8838bd",
+      "target": "node_cbbf5d26d2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_442a8838bd",
+      "target": "node_cbbf5d26d2",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f69b9c3853",
+      "target": "node_272f5fc1e4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f69b9c3853",
+      "target": "node_272f5fc1e4",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6bf5fb248b",
+      "target": "node_0d91291b06",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6bf5fb248b",
+      "target": "node_0d91291b06",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f9e20a5dcf",
+      "target": "node_3c84691368",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_272f5fc1e4",
+      "target": "node_5f03b45826",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_272f5fc1e4",
+      "target": "node_5f03b45826",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5f03b45826",
+      "target": "node_1055c968c9",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_5f03b45826",
+      "target": "node_1055c968c9",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_75814fc635",
+      "target": "node_34cd6439ca",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_75814fc635",
+      "target": "node_34cd6439ca",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_34cd6439ca",
+      "target": "node_1055c968c9",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_34cd6439ca",
+      "target": "node_1055c968c9",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_3c84691368",
+      "target": "node_8ee69cf1cf",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3c84691368",
+      "target": "node_8ee69cf1cf",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8ee69cf1cf",
+      "target": "node_1055c968c9",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_8ee69cf1cf",
+      "target": "node_1055c968c9",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_d8b34ec06b",
+      "target": "node_082a950e82",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d8b34ec06b",
+      "target": "node_082a950e82",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_082a950e82",
+      "target": "node_4dab81a049",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_082a950e82",
+      "target": "node_4dab81a049",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_c026410da5",
+      "target": "node_08bc2ad446",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_b926d7a389",
+      "target": "node_087e31dcb9",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "telegram",
+    "categoryLabel": "Telegram",
+    "department": "HR/Ops",
+    "connectors": [
+      "googlesuper",
+      "telegram"
+    ],
+    "setupVars": [
+      {
+        "key": "email",
+        "label": "Email",
+        "type": "email",
+        "usedBy": [
+          "Add event reminder"
+        ]
+      },
+      {
+        "key": "yourSpreadsheetId",
+        "label": "Your Spreadsheet Id",
+        "type": "id",
+        "usedBy": [
+          "Append Rejected",
+          "Append Valid",
+          "Get Mobile Numbers"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLoop",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 30,
+      "yantraSteps": 42,
+      "foldedHelpers": [
+        "Splitter Fallback",
+        "Analyst Fallback",
+        "serpapi_request",
+        "check_duplicate"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Telegram/Internship Informer.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Telegram Trigger",
+        "detail": "n8n-nodes-base.telegramTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Telegram Trigger\" (telegramTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value email: Email. Write it into the Workflow Configs initialContext before import.",
+      "Setup value yourSpreadsheetId: Your Spreadsheet Id. Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the telegram connector (credential).",
+      "Provide run inputs: event, message."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Notify User",
+          "n8n": "executeWorkflow",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Wait",
+          "n8n": "wait",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Check for duplicate valid",
+          "n8n": "dataTable.get",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Insert row",
+          "n8n": "dataTable.row",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "Splitter Fallback",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Splitter Agent",
+          "model": "llama3.1-8b"
+        },
+        {
+          "node": "Analyst Fallback",
+          "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+          "into": "Analyst Agent",
+          "model": "llama-3.3-70b-versatile"
+        },
+        {
+          "node": "serpapi_request",
+          "type": "n8n-nodes-base.httpRequestTool",
+          "into": "Analyst Agent",
+          "as": "ai_tool"
+        },
+        {
+          "node": "check_duplicate",
+          "type": "n8n-nodes-base.dataTableTool",
+          "into": "Analyst Agent",
+          "as": "ai_tool"
+        }
+      ],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "Telegram Trigger",
+          "type": "n8n-nodes-base.telegramTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from telegramTrigger; Yantra has no webhook slug for it, so run on demand, on a schedule (add a NodeCron), or via the workflow API with the event under the run input `event`.",
+        "\"Notify User\" (executeWorkflow): Sub-workflow calls are not imported automatically; compose the child graph by hand or paste its steps inline.",
+        "\"Notify User\" called another n8n workflow (Lw76eTw28vUAiCBb); on Yantra, open that workflow as its own template (or rebuild it) and replace this passthrough with a call into it.",
+        "\"Loop Over Each Link\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "\"Analyst Agent\" used agent tools in the original: serpapi_request (httpRequestTool), check_duplicate (dataTableTool). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
+        "\"Wait\" paused the original (2 minutes); Yantra has no delay node, so this step passes data straight through.",
+        "\"Wait\" (wait): Wait/delay is a soft passthrough; add a schedule or external delay if timing matters.",
+        "\"Check for duplicate valid\" (dataTable.get): n8n Data Table has no Yantra connector; rows pass through. Persist with Sheets/Airtable/Baserow if needed.",
+        "\"Check for duplicate valid\": Data Table was not persisted - wire a real store if you need durable rows.",
+        "\"Loop Over Items\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "\"Insert row\" (dataTable.row): n8n Data Table has no Yantra connector; rows pass through. Persist with Sheets/Airtable/Baserow if needed.",
+        "\"Insert row\": Data Table was not persisted - wire a real store if you need durable rows.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect telegram: `cdecli credential create -n \"telegram\" -p telegram --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_c387e526a1": {
+        "n8n": "Telegram Trigger",
+        "n8nType": "n8n-nodes-base.telegramTrigger"
+      },
+      "node_766ecc00dc": {
+        "n8n": "Text Guard",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_3af354f3d0": {
+        "n8n": "Text Guard",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_c1ef26b3bf": {
+        "n8n": "Splitter Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_f8f54be197": {
+        "n8n": "JSON Format Fixer",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_c026410da5": {
+        "n8n": "Notify User",
+        "n8nType": "n8n-nodes-base.executeWorkflow"
+      },
+      "node_d921991340": {
+        "n8n": "Loop Over Each Link",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_1055c968c9": {
+        "n8n": "Loop Over Each Link",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_d2fa075d96": {
+        "n8n": "Loop Over Each Link",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_b926d7a389": {
+        "n8n": "Loop Over Each Link",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_4e55269455": {
+        "n8n": "Firecrawl Scrape",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_85ee5a644f": {
+        "n8n": "Pre-Check",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_b5976a4c4e": {
+        "n8n": "For 2027?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_ba41ae60b0": {
+        "n8n": "For 2027?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_08c5aeaae6": {
+        "n8n": "Analyst Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_dd04eb5825": {
+        "n8n": "Analyst Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_6412883990": {
+        "n8n": "Output Parser",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_f9e20a5dcf": {
+        "n8n": "Wait",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_ab7105ac74": {
+        "n8n": "Check for duplicate valid",
+        "n8nType": "n8n-nodes-base.dataTable"
+      },
+      "node_3c84691368": {
+        "n8n": "Resend failed message",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_47d3ab95bc": {
+        "n8n": "Not Duplicate?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_1c3023d43e": {
+        "n8n": "Not Duplicate?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_f2f86b7b55": {
+        "n8n": "Deadline Exists?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_175a071653": {
+        "n8n": "Deadline Exists?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_6bf5fb248b": {
+        "n8n": "Merge",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_4358e9f86e": {
+        "n8n": "Add event reminder",
+        "n8nType": "n8n-nodes-base.googleCalendar"
+      },
+      "node_0d91291b06": {
+        "n8n": "Append Rejected",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_75814fc635": {
+        "n8n": "Append Rejected",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_07ec3ea609": {
+        "n8n": "Get Mobile Numbers",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_3cecacd9ef": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_4dab81a049": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_442a8838bd": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_49ef43a3ab": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_a927aa3c5e": {
+        "n8n": "Append Valid",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_f69b9c3853": {
+        "n8n": "Append Valid",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_d8b34ec06b": {
+        "n8n": "Send Whatsapp Message",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_cbbf5d26d2": {
+        "n8n": "Send Whatsapp Message",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_272f5fc1e4": {
+        "n8n": "Insert row",
+        "n8nType": "n8n-nodes-base.dataTable"
+      },
+      "node_5f03b45826": {
+        "n8n": "Insert row",
+        "n8nType": "n8n-nodes-base.dataTable"
+      },
+      "node_34cd6439ca": {
+        "n8n": "Append Rejected",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_8ee69cf1cf": {
+        "n8n": "Resend failed message",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_082a950e82": {
+        "n8n": "Send Whatsapp Message",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_08bc2ad446": {
+        "n8n": "__end:Notify User",
+        "n8nType": "synthetic"
+      },
+      "node_087e31dcb9": {
+        "n8n": "__end:Loop Over Each Link",
+        "n8nType": "synthetic"
+      },
+      "node_989f19e5ce": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

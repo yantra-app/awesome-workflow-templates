@@ -1,0 +1,354 @@
+{
+  "name": "AI chat with any data source (using the n8n workflow tool)",
+  "workflowSlug": "ai-chat-with-any-data-source-using-the-n8n-workflow-tool",
+  "description": "Converted from the n8n template \"AI chat with any data source (using the n8n workflow tool)\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_8a69f7821b",
+      "actorId": "actor_8a69f7821b",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_65276a91c0",
+      "actorId": "actor_65276a91c0",
+      "type": "NodeCdecliAgent",
+      "label": "AI Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "sessionId": "",
+        "message": "{{chatInput}}"
+      }
+    },
+    {
+      "nodeId": "node_fccb3be494",
+      "actorId": "actor_fccb3be494",
+      "type": "NodeCdeConnector",
+      "label": "hackernews/HACKERNEWS_GET_LATEST_POSTS",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "hackernews",
+        "connectorLabel": "Hacker News",
+        "action": "HACKERNEWS_GET_LATEST_POSTS",
+        "params": {
+          "size": 50
+        }
+      }
+    },
+    {
+      "nodeId": "node_6149ec5eac",
+      "actorId": "actor_6149ec5eac",
+      "type": "NodeTransform",
+      "label": "Clean up data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"title\"] = ($json._highlightResult.title.value);\n  out[\"points\"] = ($json.points);\n  out[\"url\"] = ($json.url);\n  out[\"created_at\"] = ($json.created_at);\n  out[\"author\"] = ($json.author);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_1e127c0148",
+      "actorId": "actor_1e127c0148",
+      "type": "NodeTransform",
+      "label": "Stringify",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Stringify\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  return {\n   'response': JSON.stringify($input.all().map(x => x.json))\n  }\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_609db8f75a",
+      "actorId": "actor_609db8f75a",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_5652c7165c",
+      "actorId": "actor_5652c7165c",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_6c08143073",
+      "actorId": "actor_6c08143073",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "chatInput": "",
+          "sessionId": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_8a69f7821b",
+      "target": "node_65276a91c0",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_8a69f7821b",
+      "target": "node_fccb3be494",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_fccb3be494",
+      "target": "node_6149ec5eac",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fccb3be494",
+      "target": "node_6149ec5eac",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6149ec5eac",
+      "target": "node_1e127c0148",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6149ec5eac",
+      "target": "node_1e127c0148",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_65276a91c0",
+      "target": "node_609db8f75a",
+      "sourceOutput": "text",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_1e127c0148",
+      "target": "node_5652c7165c",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "",
+    "connectors": [
+      "hackernews"
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 8,
+      "yantraSteps": 5,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "Custom tool to call the wf below"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/AI chat with any data source (using the n8n workflow tool).json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Execute Workflow Trigger",
+        "detail": "n8n-nodes-base.executeWorkflowTrigger became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "On new manual Chat Message",
+        "detail": "@n8n/n8n-nodes-langchain.manualChatTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Execute Workflow Trigger\" (executeWorkflowTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"On new manual Chat Message\" (manualChatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Connect the hackernews connector (credential).",
+      "Provide run inputs: chatInput, sessionId."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "AI Agent"
+        },
+        {
+          "node": "Custom tool to call the wf below",
+          "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+          "into": "AI Agent",
+          "as": "ai_tool"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "On new manual Chat Message",
+          "type": "@n8n/n8n-nodes-langchain.manualChatTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Execute Workflow Trigger",
+          "type": "n8n-nodes-base.executeWorkflowTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
+        "The original was a sub-workflow called by another workflow; pass its inputs as run inputs.",
+        "\"AI Agent\" used agent tools in the original: Custom tool to call the wf below (toolWorkflow). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect hackernews: `cdecli credential create -n \"hackernews\" -p hackernews --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "### Replace me\nwith any other service, e.g. fetching your own data",
+      "### Sub-workflow: Custom tool\nThis can be called by the agent above. This example fetches the top 50 posts ever on Hacker News",
+      "### Main workflow: AI agent using custom tool\nTry it out by clicking 'Chat' and entering 'What is the 5th most popular post ever on Hacker News?'",
+      "## Try me out\n\nClick the 'Chat' button and enter:\n\n_What is the 5th most popular post ever on Hacker News?_"
+    ],
+    "nodes": {
+      "node_8a69f7821b": {
+        "n8n": "On new manual Chat Message",
+        "n8nType": "@n8n/n8n-nodes-langchain.manualChatTrigger",
+        "also": [
+          "Execute Workflow Trigger"
+        ]
+      },
+      "node_65276a91c0": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_fccb3be494": {
+        "n8n": "Hacker News",
+        "n8nType": "n8n-nodes-base.hackerNews"
+      },
+      "node_6149ec5eac": {
+        "n8n": "Clean up data",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_1e127c0148": {
+        "n8n": "Stringify",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_609db8f75a": {
+        "n8n": "__end:AI Agent",
+        "n8nType": "synthetic"
+      },
+      "node_5652c7165c": {
+        "n8n": "__end:Stringify",
+        "n8nType": "synthetic"
+      },
+      "node_6c08143073": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

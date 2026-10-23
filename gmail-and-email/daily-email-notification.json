@@ -1,0 +1,895 @@
+{
+  "name": "Daily Email Notification",
+  "workflowSlug": "daily-email-notification",
+  "description": "Summarizes daily inbox emails using local LLM (Ollama) and sends notifications via Telegram or ntfy.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_7d525a3bef",
+      "actorId": "actor_7d525a3bef",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_b691eb1485",
+      "actorId": "actor_b691eb1485",
+      "type": "NodeCron",
+      "label": "Schedule Trigger",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "59 23 * * *"
+      }
+    },
+    {
+      "nodeId": "node_b8dbdcf137",
+      "actorId": "actor_b8dbdcf137",
+      "type": "NodeTransform",
+      "label": "Fetch Gmail via IMAP",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// executeCommand was not run on Yantra.\n// Original: \"python3 - <<'PY'\\nimport datetime\\nimport email\\nimport imaplib\\nimport json\\nimport re\\nfrom collections import OrderedDict\\nf\"\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_27a97a38a3",
+      "actorId": "actor_27a97a38a3",
+      "type": "NodeTransform",
+      "label": "Parse JSON Output",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Ported from n8n Code node \"Parse JSON Output\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const raw = ($json.stdout ?? '').trim();\n  if (!raw) {\n    return [{ json: { generatedAtUtc: new Date().toISOString(), windowHours: 24, count: 0, emails: [], note: 'No stdout from command', stderr: $json.stderr ?? '' } }];\n  }\n  \n  let parsed;\n  try {\n    parsed = JSON.parse(raw);\n  } catch (error) {\n    throw new Error(`Failed to parse command stdout as JSON: ${raw.slice(0, 500)}`);\n  }\n  \n  return [{ json: parsed }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_cb30fb43e5",
+      "actorId": "actor_cb30fb43e5",
+      "type": "NodeTransform",
+      "label": "Build Summary Prompt",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Build Summary Prompt\" (run once for each item).\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __results = __items.map((__item) => {\n  const $json = __item;\n  const item = { json: __item };\n  const $input = { item: { json: __item }, first: () => ({ json: __item }), all: () => [{ json: __item }] };\n  return (() => {\n  const payload = $json ?? {};\n  const threadsInput = Array.isArray(payload.threads) ? payload.threads : [];\n  const emails = Array.isArray(payload.emails) ? payload.emails : [];\n  const totalEmailCount = Number(payload.count ?? emails.length ?? 0);\n  const totalThreadCount = Number(payload.threadCount ?? threadsInput.length ?? 0);\n  \n  const clean = (value) => String(value ?? '').replace(/\\s+/g, ' ').trim();\n  const clip = (value, max) => {\n    const text = clean(value);\n    if (!text || text.length <= max) return text;\n    const trimmed = text.slice(0, max).trim();\n    return trimmed.replace(/[\\s.,;:]+$/g, '') + ' ...';\n  };\n  const dedupeBy = (items, keyFn) => {\n    const seen = new Set();\n    return items.filter((item) => {\n      const key = keyFn(item);\n      if (seen.has(key)) return false;\n      seen.add(key);\n      return true;\n    });\n  };\n  \n  const synthThreads = emails.map((email) => ({\n    threadKey: email.threadKey || email.messageId || email.imapId || clean(email.subject) || 'single',\n    normalizedSubject: clean(email.normalizedSubject || email.subject || '(no subject)'),\n    latestSubject: clean(email.subject || '(no subject)'),\n    latestFrom: clean(email.from || ''),\n    firstDateIsoUtc: email.dateIsoUtc || null,\n    lastDateIsoUtc: email.dateIsoUtc || null,\n    messageCount: 1,\n    messages: [email],\n    conversationText: [\n      `Message 1`,\n      `Date: ${clean(email.dateIsoUtc || email.date || '-')}`,\n      `From: ${clean(email.from || '-')}`,\n      `Subject: ${clean(email.subject || '(no subject)')}`,\n      `Body: ${clean(email.bodyPreview || '(no readable body)')}`,\n    ].join('\\n'),\n  }));\n  \n  const threads = (threadsInput.length ? threadsInput : synthThreads)\n    .map((thread, index) => ({\n      index,\n      threadKey: clean(thread.threadKey || `thread-${index + 1}`),\n      normalizedSubject: clean(thread.normalizedSubject || thread.latestSubject || '(no subject)'),\n      latestSubject: clean(thread.latestSubject || thread.normalizedSubject || '(no subject)'),\n      latestFrom: clean(thread.latestFrom || thread.messages?.slice(-1)?.[0]?.from || ''),\n      messageCount: Number(thread.messageCount ?? (Array.isArray(thread.messages) ? thread.messages.length : 0) ?? 1),\n      firstDateIsoUtc: clean(thread.firstDateIsoUtc || ''),\n      lastDateIsoUtc: clean(thread.lastDateIsoUtc || ''),\n      conversationText: clip(thread.conversationText || '', 6000),\n    }))\n    .filter((thread) => thread.latestSubject || thread.conversationText);\n  \n  const blockedPatterns = [\n    /job alert|jobalerts|recommended jobs?|is hiring|hiring digest|career opportunity|open roles?|bootcamp/i,\n    /newsletter|digest|promo|promotion|offer|discount|deal|sale|coupon|advert|marketing/i,\n    /loan|credit card|pre-?approved|ipo\\b|nfo\\b|mutual fund\\s*nfo|market digest|stock alert|webinar|contest|preorder/i,\n    /people you may know|social update|linkedin (news|update|research|group|notification)/i,\n    /welcome to|product update|release notes|new in|free trial reminder/i,\n  ];\n  const urgentPatterns = [\n    /security alert|suspicious|verify|verification|otp|2fa|password|breach|sign-?in/i,\n    /action required|urgent|deadline|due today|due tomorrow|expires?|expiry|renew/i,\n    /confirm|approval|approve|reply required|respond by|complete your/i,\n    /payment due|invoice|failed payment|billing issue|statement available/i,\n    /meeting|rescheduled|calendar|client issue|incident|outage|support ending/i,\n  ];\n  const infoPatterns = [\n    /statement|receipt|transaction confirmed|order shipped|delivery update|storage/i,\n    /notice|policy update|digest|summary|market note|report/i,\n  ];\n  \n  const classifyReason = (thread) => {\n    const text = `${thread.latestSubject} ${thread.latestFrom} ${thread.conversationText}`;\n    if (/security alert|verify|otp|2fa|password|sign-?in/i.test(text)) return 'Security verification or review needed';\n    if (/confirm|approval|approve|reply required|respond by|complete your/i.test(text)) return 'Pending confirmation or reply from you';\n    if (/payment due|invoice|failed payment|billing issue/i.test(text)) return 'Payment or billing action required';\n    if (/meeting|rescheduled|calendar|deadline|due/i.test(text)) return 'Schedule or deadline requires attention';\n    if (/renew|expires?|support ending/i.test(text)) return 'Expiry or renewal needs action';\n    return 'Review and act on this thread';\n  };\n  const infoNote = (thread) => {\n    const text = `${thread.latestSubject} ${thread.latestFrom} ${thread.conversationText}`;\n    if (/statement|receipt|transaction confirmed/i.test(text)) return 'Informational financial update';\n    if (/delivery|order shipped/i.test(text)) return 'Delivery or order status update';\n    if (/notice|policy update|report/i.test(text)) return 'Informational notice';\n    return 'Useful for reference';\n  };\n  \n  const annotated = threads.map((thread) => {\n    const haystack = `${thread.latestSubject} ${thread.latestFrom} ${thread.conversationText}`;\n    const isBlocked = blockedPatterns.some((rx) => rx.test(haystack));\n    const isUrgent = urgentPatterns.some((rx) => rx.test(haystack));\n    const isInfo = !isBlocked && !isUrgent && infoPatterns.some((rx) => rx.test(haystack));\n    return { ...thread, isBlocked, isUrgent, isInfo };\n  });\n  \n  const blockedThreads = annotated.filter((thread) => thread.isBlocked);\n  const candidateThreads = annotated.filter((thread) => !thread.isBlocked);\n  const urgentThreads = dedupeBy(candidateThreads.filter((thread) => thread.isUrgent), (thread) => thread.normalizedSubject.toLowerCase()).slice(0, 5);\n  const infoThreads = dedupeBy(candidateThreads.filter((thread) => !thread.isUrgent && thread.isInfo), (thread) => thread.normalizedSubject.toLowerCase()).slice(0, 3);\n  \n  const maxCandidateThreads = 12;\n  const maxContextChars = 24000;\n  let consumedChars = 0;\n  const candidateThreadContext = [];\n  for (const thread of candidateThreads.slice(0, maxCandidateThreads)) {\n    const block = [\n      `Thread Key: ${thread.threadKey}`,\n      `Normalized Subject: ${thread.normalizedSubject}`,\n      `Latest Subject: ${thread.latestSubject}`,\n      `Latest Sender: ${thread.latestFrom || '-'}`,\n      `Message Count: ${thread.messageCount}`,\n      `Last Email UTC: ${thread.lastDateIsoUtc || '-'}`,\n      `Conversation:\\n${thread.conversationText || '(no readable body)'}`,\n    ].join('\\n');\n    if (consumedChars && consumedChars + block.length + 2 > maxContextChars) break;\n    candidateThreadContext.push(block);\n    consumedChars += block.length + 2;\n  }\n  \n  const blockedExamples = blockedThreads.slice(0, 4).map((thread) => `${thread.latestSubject} (${thread.latestFrom || 'unknown sender'})`);\n  const urgentItems = urgentThreads.map((thread) => ({\n    subject: thread.latestSubject,\n    sender: thread.latestFrom || 'Unknown sender',\n    reason: classifyReason(thread),\n  }));\n  const forInfo = infoThreads.map((thread) => ({\n    subject: thread.latestSubject,\n    sender: thread.latestFrom || 'Unknown sender',\n    note: infoNote(thread),\n  }));\n  \n  const fallbackSummary = urgentItems.length\n    ? `${urgentItems.length} email thread${urgentItems.length === 1 ? '' : 's'} need action from the last 24 hours.`\n    : 'No actionable email threads in the last 24 hours.';\n  \n  const fallbackStructured = {\n    summary: fallbackSummary,\n    urgent_items: urgentItems,\n    for_info: forInfo,\n  };\n  \n  const dateLocal = new Intl.DateTimeFormat(undefined, {\n    day: '2-digit',\n    month: 'short',\n    year: 'numeric',\n  }).format(new Date());\n  \n  return {\n    json: {\n      ...payload,\n      total_thread_count: totalThreadCount || threads.length,\n      email_count_24h: totalEmailCount,\n      blocked_thread_count: blockedThreads.length,\n      candidate_thread_count: candidateThreads.length,\n      blocked_examples_text: blockedExamples.join('; '),\n      candidate_thread_context: candidateThreadContext.join('\\n\\n'),\n      fallback_structured: fallbackStructured,\n      ntfy_title: `Daily Email Summary | ${totalEmailCount} mails | ${dateLocal}`,\n    },\n  };\n  })();\n});\nreturn __single(__results.map(__unwrap));"
+      }
+    },
+    {
+      "nodeId": "node_5b6ea361f7",
+      "actorId": "actor_5b6ea361f7",
+      "type": "NodeTransform",
+      "label": "Prepare Structured Prompt",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\nconst items = __items.map((json) => ({ json }));\n// Ported from n8n Code node \"Prepare Structured Prompt\" (run once for each item).\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __results = __items.map((__item) => {\n  const $json = __item;\n  const item = { json: __item };\n  const $input = { item: { json: __item }, first: () => ({ json: __item }), all: () => [{ json: __item }] };\n  return (() => {\n  const source = $json || {};\n  const fallback = source.fallback_structured || { summary: 'No actionable email threads in the last 24 hours.', urgent_items: [], for_info: [] };\n  const systemPrompt = [\n    'You are an executive email triage assistant.',\n    'Return exactly one valid JSON object and nothing else.',\n    'Do not include markdown, code fences, commentary, or chain-of-thought.',\n    'Classify only real user-specific actions as urgent.',\n    'Promotions, job alerts, newsletters, market alerts, generic offers, social updates, and informational notices are not urgent unless the thread clearly requires a pending action from the user.',\n    'Use this exact schema:',\n    '{',\n    '  \"summary\": \"string\",',\n    '  \"urgent_items\": [{\"subject\":\"string\",\"sender\":\"string\",\"reason\":\"string\"}],',\n    '  \"for_info\": [{\"subject\":\"string\",\"sender\":\"string\",\"note\":\"string\"}]',\n    '}',\n    'Rules:',\n    '- summary must be one sentence under 140 characters',\n    '- urgent_items must contain at most 5 items',\n    '- for_info must contain at most 3 items',\n    '- reason and note must each be under 90 characters',\n    '- if there is no urgent item, return urgent_items as []',\n    '- preserve the real subject and sender text from the input',\n    '',\n    'Few-shot example input:',\n    'Thread Key: subj:google security alert',\n    'Normalized Subject: Google security alert',\n    'Latest Subject: Google security alert',\n    'Latest Sender: Google <no-reply@accounts.google.com>',\n    'Message Count: 1',\n    'Last Email UTC: 2026-04-01T16:00:00+00:00',\n    'Conversation:',\n    'Message 1',\n    'Date: 2026-04-01T16:00:00+00:00',\n    'From: Google <no-reply@accounts.google.com>',\n    'Subject: Google security alert',\n    'Body: New sign-in detected from a new device. Review activity and secure the account if this was not you.',\n    '',\n    'Few-shot example output:',\n    '{',\n    '  \"summary\": \"One security email requires immediate review.\",',\n    '  \"urgent_items\": [',\n    '    {',\n    '      \"subject\": \"Google security alert\",',\n    '      \"sender\": \"Google <no-reply@accounts.google.com>\",',\n    '      \"reason\": \"New sign-in alert requires account verification.\"',\n    '    }',\n    '  ],',\n    '  \"for_info\": []',\n    '}',\n  ].join('\\n');\n  \n  const userPrompt = [\n    'Analyze the following last-24-hour email threads.',\n    `Total emails: ${source.email_count_24h ?? 0}`,\n    `Total threads: ${source.total_thread_count ?? 0}`,\n    `Candidate threads: ${source.candidate_thread_count ?? 0}`,\n    `Muted threads before model: ${source.blocked_thread_count ?? 0}`,\n    source.blocked_examples_text ? `Muted examples: ${source.blocked_examples_text}` : 'Muted examples: None',\n    '',\n    'Return only the JSON object.',\n    '',\n    source.candidate_thread_context || '(no candidate threads)',\n  ].join('\\n');\n  \n  return {\n    json: {\n      ...source,\n      system_prompt: systemPrompt,\n      user_prompt: userPrompt,\n      prompt_text: `${systemPrompt}\\n\\n${userPrompt}`,\n    },\n  };\n  })();\n});\nreturn __single(__results.map(__unwrap));"
+      }
+    },
+    {
+      "nodeId": "node_452e4d2f0d",
+      "actorId": "actor_452e4d2f0d",
+      "type": "NodeHttpRequest",
+      "label": "Call Ollama Summary API",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "http://127.0.0.1:11434/api/chat"
+      }
+    },
+    {
+      "nodeId": "node_806bd80b5f",
+      "actorId": "actor_806bd80b5f",
+      "type": "NodeTransform",
+      "label": "Body: Call Ollama Summary API",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Call Ollama Summary API\".\nconst __body = (JSON.stringify({ model: '{{yourOllamaModel}}', stream: false, think: false, format: 'json', keep_alive: '15m', messages: [{ role: 'system', content: $json.system_prompt }, { role: 'user', content: $json.user_prompt }], options: { temperature: 0, num_ctx: 32768, num_predict: 260 } }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_91d966158f",
+      "actorId": "actor_91d966158f",
+      "type": "NodeTransform",
+      "label": "Parse Ollama Summary",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Manual Trigger\": {{ctx}}, \"Fetch Gmail via IMAP\": {{steps.xf_b8dbdcf137.result}}, \"Parse JSON Output\": {{steps.xf_27a97a38a3.result}}, \"Build Summary Prompt\": {{steps.xf_cb30fb43e5.result}}, \"Prepare Structured Prompt\": {{steps.xf_5b6ea361f7.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Parse Ollama Summary\" (run once for each item).\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __results = __items.map((__item) => {\n  const $json = __item;\n  const item = { json: __item };\n  const $input = { item: { json: __item }, first: () => ({ json: __item }), all: () => [{ json: __item }] };\n  return (() => {\n  const base = (() => {\n    try {\n      return $('Prepare Structured Prompt').first().json || {};\n    } catch {\n      return {};\n    }\n  })();\n  const payload = $json || {};\n  const fallback = base.fallback_structured || { summary: 'No actionable email threads in the last 24 hours.', urgent_items: [], for_info: [] };\n  \n  const clean = (value) => String(value ?? '').replace(/\\s+/g, ' ').trim();\n  const clip = (value, max) => {\n    const text = clean(value);\n    if (!text || text.length <= max) return text;\n    return text.slice(0, max).replace(/[\\s.,;:]+$/g, '') + ' ...';\n  };\n  const normalizeItem = (item, noteKey) => ({\n    subject: clip(item?.subject, 180),\n    sender: clip(item?.sender, 140),\n    [noteKey]: clip(item?.[noteKey], 90),\n  });\n  const extractJsonObject = (text) => {\n    const source = String(text || '').trim();\n    if (!source) return null;\n    try {\n      return JSON.parse(source);\n    } catch {}\n    let depth = 0;\n    let start = -1;\n    let inString = false;\n    let escaped = false;\n    for (let i = 0; i < source.length; i += 1) {\n      const ch = source[i];\n      if (escaped) {\n        escaped = false;\n        continue;\n      }\n      if (ch === '\\\\' && inString) {\n        escaped = true;\n        continue;\n      }\n      if (ch === '\"') {\n        inString = !inString;\n        continue;\n      }\n      if (inString) continue;\n      if (ch === '{') {\n        if (depth === 0) start = i;\n        depth += 1;\n      } else if (ch === '}') {\n        if (depth > 0) depth -= 1;\n        if (depth === 0 && start !== -1) {\n          const candidate = source.slice(start, i + 1);\n          try {\n            return JSON.parse(candidate);\n          } catch {\n            start = -1;\n          }\n        }\n      }\n    }\n    return null;\n  };\n  \n  const rawCandidates = [\n    payload?.message?.content,\n    payload?.response?.message?.content,\n    payload?.data?.message?.content,\n    payload?.output,\n    payload?.response,\n    payload?.text,\n    payload,\n  ];\n  \n  let structured = null;\n  let rawModelText = '';\n  for (const candidate of rawCandidates) {\n    if (!candidate) continue;\n    if (typeof candidate === 'string') {\n      rawModelText = rawModelText || candidate;\n      const parsed = extractJsonObject(candidate);\n      if (parsed) {\n        structured = parsed;\n        break;\n      }\n      continue;\n    }\n    if (typeof candidate === 'object') {\n      const direct = candidate.summary || candidate.urgent_items || candidate.for_info ? candidate : null;\n      if (direct) {\n        structured = direct;\n        break;\n      }\n      const nestedText = candidate?.message?.content || candidate?.content || '';\n      if (nestedText && typeof nestedText === 'string') {\n        rawModelText = rawModelText || nestedText;\n        const parsed = extractJsonObject(nestedText);\n        if (parsed) {\n          structured = parsed;\n          break;\n        }\n      }\n    }\n  }\n  \n  if (!structured || typeof structured !== 'object') {\n    const urgentItems = Array.isArray(fallback.urgent_items) ? fallback.urgent_items : [];\n    const forInfo = Array.isArray(fallback.for_info) ? fallback.for_info : [];\n    return {\n      json: {\n        ...base,\n        ...payload,\n        structured_output: fallback,\n        summary: clean(fallback.summary),\n        urgent_items: urgentItems,\n        for_info: forInfo,\n        has_urgent_items: urgentItems.length > 0,\n        summary_source: 'ollama_fallback_invalid_output',\n        ollama_error: 'Model returned invalid JSON; heuristic fallback used.',\n        raw_model_text: clip(rawModelText, 3000),\n      },\n    };\n  }\n  \n  const summary = clip(structured.summary || fallback.summary, 140);\n  const urgentItems = (Array.isArray(structured.urgent_items) ? structured.urgent_items : [])\n    .map((item) => normalizeItem(item, 'reason'))\n    .filter((item) => item.subject && item.sender && item.reason)\n    .slice(0, 5);\n  const forInfo = (Array.isArray(structured.for_info) ? structured.for_info : [])\n    .map((item) => normalizeItem(item, 'note'))\n    .filter((item) => item.subject && item.sender && item.note)\n    .slice(0, 3);\n  const normalized = {\n    summary: summary || fallback.summary,\n    urgent_items: urgentItems,\n    for_info: forInfo,\n  };\n  \n  return {\n    json: {\n      ...base,\n      ...payload,\n      structured_output: normalized,\n      summary: normalized.summary,\n      urgent_items: normalized.urgent_items,\n      for_info: normalized.for_info,\n      has_urgent_items: normalized.urgent_items.length > 0,\n      summary_source: 'ollama_structured',\n      ollama_error: '',\n      raw_model_text: clip(rawModelText, 3000),\n    },\n  };\n  })();\n});\nreturn __single(__results.map(__unwrap));"
+      }
+    },
+    {
+      "nodeId": "node_ded19d2fa5",
+      "actorId": "actor_ded19d2fa5",
+      "type": "NodeTransform",
+      "label": "Has Urgent Items?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((((!!$json.has_urgent_items)) === true || ((!!$json.has_urgent_items)) === 'true'));"
+      }
+    },
+    {
+      "nodeId": "node_b7c4f13916",
+      "actorId": "actor_b7c4f13916",
+      "type": "NodeBranch",
+      "label": "Has Urgent Items?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_94c6fac184",
+      "actorId": "actor_94c6fac184",
+      "type": "NodeTransform",
+      "label": "Normalize Summary Message",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Normalize Summary Message\" (run once for each item).\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __results = __items.map((__item) => {\n  const $json = __item;\n  const item = { json: __item };\n  const $input = { item: { json: __item }, first: () => ({ json: __item }), all: () => [{ json: __item }] };\n  return (() => {\n  const base = $json || {};\n  const structured = base.structured_output || {};\n  const urgentItems = Array.isArray(base.urgent_items) ? base.urgent_items : Array.isArray(structured.urgent_items) ? structured.urgent_items : [];\n  const forInfo = Array.isArray(base.for_info) ? base.for_info : Array.isArray(structured.for_info) ? structured.for_info : [];\n  const summary = String(base.summary || structured.summary || 'Action needed on recent email threads.').trim();\n  const mutedCount = Number(base.blocked_thread_count ?? 0);\n  const mutedExamples = String(base.blocked_examples_text || '').trim();\n  \n  const clean = (value) => String(value ?? '').replace(/\\s+/g, ' ').trim();\n  const clip = (value, max) => {\n    const text = clean(value);\n    if (!text || text.length <= max) return text;\n    return text.slice(0, max).replace(/[\\s.,;:]+$/g, '') + ' ...';\n  };\n  const escapeHtml = (value) => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n  const wrap = (value, width) => {\n    const text = clean(value);\n    if (!text) return [''];\n    const tokens = text.split(/\\s+/);\n    const lines = [];\n    let current = '';\n    for (const token of tokens) {\n      if (token.length > width) {\n        if (current) {\n          lines.push(current);\n          current = '';\n        }\n        for (let i = 0; i < token.length; i += width) lines.push(token.slice(i, i + width));\n        continue;\n      }\n      if (!current) {\n        current = token;\n        continue;\n      }\n      if ((current + ' ' + token).length <= width) {\n        current += ' ' + token;\n      } else {\n        lines.push(current);\n        current = token;\n      }\n    }\n    if (current) lines.push(current);\n    return lines.length ? lines : [''];\n  };\n  \n  const columns = [\n    { key: 'subject', width: 26 },\n    { key: 'sender', width: 18 },\n    { key: 'reason', width: 30 },\n  ];\n  const border = '+' + columns.map((c) => '-'.repeat(c.width + 2)).join('+') + '+';\n  const renderBlock = (row) => {\n    const cellLines = columns.map((column) => wrap(row[column.key] ?? '', column.width));\n    const height = Math.max(...cellLines.map((lines) => lines.length));\n    return Array.from({ length: height }, (_, index) => {\n      const cells = columns.map((column, cellIndex) => ` ${(cellLines[cellIndex][index] || '').padEnd(column.width, ' ')} `);\n      return `|${cells.join('|')}|`;\n    });\n  };\n  const buildTable = (rows) => {\n    if (!rows.length) return 'None';\n    const lines = [border, ...renderBlock({ subject: 'Subject', sender: 'Sender', reason: 'Reason' }), border];\n    for (const row of rows.slice(0, 5)) {\n      lines.push(...renderBlock({\n        subject: clip(row.subject, 240),\n        sender: clip(row.sender, 140),\n        reason: clip(row.reason, 220),\n      }));\n      lines.push(border);\n    }\n    return ['```', ...lines, '```'].join('\\n');\n  };\n  \n  const infoLines = forInfo.slice(0, 3).map((item) => `- ${clip(item.subject, 90)} | ${clip(item.sender, 60)} | ${clip(item.note, 90)}`);\n  const mutedLines = [\n    `- ${mutedCount} thread${mutedCount === 1 ? '' : 's'} muted before analysis.`,\n    mutedExamples ? `- Examples: ${clip(mutedExamples, 240)}` : '- Examples: None',\n  ];\n  \n  const sections = [\n    '📬 Daily Email Summary (Last 24h)',\n    '🧠 Summary',\n    summary,\n    '',\n    '✅ Action Required',\n    buildTable(urgentItems),\n  ];\n  if (infoLines.length) {\n    sections.push('', 'ℹ️ For Info', ...infoLines);\n  }\n  sections.push('', '🧹 Muted', ...mutedLines);\n  \n  const text = sections.join('\\n').trim();\n  const codeBlockRegex = /```(?:[a-zA-Z0-9_-]+)?\\n?([\\s\\S]*?)```/g;\n  let html = '';\n  let lastIndex = 0;\n  let match;\n  while ((match = codeBlockRegex.exec(text)) !== null) {\n    html += escapeHtml(text.slice(lastIndex, match.index));\n    html += `<pre>${escapeHtml(String(match[1] ?? '').replace(/^\\n+|\\n+$/g, ''))}</pre>`;\n    lastIndex = match.index + match[0].length;\n  }\n  html += escapeHtml(text.slice(lastIndex));\n  \n  return {\n    json: {\n      ...base,\n      text,\n      notify_message: text,\n      telegram_message: html || escapeHtml(text),\n    },\n  };\n  })();\n});\nreturn __single(__results.map(__unwrap));"
+      }
+    },
+    {
+      "nodeId": "node_4eca0728dd",
+      "actorId": "actor_4eca0728dd",
+      "type": "NodeTransform",
+      "label": "Fix Action Table Layout",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Fix Action Table Layout\" (run once for each item).\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __results = __items.map((__item) => {\n  const $json = __item;\n  const item = { json: __item };\n  const $input = { item: { json: __item }, first: () => ({ json: __item }), all: () => [{ json: __item }] };\n  return (() => {\n  return { json: { ...$json } };\n  })();\n});\nreturn __single(__results.map(__unwrap));"
+      }
+    },
+    {
+      "nodeId": "node_b61106a32c",
+      "actorId": "actor_b61106a32c",
+      "type": "NodeTransform",
+      "label": "Params: Send Telegram Summary",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for telegram/TELEGRAM_SEND_MESSAGE (n8n node \"Send Telegram Summary\").\nreturn {\n  \"chat_id\": \"{{yourTelegramChatId}}\",\n  \"text\": ($json.telegram_message || $json.notify_message),\n  \"parse_mode\": \"HTML\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_f04fa4d68d",
+      "actorId": "actor_f04fa4d68d",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_SEND_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_SEND_MESSAGE"
+      }
+    },
+    {
+      "nodeId": "node_ca2f2bca0f",
+      "actorId": "actor_ca2f2bca0f",
+      "type": "NodeTransform",
+      "label": "Telegram Delivery Failed?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((((!!$json.error)) === true || ((!!$json.error)) === 'true'));"
+      }
+    },
+    {
+      "nodeId": "node_701ab37d8d",
+      "actorId": "actor_701ab37d8d",
+      "type": "NodeBranch",
+      "label": "Telegram Delivery Failed?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_229ccca422",
+      "actorId": "actor_229ccca422",
+      "type": "NodeCdeConnector",
+      "label": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-storage",
+        "connectorLabel": "Yantra storage",
+        "action": "YANTRA_STORAGE_HTTP_SEND",
+        "params": {
+          "url": "https://ntfy.sh/{{yourNtfyTopic}}",
+          "method": "POST",
+          "headers": {
+            "Title": "{{steps.xf_4eca0728dd.result.ntfy_title}}",
+            "Priority": "high",
+            "Tags": "mail"
+          },
+          "bodyType": "raw",
+          "rawBody": "{{steps.xf_4eca0728dd.result.notify_message}}",
+          "contentType": "text/plain; charset=utf-8",
+          "responseType": "auto",
+          "timeoutMs": 10000
+        }
+      }
+    },
+    {
+      "nodeId": "node_2a3feb21d9",
+      "actorId": "actor_2a3feb21d9",
+      "type": "NodeTransform",
+      "label": "Send ntfy Summary: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The response the way the n8n HTTP node handed it on: the parsed body; a file body is { bodyBase64, filename, mimeType }.\nconst __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' && 'status' in source.data ? source.data : source;\nconst __body = __r?.bodyBase64 !== undefined ? { bodyBase64: __r.bodyBase64, filename: __r.filename, mimeType: __r.contentType, bytes: __r.bytes } : __r?.bodyJson !== undefined ? __r.bodyJson : __r?.bodyText;\nreturn { body: __body, headers: __r?.headers ?? {}, statusCode: __r?.status };"
+      }
+    },
+    {
+      "nodeId": "node_0532864daa",
+      "actorId": "actor_0532864daa",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_10815ad68c",
+      "actorId": "actor_10815ad68c",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "yourOllamaModel": "",
+          "yourTelegramChatId": "",
+          "yourNtfyTopic": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_806bd80b5f",
+      "target": "node_452e4d2f0d",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_806bd80b5f",
+      "target": "node_452e4d2f0d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_ded19d2fa5",
+      "target": "node_b7c4f13916",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_ded19d2fa5",
+      "target": "node_b7c4f13916",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_b61106a32c",
+      "target": "node_f04fa4d68d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_b61106a32c",
+      "target": "node_f04fa4d68d",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ca2f2bca0f",
+      "target": "node_701ab37d8d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_ca2f2bca0f",
+      "target": "node_701ab37d8d",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_229ccca422",
+      "target": "node_2a3feb21d9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_229ccca422",
+      "target": "node_2a3feb21d9",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7d525a3bef",
+      "target": "node_b8dbdcf137",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b691eb1485",
+      "target": "node_b8dbdcf137",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b691eb1485",
+      "target": "node_b8dbdcf137",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b8dbdcf137",
+      "target": "node_27a97a38a3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b8dbdcf137",
+      "target": "node_27a97a38a3",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_27a97a38a3",
+      "target": "node_cb30fb43e5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_27a97a38a3",
+      "target": "node_cb30fb43e5",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cb30fb43e5",
+      "target": "node_5b6ea361f7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cb30fb43e5",
+      "target": "node_5b6ea361f7",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_94c6fac184",
+      "target": "node_4eca0728dd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_94c6fac184",
+      "target": "node_4eca0728dd",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f04fa4d68d",
+      "target": "node_ca2f2bca0f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f04fa4d68d",
+      "target": "node_ca2f2bca0f",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_701ab37d8d",
+      "target": "node_229ccca422",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_91d966158f",
+      "target": "node_ded19d2fa5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_91d966158f",
+      "target": "node_ded19d2fa5",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4eca0728dd",
+      "target": "node_b61106a32c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4eca0728dd",
+      "target": "node_b61106a32c",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5b6ea361f7",
+      "target": "node_806bd80b5f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5b6ea361f7",
+      "target": "node_806bd80b5f",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_452e4d2f0d",
+      "target": "node_91d966158f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_452e4d2f0d",
+      "target": "node_91d966158f",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b7c4f13916",
+      "target": "node_94c6fac184",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_91d966158f",
+      "target": "node_94c6fac184",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2a3feb21d9",
+      "target": "node_0532864daa",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "gmail-and-email",
+    "categoryLabel": "Gmail and Email Automation",
+    "department": "Ops",
+    "connectors": [
+      "telegram",
+      "yantra-storage"
+    ],
+    "setupVars": [
+      {
+        "key": "yourOllamaModel",
+        "label": "Your Ollama Model",
+        "type": "text",
+        "usedBy": [
+          "Call Ollama Summary API"
+        ]
+      },
+      {
+        "key": "yourTelegramChatId",
+        "label": "Your Telegram Chat Id",
+        "type": "id",
+        "usedBy": [
+          "Send Telegram Summary"
+        ]
+      },
+      {
+        "key": "yourNtfyTopic",
+        "label": "Your Ntfy Topic",
+        "type": "text",
+        "usedBy": [
+          "Send ntfy Summary"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate daily-email-notification",
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeCron",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 14,
+      "yantraSteps": 19,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Gmail_and_Email_Automation/Daily Email Notification.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Daily IMAP Email Summary to Telegram (Local Ollama)"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "action-pending-publish",
+        "node": "Send ntfy Summary",
+        "detail": "yantra-storage/YANTRA_STORAGE_HTTP_SEND waits for the yantra-storage HTTP send and signatures patch (1.4.1) to be published"
+      }
+    ],
+    "setup": [
+      "\"Send ntfy Summary\": yantra-storage/YANTRA_STORAGE_HTTP_SEND comes from the yantra-storage HTTP send and signatures patch (1.4.1), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
+      "Setup value yourOllamaModel: Your Ollama Model. Write it into the Workflow Configs initialContext before import.",
+      "Setup value yourTelegramChatId: Your Telegram Chat Id. Write it into the Workflow Configs initialContext before import.",
+      "Setup value yourNtfyTopic: Your Ntfy Topic. Write it into the Workflow Configs initialContext before import.",
+      "Connect the telegram connector (credential).",
+      "After import, start the schedule: cdecli cron activate daily-email-notification."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Fetch Gmail via IMAP",
+          "n8n": "executeCommand",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Send ntfy Summary",
+          "n8n": "httpRequest.raw",
+          "action": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Manual Trigger",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Schedule Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "\"Fetch Gmail via IMAP\" (executeCommand): Host shell commands are not run in Transform; use an agent sandbox shell if you need the original command.",
+        "\"Fetch Gmail via IMAP\": original command was \"python3 - <<'PY'\\nimport datetime\\nimport email\\nimport imaplib\\nimport json\\nimport re\\nfrom collections import OrderedDict\\nfrom email.header import decode_header\\nfrom email.utils import parsedate_to_datet\" - run equivalent logic in an agent sandbox shell (not SSH).",
+        "\"Send ntfy Summary\" sends its raw body with yantra-storage HTTP_SEND (public https hosts only, 25 MB, 120 s).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect telegram: `cdecli credential create -n \"telegram\" -p telegram --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_7d525a3bef": {
+        "n8n": "Manual Trigger",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_b691eb1485": {
+        "n8n": "Schedule Trigger",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_b8dbdcf137": {
+        "n8n": "Fetch Gmail via IMAP",
+        "n8nType": "n8n-nodes-base.executeCommand"
+      },
+      "node_27a97a38a3": {
+        "n8n": "Parse JSON Output",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_cb30fb43e5": {
+        "n8n": "Build Summary Prompt",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_5b6ea361f7": {
+        "n8n": "Prepare Structured Prompt",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_452e4d2f0d": {
+        "n8n": "Call Ollama Summary API",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_806bd80b5f": {
+        "n8n": "Call Ollama Summary API",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_91d966158f": {
+        "n8n": "Parse Ollama Summary",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_ded19d2fa5": {
+        "n8n": "Has Urgent Items?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_b7c4f13916": {
+        "n8n": "Has Urgent Items?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_94c6fac184": {
+        "n8n": "Normalize Summary Message",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_4eca0728dd": {
+        "n8n": "Fix Action Table Layout",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_b61106a32c": {
+        "n8n": "Send Telegram Summary",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_f04fa4d68d": {
+        "n8n": "Send Telegram Summary",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_ca2f2bca0f": {
+        "n8n": "Telegram Delivery Failed?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_701ab37d8d": {
+        "n8n": "Telegram Delivery Failed?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_229ccca422": {
+        "n8n": "Send ntfy Summary",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_2a3feb21d9": {
+        "n8n": "Send ntfy Summary",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_0532864daa": {
+        "n8n": "__end:Send ntfy Summary",
+        "n8nType": "synthetic"
+      },
+      "node_10815ad68c": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

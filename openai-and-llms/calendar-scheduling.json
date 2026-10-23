@@ -1,0 +1,1024 @@
+{
+  "name": "Calendar_scheduling",
+  "workflowSlug": "calendar-scheduling",
+  "description": "Converted from the n8n template \"Calendar_scheduling\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_7d8c74fbfd",
+      "actorId": "actor_7d8c74fbfd",
+      "type": "NodeCdeWebhookTrigger",
+      "label": "Webhook: googlesuper/GOOGLESUPER_NEW_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "connector": "googlesuper",
+        "webhookEndpointId": "",
+        "triggerSlug": "GOOGLESUPER_NEW_MESSAGE",
+        "connectedAccountId": "",
+        "config": {},
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "nodeId": "node_0f6f70c59d",
+      "actorId": "actor_0f6f70c59d",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_feed71e487",
+      "actorId": "actor_feed71e487",
+      "type": "NodeLlmChain",
+      "label": "Classify appointment",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "is_appointment": {
+              "type": "boolean"
+            }
+          }
+        },
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_d80c118963",
+      "actorId": "actor_d80c118963",
+      "type": "NodeTransform",
+      "label": "Prompt: Classify appointment",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Classify appointment.\nconst __promptValue = `Please evaluate the following email to determine if it suggests scheduling a meeting or a call:\nSubject: ${encodeURI($json.Subject)}\nSnippet: ${encodeURI($json.snippet)}\nIndicate your assessment by responding with \"true\" if it suggests a meeting or call, or \"false\" otherwise. Use lowercase for your response.\n`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_2e56049ae6",
+      "actorId": "actor_2e56049ae6",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_EVENTS_LIST",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Calendar",
+        "action": "GOOGLESUPER_EVENTS_LIST",
+        "params": {
+          "calendarId": "{{yourEmail}}@gmail.com"
+        }
+      }
+    },
+    {
+      "nodeId": "node_beb6f1d011",
+      "actorId": "actor_beb6f1d011",
+      "type": "NodeTransform",
+      "label": "Is appointment request: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.is_appointment) ?? '') === String(\"true\" ?? '')) || (Boolean(($json.is_appointment)) === Boolean(true)));"
+      }
+    },
+    {
+      "nodeId": "node_1bd9869752",
+      "actorId": "actor_1bd9869752",
+      "type": "NodeBranch",
+      "label": "Is appointment request: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_f9b106a5d0",
+      "actorId": "actor_f9b106a5d0",
+      "type": "NodeTransform",
+      "label": "Filter only confirmed and with set time",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn __items.filter(($json) => Boolean((String(($json.status) ?? '') === String(\"confirmed\" ?? '')) && (Boolean(($json.start.dateTime)) !== Boolean(\"{{undefined}}\"))));"
+      }
+    },
+    {
+      "nodeId": "node_9db066b3b4",
+      "actorId": "actor_9db066b3b4",
+      "type": "NodeCdecliAgent",
+      "label": "Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "gpt-4",
+        "sessionId": "",
+        "system": "{{llm_system_2bd5b3715c}}",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_2bd5b3715c",
+      "actorId": "actor_2bd5b3715c",
+      "type": "NodeTransform",
+      "label": "System: Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// System: Agent.\nconst __promptValue = `You are an email scheduling assistant. Based on the received email, check my availability and propose an appropriate response. \nAim to get a specific time, rather than just a day. When checking my availability, make sure that there's enough time in between meetings.\nIf I'm not available, ALWAYS propose a new time based on my availability. When proposing a new time, always leave 15 minutes buffer from previous meeting.\nToday date and time is: ${$now.toISO()}.`;\nreturn { \"llm_system_2bd5b3715c\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_56501fdb87",
+      "actorId": "actor_56501fdb87",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Agent",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_679a636964",
+      "actorId": "actor_679a636964",
+      "type": "NodeTransform",
+      "label": "Prompt: Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Gmail Trigger\": __namedCtx.steps?.[\"Webhook: googlesuper/GOOGLESUPER_NEW_MESSAGE\"]?.[\"payload\"], \"Execute Workflow Trigger\": {{ctx}}, \"Classify appointment\": ((output) => ({ ...output, output }))(__namedCtx.steps?.[\"Classify appointment\"]?.[\"object\"]), \"Google Calendar\": __namedCtx.steps?.[\"GOOGLESUPER_EVENTS_LIST\"]?.[\"result\"], \"Filter only confirmed and with set time\": __namedCtx.steps?.[\"Filter only confirmed and with set time\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Agent.\nconst __promptValue = `Sender: ${$('Gmail Trigger').item.json.From}\\\\nSubject: ${$('Gmail Trigger').item.json.Subject}\\\\nEmail Text: ${$('Gmail Trigger').item.json.snippet}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_1405c958c0",
+      "actorId": "actor_1405c958c0",
+      "type": "NodeTransform",
+      "label": "Extract start, end and name",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"start\"] = `${DateTime.fromISO($json.start.dateTime).toLocaleString(DateTime.DATE_HUGE)}, ${DateTime.fromISO($json.start.dateTime).toLocaleString(DateTime.TIME_24_WITH_SHORT_OFFSET)}`;\n  out[\"end\"] = `${DateTime.fromISO($json.end.dateTime).toLocaleString(DateTime.DATE_HUGE)}, ${DateTime.fromISO($json.end.dateTime).toLocaleString(DateTime.TIME_24_WITH_SHORT_OFFSET)}`;\n  out[\"name\"] = ($json.summary);\n  out[\"sort\"] = ($json.start.dateTime);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_a672b33198",
+      "actorId": "actor_a672b33198",
+      "type": "NodeTransform",
+      "label": "Params: Send Reply",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Execute Workflow Trigger\": {{ctx}}, \"Google Calendar\": {{steps.GOOGLESUPER_EVENTS_LIST.result}}, \"Filter only confirmed and with set time\": {{steps.xf_f9b106a5d0.result}}, \"Extract start, end and name\": {{steps.xf_1405c958c0.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_REPLY_TO_THREAD (n8n node \"Send Reply\").\nreturn {\n  \"thread_id\": ($('Gmail Trigger').item.json.id),\n  \"message_body\": ($json),\n  \"recipient_email\": \"{{recipientEmail}}\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_ae42df2a6f",
+      "actorId": "actor_ae42df2a6f",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_REPLY_TO_THREAD",
+      "color": "#6366F1",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_REPLY_TO_THREAD"
+      }
+    },
+    {
+      "nodeId": "node_730f4e9f7a",
+      "actorId": "actor_730f4e9f7a",
+      "type": "NodeTransform",
+      "label": "Params: Mark as read",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Execute Workflow Trigger\": {{ctx}}, \"Google Calendar\": {{steps.GOOGLESUPER_EVENTS_LIST.result}}, \"Filter only confirmed and with set time\": {{steps.xf_f9b106a5d0.result}}, \"Extract start, end and name\": {{steps.xf_1405c958c0.result}}, \"Send Reply\": {{steps.GOOGLESUPER_REPLY_TO_THREAD.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL (n8n node \"Mark as read\").\nreturn {\n  \"message_id\": ($('Gmail Trigger').item.json.id),\n  \"remove_label_ids\": [\"UNREAD\"],\n};"
+      }
+    },
+    {
+      "nodeId": "node_ad69dc029f",
+      "actorId": "actor_ad69dc029f",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_ADD_LABEL_TO_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 3880,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_ADD_LABEL_TO_EMAIL"
+      }
+    },
+    {
+      "nodeId": "node_a2db73c1c0",
+      "actorId": "actor_a2db73c1c0",
+      "type": "NodeTransform",
+      "label": "Sort",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\nreturn [...__items].sort((x, y) => {\n  { const a = __get(x, \"sort\"); const b = __get(y, \"sort\"); if (a !== b) return (a > b ? 1 : -1) * 1; }\n  return 0;\n});"
+      }
+    },
+    {
+      "nodeId": "node_946c845762",
+      "actorId": "actor_946c845762",
+      "type": "NodeTransform",
+      "label": "Format response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nreturn { \"response\": __items };"
+      }
+    },
+    {
+      "nodeId": "node_355db1270c",
+      "actorId": "actor_355db1270c",
+      "type": "NodeTransform",
+      "label": "Stringify Response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"response\"] = (JSON.stringify($json.response));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_3f7b8666bc",
+      "actorId": "actor_3f7b8666bc",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_44970e74ee",
+      "actorId": "actor_44970e74ee",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_98ac406a92",
+      "actorId": "actor_98ac406a92",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_6f3541d972",
+      "actorId": "actor_6f3541d972",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "recipientEmail": "",
+          "yourEmail": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_469131fa59",
+      "actorId": "actor_469131fa59",
+      "type": "NodeChatModel",
+      "label": "Classify appointment: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 720
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_d80c118963",
+      "target": "node_feed71e487",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_beb6f1d011",
+      "target": "node_1bd9869752",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_beb6f1d011",
+      "target": "node_1bd9869752",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_2bd5b3715c",
+      "target": "node_56501fdb87",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_2bd5b3715c",
+      "target": "node_56501fdb87",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_56501fdb87",
+      "target": "node_679a636964",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_679a636964",
+      "target": "node_9db066b3b4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_a672b33198",
+      "target": "node_ae42df2a6f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_a672b33198",
+      "target": "node_ae42df2a6f",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_730f4e9f7a",
+      "target": "node_ad69dc029f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_730f4e9f7a",
+      "target": "node_ad69dc029f",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_7d8c74fbfd",
+      "target": "node_d80c118963",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7d8c74fbfd",
+      "target": "node_d80c118963",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2e56049ae6",
+      "target": "node_f9b106a5d0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2e56049ae6",
+      "target": "node_f9b106a5d0",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0f6f70c59d",
+      "target": "node_2e56049ae6",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_946c845762",
+      "target": "node_355db1270c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_946c845762",
+      "target": "node_355db1270c",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1405c958c0",
+      "target": "node_a2db73c1c0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1405c958c0",
+      "target": "node_a2db73c1c0",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f9b106a5d0",
+      "target": "node_1405c958c0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f9b106a5d0",
+      "target": "node_1405c958c0",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1bd9869752",
+      "target": "node_2bd5b3715c",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_feed71e487",
+      "target": "node_2bd5b3715c",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_feed71e487",
+      "target": "node_679a636964",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_feed71e487",
+      "target": "node_beb6f1d011",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_feed71e487",
+      "target": "node_beb6f1d011",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a2db73c1c0",
+      "target": "node_946c845762",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a2db73c1c0",
+      "target": "node_946c845762",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9db066b3b4",
+      "target": "node_a672b33198",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9db066b3b4",
+      "target": "node_a672b33198",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9db066b3b4",
+      "target": "node_730f4e9f7a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9db066b3b4",
+      "target": "node_730f4e9f7a",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ae42df2a6f",
+      "target": "node_3f7b8666bc",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_ad69dc029f",
+      "target": "node_44970e74ee",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_355db1270c",
+      "target": "node_98ac406a92",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_469131fa59",
+      "target": "node_feed71e487",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "",
+    "connectors": [
+      "googlesuper",
+      "openai"
+    ],
+    "setupVars": [
+      {
+        "key": "recipientEmail",
+        "label": "Recipient email address",
+        "type": "email",
+        "example": "you@example.com",
+        "usedBy": [
+          "Send Reply"
+        ]
+      },
+      {
+        "key": "yourEmail",
+        "label": "Your Email",
+        "type": "email",
+        "usedBy": [
+          "Google Calendar"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeCdeWebhookTrigger",
+      "NodeCdecliAgent",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 17,
+      "yantraSteps": 21,
+      "foldedHelpers": [
+        "Chat OpenAI",
+        "Structured Output Parser",
+        "Chat OpenAI1",
+        "Workflow Tool"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/Suggest meeting slots using AI.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Calendar_scheduling"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "webhook-registration",
+        "node": "Gmail Trigger",
+        "detail": "webhook trigger googlesuper/GOOGLESUPER_NEW_MESSAGE needs webhookEndpointId, connectedAccountId"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Execute Workflow Trigger",
+        "detail": "n8n-nodes-base.executeWorkflowTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Gmail Trigger\": after import, register the googlesuper webhook (`cdecli webhook endpoint create -c googlesuper`, then `cdecli trigger instance upsert --slug GOOGLESUPER_NEW_MESSAGE`) and set webhookEndpointId, connectedAccountId on the trigger node.",
+      "\"Execute Workflow Trigger\" (executeWorkflowTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value recipientEmail: Recipient email address (for example you@example.com). Write it into the Workflow Configs initialContext before import.",
+      "Setup value yourEmail: Your Email. Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "Provide run inputs: llm_system_2bd5b3715c, undefined."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [
+        {
+          "node": "Chat OpenAI",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Classify appointment",
+          "model": "gpt-4"
+        },
+        {
+          "node": "Structured Output Parser",
+          "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+          "into": "Classify appointment",
+          "as": "ai_outputParser"
+        },
+        {
+          "node": "Chat OpenAI1",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Agent",
+          "model": "gpt-4"
+        },
+        {
+          "node": "Workflow Tool",
+          "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+          "into": "Agent",
+          "as": "ai_tool"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Gmail Trigger",
+          "type": "n8n-nodes-base.gmailTrigger",
+          "as": "NodeCdeWebhookTrigger"
+        },
+        {
+          "node": "Execute Workflow Trigger",
+          "type": "n8n-nodes-base.executeWorkflowTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Gmail Trigger\" is a provider webhook (googlesuper/GOOGLESUPER_NEW_MESSAGE). Create the endpoint and trigger instance, then paste the we_… id and connected account into this node before the first run: `cdecli webhook endpoint create -c googlesuper --client-id <id>`, `cdecli webhook endpoint set-data <we_id> --signing-secret <secret>`, `cdecli trigger instance upsert --slug GOOGLESUPER_NEW_MESSAGE --account <connectedAccountId>`.",
+        "The original was a sub-workflow called by another workflow; pass its inputs as run inputs.",
+        "\"Agent\" used agent tools in the original: Workflow Tool (toolWorkflow). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Check if incoming email is about appointment\nWe use LLM to check subject and body of the email and determine if it's an appointment request.",
+      "## Get calendar availability and compose a response\nMake sure to update the Workflow ID if you are running this as 2 workflows",
+      "### Get all query google events for the next month and extract relevant data",
+      "### Wrap the result in `response` object and return"
+    ],
+    "nodes": {
+      "node_7d8c74fbfd": {
+        "n8n": "Gmail Trigger",
+        "n8nType": "n8n-nodes-base.gmailTrigger"
+      },
+      "node_0f6f70c59d": {
+        "n8n": "Execute Workflow Trigger",
+        "n8nType": "n8n-nodes-base.executeWorkflowTrigger"
+      },
+      "node_feed71e487": {
+        "n8n": "Classify appointment",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_d80c118963": {
+        "n8n": "Classify appointment",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_2e56049ae6": {
+        "n8n": "Google Calendar",
+        "n8nType": "n8n-nodes-base.googleCalendar"
+      },
+      "node_beb6f1d011": {
+        "n8n": "Is appointment request",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_1bd9869752": {
+        "n8n": "Is appointment request",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_f9b106a5d0": {
+        "n8n": "Filter only confirmed and with set time",
+        "n8nType": "n8n-nodes-base.filter"
+      },
+      "node_9db066b3b4": {
+        "n8n": "Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_2bd5b3715c": {
+        "n8n": "Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_56501fdb87": {
+        "n8n": "Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_679a636964": {
+        "n8n": "Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_1405c958c0": {
+        "n8n": "Extract start, end and name",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_a672b33198": {
+        "n8n": "Send Reply",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_ae42df2a6f": {
+        "n8n": "Send Reply",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_730f4e9f7a": {
+        "n8n": "Mark as read",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_ad69dc029f": {
+        "n8n": "Mark as read",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_a2db73c1c0": {
+        "n8n": "Sort",
+        "n8nType": "n8n-nodes-base.itemLists"
+      },
+      "node_946c845762": {
+        "n8n": "Format response",
+        "n8nType": "n8n-nodes-base.itemLists"
+      },
+      "node_355db1270c": {
+        "n8n": "Stringify Response",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_3f7b8666bc": {
+        "n8n": "__end:Send Reply",
+        "n8nType": "synthetic"
+      },
+      "node_44970e74ee": {
+        "n8n": "__end:Mark as read",
+        "n8nType": "synthetic"
+      },
+      "node_98ac406a92": {
+        "n8n": "__end:Stringify Response",
+        "n8nType": "synthetic"
+      },
+      "node_6f3541d972": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_469131fa59": {
+        "n8n": "Classify appointment",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

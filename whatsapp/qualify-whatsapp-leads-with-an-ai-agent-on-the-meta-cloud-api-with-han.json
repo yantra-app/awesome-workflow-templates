@@ -1,0 +1,3287 @@
+{
+  "name": "Qualify WhatsApp leads with an AI agent on the Meta Cloud API with handoff and follow-ups",
+  "workflowSlug": "qualify-whatsapp-leads-with-an-ai-agent-on-the-meta-cloud-api-with-han",
+  "description": "Verifies the Meta webhook signature, ignores duplicate deliveries, answers pricing and greetings in the customer's language, offers calendar slots for bookings, pauses the AI on complaints and alerts the team, and nudges quiet conversations with free text inside 24 hours or an approved template outside it.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_5526389e2c",
+      "actorId": "actor_5526389e2c",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_2c73f9ed84",
+      "actorId": "actor_2c73f9ed84",
+      "type": "NodeCron",
+      "label": "Schedule: every hour",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 */1 * * *"
+      }
+    },
+    {
+      "nodeId": "node_afb40989e0",
+      "actorId": "actor_afb40989e0",
+      "type": "NodeTransform",
+      "label": "Verify token matches?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.query['hub.verify_token']) ?? '') === String(\"{{setupValue}}-verify-token\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_a10f47beb3",
+      "actorId": "actor_a10f47beb3",
+      "type": "NodeBranch",
+      "label": "Verify token matches?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_3f43bab463",
+      "actorId": "actor_3f43bab463",
+      "type": "NodeTransform",
+      "label": "Config",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"base\"] = \"{{companyBaseUrl}}\";\n  out[\"app_secret\"] = \"{{appSecret}}-app-secret\";\n  out[\"verify_token\"] = \"{{verifyToken}}-verify-token\";\n  out[\"wa_token\"] = \"{{waToken}}-whatsapp-access-token\";\n  out[\"phone_number_id\"] = \"100000000000001\";\n  out[\"business_profile\"] = \"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\";\n  out[\"followup_template\"] = \"lead_followup_v1\";\n  out[\"nudge_after_min\"] = \"120\";\n  out[\"sales_channel\"] = \"#sales-whatsapp\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_94ac8d26a4",
+      "actorId": "actor_94ac8d26a4",
+      "type": "NodeTransform",
+      "label": "Config (follow-ups)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"base\"] = \"{{companyBaseUrl}}\";\n  out[\"app_secret\"] = \"{{appSecret}}-app-secret\";\n  out[\"verify_token\"] = \"{{verifyToken}}-verify-token\";\n  out[\"wa_token\"] = \"{{waToken}}-whatsapp-access-token\";\n  out[\"phone_number_id\"] = \"100000000000001\";\n  out[\"business_profile\"] = \"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\";\n  out[\"followup_template\"] = \"lead_followup_v1\";\n  out[\"nudge_after_min\"] = \"120\";\n  out[\"sales_channel\"] = \"#sales-whatsapp\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_fc48ea651a",
+      "actorId": "actor_fc48ea651a",
+      "type": "NodeTransform",
+      "label": "Config (errors)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"base\"] = \"{{companyBaseUrl}}\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_f8c08bf5b1",
+      "actorId": "actor_f8c08bf5b1",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_906fca3200",
+      "actorId": "actor_906fca3200",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_3d4c1edd65",
+      "actorId": "actor_3d4c1edd65",
+      "type": "NodeTransform",
+      "label": "Verify signature, parse, dedupe, remember",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: Meta verification (GET)\": {{ctx}}, \"Webhook: WhatsApp inbound (Meta Cloud API)\": {{ctx}}, \"Webhook: run follow-ups now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (follow-ups)\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst __staticData = {}; const $getWorkflowStaticData = () => __staticData; // not persisted between runs on Yantra\nconst Buffer = { from: (v, enc) => { const bytes = enc === 'base64' ? Uint8Array.from(atob(String(v)), (c) => c.charCodeAt(0)) : new TextEncoder().encode(String(v)); return { toString: (e) => (e === 'base64' ? btoa(String.fromCharCode(...bytes)) : new TextDecoder().decode(bytes)), length: bytes.length, bytes }; } };\n// Ported from n8n Code node \"Verify signature, parse, dedupe, remember\".\nconst __one = (i) => (i && typeof i === 'object' && 'json' in i ? (i.binary && typeof i.binary === 'object' ? { ...i.json, binary: i.binary } : i.json) : i);\nconst __unwrap = (v) => Array.isArray(v) ? v.map(__one) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? __one(v) : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // node:crypto is not available in the Yantra Transform runtime. Calls below fail closed instead of faking a digest.\n  const __noCrypto = (fn) => () => { throw new Error('crypto.' + fn + ' is not available in the Yantra Transform runtime; verify signatures or hash in a connector step or before the workflow'); };\n  const crypto = { randomUUID: () => globalThis.crypto.randomUUID(), getRandomValues: (a) => globalThis.crypto.getRandomValues(a), \"createHmac\": __noCrypto(\"createHmac\"), \"timingSafeEqual\": __noCrypto(\"timingSafeEqual\") };\n  // 1) Verify Meta's X-Hub-Signature-256 on the RAW body before trusting anything.\n  /* require(crypto) removed for Transform */\n  const cfg = $('Config').first().json;\n  const item = $('Webhook: WhatsApp inbound (Meta Cloud API)').first();\n  const headers = item.json.headers || {};\n  const raw = item.binary?.data ? Buffer.from(item.binary.data.data, 'base64').toString() : JSON.stringify(item.json.body || {});\n  const expected = 'sha256=' + crypto.createHmac('sha256', cfg.app_secret).update(raw).digest('hex');\n  const given = String(headers['x-hub-signature-256'] || '');\n  const ok = given.length === expected.length && crypto.timingSafeEqual(Buffer.from(given), Buffer.from(expected));\n  if (!ok) return [{ json: { kind: 'forged', reason: 'X-Hub-Signature-256 mismatch', source_ip: headers['x-forwarded-for'] || headers['x-real-ip'] || 'unknown', base: cfg.base, bytes: raw.length } }];\n  const body = item.json.body || JSON.parse(raw);\n  \n  // 2) Conversation memory + idempotency live in workflow static data (swap for Redis/Postgres at scale).\n  const sd = $getWorkflowStaticData('global');\n  sd.seen = sd.seen || {}; sd.conv = sd.conv || {};\n  const now = Date.now();\n  for (const [k, t] of Object.entries(sd.seen)) if (now - t > 7 * 864e5) delete sd.seen[k];\n  \n  // 3) Parse every change in the payload: delivery statuses are acknowledged, messages become events.\n  const out = [];\n  for (const e of body.entry || []) for (const ch of e.changes || []) {\n    const v = ch.value || {};\n    if (v.statuses?.length) { out.push({ kind: 'status', statuses: v.statuses.map(s => s.status) }); continue; }\n    const nameOf = {}; for (const c of v.contacts || []) nameOf[c.wa_id] = c.profile?.name;\n    for (const m of v.messages || []) {\n      if (sd.seen[m.id]) { out.push({ kind: 'duplicate', wamid: m.id, wa_id: m.from }); continue; }   // Meta retries deliveries\n      sd.seen[m.id] = now;\n      const text = m.type === 'text' ? (m.text?.body || '')\n        : m.type === 'button' ? (m.button?.text || '')\n        : m.type === 'interactive' ? (m.interactive?.button_reply?.title || m.interactive?.list_reply?.title || '')\n        : `[${m.type} message]`;\n      const wa = m.from;\n      const conv = sd.conv[wa] || (sd.conv[wa] = { wa_id: wa, name: '', turns: [], stage: 'new', handoff: false, opted_out: false, created_at: now });\n      conv.name = nameOf[wa] || conv.name;\n      conv.last_inbound_ts = (Number(m.timestamp) * 1000) || now;\n      conv.turns.push({ role: 'user', text, ts: conv.last_inbound_ts }); conv.turns = conv.turns.slice(-10);\n      let kind = 'message';\n      if (/^\\s*(stop|unsubscribe|band karo|cancel)\\s*$/i.test(text)) { kind = 'optout'; conv.opted_out = true; conv.stage = 'opted_out'; }\n      else if (conv.opted_out) { conv.opted_out = false; conv.stage = 're-engaged'; }          // they wrote again → re-engaged\n      else if (conv.handoff) kind = 'handoff_active';                                           // a human owns this chat now\n      out.push({ kind, wamid: m.id, wa_id: wa, name: conv.name, text, type: m.type, phone_number_id: v.metadata?.phone_number_id || cfg.phone_number_id,\n                 history: conv.turns.slice(0, -1).slice(-6), stage: conv.stage, base: cfg.base, wa_token: cfg.wa_token, business: JSON.parse(cfg.business_profile), sales_channel: cfg.sales_channel });\n    }\n  }\n  if (!out.length) out.push({ kind: 'status', statuses: [] });\n  return out.map(j => ({ json: j }));\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_31674386d3",
+      "actorId": "actor_31674386d3",
+      "type": "NodeTransform",
+      "label": "Find quiet conversations",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: Meta verification (GET)\": {{ctx}}, \"Webhook: WhatsApp inbound (Meta Cloud API)\": {{ctx}}, \"Webhook: run follow-ups now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (follow-ups)\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify signature, parse, dedupe, remember\": {{steps.xf_3d4c1edd65.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst __staticData = {}; const $getWorkflowStaticData = () => __staticData; // not persisted between runs on Yantra\n// Ported from n8n Code node \"Find quiet conversations\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Nudge quiet conversations. Inside Meta's 24-hour customer-service window a free-form text is allowed;\n  // outside it only an approved template may be sent. Opted-out, handed-off and already-nudged chats are skipped.\n  const cfg = $('Config (follow-ups)').first().json;\n  const force = !!($json.query?.force || $json.body?.force);\n  const sd = $getWorkflowStaticData('global');\n  const now = Date.now();\n  const out = [];\n  for (const c of Object.values(sd.conv || {})) {\n    const quietMin = (now - Math.max(c.last_inbound_ts || 0, c.last_outbound_ts || 0)) / 60000;\n    const hours = (now - (c.last_inbound_ts || 0)) / 36e5;\n    let skip = null;\n    if (c.opted_out) skip = 'opted_out';\n    else if (c.handoff) skip = 'human_owns_chat';\n    else if (c.followup_sent) skip = 'already_nudged';\n    else if (c.stage === 'booked') skip = 'booked';\n    else if (!force && quietMin < Number(cfg.nudge_after_min)) skip = 'not_quiet_yet';\n    if (skip) { out.push({ json: { wa_id: c.wa_id, name: c.name, action: 'skip', reason: skip } }); continue; }\n    const inside = hours < 24;\n    c.followup_sent = true; c.followup_ts = now;\n    out.push({ json: { wa_id: c.wa_id, name: c.name, action: inside ? 'freeform_nudge' : 'template', inside_window: inside, hours_since_inbound: +hours.toFixed(1),\n                       language: c.language || 'en', base: cfg.base, wa_token: cfg.wa_token, phone_number_id: cfg.phone_number_id, template: cfg.followup_template } });\n  }\n  return out.length ? out : [{ json: { action: 'skip', reason: 'no_conversations' } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_05ac1e7edd",
+      "actorId": "actor_05ac1e7edd",
+      "type": "NodeHttpRequest",
+      "label": "Alert ops (Slack)",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_fc48ea651a.result.base}}/alerts",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_de0a4cb34d",
+      "actorId": "actor_de0a4cb34d",
+      "type": "NodeTransform",
+      "label": "Body: Alert ops (Slack)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Alert ops (Slack)\".\nconst __body = (JSON.stringify({ channel: '#ops-alerts', text: 'WhatsApp agent failed: ' + $json.execution.error.message + ' (execution ' + $json.execution.id + ', node ' + ($json.execution.lastNodeExecuted || '?') + ')' }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_268c8b08b0",
+      "actorId": "actor_268c8b08b0",
+      "type": "NodeTransform",
+      "label": "Route event: message",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.kind) ?? '') === String(\"message\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_f0c5ddd26d",
+      "actorId": "actor_f0c5ddd26d",
+      "type": "NodeBranch",
+      "label": "Route event: message?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_b53e90ff7f",
+      "actorId": "actor_b53e90ff7f",
+      "type": "NodeTransform",
+      "label": "Route event: status",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.kind) ?? '') === String(\"status\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_c250cf5401",
+      "actorId": "actor_c250cf5401",
+      "type": "NodeBranch",
+      "label": "Route event: status?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_14e6770c8f",
+      "actorId": "actor_14e6770c8f",
+      "type": "NodeTransform",
+      "label": "Route event: duplicate",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.kind) ?? '') === String(\"duplicate\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_8e8c466338",
+      "actorId": "actor_8e8c466338",
+      "type": "NodeBranch",
+      "label": "Route event: duplicate?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_58bd9d4424",
+      "actorId": "actor_58bd9d4424",
+      "type": "NodeTransform",
+      "label": "Route event: optout",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.kind) ?? '') === String(\"optout\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_b1c8c10804",
+      "actorId": "actor_b1c8c10804",
+      "type": "NodeBranch",
+      "label": "Route event: optout?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_b9c0bfd923",
+      "actorId": "actor_b9c0bfd923",
+      "type": "NodeTransform",
+      "label": "Route event: handoff_active",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.kind) ?? '') === String(\"handoff_active\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_afc0502c59",
+      "actorId": "actor_afc0502c59",
+      "type": "NodeBranch",
+      "label": "Route event: handoff_active?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_d099e23f1b",
+      "actorId": "actor_d099e23f1b",
+      "type": "NodeTransform",
+      "label": "Route event: forged",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.kind) ?? '') === String(\"forged\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_8302494703",
+      "actorId": "actor_8302494703",
+      "type": "NodeBranch",
+      "label": "Route event: forged?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_15f8ff5fce",
+      "actorId": "actor_15f8ff5fce",
+      "type": "NodeTransform",
+      "label": "Needs a nudge?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.action) ?? '') !== String(\"skip\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_1fe0812bf0",
+      "actorId": "actor_1fe0812bf0",
+      "type": "NodeBranch",
+      "label": "Needs a nudge?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_13f77a0cb4",
+      "actorId": "actor_13f77a0cb4",
+      "type": "NodeHttpRequest",
+      "label": "WhatsApp API: mark as read",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{last.transformed.base}}/whatsapp/v20.0/{{last.transformed.phone_number_id}}/messages",
+        "headers": {
+          "Authorization": "Bearer {{last.transformed.wa_token}}",
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_03c37e0627",
+      "actorId": "actor_03c37e0627",
+      "type": "NodeTransform",
+      "label": "Body: WhatsApp API: mark as read",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"WhatsApp API: mark as read\".\nconst __body = (JSON.stringify({ messaging_product: 'whatsapp', status: 'read', message_id: $json.wamid }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_d8e5495024",
+      "actorId": "actor_d8e5495024",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 1220,
+        "y": 880
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f70f8ead26",
+      "actorId": "actor_f70f8ead26",
+      "type": "NodeEnd",
+      "label": "End 4",
+      "color": "#EF4444",
+      "position": {
+        "x": 1220,
+        "y": 1140
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_969fec964e",
+      "actorId": "actor_969fec964e",
+      "type": "NodeHttpRequest",
+      "label": "CRM: tag opted-out",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{last.transformed.base}}/crm/contacts/upsert",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_b43d1822ce",
+      "actorId": "actor_b43d1822ce",
+      "type": "NodeTransform",
+      "label": "Body: CRM: tag opted-out",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"CRM: tag opted-out\".\nconst __body = (JSON.stringify({ phone: '+' + $json.wa_id, name: $json.name, tags: ['whatsapp-opted-out'], opted_out: true }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_460369e611",
+      "actorId": "actor_460369e611",
+      "type": "NodeHttpRequest",
+      "label": "Slack: ping owner (human owns chat)",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5400,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{last.transformed.base}}/alerts",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_f9f47f3588",
+      "actorId": "actor_f9f47f3588",
+      "type": "NodeTransform",
+      "label": "Body: Slack: ping owner (human owns chat)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Slack: ping owner (human owns chat)\".\nconst __body = (JSON.stringify({ channel: $json.sales_channel, text: 'New message from ' + $json.name + ' (+' + $json.wa_id + ') in a chat you own: \"' + $json.text + '\"' }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_ff75541fde",
+      "actorId": "actor_ff75541fde",
+      "type": "NodeHttpRequest",
+      "label": "Security: alert ops (forged request)",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{last.transformed.base}}/alerts",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_3d07b00b38",
+      "actorId": "actor_3d07b00b38",
+      "type": "NodeTransform",
+      "label": "Body: Security: alert ops (forged request)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Security: alert ops (forged request)\".\nconst __body = (JSON.stringify({ channel: '#ops-alerts', text: 'Dropped WhatsApp webhook with bad X-Hub-Signature-256 from ' + $json.source_ip + ' (' + $json.bytes + ' bytes)' }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_112c720400",
+      "actorId": "actor_112c720400",
+      "type": "NodeTransform",
+      "label": "Inside 24 h window?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.inside_window)) === true || (($json.inside_window)) === 'true'));"
+      }
+    },
+    {
+      "nodeId": "node_d87d602a5e",
+      "actorId": "actor_d87d602a5e",
+      "type": "NodeBranch",
+      "label": "Inside 24 h window?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_f2fbfb8e1e",
+      "actorId": "actor_f2fbfb8e1e",
+      "type": "NodeHttpRequest",
+      "label": "AI: intent and reply",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_3d4c1edd65.result.base}}/llm/complete",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_d634fcb8db",
+      "actorId": "actor_d634fcb8db",
+      "type": "NodeTransform",
+      "label": "Body: AI: intent and reply",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: Meta verification (GET)\": {{ctx}}, \"Webhook: WhatsApp inbound (Meta Cloud API)\": {{ctx}}, \"Webhook: run follow-ups now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (follow-ups)\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify signature, parse, dedupe, remember\": {{steps.xf_3d4c1edd65.result}}, \"Find quiet conversations\": {{steps.xf_31674386d3.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"AI: intent and reply\".\nconst __body = (JSON.stringify({ task: 'whatsapp_reply', input: { name: $('Verify signature, parse, dedupe, remember').first().json.name, text: $('Verify signature, parse, dedupe, remember').first().json.text, history: $('Verify signature, parse, dedupe, remember').first().json.history, business: $('Verify signature, parse, dedupe, remember').first().json.business } }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_3de4ed2dd9",
+      "actorId": "actor_3de4ed2dd9",
+      "type": "NodeHttpRequest",
+      "label": "WhatsApp API: confirm opt-out",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5400,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_3d4c1edd65.result.base}}/whatsapp/v20.0/{{steps.xf_3d4c1edd65.result.phone_number_id}}/messages",
+        "headers": {
+          "Authorization": "Bearer {{steps.xf_3d4c1edd65.result.wa_token}}",
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_39ff43f0f0",
+      "actorId": "actor_39ff43f0f0",
+      "type": "NodeTransform",
+      "label": "Body: WhatsApp API: confirm opt-out",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: Meta verification (GET)\": {{ctx}}, \"Webhook: WhatsApp inbound (Meta Cloud API)\": {{ctx}}, \"Webhook: run follow-ups now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (follow-ups)\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify signature, parse, dedupe, remember\": {{steps.xf_3d4c1edd65.result}}, \"Find quiet conversations\": {{steps.xf_31674386d3.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"WhatsApp API: confirm opt-out\".\nconst __body = (JSON.stringify({ messaging_product: 'whatsapp', to: $('Verify signature, parse, dedupe, remember').first().json.wa_id, type: 'text', text: { body: 'You have been unsubscribed and will not receive further messages. Reply START to opt in again.' } }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_92420a909a",
+      "actorId": "actor_92420a909a",
+      "type": "NodeEnd",
+      "label": "End 5",
+      "color": "#EF4444",
+      "position": {
+        "x": 5780,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_c0bf4bbb64",
+      "actorId": "actor_c0bf4bbb64",
+      "type": "NodeEnd",
+      "label": "End 6",
+      "color": "#EF4444",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_467e6906ac",
+      "actorId": "actor_467e6906ac",
+      "type": "NodeHttpRequest",
+      "label": "WhatsApp API: free-form nudge",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{last.transformed.base}}/whatsapp/v20.0/{{last.transformed.phone_number_id}}/messages",
+        "headers": {
+          "Authorization": "Bearer {{last.transformed.wa_token}}",
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_2e445f09de",
+      "actorId": "actor_2e445f09de",
+      "type": "NodeTransform",
+      "label": "Body: WhatsApp API: free-form nudge",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"WhatsApp API: free-form nudge\".\nconst __body = (JSON.stringify({ messaging_product: 'whatsapp', to: $json.wa_id, type: 'text', text: { body: ($json.language === 'ur' ? 'Salam ' + $json.name.split(' ')[0] + ', kya main aapki quote/booking mein madad kar sakta hoon? Bas 1 reply karein.' : 'Hi ' + $json.name.split(' ')[0] + ', still need a hand with your quote or booking? Just reply 1 and I will sort it.') } }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_a67b28a62a",
+      "actorId": "actor_a67b28a62a",
+      "type": "NodeHttpRequest",
+      "label": "WhatsApp API: approved template (outside window)",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{last.transformed.base}}/whatsapp/v20.0/{{last.transformed.phone_number_id}}/messages",
+        "headers": {
+          "Authorization": "Bearer {{last.transformed.wa_token}}",
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_e2406e0075",
+      "actorId": "actor_e2406e0075",
+      "type": "NodeTransform",
+      "label": "Body: WhatsApp API: approved template (outside window)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"WhatsApp API: approved template (outside window)\".\nconst __body = (JSON.stringify({ messaging_product: 'whatsapp', to: $json.wa_id, type: 'template', template: { name: $json.template, language: { code: $json.language === 'ur' ? 'ur' : 'en' }, components: [{ type: 'body', parameters: [{ type: 'text', text: $json.name.split(' ')[0] }] }] } }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_2523ded6b8",
+      "actorId": "actor_2523ded6b8",
+      "type": "NodeTransform",
+      "label": "Update conversation state + choose route",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: Meta verification (GET)\": {{ctx}}, \"Webhook: WhatsApp inbound (Meta Cloud API)\": {{ctx}}, \"Webhook: run follow-ups now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (follow-ups)\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify signature, parse, dedupe, remember\": {{steps.xf_3d4c1edd65.result}}, \"Find quiet conversations\": {{steps.xf_31674386d3.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst __staticData = {}; const $getWorkflowStaticData = () => __staticData; // not persisted between runs on Yantra\n// Ported from n8n Code node \"Update conversation state + choose route\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const ev = $('Verify signature, parse, dedupe, remember').first().json;\n  const ai = $json.output;\n  const sd = $getWorkflowStaticData('global');\n  const conv = sd.conv[ev.wa_id];\n  conv.turns.push({ role: 'assistant', text: ai.reply, ts: Date.now() }); conv.turns = conv.turns.slice(-10);\n  conv.stage = ai.needs_human ? 'handoff' : (ai.booking_requested ? 'booking' : 'awaiting_reply');\n  conv.last_outbound_ts = Date.now();\n  conv.lead_score = ai.lead_score; conv.language = ai.language;\n  conv.collected = { ...(conv.collected || {}), ...(ai.collected || {}) };\n  conv.followup_sent = false;\n  if (ai.needs_human) conv.handoff = true;\n  const route = ai.needs_human ? 'human' : (ai.booking_requested ? 'booking' : 'reply');\n  return [{ json: { ...ev, ai, route, collected: conv.collected, usage: $json.usage } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_52aefec0b8",
+      "actorId": "actor_52aefec0b8",
+      "type": "NodeEnd",
+      "label": "End 7",
+      "color": "#EF4444",
+      "position": {
+        "x": 5780,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_c6a232f2c6",
+      "actorId": "actor_c6a232f2c6",
+      "type": "NodeHttpRequest",
+      "label": "CRM: note follow-up sent",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_31674386d3.result.base}}/crm/notes",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_145ad9b201",
+      "actorId": "actor_145ad9b201",
+      "type": "NodeTransform",
+      "label": "Body: CRM: note follow-up sent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: Meta verification (GET)\": {{ctx}}, \"Webhook: WhatsApp inbound (Meta Cloud API)\": {{ctx}}, \"Webhook: run follow-ups now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (follow-ups)\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify signature, parse, dedupe, remember\": {{steps.xf_3d4c1edd65.result}}, \"Find quiet conversations\": {{steps.xf_31674386d3.result}}, \"Update conversation state + choose route\": {{steps.xf_2523ded6b8.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"CRM: note follow-up sent\".\nconst __body = (JSON.stringify({ contact_id: '+' + $('Find quiet conversations').item.json.wa_id, text: 'WhatsApp follow-up sent (' + $('Find quiet conversations').item.json.action + ', ' + $('Find quiet conversations').item.json.hours_since_inbound + ' h since last inbound)' }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_3eda954fe2",
+      "actorId": "actor_3eda954fe2",
+      "type": "NodeHttpRequest",
+      "label": "CRM: upsert contact (HubSpot / GHL)",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4260,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{last.transformed.base}}/crm/contacts/upsert",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_c7dff7e507",
+      "actorId": "actor_c7dff7e507",
+      "type": "NodeTransform",
+      "label": "Body: CRM: upsert contact (HubSpot / GHL)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"CRM: upsert contact (HubSpot / GHL)\".\nconst __body = (JSON.stringify({ phone: '+' + $json.wa_id, name: $json.name, source: 'whatsapp', language: $json.ai.language, lead_score: $json.ai.lead_score, service: $json.collected.service, area: $json.collected.area, tags: ['whatsapp-lead', 'intent:' + $json.ai.intent] }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_dbd1b56bc6",
+      "actorId": "actor_dbd1b56bc6",
+      "type": "NodeTransform",
+      "label": "Follow-up summary",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: Meta verification (GET)\": {{ctx}}, \"Webhook: WhatsApp inbound (Meta Cloud API)\": {{ctx}}, \"Webhook: run follow-ups now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (follow-ups)\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify signature, parse, dedupe, remember\": {{steps.xf_3d4c1edd65.result}}, \"Find quiet conversations\": {{steps.xf_31674386d3.result}}, \"Update conversation state + choose route\": {{steps.xf_2523ded6b8.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Follow-up summary\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const rows = $('Find quiet conversations').all().map(i => i.json);\n  const sent = rows.filter(r => r.action !== 'skip');\n  return [{ json: { ran_at: new Date().toISOString(), conversations: rows.length, nudged_freeform: sent.filter(r => r.action === 'freeform_nudge').length,\n    nudged_template: sent.filter(r => r.action === 'template').length, skipped: rows.filter(r => r.action === 'skip').reduce((a, r) => { a[r.reason] = (a[r.reason] || 0) + 1; return a; }, {}),\n    detail: rows.map(r => ({ wa_id: r.wa_id, action: r.action, reason: r.reason, hours_since_inbound: r.hours_since_inbound })) } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_3d55b6596c",
+      "actorId": "actor_3d55b6596c",
+      "type": "NodeHttpRequest",
+      "label": "CRM: log inbound + AI reply",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5020,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_2523ded6b8.result.base}}/crm/notes",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_e6622ffd45",
+      "actorId": "actor_e6622ffd45",
+      "type": "NodeTransform",
+      "label": "Body: CRM: log inbound + AI reply",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: Meta verification (GET)\": {{ctx}}, \"Webhook: WhatsApp inbound (Meta Cloud API)\": {{ctx}}, \"Webhook: run follow-ups now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (follow-ups)\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify signature, parse, dedupe, remember\": {{steps.xf_3d4c1edd65.result}}, \"Find quiet conversations\": {{steps.xf_31674386d3.result}}, \"Update conversation state + choose route\": {{steps.xf_2523ded6b8.result}}, \"Follow-up summary\": {{steps.xf_dbd1b56bc6.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"CRM: log inbound + AI reply\".\nconst __body = (JSON.stringify({ contact_id: $json.id, text: 'WhatsApp in: ' + $('Update conversation state + choose route').first().json.text + ' | intent=' + $('Update conversation state + choose route').first().json.ai.intent + ' score=' + $('Update conversation state + choose route').first().json.ai.lead_score + ' | reply: ' + $('Update conversation state + choose route').first().json.ai.reply }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_e5b283f282",
+      "actorId": "actor_e5b283f282",
+      "type": "NodeTransform",
+      "label": "Intent route: reply",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: Meta verification (GET)\": {{ctx}}, \"Webhook: WhatsApp inbound (Meta Cloud API)\": {{ctx}}, \"Webhook: run follow-ups now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (follow-ups)\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify signature, parse, dedupe, remember\": {{steps.xf_3d4c1edd65.result}}, \"Find quiet conversations\": {{steps.xf_31674386d3.result}}, \"Update conversation state + choose route\": {{steps.xf_2523ded6b8.result}}, \"Follow-up summary\": {{steps.xf_dbd1b56bc6.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Update conversation state + choose route').first().json.route) ?? '') === String(\"reply\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_60c98b7665",
+      "actorId": "actor_60c98b7665",
+      "type": "NodeBranch",
+      "label": "Intent route: reply?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5780,
+        "y": 880
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_d0ecd0bdd4",
+      "actorId": "actor_d0ecd0bdd4",
+      "type": "NodeTransform",
+      "label": "Intent route: booking",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: Meta verification (GET)\": {{ctx}}, \"Webhook: WhatsApp inbound (Meta Cloud API)\": {{ctx}}, \"Webhook: run follow-ups now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (follow-ups)\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify signature, parse, dedupe, remember\": {{steps.xf_3d4c1edd65.result}}, \"Find quiet conversations\": {{steps.xf_31674386d3.result}}, \"Update conversation state + choose route\": {{steps.xf_2523ded6b8.result}}, \"Follow-up summary\": {{steps.xf_dbd1b56bc6.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Update conversation state + choose route').first().json.route) ?? '') === String(\"booking\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_ba2d32d010",
+      "actorId": "actor_ba2d32d010",
+      "type": "NodeBranch",
+      "label": "Intent route: booking?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6540,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_8bc9eb758b",
+      "actorId": "actor_8bc9eb758b",
+      "type": "NodeTransform",
+      "label": "Intent route: human",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: Meta verification (GET)\": {{ctx}}, \"Webhook: WhatsApp inbound (Meta Cloud API)\": {{ctx}}, \"Webhook: run follow-ups now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (follow-ups)\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify signature, parse, dedupe, remember\": {{steps.xf_3d4c1edd65.result}}, \"Find quiet conversations\": {{steps.xf_31674386d3.result}}, \"Update conversation state + choose route\": {{steps.xf_2523ded6b8.result}}, \"Follow-up summary\": {{steps.xf_dbd1b56bc6.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Update conversation state + choose route').first().json.route) ?? '') === String(\"human\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_9bbaac2da9",
+      "actorId": "actor_9bbaac2da9",
+      "type": "NodeBranch",
+      "label": "Intent route: human?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_2aa94031e8",
+      "actorId": "actor_2aa94031e8",
+      "type": "NodeHttpRequest",
+      "label": "WhatsApp API: send AI reply",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6540,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_2523ded6b8.result.base}}/whatsapp/v20.0/{{steps.xf_2523ded6b8.result.phone_number_id}}/messages",
+        "headers": {
+          "Authorization": "Bearer {{steps.xf_2523ded6b8.result.wa_token}}",
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_9adab28401",
+      "actorId": "actor_9adab28401",
+      "type": "NodeTransform",
+      "label": "Body: WhatsApp API: send AI reply",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: Meta verification (GET)\": {{ctx}}, \"Webhook: WhatsApp inbound (Meta Cloud API)\": {{ctx}}, \"Webhook: run follow-ups now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (follow-ups)\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify signature, parse, dedupe, remember\": {{steps.xf_3d4c1edd65.result}}, \"Find quiet conversations\": {{steps.xf_31674386d3.result}}, \"Update conversation state + choose route\": {{steps.xf_2523ded6b8.result}}, \"Follow-up summary\": {{steps.xf_dbd1b56bc6.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"WhatsApp API: send AI reply\".\nconst __body = (JSON.stringify({ messaging_product: 'whatsapp', recipient_type: 'individual', to: $('Update conversation state + choose route').first().json.wa_id, type: 'text', text: { preview_url: false, body: $('Update conversation state + choose route').first().json.ai.reply } }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_01d8517785",
+      "actorId": "actor_01d8517785",
+      "type": "NodeHttpRequest",
+      "label": "Calendar: next open slots",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6920,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "{{steps.xf_2523ded6b8.result.base}}/calendar/slots"
+      }
+    },
+    {
+      "nodeId": "node_ec64b256cb",
+      "actorId": "actor_ec64b256cb",
+      "type": "NodeHttpRequest",
+      "label": "Slack: alert sales (handoff)",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 8060,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_2523ded6b8.result.base}}/alerts",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_9912ab401d",
+      "actorId": "actor_9912ab401d",
+      "type": "NodeTransform",
+      "label": "Body: Slack: alert sales (handoff)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7680,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: Meta verification (GET)\": {{ctx}}, \"Webhook: WhatsApp inbound (Meta Cloud API)\": {{ctx}}, \"Webhook: run follow-ups now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (follow-ups)\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify signature, parse, dedupe, remember\": {{steps.xf_3d4c1edd65.result}}, \"Find quiet conversations\": {{steps.xf_31674386d3.result}}, \"Update conversation state + choose route\": {{steps.xf_2523ded6b8.result}}, \"Follow-up summary\": {{steps.xf_dbd1b56bc6.result}}, \"Calendar: next open slots\": {{steps.http_01d8517785.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Slack: alert sales (handoff)\".\nconst __body = (JSON.stringify({ channel: $('Update conversation state + choose route').first().json.sales_channel, text: 'HANDOFF requested by ' + $('Update conversation state + choose route').first().json.name + ' (+' + $('Update conversation state + choose route').first().json.wa_id + '): \"' + $('Update conversation state + choose route').first().json.text + '\", AI paused on this chat, reply within 15 min' }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_0ab541e0fe",
+      "actorId": "actor_0ab541e0fe",
+      "type": "NodeHttpRequest",
+      "label": "WhatsApp API: send reply + 3 slots",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 7680,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_2523ded6b8.result.base}}/whatsapp/v20.0/{{steps.xf_2523ded6b8.result.phone_number_id}}/messages",
+        "headers": {
+          "Authorization": "Bearer {{steps.xf_2523ded6b8.result.wa_token}}",
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_e6dfc095ad",
+      "actorId": "actor_e6dfc095ad",
+      "type": "NodeTransform",
+      "label": "Body: WhatsApp API: send reply + 3 slots",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: Meta verification (GET)\": {{ctx}}, \"Webhook: WhatsApp inbound (Meta Cloud API)\": {{ctx}}, \"Webhook: run follow-ups now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (follow-ups)\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify signature, parse, dedupe, remember\": {{steps.xf_3d4c1edd65.result}}, \"Find quiet conversations\": {{steps.xf_31674386d3.result}}, \"Update conversation state + choose route\": {{steps.xf_2523ded6b8.result}}, \"Follow-up summary\": {{steps.xf_dbd1b56bc6.result}}, \"Calendar: next open slots\": {{steps.http_01d8517785.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"WhatsApp API: send reply + 3 slots\".\nconst __body = (JSON.stringify({ messaging_product: 'whatsapp', recipient_type: 'individual', to: $('Update conversation state + choose route').first().json.wa_id, type: 'text', text: { preview_url: false, body: $('Update conversation state + choose route').first().json.ai.reply + '\\n\\n' + $json.slots.slice(0,3).map((s,i) => (i+1) + ') ' + s.replace('T',' ')).join('\\n') + '\\n\\nReply 1, 2 or 3 to confirm.' } }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_393e5141f7",
+      "actorId": "actor_393e5141f7",
+      "type": "NodeHttpRequest",
+      "label": "CRM: task, human callback",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 8820,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_2523ded6b8.result.base}}/crm/tasks",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_98dba3d507",
+      "actorId": "actor_98dba3d507",
+      "type": "NodeTransform",
+      "label": "Body: CRM: task, human callback",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8440,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: Meta verification (GET)\": {{ctx}}, \"Webhook: WhatsApp inbound (Meta Cloud API)\": {{ctx}}, \"Webhook: run follow-ups now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (follow-ups)\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify signature, parse, dedupe, remember\": {{steps.xf_3d4c1edd65.result}}, \"Find quiet conversations\": {{steps.xf_31674386d3.result}}, \"Update conversation state + choose route\": {{steps.xf_2523ded6b8.result}}, \"Follow-up summary\": {{steps.xf_dbd1b56bc6.result}}, \"Calendar: next open slots\": {{steps.http_01d8517785.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"CRM: task, human callback\".\nconst __body = (JSON.stringify({ contact_id: $('CRM: upsert contact (HubSpot / GHL)').first().json.id, title: 'Take over WhatsApp chat with ' + $('Update conversation state + choose route').first().json.name, due: new Date(Date.now() + 15*60000).toISOString() }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_4ed6ea5e45",
+      "actorId": "actor_4ed6ea5e45",
+      "type": "NodeHttpRequest",
+      "label": "CRM: task, confirm booking (15 min SLA)",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 8440,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_2523ded6b8.result.base}}/crm/tasks",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_f517bea616",
+      "actorId": "actor_f517bea616",
+      "type": "NodeTransform",
+      "label": "Body: CRM: task, confirm booking (15 min SLA)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8060,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: Meta verification (GET)\": {{ctx}}, \"Webhook: WhatsApp inbound (Meta Cloud API)\": {{ctx}}, \"Webhook: run follow-ups now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (follow-ups)\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify signature, parse, dedupe, remember\": {{steps.xf_3d4c1edd65.result}}, \"Find quiet conversations\": {{steps.xf_31674386d3.result}}, \"Update conversation state + choose route\": {{steps.xf_2523ded6b8.result}}, \"Follow-up summary\": {{steps.xf_dbd1b56bc6.result}}, \"Calendar: next open slots\": {{steps.http_01d8517785.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"CRM: task, confirm booking (15 min SLA)\".\nconst __body = (JSON.stringify({ contact_id: $('CRM: upsert contact (HubSpot / GHL)').first().json.id, title: 'WhatsApp booking request, confirm slot with ' + $('Update conversation state + choose route').first().json.name, due: new Date(Date.now() + 15*60000).toISOString() }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_5885e531d3",
+      "actorId": "actor_5885e531d3",
+      "type": "NodeHttpRequest",
+      "label": "WhatsApp API: send handoff message",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 9580,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_2523ded6b8.result.base}}/whatsapp/v20.0/{{steps.xf_2523ded6b8.result.phone_number_id}}/messages",
+        "headers": {
+          "Authorization": "Bearer {{steps.xf_2523ded6b8.result.wa_token}}",
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_19d1887606",
+      "actorId": "actor_19d1887606",
+      "type": "NodeTransform",
+      "label": "Body: WhatsApp API: send handoff message",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9200,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook: Meta verification (GET)\": {{ctx}}, \"Webhook: WhatsApp inbound (Meta Cloud API)\": {{ctx}}, \"Webhook: run follow-ups now\": {{ctx}}, \"Error trigger\": {{ctx}}, \"Config\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (follow-ups)\": {\"base\":\"{{companyBaseUrl}}\",\"app_secret\":\"{{appSecret}}-app-secret\",\"verify_token\":\"{{verifyToken}}-verify-token\",\"wa_token\":\"{{waToken}}-whatsapp-access-token\",\"phone_number_id\":\"100000000000001\",\"business_profile\":\"{\\\"name\\\": \\\"Your Business Name\\\", \\\"areas\\\": [\\\"Dubai Marina\\\", \\\"JLT\\\", \\\"Business Bay\\\", \\\"Lahore DHA\\\"], \\\"services\\\": {\\\"AC servicing\\\": {\\\"keywords\\\": [\\\"ac\\\", \\\"split\\\", \\\"cooling\\\"], \\\"from\\\": 150}, \\\"Deep cleaning\\\": {\\\"keywords\\\": [\\\"clean\\\"], \\\"from\\\": 300}, \\\"Plumbing\\\": {\\\"keywords\\\": [\\\"plumb\\\", \\\"leak\\\", \\\"pipe\\\"], \\\"from\\\": 120}}}\",\"followup_template\":\"lead_followup_v1\",\"nudge_after_min\":\"120\",\"sales_channel\":\"#sales-whatsapp\"}, \"Config (errors)\": {\"base\":\"{{companyBaseUrl}}\"}, \"Verify signature, parse, dedupe, remember\": {{steps.xf_3d4c1edd65.result}}, \"Find quiet conversations\": {{steps.xf_31674386d3.result}}, \"Update conversation state + choose route\": {{steps.xf_2523ded6b8.result}}, \"Follow-up summary\": {{steps.xf_dbd1b56bc6.result}}, \"Calendar: next open slots\": {{steps.http_01d8517785.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"WhatsApp API: send handoff message\".\nconst __body = (JSON.stringify({ messaging_product: 'whatsapp', recipient_type: 'individual', to: $('Update conversation state + choose route').first().json.wa_id, type: 'text', text: { preview_url: false, body: $('Update conversation state + choose route').first().json.ai.reply } }));\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_85036571b0",
+      "actorId": "actor_85036571b0",
+      "type": "NodeEnd",
+      "label": "End 8",
+      "color": "#EF4444",
+      "position": {
+        "x": 9960,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_1689b8176b",
+      "actorId": "actor_1689b8176b",
+      "type": "NodeEnd",
+      "label": "End 9",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_baa88931a3",
+      "actorId": "actor_baa88931a3",
+      "type": "NodeEnd",
+      "label": "End 2 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 4640,
+        "y": 880
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_908e31a48a",
+      "actorId": "actor_908e31a48a",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 1400
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {},
+          "event": {},
+          "setupValue": "",
+          "companyBaseUrl": "",
+          "appSecret": {
+            "$workflowSecret": "APP_SECRET"
+          },
+          "verifyToken": {
+            "$workflowSecret": "VERIFY_TOKEN"
+          },
+          "waToken": {
+            "$workflowSecret": "WA_TOKEN"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_afb40989e0",
+      "target": "node_a10f47beb3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_afb40989e0",
+      "target": "node_a10f47beb3",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_de0a4cb34d",
+      "target": "node_05ac1e7edd",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_de0a4cb34d",
+      "target": "node_05ac1e7edd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_268c8b08b0",
+      "target": "node_f0c5ddd26d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_268c8b08b0",
+      "target": "node_f0c5ddd26d",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_f0c5ddd26d",
+      "target": "node_b53e90ff7f",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b53e90ff7f",
+      "target": "node_c250cf5401",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_b53e90ff7f",
+      "target": "node_c250cf5401",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_c250cf5401",
+      "target": "node_14e6770c8f",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_14e6770c8f",
+      "target": "node_8e8c466338",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_14e6770c8f",
+      "target": "node_8e8c466338",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_8e8c466338",
+      "target": "node_58bd9d4424",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_58bd9d4424",
+      "target": "node_b1c8c10804",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_58bd9d4424",
+      "target": "node_b1c8c10804",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_b1c8c10804",
+      "target": "node_b9c0bfd923",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b9c0bfd923",
+      "target": "node_afc0502c59",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_b9c0bfd923",
+      "target": "node_afc0502c59",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_afc0502c59",
+      "target": "node_d099e23f1b",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d099e23f1b",
+      "target": "node_8302494703",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_d099e23f1b",
+      "target": "node_8302494703",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_15f8ff5fce",
+      "target": "node_1fe0812bf0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_15f8ff5fce",
+      "target": "node_1fe0812bf0",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_03c37e0627",
+      "target": "node_13f77a0cb4",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_03c37e0627",
+      "target": "node_13f77a0cb4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_b43d1822ce",
+      "target": "node_969fec964e",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_b43d1822ce",
+      "target": "node_969fec964e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_f9f47f3588",
+      "target": "node_460369e611",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_f9f47f3588",
+      "target": "node_460369e611",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_3d07b00b38",
+      "target": "node_ff75541fde",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_3d07b00b38",
+      "target": "node_ff75541fde",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_112c720400",
+      "target": "node_d87d602a5e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_112c720400",
+      "target": "node_d87d602a5e",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_d634fcb8db",
+      "target": "node_f2fbfb8e1e",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_d634fcb8db",
+      "target": "node_f2fbfb8e1e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_39ff43f0f0",
+      "target": "node_3de4ed2dd9",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_39ff43f0f0",
+      "target": "node_3de4ed2dd9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_2e445f09de",
+      "target": "node_467e6906ac",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_2e445f09de",
+      "target": "node_467e6906ac",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_e2406e0075",
+      "target": "node_a67b28a62a",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_e2406e0075",
+      "target": "node_a67b28a62a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_145ad9b201",
+      "target": "node_c6a232f2c6",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_145ad9b201",
+      "target": "node_c6a232f2c6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_c7dff7e507",
+      "target": "node_3eda954fe2",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_c7dff7e507",
+      "target": "node_3eda954fe2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_e6622ffd45",
+      "target": "node_3d55b6596c",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_e6622ffd45",
+      "target": "node_3d55b6596c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_e5b283f282",
+      "target": "node_60c98b7665",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_e5b283f282",
+      "target": "node_60c98b7665",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_60c98b7665",
+      "target": "node_d0ecd0bdd4",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d0ecd0bdd4",
+      "target": "node_ba2d32d010",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_d0ecd0bdd4",
+      "target": "node_ba2d32d010",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_ba2d32d010",
+      "target": "node_8bc9eb758b",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8bc9eb758b",
+      "target": "node_9bbaac2da9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_8bc9eb758b",
+      "target": "node_9bbaac2da9",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_9adab28401",
+      "target": "node_2aa94031e8",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_9adab28401",
+      "target": "node_2aa94031e8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_9912ab401d",
+      "target": "node_ec64b256cb",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_9912ab401d",
+      "target": "node_ec64b256cb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_e6dfc095ad",
+      "target": "node_0ab541e0fe",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_e6dfc095ad",
+      "target": "node_0ab541e0fe",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_98dba3d507",
+      "target": "node_393e5141f7",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_98dba3d507",
+      "target": "node_393e5141f7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_f517bea616",
+      "target": "node_4ed6ea5e45",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_f517bea616",
+      "target": "node_4ed6ea5e45",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_19d1887606",
+      "target": "node_5885e531d3",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_19d1887606",
+      "target": "node_5885e531d3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_5526389e2c",
+      "target": "node_afb40989e0",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5526389e2c",
+      "target": "node_3f43bab463",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3f43bab463",
+      "target": "node_3d4c1edd65",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3f43bab463",
+      "target": "node_3d4c1edd65",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3d4c1edd65",
+      "target": "node_268c8b08b0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3d4c1edd65",
+      "target": "node_268c8b08b0",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3d4c1edd65",
+      "target": "node_b53e90ff7f",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3d4c1edd65",
+      "target": "node_14e6770c8f",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3d4c1edd65",
+      "target": "node_58bd9d4424",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3d4c1edd65",
+      "target": "node_b9c0bfd923",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3d4c1edd65",
+      "target": "node_d099e23f1b",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f0c5ddd26d",
+      "target": "node_03c37e0627",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3d4c1edd65",
+      "target": "node_03c37e0627",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3d4c1edd65",
+      "target": "node_d8e5495024",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_3d4c1edd65",
+      "target": "node_f70f8ead26",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_b1c8c10804",
+      "target": "node_b43d1822ce",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3d4c1edd65",
+      "target": "node_b43d1822ce",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_afc0502c59",
+      "target": "node_f9f47f3588",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3d4c1edd65",
+      "target": "node_f9f47f3588",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8302494703",
+      "target": "node_3d07b00b38",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3d4c1edd65",
+      "target": "node_3d07b00b38",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_13f77a0cb4",
+      "target": "node_d634fcb8db",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_13f77a0cb4",
+      "target": "node_d634fcb8db",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f2fbfb8e1e",
+      "target": "node_2523ded6b8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f2fbfb8e1e",
+      "target": "node_2523ded6b8",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2523ded6b8",
+      "target": "node_c7dff7e507",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2523ded6b8",
+      "target": "node_c7dff7e507",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3eda954fe2",
+      "target": "node_e6622ffd45",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3eda954fe2",
+      "target": "node_e6622ffd45",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3d55b6596c",
+      "target": "node_e5b283f282",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3d55b6596c",
+      "target": "node_e5b283f282",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3d55b6596c",
+      "target": "node_d0ecd0bdd4",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3d55b6596c",
+      "target": "node_8bc9eb758b",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_60c98b7665",
+      "target": "node_9adab28401",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3d55b6596c",
+      "target": "node_9adab28401",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ba2d32d010",
+      "target": "node_01d8517785",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_9bbaac2da9",
+      "target": "node_9912ab401d",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3d55b6596c",
+      "target": "node_9912ab401d",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2aa94031e8",
+      "target": "node_85036571b0",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_01d8517785",
+      "target": "node_e6dfc095ad",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_01d8517785",
+      "target": "node_e6dfc095ad",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0ab541e0fe",
+      "target": "node_f517bea616",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0ab541e0fe",
+      "target": "node_f517bea616",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4ed6ea5e45",
+      "target": "node_85036571b0",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_ec64b256cb",
+      "target": "node_98dba3d507",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ec64b256cb",
+      "target": "node_98dba3d507",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_393e5141f7",
+      "target": "node_19d1887606",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_393e5141f7",
+      "target": "node_19d1887606",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5885e531d3",
+      "target": "node_85036571b0",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_969fec964e",
+      "target": "node_39ff43f0f0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_969fec964e",
+      "target": "node_39ff43f0f0",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3de4ed2dd9",
+      "target": "node_52aefec0b8",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_460369e611",
+      "target": "node_92420a909a",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_ff75541fde",
+      "target": "node_c0bf4bbb64",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_2c73f9ed84",
+      "target": "node_94ac8d26a4",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2c73f9ed84",
+      "target": "node_94ac8d26a4",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5526389e2c",
+      "target": "node_94ac8d26a4",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_94ac8d26a4",
+      "target": "node_31674386d3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_94ac8d26a4",
+      "target": "node_31674386d3",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_31674386d3",
+      "target": "node_15f8ff5fce",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_31674386d3",
+      "target": "node_15f8ff5fce",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1fe0812bf0",
+      "target": "node_112c720400",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_31674386d3",
+      "target": "node_112c720400",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1fe0812bf0",
+      "target": "node_dbd1b56bc6",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_31674386d3",
+      "target": "node_dbd1b56bc6",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d87d602a5e",
+      "target": "node_2e445f09de",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_31674386d3",
+      "target": "node_2e445f09de",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d87d602a5e",
+      "target": "node_e2406e0075",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_31674386d3",
+      "target": "node_e2406e0075",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_467e6906ac",
+      "target": "node_145ad9b201",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_467e6906ac",
+      "target": "node_145ad9b201",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a67b28a62a",
+      "target": "node_145ad9b201",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a67b28a62a",
+      "target": "node_145ad9b201",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c6a232f2c6",
+      "target": "node_dbd1b56bc6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c6a232f2c6",
+      "target": "node_dbd1b56bc6",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5526389e2c",
+      "target": "node_fc48ea651a",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fc48ea651a",
+      "target": "node_de0a4cb34d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fc48ea651a",
+      "target": "node_de0a4cb34d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_05ac1e7edd",
+      "target": "node_1689b8176b",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_dbd1b56bc6",
+      "target": "node_baa88931a3",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "whatsapp",
+    "categoryLabel": "WhatsApp",
+    "department": "Sales/Customer Service/AI",
+    "connectors": [],
+    "setupVars": [
+      {
+        "key": "setupValue",
+        "label": "Setup Value",
+        "type": "text",
+        "usedBy": [
+          "Verify token matches?"
+        ]
+      },
+      {
+        "key": "companyBaseUrl",
+        "label": "Company Base Url",
+        "type": "url",
+        "example": "https://api.your-company.com",
+        "usedBy": [
+          "AI: intent and reply",
+          "CRM: log inbound + AI reply",
+          "CRM: note follow-up sent",
+          "CRM: task, confirm booking (15 min SLA)",
+          "CRM: task, human callback",
+          "Config",
+          "Config (errors)",
+          "Config (follow-ups)",
+          "Find quiet conversations",
+          "Follow-up summary",
+          "Intent route",
+          "Slack: alert sales (handoff)",
+          "Update conversation state + choose route",
+          "Verify signature, parse, dedupe, remember",
+          "WhatsApp API: confirm opt-out",
+          "WhatsApp API: send AI reply",
+          "WhatsApp API: send handoff message",
+          "WhatsApp API: send reply + 3 slots"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "APP_SECRET",
+        "label": "app secret",
+        "headerFormat": "read inside the step code",
+        "contextKey": "appSecret",
+        "usedBy": [
+          "AI: intent and reply",
+          "CRM: log inbound + AI reply",
+          "CRM: note follow-up sent",
+          "CRM: task, confirm booking (15 min SLA)",
+          "CRM: task, human callback",
+          "Config",
+          "Config (follow-ups)",
+          "Find quiet conversations",
+          "Follow-up summary",
+          "Intent route",
+          "Slack: alert sales (handoff)",
+          "Update conversation state + choose route",
+          "Verify signature, parse, dedupe, remember",
+          "WhatsApp API: confirm opt-out",
+          "WhatsApp API: send AI reply",
+          "WhatsApp API: send handoff message",
+          "WhatsApp API: send reply + 3 slots"
+        ]
+      },
+      {
+        "key": "VERIFY_TOKEN",
+        "label": "verify token",
+        "headerFormat": "read inside the step code",
+        "contextKey": "verifyToken",
+        "usedBy": [
+          "AI: intent and reply",
+          "CRM: log inbound + AI reply",
+          "CRM: note follow-up sent",
+          "CRM: task, confirm booking (15 min SLA)",
+          "CRM: task, human callback",
+          "Config",
+          "Config (follow-ups)",
+          "Find quiet conversations",
+          "Follow-up summary",
+          "Intent route",
+          "Slack: alert sales (handoff)",
+          "Update conversation state + choose route",
+          "Verify signature, parse, dedupe, remember",
+          "WhatsApp API: confirm opt-out",
+          "WhatsApp API: send AI reply",
+          "WhatsApp API: send handoff message",
+          "WhatsApp API: send reply + 3 slots"
+        ]
+      },
+      {
+        "key": "WA_TOKEN",
+        "label": "wa token",
+        "headerFormat": "read inside the step code",
+        "contextKey": "waToken",
+        "usedBy": [
+          "AI: intent and reply",
+          "CRM: log inbound + AI reply",
+          "CRM: note follow-up sent",
+          "CRM: task, confirm booking (15 min SLA)",
+          "CRM: task, human callback",
+          "Config",
+          "Config (follow-ups)",
+          "Find quiet conversations",
+          "Follow-up summary",
+          "Intent route",
+          "Slack: alert sales (handoff)",
+          "Update conversation state + choose route",
+          "Verify signature, parse, dedupe, remember",
+          "WhatsApp API: confirm opt-out",
+          "WhatsApp API: send AI reply",
+          "WhatsApp API: send handoff message",
+          "WhatsApp API: send reply + 3 slots"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate qualify-whatsapp-leads-with-an-ai-agent-on-the-meta-cloud-api-with-han",
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCron",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 45,
+      "yantraSteps": 70,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "WhatsApp/Qualify WhatsApp leads with an AI agent on the Meta Cloud API with handoff and follow-ups.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Qualify WhatsApp leads with an AI agent on the Meta Cloud API with handoff and follow-ups"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "signature-verification",
+        "node": "Verify signature, parse, dedupe, remember",
+        "detail": "code.crypto: checks the x-hub-signature-256 HMAC over the raw request body of the webhook \"Webhook: WhatsApp inbound (Meta Cloud API)\"; the Yantra start node passes the webhook body as parsed JSON with no raw bytes, and re-serialised JSON does not match the sender's bytes, so the check cannot be faithful until the webhook trigger exposes the raw body (yantra-storage YANTRA_STORAGE_VERIFY_SIGNATURE can then verify it)"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Error trigger",
+        "detail": "n8n-nodes-base.errorTrigger became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Webhook: Meta verification (GET)",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Webhook: run follow-ups now",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Webhook: WhatsApp inbound (Meta Cloud API)",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Verify signature, parse, dedupe, remember\" (code.crypto): checks the x-hub-signature-256 HMAC over the raw request body of the webhook \"Webhook: WhatsApp inbound (Meta Cloud API)\"; the Yantra start node passes the webhook body as parsed JSON with no raw bytes, and re-serialised JSON does not match the sender's bytes, so the check cannot be faithful until the webhook trigger exposes the raw body (yantra-storage YANTRA_STORAGE_VERIFY_SIGNATURE can then verify it).",
+      "\"Error trigger\" (errorTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Webhook: Meta verification (GET)\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Webhook: run follow-ups now\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Webhook: WhatsApp inbound (Meta Cloud API)\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value setupValue: Setup Value. Write it into the Workflow Configs initialContext before import.",
+      "Setup value companyBaseUrl: Company Base Url (for example https://api.your-company.com). Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret APP_SECRET: app secret (read inside the step code). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Workflow secret VERIFY_TOKEN: verify token (read inside the step code). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Workflow secret WA_TOKEN: wa token (read inside the step code). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "After import, start the schedule: cdecli cron activate qualify-whatsapp-leads-with-an-ai-agent-on-the-meta-cloud-api-with-han.",
+      "Provide run inputs: body, query, headers, event."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Verify signature, parse, dedupe, remember",
+          "n8n": "code.require",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Verify signature, parse, dedupe, remember",
+          "n8n": "code.crypto",
+          "action": "NodeTransform",
+          "blocker": "signature-verification",
+          "reason": "checks the x-hub-signature-256 HMAC over the raw request body of the webhook \"Webhook: WhatsApp inbound (Meta Cloud API)\"; the Yantra start node passes the webhook body as parsed JSON with no raw bytes, and re-serialised JSON does not match the sender's bytes, so the check cannot be faithful until the webhook trigger exposes the raw body (yantra-storage YANTRA_STORAGE_VERIFY_SIGNATURE can then verify it)"
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Webhook: Meta verification (GET)",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Webhook: WhatsApp inbound (Meta Cloud API)",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Schedule: every hour",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        },
+        {
+          "node": "Webhook: run follow-ups now",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Error trigger",
+          "type": "n8n-nodes-base.errorTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (GET /whatsapp-in). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "The original started from an inbound webhook (POST /whatsapp-in). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "The original started from an inbound webhook (POST /whatsapp-followups). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "The original started from errorTrigger; Yantra has no webhook slug for it, so run on demand, on a schedule (add a NodeCron), or via the workflow API with the event under the run input `event`.",
+        "\"Verify signature, parse, dedupe, remember\" (code.require): Allowlisted require() calls were rewritten or dropped for Transform (no module system).",
+        "\"Verify signature, parse, dedupe, remember\" (code.crypto): uses crypto.createHmac, crypto.timingSafeEqual, which the Transform runtime does not provide; the step stops the run instead of faking a digest. It checks the x-hub-signature-256 HMAC over the raw request body of the webhook \"Webhook: WhatsApp inbound (Meta Cloud API)\"; the Yantra start node passes the webhook body as parsed JSON with no raw bytes, and re-serialised JSON does not match the sender's bytes, so the check cannot be faithful until the webhook trigger exposes the raw body (yantra-storage YANTRA_STORAGE_VERIFY_SIGNATURE can then verify it).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "## Qualify WhatsApp leads with an AI agent on the Meta Cloud API with handoff and follow-ups\n\n**Who it is for.** Service businesses that take most of their leads on WhatsApp: clinics, real estate, home services, trading companies.\n\n**What it does**\n- Verifies the X-Hub-Signature-256 on the raw request and answers a forged request with 401.\n- Ignores duplicate deliveries by message id and keeps each conversation in workflow static data so the second message is read in context.\n- An AI step returns intent, language, lead score and a reply. Pricing and greetings get an instant answer in the customer's language.\n- A booking request gets three calendar slots and a CRM task with a 15 minute deadline.\n- A complaint pauses the AI for that chat, alerts the team and creates a callback task. STOP tags the contact as opted out.\n- An hourly branch nudges quiet conversations: free text inside 24 hours, an approved template outside it.\n\n**Setup**\n1. Open the Config node and set base (your API gateway or replace the HTTP Request nodes with your CRM, calendar and Slack nodes), app_secret and verify_token from your Meta app, and the WhatsApp phone number id.\n2. Register the Webhook URL in the Meta app as the WhatsApp callback and complete the verify handshake.\n3. Point the AI step at your model credential. Adjust the business profile JSON (services, areas, hours) in Config.\n4. Activate. The hourly schedule handles follow ups; nothing runs outside the 24 hour window without an approved template.\n\nAll external systems are reached through HTTP Request nodes against `base` in the Config node, so the whole flow imports and runs against any REST backend; swap any of them for the native n8n node of your system. Built and tested on sample data by Finamatik: https://finamatik.com/work/whatsapp-lead-agent\n\n**Requirements.** n8n 1.100 or later; for the AI steps, a model endpoint at `base`/llm/complete or the OpenAI or Anthropic node in its place; your own systems reachable over HTTPS.\n\n**How to customise.** Every rule lives in one Code or Config node and is named for what it decides; change the thresholds there, not in the branches.",
+      "## Setup in three steps\n\n1. Open **Config** and set `base`, the WhatsApp phone number id and the verify token; the access token comes from your Meta app.\n2. Register the Webhook URL in the Meta app as the WhatsApp webhook and complete the verification handshake.\n3. Point the intent step at your model endpoint (`base`/llm/complete) or swap it for the OpenAI or Anthropic node, then activate. Follow-ups run on the schedule branch.\n\nMessage the number from a test phone and walk through every intent before going live."
+    ],
+    "nodes": {
+      "node_5526389e2c": {
+        "n8n": "Webhook: Meta verification (GET)",
+        "n8nType": "n8n-nodes-base.webhook",
+        "also": [
+          "Webhook: WhatsApp inbound (Meta Cloud API)",
+          "Webhook: run follow-ups now",
+          "Error trigger"
+        ]
+      },
+      "node_2c73f9ed84": {
+        "n8n": "Schedule: every hour",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_afb40989e0": {
+        "n8n": "Verify token matches?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_a10f47beb3": {
+        "n8n": "Verify token matches?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_3f43bab463": {
+        "n8n": "Config",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_94ac8d26a4": {
+        "n8n": "Config (follow-ups)",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_fc48ea651a": {
+        "n8n": "Config (errors)",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_f8c08bf5b1": {
+        "n8n": "Respond hub.challenge (200)",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_906fca3200": {
+        "n8n": "Respond 403 Forbidden",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_3d4c1edd65": {
+        "n8n": "Verify signature, parse, dedupe, remember",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_31674386d3": {
+        "n8n": "Find quiet conversations",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_05ac1e7edd": {
+        "n8n": "Alert ops (Slack)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_de0a4cb34d": {
+        "n8n": "Alert ops (Slack)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_268c8b08b0": {
+        "n8n": "Route event",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_f0c5ddd26d": {
+        "n8n": "Route event",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_b53e90ff7f": {
+        "n8n": "Route event",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_c250cf5401": {
+        "n8n": "Route event",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_14e6770c8f": {
+        "n8n": "Route event",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_8e8c466338": {
+        "n8n": "Route event",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_58bd9d4424": {
+        "n8n": "Route event",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_b1c8c10804": {
+        "n8n": "Route event",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_b9c0bfd923": {
+        "n8n": "Route event",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_afc0502c59": {
+        "n8n": "Route event",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_d099e23f1b": {
+        "n8n": "Route event",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_8302494703": {
+        "n8n": "Route event",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_15f8ff5fce": {
+        "n8n": "Needs a nudge?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_1fe0812bf0": {
+        "n8n": "Needs a nudge?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_13f77a0cb4": {
+        "n8n": "WhatsApp API: mark as read",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_03c37e0627": {
+        "n8n": "WhatsApp API: mark as read",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_d8e5495024": {
+        "n8n": "Respond 200 (status ack)",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_f70f8ead26": {
+        "n8n": "Respond 200 (duplicate ack)",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_969fec964e": {
+        "n8n": "CRM: tag opted-out",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_b43d1822ce": {
+        "n8n": "CRM: tag opted-out",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_460369e611": {
+        "n8n": "Slack: ping owner (human owns chat)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_f9f47f3588": {
+        "n8n": "Slack: ping owner (human owns chat)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_ff75541fde": {
+        "n8n": "Security: alert ops (forged request)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_3d07b00b38": {
+        "n8n": "Security: alert ops (forged request)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_112c720400": {
+        "n8n": "Inside 24 h window?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_d87d602a5e": {
+        "n8n": "Inside 24 h window?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_f2fbfb8e1e": {
+        "n8n": "AI: intent and reply",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_d634fcb8db": {
+        "n8n": "AI: intent and reply",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_3de4ed2dd9": {
+        "n8n": "WhatsApp API: confirm opt-out",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_39ff43f0f0": {
+        "n8n": "WhatsApp API: confirm opt-out",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_92420a909a": {
+        "n8n": "Respond 200 (handoff active, AI paused)",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_c0bf4bbb64": {
+        "n8n": "Respond 401 (signature mismatch)",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_467e6906ac": {
+        "n8n": "WhatsApp API: free-form nudge",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_2e445f09de": {
+        "n8n": "WhatsApp API: free-form nudge",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_a67b28a62a": {
+        "n8n": "WhatsApp API: approved template (outside window)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_e2406e0075": {
+        "n8n": "WhatsApp API: approved template (outside window)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_2523ded6b8": {
+        "n8n": "Update conversation state + choose route",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_52aefec0b8": {
+        "n8n": "Respond 200 (opt-out)",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_c6a232f2c6": {
+        "n8n": "CRM: note follow-up sent",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_145ad9b201": {
+        "n8n": "CRM: note follow-up sent",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_3eda954fe2": {
+        "n8n": "CRM: upsert contact (HubSpot / GHL)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_c7dff7e507": {
+        "n8n": "CRM: upsert contact (HubSpot / GHL)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_dbd1b56bc6": {
+        "n8n": "Follow-up summary",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_3d55b6596c": {
+        "n8n": "CRM: log inbound + AI reply",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_e6622ffd45": {
+        "n8n": "CRM: log inbound + AI reply",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_e5b283f282": {
+        "n8n": "Intent route",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_60c98b7665": {
+        "n8n": "Intent route",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_d0ecd0bdd4": {
+        "n8n": "Intent route",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_ba2d32d010": {
+        "n8n": "Intent route",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_8bc9eb758b": {
+        "n8n": "Intent route",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_9bbaac2da9": {
+        "n8n": "Intent route",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_2aa94031e8": {
+        "n8n": "WhatsApp API: send AI reply",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_9adab28401": {
+        "n8n": "WhatsApp API: send AI reply",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_01d8517785": {
+        "n8n": "Calendar: next open slots",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_ec64b256cb": {
+        "n8n": "Slack: alert sales (handoff)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_9912ab401d": {
+        "n8n": "Slack: alert sales (handoff)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_0ab541e0fe": {
+        "n8n": "WhatsApp API: send reply + 3 slots",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_e6dfc095ad": {
+        "n8n": "WhatsApp API: send reply + 3 slots",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_393e5141f7": {
+        "n8n": "CRM: task, human callback",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_98dba3d507": {
+        "n8n": "CRM: task, human callback",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_4ed6ea5e45": {
+        "n8n": "CRM: task, confirm booking (15 min SLA)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_f517bea616": {
+        "n8n": "CRM: task, confirm booking (15 min SLA)",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_5885e531d3": {
+        "n8n": "WhatsApp API: send handoff message",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_19d1887606": {
+        "n8n": "WhatsApp API: send handoff message",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_85036571b0": {
+        "n8n": "Respond 200 (message handled)",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_1689b8176b": {
+        "n8n": "__end:Alert ops (Slack)",
+        "n8nType": "synthetic"
+      },
+      "node_baa88931a3": {
+        "n8n": "__end:Follow-up summary",
+        "n8nType": "synthetic"
+      },
+      "node_908e31a48a": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

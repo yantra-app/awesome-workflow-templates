@@ -1,0 +1,341 @@
+{
+  "name": "Post New YouTube Videos to X",
+  "workflowSlug": "post-new-youtube-videos-to-x",
+  "description": "Automatically posts new YouTube videos to X (formerly Twitter).",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_f8126e55f9",
+      "actorId": "actor_f8126e55f9",
+      "type": "NodeCron",
+      "label": "Check Every 30 Min",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "*/30 * * * *"
+      }
+    },
+    {
+      "nodeId": "node_235abd02c7",
+      "actorId": "actor_235abd02c7",
+      "type": "NodeHttpRequest",
+      "label": "Fetch Latest Videos",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=&key={{googleApiKey}}"
+      }
+    },
+    {
+      "nodeId": "node_f11781887b",
+      "actorId": "actor_f11781887b",
+      "type": "NodeLlmChain",
+      "label": "Generate Post for X with ChatGPT",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_3ed14fe086",
+      "actorId": "actor_3ed14fe086",
+      "type": "NodeTransform",
+      "label": "Prompt: Generate Post for X with ChatGPT",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Generate Post for X with ChatGPT.\nconst __promptValue = `Write an engaging post about my latest YouTube video for X (Twitter) of no more than 140 characters in length. Link to the video at https://youtu.be/${$json.id.videoId} use this title and description: ${$json.snippet.title} ${$json.snippet.description}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_71cc3515df",
+      "actorId": "actor_71cc3515df",
+      "type": "NodeCdeConnector",
+      "label": "twitter/TWITTER_CREATION_OF_A_POST",
+      "color": "#6366F1",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "twitter",
+        "connectorLabel": "X (Twitter)",
+        "action": "TWITTER_CREATION_OF_A_POST",
+        "params": {
+          "text": "{{last.text}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_b58f99a7bf",
+      "actorId": "actor_b58f99a7bf",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_2c414035c5",
+      "actorId": "actor_2c414035c5",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "googleApiKey": {
+            "$workflowSecret": "GOOGLE_API_KEY"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_68332e5219",
+      "actorId": "actor_68332e5219",
+      "type": "NodeChatModel",
+      "label": "Generate Post for X with ChatGPT: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-3.5-turbo"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_3ed14fe086",
+      "target": "node_f11781887b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_f11781887b",
+      "target": "node_71cc3515df",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_235abd02c7",
+      "target": "node_3ed14fe086",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_235abd02c7",
+      "target": "node_3ed14fe086",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f8126e55f9",
+      "target": "node_235abd02c7",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_71cc3515df",
+      "target": "node_b58f99a7bf",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_68332e5219",
+      "target": "node_f11781887b",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "social-media",
+    "categoryLabel": "Instagram, X and Social Media",
+    "department": "Marketing/Social Media",
+    "connectors": [
+      "openai",
+      "twitter"
+    ],
+    "setupSecrets": [
+      {
+        "key": "GOOGLE_API_KEY",
+        "label": "Google API key (YouTube Data API enabled)",
+        "host": "www.googleapis.com",
+        "headerFormat": "query parameter key=<secret>",
+        "contextKey": "googleApiKey",
+        "usedBy": [
+          "Fetch Latest Videos"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate post-new-youtube-videos-to-x",
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 4,
+      "yantraSteps": 6,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Instagram_Twitter_Social_Media/Post New YouTube Videos to X.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Post New YouTube Videos to X"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Workflow secret GOOGLE_API_KEY: Google API key (YouTube Data API enabled) for www.googleapis.com (query parameter key=<secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the openai connector (credential).",
+      "Connect the twitter connector (credential).",
+      "After import, start the schedule: cdecli cron activate post-new-youtube-videos-to-x."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Fetch Latest Videos",
+          "n8n": "youTube.search",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Check Every 30 Min",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "\"Fetch Latest Videos\" (youTube.search): YouTube search via the Data API HTTP endpoint with a Google API key from a workflow secret.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect twitter: `cdecli credential create -n \"twitter\" -p twitter --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "🆔 Ensure you enter your YouTube Channel ID in the \"Channel ID\" field of this node. You can find your [Channel ID here](https://youtube.com/account_advanced).",
+      "**Use AI to Promote Your New YouTube Videos on X**\n\n🎬 Watch the [Setup Video Here](https://mrc.fm/ai2x)"
+    ],
+    "nodes": {
+      "node_f8126e55f9": {
+        "n8n": "Check Every 30 Min",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_235abd02c7": {
+        "n8n": "Fetch Latest Videos",
+        "n8nType": "n8n-nodes-base.youTube"
+      },
+      "node_f11781887b": {
+        "n8n": "Generate Post for X with ChatGPT",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_3ed14fe086": {
+        "n8n": "Generate Post for X with ChatGPT",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_71cc3515df": {
+        "n8n": "Post to X",
+        "n8nType": "n8n-nodes-base.twitter"
+      },
+      "node_b58f99a7bf": {
+        "n8n": "__end:Post to X",
+        "n8nType": "synthetic"
+      },
+      "node_2c414035c5": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_68332e5219": {
+        "n8n": "Generate Post for X with ChatGPT",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

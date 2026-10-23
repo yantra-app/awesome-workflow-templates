@@ -1,0 +1,1021 @@
+{
+  "name": "Umami analytics template",
+  "workflowSlug": "umami-analytics-template",
+  "description": "Summarizes Umami analytics data using AI (via Openrouter) and saves the insights to Baserow.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_ab9e8a7443",
+      "actorId": "actor_ab9e8a7443",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_7573f887e6",
+      "actorId": "actor_7573f887e6",
+      "type": "NodeCron",
+      "label": "Schedule Trigger",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 0 * * 4"
+      }
+    },
+    {
+      "nodeId": "node_86d71c0b1c",
+      "actorId": "actor_86d71c0b1c",
+      "type": "NodeHttpRequest",
+      "label": "Get view stats from Umami",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "headers": {
+          "Authorization": "{{umamiApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_5b12c4b781",
+      "actorId": "actor_5b12c4b781",
+      "type": "NodeTransform",
+      "label": "URL: Get view stats from Umami",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Request URL for \"Get view stats from Umami\".\nreturn `https://umami.mydomain.com/api/websites/86d4095c-a2a8-4fc8-9521-103e858e2b41/event-data/stats?startAt=${DateTime.now().minus({ days: 7 }).toMillis()}&endAt=${DateTime.now().toMillis()}&unit=hour&timezone=Asia%2FHong_Kong`;"
+      }
+    },
+    {
+      "nodeId": "node_4f56af446a",
+      "actorId": "actor_4f56af446a",
+      "type": "NodeTransform",
+      "label": "Parse Umami data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Parse Umami data\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  function transformToUrlString(items) {\n   // In n8n, we need to check if items is an array and get the json property\n   const data = items[0].json;\n   \n   if (!data) {\n   console.log('No valid data found');\n   return encodeURIComponent(JSON.stringify([]));\n   }\n   \n   try {\n   // Create a simplified object with the metrics\n   const simplified = {\n   pageviews: {\n   value: parseInt(data.pageviews.value) || 0,\n   prev: parseInt(data.pageviews.prev) || 0\n   },\n   visitors: {\n   value: parseInt(data.visitors.value) || 0,\n   prev: parseInt(data.visitors.prev) || 0\n   },\n   visits: {\n   value: parseInt(data.visits.value) || 0,\n   prev: parseInt(data.visits.prev) || 0\n   },\n   bounces: {\n   value: parseInt(data.bounces.value) || 0,\n   prev: parseInt(data.bounces.prev) || 0\n   },\n   totaltime: {\n   value: parseInt(data.totaltime.value) || 0,\n   prev: parseInt(data.totaltime.prev) || 0\n   }\n   };\n   \n   return encodeURIComponent(JSON.stringify(simplified));\n   } catch (error) {\n   console.log('Error processing data:', error);\n   throw new Error('Invalid data structure');\n   }\n  }\n  \n  // Get the input data\n  const items = $input.all();\n  \n  // Process the data\n  const result = transformToUrlString(items);\n  \n  // Return the result\n  return { json: { urlString: result } };\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_a1990ac764",
+      "actorId": "actor_a1990ac764",
+      "type": "NodeLlmChain",
+      "label": "Send data to A.I.",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{llm_system_d62904212e}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_d62904212e",
+      "actorId": "actor_d62904212e",
+      "type": "NodeTransform",
+      "label": "System: Send data to A.I.",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When clicking ‘Test workflow’\": {{ctx}}, \"Schedule Trigger\": __namedCtx.steps?.[\"Schedule Trigger\"]?.[\"payload\"], \"Get view stats from Umami\": __namedCtx.steps?.[\"Get view stats from Umami\"]?.[\"body\"], \"Parse Umami data\": __namedCtx.steps?.[\"Parse Umami data\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// System: Send data to A.I..\nconst __promptValue = (() => { const __b = (() => { const __v = `{\n \"model\": \"meta-llama/llama-3.1-70b-instruct:free\",\n \"messages\": [\n {\n \"role\": \"user\",\n \"content\": \"You are an SEO expert. Here is data from Umami analytics of Pennibnotes.com. Where X is URL and Y is number of visitors. Give me a table summary of this data in markdown format:${$('Parse Umami data').item.json.urlString}.\"\n }\n ]\n}`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn (__b.messages || []).filter((m) => m?.role === 'system' || m?.role === 'developer').map((m) => __t(m.content)).join('\\n\\n'); })();\nreturn { \"llm_system_d62904212e\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_13bda87dd4",
+      "actorId": "actor_13bda87dd4",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Send data to A.I.",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_200d93add4",
+      "actorId": "actor_200d93add4",
+      "type": "NodeTransform",
+      "label": "Prompt: Send data to A.I.",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When clicking ‘Test workflow’\": {{ctx}}, \"Schedule Trigger\": __namedCtx.steps?.[\"Schedule Trigger\"]?.[\"payload\"], \"Get view stats from Umami\": __namedCtx.steps?.[\"Get view stats from Umami\"]?.[\"body\"], \"Parse Umami data\": __namedCtx.steps?.[\"Parse Umami data\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Send data to A.I..\nconst __promptValue = (() => { const __b = (() => { const __v = `{\n \"model\": \"meta-llama/llama-3.1-70b-instruct:free\",\n \"messages\": [\n {\n \"role\": \"user\",\n \"content\": \"You are an SEO expert. Here is data from Umami analytics of Pennibnotes.com. Where X is URL and Y is number of visitors. Give me a table summary of this data in markdown format:${$('Parse Umami data').item.json.urlString}.\"\n }\n ]\n}`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn (() => { const u = (__b.messages || []).filter((m) => m && m.role !== 'system' && m.role !== 'developer'); return __b.__raw ?? (u.length === 1 ? __t(u[0].content) : u.map((m) => m.role + ': ' + __t(m.content)).join('\\n\\n')); })(); })();\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_86e5ae4828",
+      "actorId": "actor_86e5ae4828",
+      "type": "NodeHttpRequest",
+      "label": "Get page data from Umami",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "headers": {
+          "Authorization": "{{umamiApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_6f8d296d78",
+      "actorId": "actor_6f8d296d78",
+      "type": "NodeTransform",
+      "label": "URL: Get page data from Umami",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// Request URL for \"Get page data from Umami\".\nreturn `https://umami.rumjahn.synology.me/api/websites/f375d28c-1949-4597-8871-f1b942e3aa24/metrics?startAt=${Date.now() - (7 * 24 * 60 * 60 * 1000)}&endAt=${Date.now()}&type=url&tz=America/Los_Angeles`;"
+      }
+    },
+    {
+      "nodeId": "node_d8cdbbc2c0",
+      "actorId": "actor_d8cdbbc2c0",
+      "type": "NodeTransform",
+      "label": "Parse Umami data1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Parse Umami data1\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Get input data\n  const data = $input.all();\n  \n  // Create URL-encoded string from the data\n  const encodedData = encodeURIComponent(JSON.stringify(data));\n  \n  // Return the encoded data\n  return {\n   json: {\n   thisWeek: encodedData\n   }\n  };\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_31039afc3a",
+      "actorId": "actor_31039afc3a",
+      "type": "NodeHttpRequest",
+      "label": "Get page view data from Umami",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "headers": {
+          "Authorization": "{{umamiApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_4530bc3eff",
+      "actorId": "actor_4530bc3eff",
+      "type": "NodeTransform",
+      "label": "URL: Get page view data from Umami",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// Request URL for \"Get page view data from Umami\".\nreturn `https://umami.rumjahn.synology.me/api/websites/f375d28c-1949-4597-8871-f1b942e3aa24/metrics?startAt=${Date.now() - (14 * 24 * 60 * 60 * 1000)}&endAt=${Date.now() - (7 * 24 * 60 * 60 * 1000)}&type=url&tz=America/Los_Angeles`;"
+      }
+    },
+    {
+      "nodeId": "node_2b0323bfd5",
+      "actorId": "actor_2b0323bfd5",
+      "type": "NodeTransform",
+      "label": "Parse Umami",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Parse Umami\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Get input data\n  const data = $input.all();\n  \n  // Create URL-encoded string from the data\n  const encodedData = encodeURIComponent(JSON.stringify(data));\n  \n  // Return the encoded data\n  return {\n   json: {\n   lastweek: encodedData\n   }\n  };\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_afca2b3bf0",
+      "actorId": "actor_afca2b3bf0",
+      "type": "NodeLlmChain",
+      "label": "Send data to A.I.1",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{llm_system_2196a03721}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_2196a03721",
+      "actorId": "actor_2196a03721",
+      "type": "NodeTransform",
+      "label": "System: Send data to A.I.1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When clicking ‘Test workflow’\": {{ctx}}, \"Schedule Trigger\": __namedCtx.steps?.[\"Schedule Trigger\"]?.[\"payload\"], \"Get view stats from Umami\": __namedCtx.steps?.[\"Get view stats from Umami\"]?.[\"body\"], \"Parse Umami data\": __namedCtx.steps?.[\"Parse Umami data\"]?.[\"transformed\"], \"Send data to A.I.\": ((text) => ({ text, output: text, content: text, response: { text, output_text: text }, message: { content: text }, choices: [{ message: { content: text }, text }] }))(__namedCtx.steps?.[\"Send data to A.I.\"]?.[\"text\"]), \"Get page data from Umami\": __namedCtx.steps?.[\"Get page data from Umami\"]?.[\"body\"], \"Parse Umami data1\": __namedCtx.steps?.[\"Parse Umami data1\"]?.[\"transformed\"], \"Get page view data from Umami\": __namedCtx.steps?.[\"Get page view data from Umami\"]?.[\"body\"], \"Parse Umami\": __namedCtx.steps?.[\"Parse Umami\"]?.[\"transformed\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// System: Send data to A.I.1.\nconst __promptValue = (() => { const __b = (() => { const __v = `{\n \"model\": \"meta-llama/llama-3.1-70b-instruct:free\",\n \"messages\": [\n {\n \"role\": \"user\",\n \"content\": \"You are an SEO expert. Here is data from Umami analytics of Pennibnotes.com. Where X is URL and Y is number of visitors. Compare the data from this week to last week. Present the data in a table using markdown and offer 5 improvement suggestions. This week:${$('Parse Umami data1').first().json.thisWeek} Lastweek:${$json.lastweek}\"\n }\n ]\n}\n\n`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn (__b.messages || []).filter((m) => m?.role === 'system' || m?.role === 'developer').map((m) => __t(m.content)).join('\\n\\n'); })();\nreturn { \"llm_system_2196a03721\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_d736ab0981",
+      "actorId": "actor_d736ab0981",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Send data to A.I.1",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_e178781395",
+      "actorId": "actor_e178781395",
+      "type": "NodeTransform",
+      "label": "Prompt: Send data to A.I.1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When clicking ‘Test workflow’\": {{ctx}}, \"Schedule Trigger\": __namedCtx.steps?.[\"Schedule Trigger\"]?.[\"payload\"], \"Get view stats from Umami\": __namedCtx.steps?.[\"Get view stats from Umami\"]?.[\"body\"], \"Parse Umami data\": __namedCtx.steps?.[\"Parse Umami data\"]?.[\"transformed\"], \"Send data to A.I.\": ((text) => ({ text, output: text, content: text, response: { text, output_text: text }, message: { content: text }, choices: [{ message: { content: text }, text }] }))(__namedCtx.steps?.[\"Send data to A.I.\"]?.[\"text\"]), \"Get page data from Umami\": __namedCtx.steps?.[\"Get page data from Umami\"]?.[\"body\"], \"Parse Umami data1\": __namedCtx.steps?.[\"Parse Umami data1\"]?.[\"transformed\"], \"Get page view data from Umami\": __namedCtx.steps?.[\"Get page view data from Umami\"]?.[\"body\"], \"Parse Umami\": __namedCtx.steps?.[\"Parse Umami\"]?.[\"transformed\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Send data to A.I.1.\nconst __promptValue = (() => { const __b = (() => { const __v = `{\n \"model\": \"meta-llama/llama-3.1-70b-instruct:free\",\n \"messages\": [\n {\n \"role\": \"user\",\n \"content\": \"You are an SEO expert. Here is data from Umami analytics of Pennibnotes.com. Where X is URL and Y is number of visitors. Compare the data from this week to last week. Present the data in a table using markdown and offer 5 improvement suggestions. This week:${$('Parse Umami data1').first().json.thisWeek} Lastweek:${$json.lastweek}\"\n }\n ]\n}\n\n`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn (() => { const u = (__b.messages || []).filter((m) => m && m.role !== 'system' && m.role !== 'developer'); return __b.__raw ?? (u.length === 1 ? __t(u[0].content) : u.map((m) => m.role + ': ' + __t(m.content)).join('\\n\\n')); })(); })();\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_b87269184f",
+      "actorId": "actor_b87269184f",
+      "type": "NodeTransform",
+      "label": "Params: Save data to Baserow",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When clicking ‘Test workflow’\": {{ctx}}, \"Parse Umami data\": {{steps.xf_4f56af446a.result}}, \"Parse Umami data1\": {{steps.xf_d8cdbbc2c0.result}}, \"Parse Umami\": {{steps.xf_2b0323bfd5.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Params for baserow/BASEROW_CREATE_ROW (n8n node \"Save data to Baserow\").\nreturn {\n  \"5868\": (DateTime.now().toFormat('yyyy-MM-dd')),\n  \"5869\": ($('Send data to A.I.').first().json.choices[0].message.content),\n  \"5870\": ($json),\n  \"5871\": \"Name of your blog\",\n  \"table_id\": 607,\n};"
+      }
+    },
+    {
+      "nodeId": "node_5910101ea6",
+      "actorId": "actor_5910101ea6",
+      "type": "NodeCdeConnector",
+      "label": "baserow/BASEROW_CREATE_ROW",
+      "color": "#6366F1",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "baserow",
+        "connectorLabel": "Baserow",
+        "action": "BASEROW_CREATE_ROW"
+      }
+    },
+    {
+      "nodeId": "node_0192160543",
+      "actorId": "actor_0192160543",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 7680,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_357c500e91",
+      "actorId": "actor_357c500e91",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "umamiApiKey": {
+            "$workflowSecret": "UMAMI_API_KEY"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_5ccc7c9db6",
+      "actorId": "actor_5ccc7c9db6",
+      "type": "NodeChatModel",
+      "label": "Send data to A.I.: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2740,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openrouter",
+        "model": "meta-llama/llama-3.1-70b-instruct:free"
+      }
+    },
+    {
+      "nodeId": "node_3cccc01361",
+      "actorId": "actor_3cccc01361",
+      "type": "NodeChatModel",
+      "label": "Send data to A.I.1: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 6540,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openrouter",
+        "model": "meta-llama/llama-3.1-70b-instruct:free"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_5b12c4b781",
+      "target": "node_86d71c0b1c",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_5b12c4b781",
+      "target": "node_86d71c0b1c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_d62904212e",
+      "target": "node_13bda87dd4",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_d62904212e",
+      "target": "node_13bda87dd4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_13bda87dd4",
+      "target": "node_200d93add4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_200d93add4",
+      "target": "node_a1990ac764",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_6f8d296d78",
+      "target": "node_86e5ae4828",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_6f8d296d78",
+      "target": "node_86e5ae4828",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_4530bc3eff",
+      "target": "node_31039afc3a",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_4530bc3eff",
+      "target": "node_31039afc3a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_2196a03721",
+      "target": "node_d736ab0981",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_2196a03721",
+      "target": "node_d736ab0981",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_d736ab0981",
+      "target": "node_e178781395",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e178781395",
+      "target": "node_afca2b3bf0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_b87269184f",
+      "target": "node_5910101ea6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_b87269184f",
+      "target": "node_5910101ea6",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ab9e8a7443",
+      "target": "node_5b12c4b781",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7573f887e6",
+      "target": "node_5b12c4b781",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7573f887e6",
+      "target": "node_5b12c4b781",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_86d71c0b1c",
+      "target": "node_4f56af446a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_86d71c0b1c",
+      "target": "node_4f56af446a",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4f56af446a",
+      "target": "node_d62904212e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4f56af446a",
+      "target": "node_d62904212e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4f56af446a",
+      "target": "node_200d93add4",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a1990ac764",
+      "target": "node_6f8d296d78",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a1990ac764",
+      "target": "node_6f8d296d78",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_86e5ae4828",
+      "target": "node_d8cdbbc2c0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_86e5ae4828",
+      "target": "node_d8cdbbc2c0",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d8cdbbc2c0",
+      "target": "node_4530bc3eff",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d8cdbbc2c0",
+      "target": "node_4530bc3eff",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_31039afc3a",
+      "target": "node_2b0323bfd5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_31039afc3a",
+      "target": "node_2b0323bfd5",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2b0323bfd5",
+      "target": "node_2196a03721",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2b0323bfd5",
+      "target": "node_2196a03721",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2b0323bfd5",
+      "target": "node_e178781395",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_afca2b3bf0",
+      "target": "node_b87269184f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_afca2b3bf0",
+      "target": "node_b87269184f",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5910101ea6",
+      "target": "node_0192160543",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_5ccc7c9db6",
+      "target": "node_a1990ac764",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_3cccc01361",
+      "target": "node_afca2b3bf0",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "ai-research-and-data",
+    "categoryLabel": "AI Research, RAG and Data Analysis",
+    "department": "Data Analysis, Marketing",
+    "connectors": [
+      "baserow",
+      "openrouter"
+    ],
+    "setupSecrets": [
+      {
+        "key": "UMAMI_API_KEY",
+        "label": "umami.mydomain.com API credential header value (for example \"Bearer <key>\"; rename the header if the API expects another one)",
+        "host": "umami.mydomain.com",
+        "headerFormat": "Authorization: <secret>",
+        "contextKey": "umamiApiKey",
+        "usedBy": [
+          "Get page data from Umami",
+          "Get page view data from Umami",
+          "Get view stats from Umami"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate umami-analytics-template",
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 11,
+      "yantraSteps": 23,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "AI_Research_RAG_and_Data_Analysis/Summarize Umami data with AI (via Openrouter) and save it to Baserow.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Umami analytics template"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Workflow secret UMAMI_API_KEY: umami.mydomain.com API credential header value (for example \"Bearer <key>\"; rename the header if the API expects another one) for umami.mydomain.com (Authorization: <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the baserow connector (credential).",
+      "Connect the openrouter connector (credential).",
+      "After import, start the schedule: cdecli cron activate umami-analytics-template.",
+      "Provide run inputs: llm_system_2196a03721, llm_system_d62904212e."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Send data to A.I.",
+          "n8n": "httpRequest.openai.chat",
+          "action": "NodeLlmChain",
+          "soft": true
+        },
+        {
+          "node": "Send data to A.I.1",
+          "n8n": "httpRequest.openai.chat",
+          "action": "NodeLlmChain",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Schedule Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "\"Get view stats from Umami\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Send data to A.I.\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Send data to A.I.\" called the OpenRouter API (meta-llama/llama-3.1-70b-instruct:free) over HTTP; it now runs on LLMChain with a Chat Model and provider connector credential, and later steps read the answer text instead of the provider's JSON.",
+        "\"Get page data from Umami\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Get page view data from Umami\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Send data to A.I.1\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Send data to A.I.1\" called the OpenRouter API (meta-llama/llama-3.1-70b-instruct:free) over HTTP; it now runs on LLMChain with a Chat Model and provider connector credential, and later steps read the answer text instead of the provider's JSON.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect baserow: `cdecli credential create -n \"baserow\" -p baserow --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Send data from Umami to A.I. and then save to Baserow\n\nYou can find out more about the stats available in the [Umami API](https://umami.is/docs/api/website-stats-api)\n\nRead the [case study here](https://rumjahn.com/how-to-analyze-umami-data-using-n8n-and-a-i-to-improve-seo-and-uncover-hidden-insights-for-better-content-optimization/).",
+      "## Get summary stats from Umami\n\nIt will get: Pageviews, Visitors, Visits, Bounces, Total Time\n\nYou need to change the URL to your website. https://{your website}/api/websites/{website ID}/\n\nYou can find your ID by going to your Umami account -> Settings -> Edit (next to domain)",
+      "## Send data to A.I.\n\nTo use Openrouter, you need to register for an account.\nThen add header authorization credentials.\nUsername: Authroization\nPassword: Bearer {Your API Key}\n*It's Bearer space {API key}.",
+      "## Get page specific stats for this week and last\n\nCalls Umami to get this week and last week's data. It will get the views for each page visited on your website for comparison.",
+      "## Send data to A.I.\n\nTo use Openrouter, you need to register for an account.\nThen add header authorization credentials.\nUsername: Authroization\nPassword: Bearer {Your API Key}\n*It's Bearer space {API key}.",
+      "## Save analysis to baserow\n\nYou need to create a table in advance to save. \n- Date (date)\n- Summary (Long text)\n- Top pages (Long text)\n- Blog name (Long text)"
+    ],
+    "nodes": {
+      "node_ab9e8a7443": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_7573f887e6": {
+        "n8n": "Schedule Trigger",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_86d71c0b1c": {
+        "n8n": "Get view stats from Umami",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_5b12c4b781": {
+        "n8n": "Get view stats from Umami",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_4f56af446a": {
+        "n8n": "Parse Umami data",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_a1990ac764": {
+        "n8n": "Send data to A.I.",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "llmProvider": "openrouter"
+      },
+      "node_d62904212e": {
+        "n8n": "Send data to A.I.",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_13bda87dd4": {
+        "n8n": "Send data to A.I.",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_200d93add4": {
+        "n8n": "Send data to A.I.",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_86e5ae4828": {
+        "n8n": "Get page data from Umami",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_6f8d296d78": {
+        "n8n": "Get page data from Umami",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_d8cdbbc2c0": {
+        "n8n": "Parse Umami data1",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_31039afc3a": {
+        "n8n": "Get page view data from Umami",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_4530bc3eff": {
+        "n8n": "Get page view data from Umami",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_2b0323bfd5": {
+        "n8n": "Parse Umami",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_afca2b3bf0": {
+        "n8n": "Send data to A.I.1",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "llmProvider": "openrouter"
+      },
+      "node_2196a03721": {
+        "n8n": "Send data to A.I.1",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_d736ab0981": {
+        "n8n": "Send data to A.I.1",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_e178781395": {
+        "n8n": "Send data to A.I.1",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_b87269184f": {
+        "n8n": "Save data to Baserow",
+        "n8nType": "n8n-nodes-base.baserow"
+      },
+      "node_5910101ea6": {
+        "n8n": "Save data to Baserow",
+        "n8nType": "n8n-nodes-base.baserow"
+      },
+      "node_0192160543": {
+        "n8n": "__end:Save data to Baserow",
+        "n8nType": "synthetic"
+      },
+      "node_357c500e91": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_5ccc7c9db6": {
+        "n8n": "Send data to A.I.",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_3cccc01361": {
+        "n8n": "Send data to A.I.1",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

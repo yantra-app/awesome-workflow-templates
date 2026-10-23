@@ -1,0 +1,168 @@
+{
+  "name": "n8n Failed Execution Doctor",
+  "workflowSlug": "n8n-failed-execution-doctor",
+  "description": "Diagnose exported failed n8n execution data locally, identify the failing node, classify common root causes such as 401/403, 429, timeouts, network, invalid input, and expression errors, and return a focused next diagnostic step. No external API key or LLM required.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_93b1009043",
+      "actorId": "actor_93b1009043",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_2e7a66398d",
+      "actorId": "actor_2e7a66398d",
+      "type": "NodeTransform",
+      "label": "Diagnose Failed Execution",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\nconst item = { json: __items[0] ?? source, binary: {} };\n// Ported from n8n Code node \"Diagnose Failed Execution\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const input = $input.first().json;\n  const workflow = input.workflow;\n  const execution = input.execution;\n  \n  if (!workflow || !Array.isArray(workflow.nodes)) {\n    throw new Error('workflow.nodes must be an array');\n  }\n  if (!execution || typeof execution !== 'object') {\n    throw new Error('execution must be an object');\n  }\n  \n  const nodeTypes = new Map(\n    workflow.nodes.map((node) => [String(node.name || ''), String(node.type || '')]),\n  );\n  const data = execution.data && typeof execution.data === 'object' ? execution.data : {};\n  const result = data.resultData && typeof data.resultData === 'object'\n    ? data.resultData\n    : (execution.resultData && typeof execution.resultData === 'object' ? execution.resultData : {});\n  const lastNode = result.lastNodeExecuted ? String(result.lastNodeExecuted) : null;\n  const runData = result.runData && typeof result.runData === 'object' ? result.runData : {};\n  const failures = [];\n  function safeMessage(value) {\n    let text = String(value ?? '').replace(/\\s+/g, ' ').trim();\n    text = text.replace(/(api[_-]?key|token|secret|password|authorization)\\s*[:=]\\s*[^\\s,;}]+/gi, '$1=[REDACTED]');\n    text = text.replace(/bearer\\s+[A-Za-z0-9._~+/-]{8,}/gi, 'Bearer [REDACTED]');\n    return text.slice(0, 300);\n  }\n  \n  function classify(message, status) {\n    const text = `${String(status ?? '')} ${message}`.toLowerCase();\n    if (['401', '403', 'unauthorized', 'forbidden', 'credential', 'authentication'].some((x) => text.includes(x))) {\n      return ['authentication', 'Verify credential reference, auth scheme, token scope and expiry; then retest only the failing node.'];\n    }\n    if (['429', 'rate limit', 'too many requests'].some((x) => text.includes(x))) {\n      return ['rate_limit', 'Add bounded retry with exponential backoff and respect Retry-After or the upstream rate-limit policy.'];\n    }\n    if (['timeout', 'timed out', 'etimedout', 'econnaborted'].some((x) => text.includes(x))) {\n      return ['timeout', 'Set an explicit timeout, retry only idempotent work, and isolate the slow external call from the main path.'];\n    }\n    if (['econn', 'dns', 'network', 'connection refused', 'socket hang up'].some((x) => text.includes(x))) {\n      return ['network', 'Check endpoint reachability, DNS and TLS first; then add bounded retries and an explicit failure path.'];\n    }\n    if (['400', '422', 'invalid', 'validation', 'bad request'].some((x) => text.includes(x))) {\n      return ['invalid_input', 'Inspect the outbound payload/schema and validate required fields before the failing node.'];\n    }\n    if (['expression', 'undefined', 'cannot read', 'not defined', 'item linking'].some((x) => text.includes(x))) {\n      return ['expression', 'Validate referenced fields, item linking and optional values before evaluating the expression.'];\n    }\n    return ['execution_error', 'Reproduce the failing node with the same sanitized input, then add an explicit error path before re-enabling automation.'];\n  }\n  \n  function addFailure(node, rawError) {\n    const error = rawError && typeof rawError === 'object' ? rawError : {};\n    const rawMessage = error.message || error.description || error.name || rawError || 'Execution failed';\n    const statusCode = error.httpCode ?? error.statusCode ?? error.status ?? null;\n    const message = safeMessage(rawMessage);\n    const [category, recommendedNextStep] = classify(message, statusCode);\n    failures.push({\n      node,\n      nodeType: node ? (nodeTypes.get(String(node)) || null) : null,\n      category,\n      statusCode,\n      message,\n      recommendedNextStep,\n    });\n  }\n  for (const [nodeName, runs] of Object.entries(runData)) {\n    if (!Array.isArray(runs)) continue;\n    for (const run of runs) {\n      if (!run || typeof run !== 'object' || !run.error) continue;\n      addFailure(nodeName, run.error);\n    }\n  }\n  if (result.error && failures.length === 0) {\n    addFailure(lastNode, result.error);\n  }\n  \n  const counts = {};\n  for (const failure of failures) {\n    counts[failure.category] = (counts[failure.category] || 0) + 1;\n  }\n  const primaryCategory = Object.entries(counts)\n    .sort((a, b) => b[1] - a[1])[0]?.[0] || 'unknown';\n  \n  return [{ json: {\n    workflowName: String(workflow.name || ''),\n    lastNodeExecuted: lastNode,\n    failureCount: failures.length,\n    primaryCategory,\n    failures,\n    diagnosticStatus: failures.length ? 'FAILED_EXECUTION_ANALYZED' : 'NO_STRUCTURED_ERROR_FOUND',\n    privacyNote: 'Common secret-like strings are redacted and error messages are truncated.',\n  } }];\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_b0bed8ee9d",
+      "actorId": "actor_b0bed8ee9d",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_24e9e70989",
+      "actorId": "actor_24e9e70989",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": ""
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_93b1009043",
+      "target": "node_2e7a66398d",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2e7a66398d",
+      "target": "node_b0bed8ee9d",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "devops",
+    "categoryLabel": "DevOps and Server Automation",
+    "department": "Engineering",
+    "connectors": [],
+    "nodeTypes": [
+      "NodeEnd",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 2,
+      "yantraSteps": 2,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "devops/n8n-failed-execution-doctor.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "n8n Failed Execution Doctor"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "When Executed by Another Workflow",
+        "detail": "n8n-nodes-base.executeWorkflowTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"When Executed by Another Workflow\" (executeWorkflowTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When Executed by Another Workflow",
+          "type": "n8n-nodes-base.executeWorkflowTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original was a sub-workflow called by another workflow; pass its inputs as run inputs.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_93b1009043": {
+        "n8n": "When Executed by Another Workflow",
+        "n8nType": "n8n-nodes-base.executeWorkflowTrigger"
+      },
+      "node_2e7a66398d": {
+        "n8n": "Diagnose Failed Execution",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_b0bed8ee9d": {
+        "n8n": "__end:Diagnose Failed Execution",
+        "n8nType": "synthetic"
+      },
+      "node_24e9e70989": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

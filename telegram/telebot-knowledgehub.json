@@ -1,0 +1,430 @@
+{
+  "name": "TeleBot_KnowledgeHub",
+  "workflowSlug": "telebot-knowledgehub",
+  "description": "Converted from the n8n template \"TeleBot_KnowledgeHub\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_5717da1fbb",
+      "actorId": "actor_5717da1fbb",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_9bf60004cd",
+      "actorId": "actor_9bf60004cd",
+      "type": "NodeTransform",
+      "label": "Params: Simple Vector Store",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Params for pinecone/PINECONE_UPSERT_RECORDS_NAMESPACE (n8n node \"Simple Vector Store\").\nreturn {\n  \"index_host\": \"{{pineconeIndexHost}}\",\n  \"namespace\": \"vector_store_key\",\n  \"records\": (() => {\n  const __docs = __items.flatMap((d) => (Array.isArray(d) ? d : [d]));\n  return __docs.map((d) => {\n    const text = typeof d === 'string' ? d : d?.pageContent ?? d?.text ?? d?.content ?? d?.chunk ?? JSON.stringify(d);\n    const meta = d && typeof d === 'object' ? (d.metadata && typeof d.metadata === 'object' ? d.metadata : d) : {};\n    const flat = {};\n    for (const [k, v] of Object.entries(meta)) if (!['pageContent', 'text', '_id'].includes(k) && ['string', 'number', 'boolean'].includes(typeof v)) flat[k] = v;\n    return { ...flat, _id: String(d?.id ?? meta.id ?? crypto.randomUUID()), text: String(text) };\n  });\n})(),\n};"
+      }
+    },
+    {
+      "nodeId": "node_33ab1be03c",
+      "actorId": "actor_33ab1be03c",
+      "type": "NodeCdeConnector",
+      "label": "pinecone/PINECONE_UPSERT_RECORDS_NAMESPACE",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "pinecone",
+        "connectorLabel": "Pinecone",
+        "action": "PINECONE_UPSERT_RECORDS_NAMESPACE"
+      }
+    },
+    {
+      "nodeId": "node_8e753e9ccc",
+      "actorId": "actor_8e753e9ccc",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_GET_CHAT",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_GET_CHAT",
+        "params": {
+          "chat_id": "{{message.chat.id}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_f1bff9bbf3",
+      "actorId": "actor_f1bff9bbf3",
+      "type": "NodeCdecliAgent",
+      "label": "AI Agent1",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "llama-3.1-8b-instant",
+        "sessionId": "{{sessionId}}",
+        "system": "You are an helplful AI Assistant Provide answers to user query based only on knowledgebase.Do Not provide any edectra knowledge apart from knowledgebase",
+        "message": "{{message.text}}"
+      }
+    },
+    {
+      "nodeId": "node_f0c84f5b55",
+      "actorId": "actor_f0c84f5b55",
+      "type": "NodeCdeConnector",
+      "label": "telegram/TELEGRAM_SEND_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "telegram",
+        "connectorLabel": "Telegram",
+        "action": "TELEGRAM_SEND_MESSAGE",
+        "params": {
+          "chat_id": "{{message.chat.id}}",
+          "text": "{{last.text}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_4e9c9b5fe0",
+      "actorId": "actor_4e9c9b5fe0",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_3976fdfd7d",
+      "actorId": "actor_3976fdfd7d",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_0c0e8d699b",
+      "actorId": "actor_0c0e8d699b",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "Upload your file(s)": "",
+          "event": {},
+          "sessionId": "",
+          "pineconeIndexHost": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_9bf60004cd",
+      "target": "node_33ab1be03c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_9bf60004cd",
+      "target": "node_33ab1be03c",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_8e753e9ccc",
+      "target": "node_f1bff9bbf3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_5717da1fbb",
+      "target": "node_9bf60004cd",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f1bff9bbf3",
+      "target": "node_f0c84f5b55",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_5717da1fbb",
+      "target": "node_8e753e9ccc",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_33ab1be03c",
+      "target": "node_4e9c9b5fe0",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_f0c84f5b55",
+      "target": "node_3976fdfd7d",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "telegram",
+    "categoryLabel": "Telegram",
+    "department": "",
+    "connectors": [
+      "pinecone",
+      "telegram"
+    ],
+    "setupVars": [
+      {
+        "key": "pineconeIndexHost",
+        "label": "Pinecone index host (create the index with integrated embedding and field map text=text)",
+        "type": "url",
+        "example": "my-index-abc123.svc.aped-4627-b74a.pinecone.io",
+        "usedBy": [
+          "Simple Vector Store"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 13,
+      "yantraSteps": 6,
+      "foldedHelpers": [
+        "Default Data Loader1",
+        "Embeddings HuggingFace Inference",
+        "Groq Chat Model",
+        "Simple Memory",
+        "Retrieve documents"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Telegram/TeleBot_KnowledgeHub.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Telegram Message Trigger1",
+        "detail": "n8n-nodes-base.telegramTrigger became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Upload your file here",
+        "detail": "n8n-nodes-base.formTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Telegram Message Trigger1\" (telegramTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Upload your file here\" (formTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value pineconeIndexHost: Pinecone index host (create the index with integrated embedding and field map text=text) (for example my-index-abc123.svc.aped-4627-b74a.pinecone.io). Write it into the Workflow Configs initialContext before import.",
+      "Connect the pinecone connector (credential).",
+      "Connect the telegram connector (credential).",
+      "Provide run inputs: Upload your file(s), event, sessionId, message."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Simple Vector Store",
+          "n8n": "vectorStoreInMemory.insert",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "Default Data Loader1",
+          "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+          "into": "Simple Vector Store",
+          "as": "ai_document"
+        },
+        {
+          "node": "Embeddings HuggingFace Inference",
+          "type": "@n8n/n8n-nodes-langchain.embeddingsHuggingFaceInference",
+          "into": "Simple Vector Store",
+          "as": "ai_embedding"
+        },
+        {
+          "node": "Groq Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+          "into": "AI Agent1",
+          "model": "llama-3.1-8b-instant"
+        },
+        {
+          "node": "Simple Memory",
+          "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+          "into": "AI Agent1",
+          "as": "ai_memory"
+        },
+        {
+          "node": "Retrieve documents",
+          "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+          "into": "AI Agent1",
+          "as": "ai_tool"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Upload your file here",
+          "type": "n8n-nodes-base.formTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Telegram Message Trigger1",
+          "type": "n8n-nodes-base.telegramTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from a form submission; pass the form fields as run inputs.",
+        "The original started from telegramTrigger; Yantra has no webhook slug for it, so run on demand, on a schedule (add a NodeCron), or via the workflow API with the event under the run input `event`.",
+        "\"Simple Vector Store\" folded a document (documentDefaultDataLoader); retrieved text is expected on the upstream payload as context/documents.",
+        "\"Simple Vector Store\" (vectorStoreInMemory.insert): The original used an in-memory vector store; here the default vector store is a Pinecone index with integrated embedding (upsert records), so Pinecone embeds the text itself.",
+        "\"Simple Vector Store\": create a Pinecone index with integrated embedding (for example llama-text-embed-v2, field map text=text) and set pineconeIndexHost; the store uses the namespace \"vector_store_key\".",
+        "\"AI Agent1\" kept conversation memory (memoryBufferWindow); sessionId is set to the run-input sessionId.",
+        "\"AI Agent1\" used agent tools in the original: Retrieve documents (vectorStoreInMemory). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect pinecone: `cdecli credential create -n \"pinecone\" -p pinecone --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect telegram: `cdecli credential create -n \"telegram\" -p telegram --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_5717da1fbb": {
+        "n8n": "Upload your file here",
+        "n8nType": "n8n-nodes-base.formTrigger",
+        "also": [
+          "Telegram Message Trigger1"
+        ]
+      },
+      "node_9bf60004cd": {
+        "n8n": "Simple Vector Store",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreInMemory"
+      },
+      "node_33ab1be03c": {
+        "n8n": "Simple Vector Store",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreInMemory"
+      },
+      "node_8e753e9ccc": {
+        "n8n": "Get a chat1",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_f1bff9bbf3": {
+        "n8n": "AI Agent1",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_f0c84f5b55": {
+        "n8n": "Reply in Telegram1",
+        "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_4e9c9b5fe0": {
+        "n8n": "__end:Simple Vector Store",
+        "n8nType": "synthetic"
+      },
+      "node_3976fdfd7d": {
+        "n8n": "__end:Reply in Telegram1",
+        "n8nType": "synthetic"
+      },
+      "node_0c0e8d699b": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

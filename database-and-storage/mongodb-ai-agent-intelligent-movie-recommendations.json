@@ -1,0 +1,211 @@
+{
+  "name": "MongoDB AI Agent - Intelligent Movie Recommendations",
+  "workflowSlug": "mongodb-ai-agent-intelligent-movie-recommendations",
+  "description": "This workflow creates an AI agent that provides intelligent movie recommendations by interacting with a MongoDB database, using aggregation pipelines to fetch relevant movie data.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_abe84a256a",
+      "actorId": "actor_abe84a256a",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_8f9c7d16c5",
+      "actorId": "actor_8f9c7d16c5",
+      "type": "NodeCdecliAgent",
+      "label": "AI Agent - Movie Recommendation",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "sessionId": "{{sessionId}}",
+        "message": "Assistant for best movies context, you have tools to search using \"MongoDBAggregate\" and you need to provide a MongoDB aggregation pipeline code array as a \"query\" input param. User input and request: {{chatInput}}. Only when a user confirms a favorite movie use the insert favorite using the \"insertFavorite\" workflow tool of to insertFavorite as { \"title\" : \"<TITLE>\" }."
+      }
+    },
+    {
+      "nodeId": "node_dc9fa149b5",
+      "actorId": "actor_dc9fa149b5",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_79ef4a8956",
+      "actorId": "actor_79ef4a8956",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "chatInput": "",
+          "sessionId": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_abe84a256a",
+      "target": "node_8f9c7d16c5",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_8f9c7d16c5",
+      "target": "node_dc9fa149b5",
+      "sourceOutput": "text",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "database-and-storage",
+    "categoryLabel": "Database and Storage",
+    "department": "Data Analytics",
+    "connectors": [
+      "mongodb"
+    ],
+    "nodeTypes": [
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeStart",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 6,
+      "yantraSteps": 2,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "insertFavorite",
+        "MongoDBAggregate",
+        "Window Buffer Memory"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Database_and_Storage/MongoDB AI Agent - Intelligent Movie Recommendations.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "MongoDB Agent"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "When chat message received",
+        "detail": "@n8n/n8n-nodes-langchain.chatTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"When chat message received\" (chatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Connect the mongodb connector (credential).",
+      "Provide run inputs: chatInput, sessionId."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "AI Agent - Movie Recommendation"
+        },
+        {
+          "node": "insertFavorite",
+          "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+          "into": "AI Agent - Movie Recommendation",
+          "as": "ai_tool"
+        },
+        {
+          "node": "MongoDBAggregate",
+          "type": "n8n-nodes-base.mongoDbTool",
+          "into": "AI Agent - Movie Recommendation",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Window Buffer Memory",
+          "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+          "into": "AI Agent - Movie Recommendation",
+          "as": "ai_memory"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When chat message received",
+          "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
+        "\"AI Agent - Movie Recommendation\" kept conversation memory (memoryBufferWindow); sessionId is set to the run-input sessionId.",
+        "\"AI Agent - Movie Recommendation\" used agent tools in the original: insertFavorite (toolWorkflow), MongoDBAggregate (mongoDbTool). The cdecli agent calls connectors directly; connect credentials for the services those tools reached. Prefer connectors: mongodb.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect mongodb: `cdecli credential create -n \"mongodb\" -p mongodb --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## AI Agent powered by OpenAI and MongoDB \n\nThis flow is designed to work as an AI autonomous agent that can get chat messages, query data from MongoDB using the aggregation framework.\n\nFollowing by augmenting the results from the sample movies collection and allowing storing my favorite movies back to the database using an \"insert\" flow.",
+      "## Process\n\nThe message is being processed by the \"Chat Model\" and the correct tool is used according to the message."
+    ],
+    "nodes": {
+      "node_abe84a256a": {
+        "n8n": "When chat message received",
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
+      },
+      "node_8f9c7d16c5": {
+        "n8n": "AI Agent - Movie Recommendation",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_dc9fa149b5": {
+        "n8n": "__end:AI Agent - Movie Recommendation",
+        "n8nType": "synthetic"
+      },
+      "node_79ef4a8956": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

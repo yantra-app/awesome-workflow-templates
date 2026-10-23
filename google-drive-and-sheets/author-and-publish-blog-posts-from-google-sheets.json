@@ -1,0 +1,1441 @@
+{
+  "name": "Author and Publish Blog Posts From Google Sheets",
+  "workflowSlug": "author-and-publish-blog-posts-from-google-sheets",
+  "description": "Enables authoring blog posts in Google Sheets and automatically publishing them to a content management system, simplifying content creation and publishing.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_da1561b2ac",
+      "actorId": "actor_da1561b2ac",
+      "type": "NodeCron",
+      "label": "ScheduleTrigger",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 */1 * * *"
+      }
+    },
+    {
+      "nodeId": "node_5965b1df21",
+      "actorId": "actor_5965b1df21",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_d8137aebdc",
+      "actorId": "actor_d8137aebdc",
+      "type": "NodeTransform",
+      "label": "Settings",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"urlSpreadsheet\"] = \"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit?gid=0#gid=0\";\n  out[\"urlWordpress\"] = \"SUBDOMAIN.wordpress.com\";\n  out[\"wordpressUsername\"] = \"YourUserName\";\n  out[\"wordpressApplicationPassword\"] = \"y0ur app1 p4ss w0rd\";\n  out[\"sheetSchedule\"] = `Schedule`;\n  out[\"sheetConfig\"] = \"Config\";\n  out[\"actionPublish\"] = \"publish\";\n  out[\"actionUpdate\"] = \"\";\n  out[\"sheetLog\"] = \"Log\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_4798a6b7ae",
+      "actorId": "actor_4798a6b7ae",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_BATCH_GET",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_BATCH_GET",
+        "params": {
+          "spreadsheet_id": "{{steps.xf_d8137aebdc.result.urlSpreadsheet}}",
+          "ranges": [
+            "{{steps.xf_d8137aebdc.result.sheetConfig}}"
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_73f5f44c2f",
+      "actorId": "actor_73f5f44c2f",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_BATCH_GET",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_BATCH_GET",
+        "params": {
+          "spreadsheet_id": "{{steps.xf_d8137aebdc.result.urlSpreadsheet}}",
+          "ranges": [
+            "{{steps.xf_d8137aebdc.result.sheetSchedule}}"
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_233a3da91b",
+      "actorId": "actor_233a3da91b",
+      "type": "NodeTransform",
+      "label": "Config",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"ManualTrigger\": {{ctx}}, \"Settings\": {\"urlSpreadsheet\":\"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit?gid=0#gid=0\",\"urlWordpress\":\"SUBDOMAIN.wordpress.com\",\"wordpressUsername\":\"YourUserName\",\"wordpressApplicationPassword\":\"y0ur app1 p4ss w0rd\",\"sheetSchedule\":\"Schedule\",\"sheetConfig\":\"Config\",\"actionPublish\":\"publish\",\"actionUpdate\":\"\",\"sheetLog\":\"Log\"}, \"fetchConfig\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Schedule\": {{steps.GOOGLESUPER_BATCH_GET.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Config\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  let a = $(\"fetchConfig\").all();\n  let params = {};\n  a.forEach(p => params[p.json.Key] = p.json.Value);\n  \n  return params;\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_f683b9d501",
+      "actorId": "actor_f683b9d501",
+      "type": "NodeTransform",
+      "label": "PreparedData",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"ManualTrigger\": {{ctx}}, \"Settings\": {\"urlSpreadsheet\":\"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit?gid=0#gid=0\",\"urlWordpress\":\"SUBDOMAIN.wordpress.com\",\"wordpressUsername\":\"YourUserName\",\"wordpressApplicationPassword\":\"y0ur app1 p4ss w0rd\",\"sheetSchedule\":\"Schedule\",\"sheetConfig\":\"Config\",\"actionPublish\":\"publish\",\"actionUpdate\":\"\",\"sheetLog\":\"Log\"}, \"fetchConfig\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Schedule\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Config\": {{steps.xf_233a3da91b.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"PreparedData\" (run once for each item).\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __results = __items.map((__item) => {\n  const $json = __item;\n  const item = { json: __item };\n  const $input = { item: { json: __item }, first: () => ({ json: __item }), all: () => [{ json: __item }] };\n  return (() => {\n  function replacePlaceholders(text, row, config) {\n   function checkProp(prop, lookup) {\n   // console.log('checkProp:' + prop);\n   if (!lookup.hasOwnProperty(prop)) return false;\n   let value = lookup[prop];\n   if (typeof(value) == 'string') {\n   value = value.trim();\n   if (value == '') return false;\n   }\n   // console.log('checkProp found:', value)\n   return value;\n   }\n   function replaceMatch(fullMatch, prop) { \n   prop = prop.trim();\n   // Return the corresponding value\n   return checkProp(prop, row)\n   || checkProp(prop, config)\n   || checkProp(prop + checkProp('Context', row), config)\n   || `[could not find \"${ prop }]\"`;\n   }\n  \n   if (typeof(text) != 'string') return '';\n  \n   // Regex to capture {{ ... }}\n   const pattern = /\\{\\{\\s*([^}]+)\\s*\\}\\}/g\n   const result = text.replace(pattern, replaceMatch);\n   return result.trim();\n  }\n  \n  const row = $json;\n  const settings = $(\"Settings\").first().json;\n  const config = $(\"Config\").first().json;\n  const prompt_key = 'prompt_' + row.Action;\n  const prompt = replacePlaceholders(config[prompt_key], row, config);\n  const model_key = prompt_key + '_model';\n  const model = replacePlaceholders(config[model_key], row, config);\n  const outputFormat = config[prompt_key + '_outputFormat'];\n  const takeAction = row.Action != row.Status;\n  const action = row.Action\n  \n  // console.log('prompt', prompt);\n  \n  // console.log(prompt);\n  return { takeAction, action, model_key, model, prompt_key, prompt, outputFormat, row, config, settings }\n  })();\n});\nreturn __single(__results.map(__unwrap));"
+      }
+    },
+    {
+      "nodeId": "node_73a6a76a6d",
+      "actorId": "actor_73a6a76a6d",
+      "type": "NodeTransform",
+      "label": "IfTakeAction: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.takeAction)) === true || (($json.takeAction)) === 'true'));"
+      }
+    },
+    {
+      "nodeId": "node_c57cf88853",
+      "actorId": "actor_c57cf88853",
+      "type": "NodeBranch",
+      "label": "IfTakeAction: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_f5fa3cbe3d",
+      "actorId": "actor_f5fa3cbe3d",
+      "type": "NodeTransform",
+      "label": "IfActionPublish: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"ManualTrigger\": {{ctx}}, \"Settings\": {\"urlSpreadsheet\":\"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit?gid=0#gid=0\",\"urlWordpress\":\"SUBDOMAIN.wordpress.com\",\"wordpressUsername\":\"YourUserName\",\"wordpressApplicationPassword\":\"y0ur app1 p4ss w0rd\",\"sheetSchedule\":\"Schedule\",\"sheetConfig\":\"Config\",\"actionPublish\":\"publish\",\"actionUpdate\":\"\",\"sheetLog\":\"Log\"}, \"fetchConfig\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Schedule\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Config\": {{steps.xf_233a3da91b.result}}, \"PreparedData\": {{steps.xf_f683b9d501.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($json.row.Action) ?? '') === String(($('Settings').item.json.actionPublish) ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_13c56f2133",
+      "actorId": "actor_13c56f2133",
+      "type": "NodeBranch",
+      "label": "IfActionPublish: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_087e0f8346",
+      "actorId": "actor_087e0f8346",
+      "type": "NodeTransform",
+      "label": "IfScheduledNow: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\nreturn Boolean((Number((DateTime.now().ts)) >= Number((DateTime.fromFormat($json.row.Scheduled, \"yyyy-MM-dd HH:mm:ss\").ts))));"
+      }
+    },
+    {
+      "nodeId": "node_942ec29f52",
+      "actorId": "actor_942ec29f52",
+      "type": "NodeBranch",
+      "label": "IfScheduledNow: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_6a08d60d90",
+      "actorId": "actor_6a08d60d90",
+      "type": "NodeTransform",
+      "label": "IfPromptExists: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.prompt) ?? '').trim() !== ''));"
+      }
+    },
+    {
+      "nodeId": "node_690095b028",
+      "actorId": "actor_690095b028",
+      "type": "NodeBranch",
+      "label": "IfPromptExists: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_f6b6761949",
+      "actorId": "actor_f6b6761949",
+      "type": "NodeTransform",
+      "label": "PrepareXmlPost",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"ManualTrigger\": {{ctx}}, \"Settings\": {\"urlSpreadsheet\":\"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit?gid=0#gid=0\",\"urlWordpress\":\"SUBDOMAIN.wordpress.com\",\"wordpressUsername\":\"YourUserName\",\"wordpressApplicationPassword\":\"y0ur app1 p4ss w0rd\",\"sheetSchedule\":\"Schedule\",\"sheetConfig\":\"Config\",\"actionPublish\":\"publish\",\"actionUpdate\":\"\",\"sheetLog\":\"Log\"}, \"fetchConfig\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Schedule\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Config\": {{steps.xf_233a3da91b.result}}, \"PreparedData\": {{steps.xf_f683b9d501.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"PrepareXmlPost\" (run once for each item).\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __results = __items.map((__item) => {\n  const $json = __item;\n  const item = { json: __item };\n  const $input = { item: { json: __item }, first: () => ({ json: __item }), all: () => [{ json: __item }] };\n  return (() => {\n  const username = $('Settings').item.json.wordpressUsername;\n  const password = $('Settings').item.json.wordpressApplicationPassword;\n  const blogId = 0;\n  const published = 1; // 0 = draft, 1 = published\n  const title = $json.row.Title;\n  const text = $json.row.final;\n  \n  // Helper function to escape XML special characters\n  function escapeXml(unsafe) {\n   return unsafe.replace(/[<>&'\"]/g, (c) => {\n   switch (c) {\n   case '<': return '&lt;';\n   case '>': return '&gt;';\n   case '&': return '&amp;';\n   case '\\'': return '&apos;';\n   case '\"': return '&quot;';\n   default: return c;\n   }\n   });\n  }\n  \n  // Your actual post text, which may contain characters needing escaping\n  const titleEscaped = escapeXml(title);\n  const textEscaped = escapeXml(text);\n  \n  // Build the XML payload\n  const xmlData = `<?xml version=\"1.0\"?>\n  <methodCall>\n   <methodName>wp.newPost</methodName>\n   <params>\n   <param>\n   <value><string>${blogId}</string></value>\n   </param>\n   <param>\n   <value><string>${username}</string></value>\n   </param>\n   <param>\n   <value><string>${password}</string></value>\n   </param>\n   <param>\n   <value>\n   <struct>\n   <member>\n   <name>post_title</name>\n   <value><string>${titleEscaped}</string></value>\n   </member>\n   <member>\n   <name>post_content</name>\n   <value><string>${textEscaped}</string></value>\n   </member>\n   </struct>\n   </value>\n   </param>\n   <param>\n   <value><boolean>${published}</boolean></value>\n   </param>\n   </params>\n  </methodCall>`;\n  \n  \n  // Add a new field called 'myNewField' to the JSON of the item\n  $input.item.json.xmlRequestBody = xmlData;\n  \n  return $input.item;\n  })();\n});\nreturn __single(__results.map(__unwrap));"
+      }
+    },
+    {
+      "nodeId": "node_dbb376de66",
+      "actorId": "actor_dbb376de66",
+      "type": "NodeLlmChain",
+      "label": "Basic LLM Chain",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_0221f01c4d",
+      "actorId": "actor_0221f01c4d",
+      "type": "NodeTransform",
+      "label": "Prompt: Basic LLM Chain",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Basic LLM Chain.\nconst __promptValue = ($json.prompt);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_b60be6efe8",
+      "actorId": "actor_b60be6efe8",
+      "type": "NodeCdeConnector",
+      "label": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-storage",
+        "connectorLabel": "Yantra storage",
+        "action": "YANTRA_STORAGE_HTTP_SEND",
+        "params": {
+          "url": "https://{{steps.xf_d8137aebdc.result.urlWordpress}}/xmlrpc.php",
+          "method": "POST",
+          "bodyType": "raw",
+          "rawBody": "{{last.transformed.xmlRequestBody}}",
+          "contentType": "text/xml",
+          "responseType": "auto"
+        }
+      }
+    },
+    {
+      "nodeId": "node_4fb9742eb1",
+      "actorId": "actor_4fb9742eb1",
+      "type": "NodeTransform",
+      "label": "CreatePost: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The response the way the n8n HTTP node handed it on: the parsed body; a file body is { bodyBase64, filename, mimeType }.\nconst __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' && 'status' in source.data ? source.data : source;\nconst __body = __r?.bodyBase64 !== undefined ? { bodyBase64: __r.bodyBase64, filename: __r.filename, mimeType: __r.contentType, bytes: __r.bytes } : __r?.bodyJson !== undefined ? __r.bodyJson : __r?.bodyText;\nreturn __body;"
+      }
+    },
+    {
+      "nodeId": "node_acd1e17845",
+      "actorId": "actor_acd1e17845",
+      "type": "NodeTransform",
+      "label": "RecombinedDataRow",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"ManualTrigger\": {{ctx}}, \"Settings\": {\"urlSpreadsheet\":\"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit?gid=0#gid=0\",\"urlWordpress\":\"SUBDOMAIN.wordpress.com\",\"wordpressUsername\":\"YourUserName\",\"wordpressApplicationPassword\":\"y0ur app1 p4ss w0rd\",\"sheetSchedule\":\"Schedule\",\"sheetConfig\":\"Config\",\"actionPublish\":\"publish\",\"actionUpdate\":\"\",\"sheetLog\":\"Log\"}, \"fetchConfig\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Schedule\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Config\": {{steps.xf_233a3da91b.result}}, \"PreparedData\": {{steps.xf_f683b9d501.result}}, \"PrepareXmlPost\": {{steps.xf_f6b6761949.result}}, \"CreatePost\": {{steps.xf_4fb9742eb1.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst $workflow = { id: '', name: '', active: true }; const $execution = { id: '', mode: 'manual', resumeUrl: '' }; const $executionId = $execution.id;\nconst $runIndex = 0; const $itemIndex = 0; const $binary = {}; const $prevNode = { name: '', outputIndex: 0, runIndex: 0 }; const $parameter = {}; const $position = 0;\n// Ported from n8n Code node \"RecombinedDataRow\" (run once for each item).\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __results = __items.map((__item) => {\n  const $json = __item;\n  const item = { json: __item };\n  const $input = { item: { json: __item }, first: () => ({ json: __item }), all: () => [{ json: __item }] };\n  return (() => {\n  /**\n   * Attempts to parse the \"text\" property in a JSON object\n   * that may contain malformed or incorrectly escaped JSON.\n   *\n   * @param {Object} raw - A string to parse.\n   * @returns {Object|null} The parsed JSON object if successful, or null if all attempts fail.\n   */\n  function parseTextAsJson(raw) {\n   // 1) First, try a direct parse.\n   try {\n   return JSON.parse(raw);\n   } catch (e) {\n   // Continue to next strategy\n   }\n  \n   // Common \"fix-up\" strategies:\n   // Strategy A: Attempt to remove over-escaped quotes like `\\\\\"` -> `\"`\n   try {\n   const fixedA = raw.replace(/\\\\\"/g, '\"');\n   return JSON.parse(fixedA);\n   } catch (e) {\n   // Continue\n   }\n  \n   // Strategy B: Remove escaped newlines, tabs, carriage returns if they’re suspected\n   try {\n   const fixedB = raw\n   .replace(/\\\\n/g, ' ')\n   .replace(/\\\\r/g, ' ')\n   .replace(/\\\\t/g, ' ');\n   return JSON.parse(fixedB);\n   } catch (e) {\n   // Continue\n   }\n  \n   // Strategy C: Replace single quotes with double quotes (useful if the JSON was incorrectly quoted).\n   // NOTE: This is a very rough fix. If your data legitimately includes single quotes you may need\n   // a more nuanced approach.\n   try {\n   const fixedC = raw.replace(/'/g, '\"');\n   return JSON.parse(fixedC);\n   } catch (e) {\n   // Continue\n   }\n  \n   // Strategy D: Combine strategies or chain them if needed:\n   // For example, single-quote fix plus removing new lines, etc.\n   try {\n   let fixedD = raw.replace(/\\\\\"/g, '\"');\n   fixedD = fixedD.replace(/\\\\n|\\\\r|\\\\t/g, ' ');\n   fixedD = fixedD.replace(/'/g, '\"');\n   return JSON.parse(fixedD);\n   } catch (e) {\n   // If all attempts fail, log or handle the error as needed\n   console.error('Could not parse \"text\" property as JSON.', e);\n   return { 'Fulltext': raw };\n   }\n  }\n  \n  function isolateCurlySubstring(str) {\n   // This pattern greedily matches everything from the first '{' to the last '}'.\n   const match = str.match(/\\{[\\s\\S]*\\}/);\n   \n   // If a match is found, return it; otherwise return the entire string.\n   return match ? match[0] : str;\n  }\n  \n  function fixJsonSyntax(str) {\n   str = str.replace('\\\"', '\"');\n   str = str\n   .split(/(\"[^\"]*\"|'[^']*')/)\n   .map((part, i) => i % 2 ? part : part.replace(/\\n/g, \" \"))\n   .join(\"\");\n   return str;\n  }\n  \n  function normalizeLLMOutput(param, iteration = 3) {\n   // If it's not an object or it's null or an array, just return it as is.\n   // (In some workflows, you might decide to throw an error or handle differently.)\n   if (!iteration || typeof param !== 'object' || param === null || Array.isArray(param)) {\n   return param;\n   }\n  \n   // Get the object's own property keys\n   const keys = Object.keys(param);\n  \n   // If there's more than one property, we assume it's already the complex object we want.\n   if (keys.length > 1) {\n   // console.log('keys > 1 → return param', param);\n   return param;\n   }\n  \n   // If there are no properties, just return it (though this is likely an empty object).\n   if (keys.length === 0) {\n   return param;\n   }\n  \n   // If there's exactly one property, it might be a JSON-string that we need to parse.\n   const singleKey = keys[0];\n   const value = param[singleKey];\n   // If that single property is a string, fix it and try to parse it as JSON.\n   if (typeof value === 'string') {\n   try {\n   return parseTextAsJson(isolateCurlySubstring(value));\n   } catch (e) {\n   console.log('value is string → parse failed with error:', e.toString(), '→ return param:', param, 'value:', value);\n   // Parsing failed; perhaps it's just a plain string or invalid JSON, so return as is.\n   return param;\n   }\n   }\n  \n   // Otherwise, repeat this process itratively.\n   return normalizeLLMOutput(value, iteration-1);\n  }\n  \n  const preparedData = $(\"PreparedData\").itemMatching($itemIndex).json;\n  const row = preparedData.row;\n  let gen = normalizeLLMOutput($json);\n  let fulltext = gen.hasOwnProperty('Fulltext') ? gen.Fulltext : gen;\n  \n  // Append any fulltext field returned to the field\n  // in our data row corresponding to the current action. \n  gen[row.Action] = fulltext;\n  \n  // Concatenate any generated fields with those already exisiting\n  // in our data row (using seperator if necessary),\n  // so we don't loose any pre-entered data.\n  const combined = {};\n  Object.keys(gen).forEach(key => {\n   const a = String(row[key] ?? \"\");\n   const b = String(gen[key]);\n   combined[key] = (a && b) ? (a + \"\\n---\\n\" + b) : (a || b);\n  });\n  \n  // Add the row number and set the new status to the action just performed.\n  combined.row_number = row.row_number;\n  combined.Status = row.Action;\n  combined.model = preparedData.model;\n  \n  return combined;\n  })();\n});\nreturn __single(__results.map(__unwrap));"
+      }
+    },
+    {
+      "nodeId": "node_9b62fc53f0",
+      "actorId": "actor_9b62fc53f0",
+      "type": "NodeTransform",
+      "label": "HandleXMLRPCResponse",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"HandleXMLRPCResponse\" (run once for each item).\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __results = __items.map((__item) => {\n  const $json = __item;\n  const item = { json: __item };\n  const $input = { item: { json: __item }, first: () => ({ json: __item }), all: () => [{ json: __item }] };\n  return (() => {\n  // Get the XML response from the incoming JSON\n  const xmlResponse = $json.data;\n  \n  // Helper function to extract a value by matching a regex pattern\n  function extractValue(pattern, xml) {\n   const match = xml.match(pattern);\n   return match ? match[1] : null;\n  }\n  \n  // Check if the XML contains a fault\n  if (xmlResponse.indexOf(\"<fault>\") !== -1) {\n   // Extract the faultCode and faultString using regex\n   // This regex matches the value inside <int> or <string> for faultCode\n   const faultCode = extractValue(/<name>faultCode<\\/name>\\s*<value><(?:int|string)>(.*?)<\\/(?:int|string)>/s, xmlResponse);\n   // This regex extracts the faultString from within <string>\n   const faultString = extractValue(/<name>faultString<\\/name>\\s*<value><string>(.*?)<\\/string>/s, xmlResponse);\n   return { 'errorCode': faultCode, 'error': faultString };\n  } else {\n   // Otherwise, assume a successful response.\n   // The post ID is contained inside a <string> tag within <params>\n   const postId = extractValue(/<params>[\\s\\S]*?<string>(.*?)<\\/string>/, xmlResponse);\n   return { postId };\n  }\n  })();\n});\nreturn __single(__results.map(__unwrap));"
+      }
+    },
+    {
+      "nodeId": "node_075e4dce71",
+      "actorId": "actor_075e4dce71",
+      "type": "NodeTransform",
+      "label": "Params: LogStatus",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"ManualTrigger\": {{ctx}}, \"Settings\": {\"urlSpreadsheet\":\"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit?gid=0#gid=0\",\"urlWordpress\":\"SUBDOMAIN.wordpress.com\",\"wordpressUsername\":\"YourUserName\",\"wordpressApplicationPassword\":\"y0ur app1 p4ss w0rd\",\"sheetSchedule\":\"Schedule\",\"sheetConfig\":\"Config\",\"actionPublish\":\"publish\",\"actionUpdate\":\"\",\"sheetLog\":\"Log\"}, \"fetchConfig\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Schedule\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Config\": {{steps.xf_233a3da91b.result}}, \"PreparedData\": {{steps.xf_f683b9d501.result}}, \"PrepareXmlPost\": {{steps.xf_f6b6761949.result}}, \"CreatePost\": {{steps.xf_4fb9742eb1.result}}, \"RecombinedDataRow\": {{steps.xf_acd1e17845.result}}, \"HandleXMLRPCResponse\": {{steps.xf_9b62fc53f0.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Params for googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND (n8n node \"LogStatus\").\nreturn {\n  \"spreadsheetId\": ($('Settings').item.json.urlSpreadsheet),\n  \"range\": ($('Settings').item.json.sheetLog),\n  \"values\": [[($now), `info`, `Status ${$json.Status} for row ${$('PreparedData').item.json.row.row_number}`]],\n  \"valueInputOption\": \"USER_ENTERED\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_da8f9a7397",
+      "actorId": "actor_da8f9a7397",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_SPREADSHEETS_VALUES_APPEND"
+      }
+    },
+    {
+      "nodeId": "node_35e3f42a4c",
+      "actorId": "actor_35e3f42a4c",
+      "type": "NodeTransform",
+      "label": "Params: LogPublished",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"ManualTrigger\": {{ctx}}, \"Settings\": {\"urlSpreadsheet\":\"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit?gid=0#gid=0\",\"urlWordpress\":\"SUBDOMAIN.wordpress.com\",\"wordpressUsername\":\"YourUserName\",\"wordpressApplicationPassword\":\"y0ur app1 p4ss w0rd\",\"sheetSchedule\":\"Schedule\",\"sheetConfig\":\"Config\",\"actionPublish\":\"publish\",\"actionUpdate\":\"\",\"sheetLog\":\"Log\"}, \"fetchConfig\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Schedule\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Config\": {{steps.xf_233a3da91b.result}}, \"PreparedData\": {{steps.xf_f683b9d501.result}}, \"PrepareXmlPost\": {{steps.xf_f6b6761949.result}}, \"CreatePost\": {{steps.xf_4fb9742eb1.result}}, \"RecombinedDataRow\": {{steps.xf_acd1e17845.result}}, \"HandleXMLRPCResponse\": {{steps.xf_9b62fc53f0.result}}, \"LogStatus\": {{steps.GOOGLESUPER_SPREADSHEETS_VALUES_APPEND.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Params for googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND (n8n node \"LogPublished\").\nreturn {\n  \"spreadsheetId\": ($('Settings').item.json.urlSpreadsheet),\n  \"range\": ($('Settings').item.json.sheetLog),\n  \"values\": [[($now), ($json.errorCode ? 'error' : 'info'), `Publishing row ${$('PreparedData').item.json.row.row_number}: ${$json.postId}${$json.errorCode}${$json.error}`]],\n  \"valueInputOption\": \"USER_ENTERED\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_babde7c4c8",
+      "actorId": "actor_babde7c4c8",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_SPREADSHEETS_VALUES_APPEND"
+      }
+    },
+    {
+      "nodeId": "node_e57671742e",
+      "actorId": "actor_e57671742e",
+      "type": "NodeTransform",
+      "label": "Params: SaveBackToSheet",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"ManualTrigger\": {{ctx}}, \"Settings\": {\"urlSpreadsheet\":\"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit?gid=0#gid=0\",\"urlWordpress\":\"SUBDOMAIN.wordpress.com\",\"wordpressUsername\":\"YourUserName\",\"wordpressApplicationPassword\":\"y0ur app1 p4ss w0rd\",\"sheetSchedule\":\"Schedule\",\"sheetConfig\":\"Config\",\"actionPublish\":\"publish\",\"actionUpdate\":\"\",\"sheetLog\":\"Log\"}, \"fetchConfig\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Schedule\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Config\": {{steps.xf_233a3da91b.result}}, \"PreparedData\": {{steps.xf_f683b9d501.result}}, \"PrepareXmlPost\": {{steps.xf_f6b6761949.result}}, \"CreatePost\": {{steps.xf_4fb9742eb1.result}}, \"RecombinedDataRow\": {{steps.xf_acd1e17845.result}}, \"HandleXMLRPCResponse\": {{steps.xf_9b62fc53f0.result}}, \"LogStatus\": {{steps.GOOGLESUPER_SPREADSHEETS_VALUES_APPEND.result}}, \"LogPublished\": {{steps.GOOGLESUPER_SPREADSHEETS_VALUES_APPEND.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_BATCH_UPDATE (n8n node \"SaveBackToSheet\").\nreturn {\n  \"spreadsheet_id\": ($('Settings').item.json.urlSpreadsheet),\n  \"sheet_name\": ($('Settings').item.json.sheetSchedule),\n  \"values\": ($input.all().map((i) => Object.values(i.json ?? {}))),\n};"
+      }
+    },
+    {
+      "nodeId": "node_29204b1c62",
+      "actorId": "actor_29204b1c62",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_BATCH_UPDATE",
+      "color": "#6366F1",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_BATCH_UPDATE"
+      }
+    },
+    {
+      "nodeId": "node_f0c3df7861",
+      "actorId": "actor_f0c3df7861",
+      "type": "NodeTransform",
+      "label": "PostingSuccessful: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"ManualTrigger\": {{ctx}}, \"Settings\": {\"urlSpreadsheet\":\"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit?gid=0#gid=0\",\"urlWordpress\":\"SUBDOMAIN.wordpress.com\",\"wordpressUsername\":\"YourUserName\",\"wordpressApplicationPassword\":\"y0ur app1 p4ss w0rd\",\"sheetSchedule\":\"Schedule\",\"sheetConfig\":\"Config\",\"actionPublish\":\"publish\",\"actionUpdate\":\"\",\"sheetLog\":\"Log\"}, \"fetchConfig\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Schedule\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Config\": {{steps.xf_233a3da91b.result}}, \"PreparedData\": {{steps.xf_f683b9d501.result}}, \"PrepareXmlPost\": {{steps.xf_f6b6761949.result}}, \"CreatePost\": {{steps.xf_4fb9742eb1.result}}, \"RecombinedDataRow\": {{steps.xf_acd1e17845.result}}, \"HandleXMLRPCResponse\": {{steps.xf_9b62fc53f0.result}}, \"LogStatus\": {{steps.GOOGLESUPER_SPREADSHEETS_VALUES_APPEND.result}}, \"LogPublished\": {{steps.GOOGLESUPER_SPREADSHEETS_VALUES_APPEND.result}}, \"SaveBackToSheet\": {{steps.GOOGLESUPER_BATCH_UPDATE.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean(((($('HandleXMLRPCResponse').item.json.postId)) != null));"
+      }
+    },
+    {
+      "nodeId": "node_0e71199f0c",
+      "actorId": "actor_0e71199f0c",
+      "type": "NodeBranch",
+      "label": "PostingSuccessful: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_6666be755f",
+      "actorId": "actor_6666be755f",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_BATCH_UPDATE",
+      "color": "#6366F1",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_BATCH_UPDATE",
+        "params": {
+          "spreadsheet_id": "{{steps.xf_d8137aebdc.result.urlSpreadsheet}}",
+          "sheet_name": "{{steps.xf_d8137aebdc.result.sheetSchedule}}",
+          "values": [
+            [
+              "{{steps.xf_d8137aebdc.result.actionPublish}}",
+              "{{steps.xf_f683b9d501.result.row.row_number}}"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_e2abbeb583",
+      "actorId": "actor_e2abbeb583",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_d86c9c94e5",
+      "actorId": "actor_d86c9c94e5",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 6540,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_85b42e72ad",
+      "actorId": "actor_85b42e72ad",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_83d1dc1254",
+      "actorId": "actor_83d1dc1254",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "spreadsheetId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_2b1657bcf2",
+      "actorId": "actor_2b1657bcf2",
+      "type": "NodeChatModel",
+      "label": "Basic LLM Chain: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4260,
+        "y": 720
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_73a6a76a6d",
+      "target": "node_c57cf88853",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_73a6a76a6d",
+      "target": "node_c57cf88853",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_f5fa3cbe3d",
+      "target": "node_13c56f2133",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_f5fa3cbe3d",
+      "target": "node_13c56f2133",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_087e0f8346",
+      "target": "node_942ec29f52",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_087e0f8346",
+      "target": "node_942ec29f52",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_6a08d60d90",
+      "target": "node_690095b028",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_6a08d60d90",
+      "target": "node_690095b028",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_0221f01c4d",
+      "target": "node_dbb376de66",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_b60be6efe8",
+      "target": "node_4fb9742eb1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b60be6efe8",
+      "target": "node_4fb9742eb1",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_075e4dce71",
+      "target": "node_da8f9a7397",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_075e4dce71",
+      "target": "node_da8f9a7397",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_35e3f42a4c",
+      "target": "node_babde7c4c8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_35e3f42a4c",
+      "target": "node_babde7c4c8",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_e57671742e",
+      "target": "node_29204b1c62",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_e57671742e",
+      "target": "node_29204b1c62",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_f0c3df7861",
+      "target": "node_0e71199f0c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_f0c3df7861",
+      "target": "node_0e71199f0c",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_d8137aebdc",
+      "target": "node_4798a6b7ae",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d8137aebdc",
+      "target": "node_73f5f44c2f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_da1561b2ac",
+      "target": "node_d8137aebdc",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_da1561b2ac",
+      "target": "node_d8137aebdc",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5965b1df21",
+      "target": "node_d8137aebdc",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_73f5f44c2f",
+      "target": "node_f683b9d501",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_73f5f44c2f",
+      "target": "node_f683b9d501",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4798a6b7ae",
+      "target": "node_233a3da91b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4798a6b7ae",
+      "target": "node_233a3da91b",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_942ec29f52",
+      "target": "node_f6b6761949",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f683b9d501",
+      "target": "node_f6b6761949",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f683b9d501",
+      "target": "node_73a6a76a6d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f683b9d501",
+      "target": "node_73a6a76a6d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_acd1e17845",
+      "target": "node_075e4dce71",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_acd1e17845",
+      "target": "node_075e4dce71",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_13c56f2133",
+      "target": "node_087e0f8346",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f683b9d501",
+      "target": "node_087e0f8346",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_13c56f2133",
+      "target": "node_6a08d60d90",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f683b9d501",
+      "target": "node_6a08d60d90",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c57cf88853",
+      "target": "node_f5fa3cbe3d",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f683b9d501",
+      "target": "node_f5fa3cbe3d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_690095b028",
+      "target": "node_0221f01c4d",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f683b9d501",
+      "target": "node_0221f01c4d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dbb376de66",
+      "target": "node_acd1e17845",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dbb376de66",
+      "target": "node_acd1e17845",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4fb9742eb1",
+      "target": "node_9b62fc53f0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4fb9742eb1",
+      "target": "node_9b62fc53f0",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f6b6761949",
+      "target": "node_b60be6efe8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_9b62fc53f0",
+      "target": "node_35e3f42a4c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9b62fc53f0",
+      "target": "node_35e3f42a4c",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0e71199f0c",
+      "target": "node_6666be755f",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_da8f9a7397",
+      "target": "node_e57671742e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_da8f9a7397",
+      "target": "node_e57671742e",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_babde7c4c8",
+      "target": "node_f0c3df7861",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_babde7c4c8",
+      "target": "node_f0c3df7861",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_233a3da91b",
+      "target": "node_e2abbeb583",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_29204b1c62",
+      "target": "node_d86c9c94e5",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_6666be755f",
+      "target": "node_85b42e72ad",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_2b1657bcf2",
+      "target": "node_dbb376de66",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "google-drive-and-sheets",
+    "categoryLabel": "Google Drive and Google Sheets",
+    "department": "Marketing",
+    "connectors": [
+      "googlesuper",
+      "openai",
+      "yantra-storage"
+    ],
+    "setupVars": [
+      {
+        "key": "spreadsheetId",
+        "label": "Google Sheets spreadsheet id",
+        "type": "id",
+        "example": "1AbC...xyz",
+        "usedBy": [
+          "Config",
+          "IfActionPublish",
+          "LogPublished",
+          "LogStatus",
+          "PostingSuccessful",
+          "PrepareXmlPost",
+          "PreparedData",
+          "RecombinedDataRow",
+          "SaveBackToSheet",
+          "Settings"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate author-and-publish-blog-posts-from-google-sheets",
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 22,
+      "yantraSteps": 32,
+      "foldedHelpers": [
+        "AgentLLM"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Google_Drive_and_Google_Sheets/Author and Publish Blog Posts From Google Sheets.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Blog Automation TEMPLATE"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "action-pending-publish",
+        "node": "CreatePost",
+        "detail": "yantra-storage/YANTRA_STORAGE_HTTP_SEND waits for the yantra-storage HTTP send and signatures patch (1.4.1) to be published"
+      }
+    ],
+    "setup": [
+      "\"CreatePost\": yantra-storage/YANTRA_STORAGE_HTTP_SEND comes from the yantra-storage HTTP send and signatures patch (1.4.1), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
+      "Setup value spreadsheetId: Google Sheets spreadsheet id (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "After import, start the schedule: cdecli cron activate author-and-publish-blog-posts-from-google-sheets."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "CreatePost",
+          "n8n": "httpRequest.raw",
+          "action": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+          "soft": true
+        },
+        {
+          "node": "SaveBackToSheet",
+          "n8n": "sheet.update.autoMap",
+          "action": "googlesuper/GOOGLESUPER_BATCH_UPDATE",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "AgentLLM",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Basic LLM Chain",
+          "model": "={{ $json.model }}"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "ScheduleTrigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        },
+        {
+          "node": "ManualTrigger",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"CreatePost\" sends its raw body with yantra-storage HTTP_SEND (public https hosts only, 25 MB, 120 s).",
+        "\"SaveBackToSheet\" mapped columns automatically; here each item's fields are appended in their own order, so keep them in the same order as the sheet's header row.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Settings",
+      "## Author Blog-Post\nUsing OpenRouter to make model fully configurable for each authoring stage",
+      "## Post-process Data\n{{ Placehoder }} replacement",
+      "## Log to Sheet",
+      "## Save Result To Sheet",
+      "## Publish Blog-Post\nUse a generic XMLHttpRequest with subsequent response handling, since the Wordpress node did not work at all.",
+      "## Post-process Data\nNormalize and re-merge output data structure.",
+      "## Post-process Data\nExtract post id or error message from response.",
+      "## Log to Sheet",
+      "## Save Status To Sheet",
+      "## Authoring\n## Stage",
+      "## Publishing\n## Stage",
+      "## Config & Data"
+    ],
+    "nodes": {
+      "node_da1561b2ac": {
+        "n8n": "ScheduleTrigger",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_5965b1df21": {
+        "n8n": "ManualTrigger",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_d8137aebdc": {
+        "n8n": "Settings",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_4798a6b7ae": {
+        "n8n": "fetchConfig",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_73f5f44c2f": {
+        "n8n": "Schedule",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_233a3da91b": {
+        "n8n": "Config",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_f683b9d501": {
+        "n8n": "PreparedData",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_73a6a76a6d": {
+        "n8n": "IfTakeAction",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_c57cf88853": {
+        "n8n": "IfTakeAction",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_f5fa3cbe3d": {
+        "n8n": "IfActionPublish",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_13c56f2133": {
+        "n8n": "IfActionPublish",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_087e0f8346": {
+        "n8n": "IfScheduledNow",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_942ec29f52": {
+        "n8n": "IfScheduledNow",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_6a08d60d90": {
+        "n8n": "IfPromptExists",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_690095b028": {
+        "n8n": "IfPromptExists",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_f6b6761949": {
+        "n8n": "PrepareXmlPost",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_dbb376de66": {
+        "n8n": "Basic LLM Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_0221f01c4d": {
+        "n8n": "Basic LLM Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_b60be6efe8": {
+        "n8n": "CreatePost",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_4fb9742eb1": {
+        "n8n": "CreatePost",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_acd1e17845": {
+        "n8n": "RecombinedDataRow",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_9b62fc53f0": {
+        "n8n": "HandleXMLRPCResponse",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_075e4dce71": {
+        "n8n": "LogStatus",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_da8f9a7397": {
+        "n8n": "LogStatus",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_35e3f42a4c": {
+        "n8n": "LogPublished",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_babde7c4c8": {
+        "n8n": "LogPublished",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_e57671742e": {
+        "n8n": "SaveBackToSheet",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_29204b1c62": {
+        "n8n": "SaveBackToSheet",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_f0c3df7861": {
+        "n8n": "PostingSuccessful",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_0e71199f0c": {
+        "n8n": "PostingSuccessful",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_6666be755f": {
+        "n8n": "SetToPublish",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_e2abbeb583": {
+        "n8n": "__end:Config",
+        "n8nType": "synthetic"
+      },
+      "node_d86c9c94e5": {
+        "n8n": "__end:SaveBackToSheet",
+        "n8nType": "synthetic"
+      },
+      "node_85b42e72ad": {
+        "n8n": "__end:SetToPublish",
+        "n8nType": "synthetic"
+      },
+      "node_83d1dc1254": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_2b1657bcf2": {
+        "n8n": "Basic LLM Chain",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

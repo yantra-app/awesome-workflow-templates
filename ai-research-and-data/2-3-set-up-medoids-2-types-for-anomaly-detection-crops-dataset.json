@@ -1,0 +1,1743 @@
+{
+  "name": "[2/3] Set up medoids (2 types) for anomaly detection (crops dataset)",
+  "workflowSlug": "2-3-set-up-medoids-2-types-for-anomaly-detection-crops-dataset",
+  "description": "Explores the use of a vector database for big data analysis, focusing on anomaly detection for AI agents.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_951d57d1aa",
+      "actorId": "actor_951d57d1aa",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_a5a23b8e84",
+      "actorId": "actor_a5a23b8e84",
+      "type": "NodeTransform",
+      "label": "Qdrant cluster variables",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"qdrantCloudURL\"] = `https://152bc6e2-832a-415c-a1aa-fb529f8baf8d.eu-central-1-0.aws.cloud.qdrant.io`;\n  out[\"collectionName\"] = `agricultural-crops`;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_f5aa06f988",
+      "actorId": "actor_f5aa06f988",
+      "type": "NodeTransform",
+      "label": "Medoids Variables",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"furthestFromCenter\"] = Number(5);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_e48b2ffc79",
+      "actorId": "actor_e48b2ffc79",
+      "type": "NodeTransform",
+      "label": "Text Medoids Variables",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"furthestFromCenter\"] = Number(1);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_493225c89a",
+      "actorId": "actor_493225c89a",
+      "type": "NodeHttpRequest",
+      "label": "Total Points in Collection",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_a5a23b8e84.result.qdrantCloudURL}}/collections/{{steps.xf_a5a23b8e84.result.collectionName}}/points/count",
+        "headers": {
+          "Content-Type": "application/json",
+          "api-key": "{{qdrantApiKey}}"
+        },
+        "body": "{\n \"exact\": true\n}"
+      }
+    },
+    {
+      "nodeId": "node_eb164c1593",
+      "actorId": "actor_eb164c1593",
+      "type": "NodeTransform",
+      "label": "Textual (visual) crop descriptions",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields from JSON (n8n Set node, JSON mode): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const __raw = \"{\\\"text anchors\\\": [{\\\"cropName\\\": \\\"pearl_millet(bajra)\\\", \\\"cropDescription\\\": \\\"pearl_millet(bajra) - Tall stalks with cylindrical, spiked green grain heads.\\\"},\\n{\\\"cropName\\\": \\\"tobacco-plant\\\", \\\"cropDescription\\\": \\\"tobacco-plant - Broad, oval leaves and small tubular flowers, typically pink or white.\\\"},\\n{\\\"cropName\\\": \\\"cherry\\\", \\\"cropDescription\\\": \\\"cherry - Small, glossy red fruits on a medium-sized tree with slender branches and serrated leaves.\\\"},\\n{\\\"cropName\\\": \\\"cotton\\\", \\\"cropDescription\\\": \\\"cotton - Bushy plant with fluffy white fiber-filled pods and lobed green leaves.\\\"},\\n{\\\"cropName\\\": \\\"banana\\\", \\\"cropDescription\\\": \\\"banana - Tall herbaceous plant with broad, elongated green leaves and hanging bunches of yellow fruits.\\\"},\\n{\\\"cropName\\\": \\\"cucumber\\\", \\\"cropDescription\\\": \\\"cucumber - Creeping vine with yellow flowers and elongated green cylindrical fruits.\\\"},\\n{\\\"cropName\\\": \\\"maize\\\", \\\"cropDescription\\\": \\\"maize - Tall stalks with broad leaves, tassels at the top, and ears of corn sheathed in husks.\\\"},\\n{\\\"cropName\\\": \\\"wheat\\\", \\\"cropDescription\\\": \\\"wheat - Slender, upright stalks with narrow green leaves and golden, spiky grain heads.\\\"},\\n{\\\"cropName\\\": \\\"clove\\\", \\\"cropDescription\\\": \\\"clove - Small tree with oval green leaves and clusters of unopened reddish flower buds.\\\"},\\n{\\\"cropName\\\": \\\"jowar\\\", \\\"cropDescription\\\": \\\"jowar - Tall grass-like plant with broad leaves and round, compact grain clusters at the top.\\\"},\\n{\\\"cropName\\\": \\\"olive-tree\\\", \\\"cropDescription\\\": \\\"olive-tree - Medium-sized tree with silvery-green leaves and small oval green or black fruits.\\\"},\\n{\\\"cropName\\\": \\\"soyabean\\\", \\\"cropDescription\\\": \\\"soyabean - Bushy plant with trifoliate green leaves and small pods containing rounded beans.\\\"},\\n{\\\"cropName\\\": \\\"coffee-plant\\\", \\\"cropDescription\\\": \\\"coffee-plant - Shrub with shiny dark green leaves and clusters of small white flowers, followed by red berries.\\\"},\\n{\\\"cropName\\\": \\\"rice\\\", \\\"cropDescription\\\": \\\"rice - Short, water-loving grass with narrow green leaves and drooping golden grain heads.\\\"},\\n{\\\"cropName\\\": \\\"lemon\\\", \\\"cropDescription\\\": \\\"lemon - Small tree with glossy green leaves and oval yellow fruits.\\\"},\\n{\\\"cropName\\\": \\\"mustard-oil\\\", \\\"cropDescription\\\": \\\"mustard-oil - Small herbaceous plant with yellow flowers and slender seed pods.\\\"},\\n{\\\"cropName\\\": \\\"vigna-radiati(mung)\\\", \\\"cropDescription\\\": \\\"vigna-radiati(mung) - Low-growing plant with trifoliate leaves and small green pods containing mung beans.\\\"},\\n{\\\"cropName\\\": \\\"coconut\\\", \\\"cropDescription\\\": \\\"coconut - Tall palm tree with feathery leaves and large round fibrous fruits.\\\"},\\n{\\\"cropName\\\": \\\"gram\\\", \\\"cropDescription\\\": \\\"gram - Low bushy plant with feathery leaves and small pods containing round seeds.\\\"},\\n{\\\"cropName\\\": \\\"pineapple\\\", \\\"cropDescription\\\": \\\"pineapple - Low plant with spiky, sword-shaped leaves and large, spiky golden fruits.\\\"},\\n{\\\"cropName\\\": \\\"sugarcane\\\", \\\"cropDescription\\\": \\\"sugarcane - Tall, jointed stalks with long narrow leaves and a sweet interior.\\\"},\\n{\\\"cropName\\\": \\\"sunflower\\\", \\\"cropDescription\\\": \\\"sunflower - Tall plant with rough green leaves and large bright yellow flower heads.\\\"},\\n{\\\"cropName\\\": \\\"chilli\\\", \\\"cropDescription\\\": \\\"chilli - Small bushy plant with slender green or red elongated fruits.\\\"},\\n{\\\"cropName\\\": \\\"fox_nut(makhana)\\\", \\\"cropDescription\\\": \\\"fox_nut(makhana) - Aquatic plant with floating round leaves and spiny white seeds.\\\"},\\n{\\\"cropName\\\": \\\"jute\\\", \\\"cropDescription\\\": \\\"jute - Tall plant with long, straight stalks and narrow green leaves.\\\"},\\n{\\\"cropName\\\": \\\"papaya\\\", \\\"cropDescription\\\": \\\"papaya - Medium-sized tree with hollow trunk, large lobed leaves, and yellow-orange pear-shaped fruits.\\\"},\\n{\\\"cropName\\\": \\\"tea\\\", \\\"cropDescription\\\": \\\"tea - Small shrub with glossy dark green leaves and small white flowers.\\\"},\\n{\\\"cropName\\\": \\\"cardamom\\\", \\\"cropDescription\\\": \\\"cardamom - Low tropical plant with broad leaves and clusters of small, light green pods.\\\"},\\n{\\\"cropName\\\": \\\"almond\\\", \\\"cropDescription\\\": \\\"almond - Medium-sized tree with serrated leaves and oval green pods containing edible nuts.\\\"}]}\\n\";\n  let __obj;\n  try { __obj = typeof __raw === 'string' ? JSON.parse(__raw) : __raw; } catch (e) { throw new Error('Set node JSON is not valid JSON: ' + e.message); }\n  return __obj;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_22191ad6fa",
+      "actorId": "actor_22191ad6fa",
+      "type": "NodeHttpRequest",
+      "label": "Crop Counts",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_a5a23b8e84.result.qdrantCloudURL}}/collections/{{steps.xf_a5a23b8e84.result.collectionName}}/facet",
+        "headers": {
+          "Content-Type": "application/json",
+          "api-key": "{{qdrantApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_787ebe8162",
+      "actorId": "actor_787ebe8162",
+      "type": "NodeTransform",
+      "label": "Body: Crop Counts",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Crop Counts\".\nconst __body = ({\n \"key\": \"crop_name\",\n \"limit\": $json.result.count,\n \"exact\": true\n});\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_a201362160",
+      "actorId": "actor_a201362160",
+      "type": "NodeTransform",
+      "label": "Split Out1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"['text anchors']\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"['text anchors']\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"['text anchors']\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_afdbed8a4b",
+      "actorId": "actor_afdbed8a4b",
+      "type": "NodeTransform",
+      "label": "Info About Crop Clusters",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"=cropsNumber\"] = Number(($json.result.hits.length));\n  out[\"maxClusterSize\"] = Number((Math.max(...$json.result.hits.map(item => item.count))));\n  out[\"cropNames\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json.result.hits.map(item => item.value)));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_8c84d11e75",
+      "actorId": "actor_8c84d11e75",
+      "type": "NodeTransform",
+      "label": "Split Out",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"cropNames\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"cropNames\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => ({ ...__base, \"cropNames\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_ff33d001a8",
+      "actorId": "actor_ff33d001a8",
+      "type": "NodeHttpRequest",
+      "label": "Cluster Distance Matrix",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_a5a23b8e84.result.qdrantCloudURL}}/collections/{{steps.xf_a5a23b8e84.result.collectionName}}/points/search/matrix/offsets",
+        "headers": {
+          "Content-Type": "application/json",
+          "api-key": "{{qdrantApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_07a53cee86",
+      "actorId": "actor_07a53cee86",
+      "type": "NodeTransform",
+      "label": "Body: Cluster Distance Matrix",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Cluster Distance Matrix\".\nconst __body = ({\n \"sample\": $json.maxClusterSize,\n \"limit\": $json.maxClusterSize,\n \"using\": \"voyage\",\n \"filter\": {\n \"must\": {\n \"key\": \"crop_name\",\n \"match\": { \"value\": $json.cropName }\n }\n }\n});\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_a6c2f5623d",
+      "actorId": "actor_a6c2f5623d",
+      "type": "NodeSync",
+      "label": "Merge",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_c04cf4c138",
+      "actorId": "actor_c04cf4c138",
+      "type": "NodeTransform",
+      "label": "Scipy Sparse Matrix",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// Original n8n node was Python Code; no Python runtime on Transform.\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_44cc9f63a8",
+      "actorId": "actor_44cc9f63a8",
+      "type": "NodeHttpRequest",
+      "label": "Embed text",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://api.voyageai.com/v1/multimodalembeddings",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{voyageApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_c347b418ba",
+      "actorId": "actor_c347b418ba",
+      "type": "NodeTransform",
+      "label": "Body: Embed text",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Embed text\".\nconst __body = ({\n \"inputs\": [\n {\n \"content\": [\n {\n \"type\": \"text\",\n \"text\": $json.cropDescription\n }\n ]\n }\n ],\n \"model\": \"voyage-multimodal-3\",\n \"input_type\": \"query\"\n});\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_c29fffaab2",
+      "actorId": "actor_c29fffaab2",
+      "type": "NodeHttpRequest",
+      "label": "Set medoid id",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_a5a23b8e84.result.qdrantCloudURL}}/collections/{{steps.xf_a5a23b8e84.result.collectionName}}/points/payload",
+        "headers": {
+          "Content-Type": "application/json",
+          "api-key": "{{qdrantApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_ef5ef747be",
+      "actorId": "actor_ef5ef747be",
+      "type": "NodeTransform",
+      "label": "Body: Set medoid id",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Set medoid id\".\nconst __body = ({\n \"payload\": {\"is_medoid\": true},\n \"points\": [$json.medoid_id]\n});\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_251871672f",
+      "actorId": "actor_251871672f",
+      "type": "NodeHttpRequest",
+      "label": "Get Medoid Vector",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_a5a23b8e84.result.qdrantCloudURL}}/collections/{{steps.xf_a5a23b8e84.result.collectionName}}/points",
+        "headers": {
+          "Content-Type": "application/json",
+          "api-key": "{{qdrantApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_71e0a96001",
+      "actorId": "actor_71e0a96001",
+      "type": "NodeTransform",
+      "label": "Body: Get Medoid Vector",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Get Medoid Vector\".\nconst __body = ({\n \"ids\": [$json.medoid_id],\n \"with_vector\": true,\n \"with_payload\": true\n});\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_04086b3567",
+      "actorId": "actor_04086b3567",
+      "type": "NodeHttpRequest",
+      "label": "Get Medoid by Text",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4640,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_a5a23b8e84.result.qdrantCloudURL}}/collections/{{steps.xf_a5a23b8e84.result.collectionName}}/points/query",
+        "headers": {
+          "Content-Type": "application/json",
+          "api-key": "{{qdrantApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_5a491b60b9",
+      "actorId": "actor_5a491b60b9",
+      "type": "NodeTransform",
+      "label": "Body: Get Medoid by Text",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When clicking ‘Test workflow’\": {{ctx}}, \"Qdrant cluster variables\": {\"qdrantCloudURL\":\"https://152bc6e2-832a-415c-a1aa-fb529f8baf8d.eu-central-1-0.aws.cloud.qdrant.io\",\"collectionName\":\"agricultural-crops\"}, \"Medoids Variables\": {\"furthestFromCenter\":5}, \"Text Medoids Variables\": {\"furthestFromCenter\":1}, \"Total Points in Collection\": {{steps.http_493225c89a.result}}, \"Textual (visual) crop descriptions\": {{steps.xf_eb164c1593.result}}, \"Split Out1\": {{steps.xf_a201362160.result}}, \"Info About Crop Clusters\": {{steps.xf_afdbed8a4b.result}}, \"Split Out\": {{steps.xf_8c84d11e75.result}}, \"Scipy Sparse Matrix\": {{steps.xf_c04cf4c138.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Get Medoid by Text\".\nconst __body = ({\n \"query\": $json.data[0].embedding,\n \"using\": \"voyage\",\n \"exact\": true,\n \"filter\": {\n \"must\": [\n {\n \"key\": \"crop_name\",\n \"match\": {\"value\": $('Merge').item.json.cropName }\n }\n ]\n },\n \"limit\": 1,\n \"with_payload\": true,\n \"with_vector\": true\n});\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_9437df58bd",
+      "actorId": "actor_9437df58bd",
+      "type": "NodeTransform",
+      "label": "Prepare for Searching Threshold",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"oppositeOfCenterVector\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json.result[0].vector.voyage.map(value => value * -1)));\n  out[\"cropName\"] = ($json.result[0].payload.crop_name);\n  out[\"centerId\"] = ($json.result[0].id);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_c6c5291691",
+      "actorId": "actor_c6c5291691",
+      "type": "NodeHttpRequest",
+      "label": "Set text medoid id",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_a5a23b8e84.result.qdrantCloudURL}}/collections/{{steps.xf_a5a23b8e84.result.collectionName}}/points/payload",
+        "headers": {
+          "Content-Type": "application/json",
+          "api-key": "{{qdrantApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_6f3c2d8dfe",
+      "actorId": "actor_6f3c2d8dfe",
+      "type": "NodeTransform",
+      "label": "Body: Set text medoid id",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Set text medoid id\".\nconst __body = ({\n \"payload\": {\"is_text_anchor_medoid\": true},\n \"points\": [$json.result.points[0].id]\n});\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_1de5863f64",
+      "actorId": "actor_1de5863f64",
+      "type": "NodeTransform",
+      "label": "Prepare for Searching Threshold1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"oppositeOfCenterVector\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json.result.points[0].vector.voyage.map(value => value * -1)));\n  out[\"cropName\"] = ($json.result.points[0].payload.crop_name);\n  out[\"centerId\"] = ($json.result.points[0].id);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_7c80022a46",
+      "actorId": "actor_7c80022a46",
+      "type": "NodeHttpRequest",
+      "label": "Searching Score",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_a5a23b8e84.result.qdrantCloudURL}}/collections/{{steps.xf_a5a23b8e84.result.collectionName}}/points/query",
+        "headers": {
+          "Content-Type": "application/json",
+          "api-key": "{{qdrantApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_b115a5982e",
+      "actorId": "actor_b115a5982e",
+      "type": "NodeTransform",
+      "label": "Body: Searching Score",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When clicking ‘Test workflow’\": {{ctx}}, \"Qdrant cluster variables\": {\"qdrantCloudURL\":\"https://152bc6e2-832a-415c-a1aa-fb529f8baf8d.eu-central-1-0.aws.cloud.qdrant.io\",\"collectionName\":\"agricultural-crops\"}, \"Medoids Variables\": {\"furthestFromCenter\":5}, \"Text Medoids Variables\": {\"furthestFromCenter\":1}, \"Total Points in Collection\": {{steps.http_493225c89a.result}}, \"Textual (visual) crop descriptions\": {{steps.xf_eb164c1593.result}}, \"Split Out1\": {{steps.xf_a201362160.result}}, \"Info About Crop Clusters\": {{steps.xf_afdbed8a4b.result}}, \"Split Out\": {{steps.xf_8c84d11e75.result}}, \"Scipy Sparse Matrix\": {{steps.xf_c04cf4c138.result}}, \"Prepare for Searching Threshold\": {{steps.xf_9437df58bd.result}}, \"Prepare for Searching Threshold1\": {{steps.xf_1de5863f64.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Searching Score\".\nconst __body = ({\n \"query\": $json.oppositeOfCenterVector,\n \"using\": \"voyage\",\n \"exact\": true,\n \"filter\": {\n \"must\": [\n {\n \"key\": \"crop_name\",\n \"match\": {\"value\": $json.cropName }\n }\n ]\n },\n \"limit\": $('Medoids Variables').first().json.furthestFromCenter,\n \"with_payload\": true\n});\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_82b2281f4b",
+      "actorId": "actor_82b2281f4b",
+      "type": "NodeHttpRequest",
+      "label": "Searching Text Medoid Score",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5780,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_a5a23b8e84.result.qdrantCloudURL}}/collections/{{steps.xf_a5a23b8e84.result.collectionName}}/points/query",
+        "headers": {
+          "Content-Type": "application/json",
+          "api-key": "{{qdrantApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_559d7af9e1",
+      "actorId": "actor_559d7af9e1",
+      "type": "NodeTransform",
+      "label": "Body: Searching Text Medoid Score",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When clicking ‘Test workflow’\": {{ctx}}, \"Qdrant cluster variables\": {\"qdrantCloudURL\":\"https://152bc6e2-832a-415c-a1aa-fb529f8baf8d.eu-central-1-0.aws.cloud.qdrant.io\",\"collectionName\":\"agricultural-crops\"}, \"Medoids Variables\": {\"furthestFromCenter\":5}, \"Text Medoids Variables\": {\"furthestFromCenter\":1}, \"Total Points in Collection\": {{steps.http_493225c89a.result}}, \"Textual (visual) crop descriptions\": {{steps.xf_eb164c1593.result}}, \"Split Out1\": {{steps.xf_a201362160.result}}, \"Info About Crop Clusters\": {{steps.xf_afdbed8a4b.result}}, \"Split Out\": {{steps.xf_8c84d11e75.result}}, \"Scipy Sparse Matrix\": {{steps.xf_c04cf4c138.result}}, \"Prepare for Searching Threshold\": {{steps.xf_9437df58bd.result}}, \"Prepare for Searching Threshold1\": {{steps.xf_1de5863f64.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Searching Text Medoid Score\".\nconst __body = ({\n \"query\": $json.oppositeOfCenterVector,\n \"using\": \"voyage\",\n \"exact\": true,\n \"filter\": {\n \"must\": [\n {\n \"key\": \"crop_name\",\n \"match\": {\"value\": $json.cropName }\n }\n ]\n },\n \"limit\": $('Text Medoids Variables').first().json.furthestFromCenter,\n \"with_payload\": true\n});\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_4f16eb4557",
+      "actorId": "actor_4f16eb4557",
+      "type": "NodeTransform",
+      "label": "Threshold Score",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When clicking ‘Test workflow’\": {{ctx}}, \"Qdrant cluster variables\": {\"qdrantCloudURL\":\"https://152bc6e2-832a-415c-a1aa-fb529f8baf8d.eu-central-1-0.aws.cloud.qdrant.io\",\"collectionName\":\"agricultural-crops\"}, \"Medoids Variables\": {\"furthestFromCenter\":5}, \"Text Medoids Variables\": {\"furthestFromCenter\":1}, \"Total Points in Collection\": {{steps.http_493225c89a.result}}, \"Textual (visual) crop descriptions\": {{steps.xf_eb164c1593.result}}, \"Split Out1\": {{steps.xf_a201362160.result}}, \"Info About Crop Clusters\": {{steps.xf_afdbed8a4b.result}}, \"Split Out\": {{steps.xf_8c84d11e75.result}}, \"Scipy Sparse Matrix\": {{steps.xf_c04cf4c138.result}}, \"Prepare for Searching Threshold\": {{steps.xf_9437df58bd.result}}, \"Prepare for Searching Threshold1\": {{steps.xf_1de5863f64.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Array.prototype, { last() { return this[this.length - 1]; } });\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"thresholdScore\"] = Number(($json.result.points.last().score * -1));\n  out[\"centerId\"] = ($('Prepare for Searching Threshold').item.json.centerId);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_322a68e968",
+      "actorId": "actor_322a68e968",
+      "type": "NodeTransform",
+      "label": "Threshold Score1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When clicking ‘Test workflow’\": {{ctx}}, \"Qdrant cluster variables\": {\"qdrantCloudURL\":\"https://152bc6e2-832a-415c-a1aa-fb529f8baf8d.eu-central-1-0.aws.cloud.qdrant.io\",\"collectionName\":\"agricultural-crops\"}, \"Medoids Variables\": {\"furthestFromCenter\":5}, \"Text Medoids Variables\": {\"furthestFromCenter\":1}, \"Total Points in Collection\": {{steps.http_493225c89a.result}}, \"Textual (visual) crop descriptions\": {{steps.xf_eb164c1593.result}}, \"Split Out1\": {{steps.xf_a201362160.result}}, \"Info About Crop Clusters\": {{steps.xf_afdbed8a4b.result}}, \"Split Out\": {{steps.xf_8c84d11e75.result}}, \"Scipy Sparse Matrix\": {{steps.xf_c04cf4c138.result}}, \"Prepare for Searching Threshold\": {{steps.xf_9437df58bd.result}}, \"Prepare for Searching Threshold1\": {{steps.xf_1de5863f64.result}}, \"Threshold Score\": {{steps.xf_4f16eb4557.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Array.prototype, { last() { return this[this.length - 1]; } });\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"thresholdScore\"] = Number(($json.result.points.last().score * -1));\n  out[\"centerId\"] = ($('Prepare for Searching Threshold1').item.json.centerId);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_b894dbab26",
+      "actorId": "actor_b894dbab26",
+      "type": "NodeHttpRequest",
+      "label": "Set medoid threshold score",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_a5a23b8e84.result.qdrantCloudURL}}/collections/{{steps.xf_a5a23b8e84.result.collectionName}}/points/payload",
+        "headers": {
+          "Content-Type": "application/json",
+          "api-key": "{{qdrantApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_20765ee984",
+      "actorId": "actor_20765ee984",
+      "type": "NodeTransform",
+      "label": "Body: Set medoid threshold score",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Set medoid threshold score\".\nconst __body = ({\n \"payload\": {\"is_medoid_cluster_threshold\": $json.thresholdScore },\n \"points\": [$json.centerId]\n});\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_3073c8ad34",
+      "actorId": "actor_3073c8ad34",
+      "type": "NodeHttpRequest",
+      "label": "Set text medoid threshold score",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6920,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{steps.xf_a5a23b8e84.result.qdrantCloudURL}}/collections/{{steps.xf_a5a23b8e84.result.collectionName}}/points/payload",
+        "headers": {
+          "Content-Type": "application/json",
+          "api-key": "{{qdrantApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_949e2049ff",
+      "actorId": "actor_949e2049ff",
+      "type": "NodeTransform",
+      "label": "Body: Set text medoid threshold score",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Set text medoid threshold score\".\nconst __body = ({\n \"payload\": {\"is_text_anchor_medoid_cluster_threshold\": $json.thresholdScore },\n \"points\": [$json.centerId]\n});\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_1222c11532",
+      "actorId": "actor_1222c11532",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 5020,
+        "y": 880
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_238c6d3c95",
+      "actorId": "actor_238c6d3c95",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 5780,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_ef6f6f95ff",
+      "actorId": "actor_ef6f6f95ff",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_06ad155c00",
+      "actorId": "actor_06ad155c00",
+      "type": "NodeEnd",
+      "label": "End 4",
+      "color": "#EF4444",
+      "position": {
+        "x": 7300,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_07dc5f2584",
+      "actorId": "actor_07dc5f2584",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 1140
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "qdrantApiKey": {
+            "$workflowSecret": "QDRANT_API_KEY"
+          },
+          "voyageApiKey": {
+            "$workflowSecret": "VOYAGE_API_KEY"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_787ebe8162",
+      "target": "node_22191ad6fa",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_787ebe8162",
+      "target": "node_22191ad6fa",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_07a53cee86",
+      "target": "node_ff33d001a8",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_07a53cee86",
+      "target": "node_ff33d001a8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_c347b418ba",
+      "target": "node_44cc9f63a8",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_c347b418ba",
+      "target": "node_44cc9f63a8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_ef5ef747be",
+      "target": "node_c29fffaab2",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_ef5ef747be",
+      "target": "node_c29fffaab2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_71e0a96001",
+      "target": "node_251871672f",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_71e0a96001",
+      "target": "node_251871672f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_5a491b60b9",
+      "target": "node_04086b3567",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_5a491b60b9",
+      "target": "node_04086b3567",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_6f3c2d8dfe",
+      "target": "node_c6c5291691",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_6f3c2d8dfe",
+      "target": "node_c6c5291691",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_b115a5982e",
+      "target": "node_7c80022a46",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_b115a5982e",
+      "target": "node_7c80022a46",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_559d7af9e1",
+      "target": "node_82b2281f4b",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_559d7af9e1",
+      "target": "node_82b2281f4b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_20765ee984",
+      "target": "node_b894dbab26",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_20765ee984",
+      "target": "node_b894dbab26",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_949e2049ff",
+      "target": "node_3073c8ad34",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_949e2049ff",
+      "target": "node_3073c8ad34",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_951d57d1aa",
+      "target": "node_a5a23b8e84",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_493225c89a",
+      "target": "node_787ebe8162",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_493225c89a",
+      "target": "node_787ebe8162",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ff33d001a8",
+      "target": "node_c04cf4c138",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ff33d001a8",
+      "target": "node_c04cf4c138",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c04cf4c138",
+      "target": "node_ef5ef747be",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c04cf4c138",
+      "target": "node_ef5ef747be",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c04cf4c138",
+      "target": "node_71e0a96001",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c04cf4c138",
+      "target": "node_71e0a96001",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_251871672f",
+      "target": "node_9437df58bd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_251871672f",
+      "target": "node_9437df58bd",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9437df58bd",
+      "target": "node_b115a5982e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9437df58bd",
+      "target": "node_b115a5982e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7c80022a46",
+      "target": "node_4f16eb4557",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7c80022a46",
+      "target": "node_4f16eb4557",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4f16eb4557",
+      "target": "node_20765ee984",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4f16eb4557",
+      "target": "node_20765ee984",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a201362160",
+      "target": "node_a6c2f5623d",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_a6c2f5623d",
+      "target": "node_c347b418ba",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a6c2f5623d",
+      "target": "node_c347b418ba",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_eb164c1593",
+      "target": "node_a201362160",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_eb164c1593",
+      "target": "node_a201362160",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_44cc9f63a8",
+      "target": "node_5a491b60b9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_44cc9f63a8",
+      "target": "node_5a491b60b9",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_04086b3567",
+      "target": "node_6f3c2d8dfe",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_04086b3567",
+      "target": "node_6f3c2d8dfe",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_04086b3567",
+      "target": "node_1de5863f64",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_04086b3567",
+      "target": "node_1de5863f64",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1de5863f64",
+      "target": "node_559d7af9e1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1de5863f64",
+      "target": "node_559d7af9e1",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_322a68e968",
+      "target": "node_949e2049ff",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_322a68e968",
+      "target": "node_949e2049ff",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_82b2281f4b",
+      "target": "node_322a68e968",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_82b2281f4b",
+      "target": "node_322a68e968",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f5aa06f988",
+      "target": "node_493225c89a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_e48b2ffc79",
+      "target": "node_eb164c1593",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e48b2ffc79",
+      "target": "node_eb164c1593",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a5a23b8e84",
+      "target": "node_f5aa06f988",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a5a23b8e84",
+      "target": "node_f5aa06f988",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a5a23b8e84",
+      "target": "node_e48b2ffc79",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a5a23b8e84",
+      "target": "node_e48b2ffc79",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_afdbed8a4b",
+      "target": "node_8c84d11e75",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_afdbed8a4b",
+      "target": "node_8c84d11e75",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_22191ad6fa",
+      "target": "node_afdbed8a4b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_22191ad6fa",
+      "target": "node_afdbed8a4b",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8c84d11e75",
+      "target": "node_07a53cee86",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8c84d11e75",
+      "target": "node_07a53cee86",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8c84d11e75",
+      "target": "node_a6c2f5623d",
+      "sourceOutput": "transformed",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_c29fffaab2",
+      "target": "node_1222c11532",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_c6c5291691",
+      "target": "node_238c6d3c95",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_b894dbab26",
+      "target": "node_ef6f6f95ff",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_3073c8ad34",
+      "target": "node_06ad155c00",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "ai-research-and-data",
+    "categoryLabel": "AI Research, RAG and Data Analysis",
+    "department": "AI Research, Data Analysis",
+    "connectors": [],
+    "setupSecrets": [
+      {
+        "key": "QDRANT_API_KEY",
+        "label": "Qdrant API key",
+        "headerFormat": "api-key: <secret>",
+        "contextKey": "qdrantApiKey",
+        "usedBy": [
+          "Cluster Distance Matrix",
+          "Crop Counts",
+          "Get Medoid Vector",
+          "Get Medoid by Text",
+          "Searching Score",
+          "Searching Text Medoid Score",
+          "Set medoid id",
+          "Set medoid threshold score",
+          "Set text medoid id",
+          "Set text medoid threshold score",
+          "Total Points in Collection"
+        ]
+      },
+      {
+        "key": "VOYAGE_API_KEY",
+        "label": "Voyage AI API key",
+        "host": "api.voyageai.com",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "voyageApiKey",
+        "usedBy": [
+          "Embed text"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 26,
+      "yantraSteps": 37,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "AI_Research_RAG_and_Data_Analysis/Vector Database as a Big Data Analysis Tool for AI Agents [2_3 - anomaly].json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "[2/3] Set up medoids (2 types) for anomaly detection (crops dataset)"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Workflow secret QDRANT_API_KEY: Qdrant API key (api-key: <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Workflow secret VOYAGE_API_KEY: Voyage AI API key for api.voyageai.com (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Scipy Sparse Matrix",
+          "n8n": "code.python",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Total Points in Collection\" authenticated with qdrantApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Crop Counts\" authenticated with qdrantApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Cluster Distance Matrix\" authenticated with qdrantApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Merge\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "\"Scipy Sparse Matrix\" (code.python): Python Code has no Transform runtime; payload passes through unchanged.",
+        "\"Scipy Sparse Matrix\": Python Code was not executed - port the logic to JavaScript Transform or run it in an agent sandbox.",
+        "\"Embed text\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Set medoid id\" authenticated with qdrantApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Get Medoid Vector\" authenticated with qdrantApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Get Medoid by Text\" authenticated with qdrantApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Set text medoid id\" authenticated with qdrantApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Searching Score\" authenticated with qdrantApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Searching Text Medoid Score\" authenticated with qdrantApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Set medoid threshold score\" authenticated with qdrantApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Set text medoid threshold score\" authenticated with qdrantApi in the original; add the matching Authorization header (or use the service's connector).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "## Setting Up Medoids for Anomaly Detection\n### Preparatory workflow to set cluster centres and cluster threshold scores, so anomalies can be detected based on these thresholds\nHere, we're using two approaches to set up these centres: the upper branch is the *\"distance matrix approach\"*, and the lower is the *\"multimodal embedding model approach\"*.",
+      "Once again, variables for Qdrant: cluster URL and a collection we're working with",
+      "Which point in the cluster we're using to draw threshold on: the furthest one from center, or the 2nd, ... Xth furthest one;",
+      "Here we are getting [facet counts](https://qdrant.tech/documentation/concepts/payload/?q=facet#facet-counts): information which unique values are there behind *\"crop_name\"* payload and how many points have these values (for example, we have 31 *\"cucumber\"* and 29 *\"cotton\"*)",
+      "Which point in the cluster we're using to draw threshold on: the furthest one from center, or the 2nd, ... Xth furthest one;\n<this is the 2nd approach>",
+      "We need to get the [total amount of points](https://qdrant.tech/documentation/concepts/points/?q=count#counting-points) in Qdrant collection to use it as a `limit` in the *\"Crop Counts\"* node, so we won't lose any information;\n<not the best practice per se>",
+      "Here we're extracting and gathering all the information about crop clusters, so we can call [Qdrant distance matrix API](https://qdrant.tech/documentation/concepts/explore/?q=distance+#distance-matrix) for each cluster.\nWe're propagating **the biggest cluster size** (of labeled data, in our case all data is labeled; for real use cases don't call distance matrix API if your labeled data is more than a couple of hundreds), **the number of unique crop values** and **unique crop values** themselves. We will run the algorithm once per unique crop cluster (to find it's center and threshold).",
+      "Hardcoded descriptions on how each crop usually looks; They were generated with chatGPT, and that can be technically done directly in n8n based on the crop name or a crop picture (we need a good description of how the most normal specimen of a crop looks like)",
+      "Calling [distance matrix API](https://qdrant.tech/documentation/concepts/explore/?q=distance+#distance-matrix) once per cluster. \n\n`sample` - how many points we are sampling (here filtered by `crop_name` field, so we are sampling within each cluster, and since we are passing the biggest cluster size to `sample`, we will get all points from each cluster.\n\n`limit` is the number of neighbours distance to which we will see calculated. Since we want all pairwise distances between the points within a cluster, here we're once again setting an upper limit equal to the biggest cluster size;",
+      "Splitting out into each unique crop cluster",
+      "Using distance matrix generated by Qdrant and `coo_array` from `scipy`, we're finding a **representative** for each cluster (point which is the most similar to all other points within a cluster, based on the **Cosine** distance)",
+      "To find a **representative** with this approach, we:\n1) Embed descriptions of crops with the same Voyage model we used for images (we can do so, since model is multimodal)\n2) For each (crop) cluster, find an image the closest by **Cosine** similarity metric to this embedded description. We will consider it a perfect representative of the cluster",
+      "Embedding descriptions with Voyage model \n[Note] mind `input_type`, it's *\"query\"*",
+      "Find the closest image to the description embeddings (done per cluster)\n[Note] Mind `exact` parameter\n[Note] `limit` is 1 because vector database always returns points sorted by distance from the most similar one to the least\n[Note] `using` parameter is here because our vectors uploaded in the previous pipeline are named *\"voyage\"*.",
+      "Fetching vectors of centres by their IDs",
+      "Set in Qdrant *\"is_medoid\"* [payloads](https://qdrant.tech/documentation/concepts/payload/) for points which were defined as centres by *\"distance matrix approach\"*",
+      "Here, we don't have to fetch a vector by point id as in the *\"distance matrix approach\"*, since [an API call in the previous node](https://api.qdrant.tech/api-reference/search/query-points) is able to return vectors stored in Qdrant as a response, while the distance matrix API returns only points IDs.",
+      "Set in Qdrant *\"is_text_anchor_medoid\"* [payloads](https://qdrant.tech/documentation/concepts/payload/) for points which were defined as centres by *\"multimodal embedding model approach\"*.",
+      "Starting from here, this and the three following nodes are analogous for both methods, with a difference only in variable names. The goal is to find a **class (cluster) threshold score** so we can use it for anomaly detection (for each class).",
+      "Finding the most dissimilar point to a centre vector (within each class) is equivalent to finding the most similar point to the [opposite](https://mathinsight.org/image/vector_opposite) of a centre vector, aka the centre vector with all coordinates multiplied by -1. It is always true with **Cosine** vector similarity metric (that we're using).",
+      "So here, we found the most dissimilar point within the crop class to the class centre (or the Xth dissimilar point, depending on a variable set in the beginning of this pipeline). Our **threshold score** is the similarity score between this point and the class centre. Now we're saving it as meta information of each class centre point. All preparatory work for anomaly detection is done.",
+      "### For anomaly detection\n1. The first pipeline is uploading (crops) dataset to Qdrant's collection.\n2. **This is the second pipeline, to set up cluster (class) centres in this Qdrant collection & cluster (class) threshold scores.**\n3. The third one is the anomaly detection tool, which takes any image as input and uses all preparatory work done with Qdrant (crops) collection.\n\n### To recreate it\nYou'll have to upload [crops](https://www.kaggle.com/datasets/mdwaquarazam/agricultural-crops-image-classification) dataset from Kaggle to your own Google Storage bucket, and re-create APIs/connections to [Qdrant Cloud](https://qdrant.tech/documentation/quickstart-cloud/) (you can use **Free Tier** cluster), Voyage AI API & Google Cloud Storage\n\n**In general, pipelines are adaptable to any dataset of images**"
+    ],
+    "nodes": {
+      "node_951d57d1aa": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_a5a23b8e84": {
+        "n8n": "Qdrant cluster variables",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_f5aa06f988": {
+        "n8n": "Medoids Variables",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_e48b2ffc79": {
+        "n8n": "Text Medoids Variables",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_493225c89a": {
+        "n8n": "Total Points in Collection",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "qdrantApi"
+      },
+      "node_eb164c1593": {
+        "n8n": "Textual (visual) crop descriptions",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_22191ad6fa": {
+        "n8n": "Crop Counts",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "qdrantApi"
+      },
+      "node_787ebe8162": {
+        "n8n": "Crop Counts",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_a201362160": {
+        "n8n": "Split Out1",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_afdbed8a4b": {
+        "n8n": "Info About Crop Clusters",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_8c84d11e75": {
+        "n8n": "Split Out",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_ff33d001a8": {
+        "n8n": "Cluster Distance Matrix",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "qdrantApi"
+      },
+      "node_07a53cee86": {
+        "n8n": "Cluster Distance Matrix",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_a6c2f5623d": {
+        "n8n": "Merge",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_c04cf4c138": {
+        "n8n": "Scipy Sparse Matrix",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_44cc9f63a8": {
+        "n8n": "Embed text",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_c347b418ba": {
+        "n8n": "Embed text",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_c29fffaab2": {
+        "n8n": "Set medoid id",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "qdrantApi"
+      },
+      "node_ef5ef747be": {
+        "n8n": "Set medoid id",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_251871672f": {
+        "n8n": "Get Medoid Vector",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "qdrantApi"
+      },
+      "node_71e0a96001": {
+        "n8n": "Get Medoid Vector",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_04086b3567": {
+        "n8n": "Get Medoid by Text",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "qdrantApi"
+      },
+      "node_5a491b60b9": {
+        "n8n": "Get Medoid by Text",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_9437df58bd": {
+        "n8n": "Prepare for Searching Threshold",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_c6c5291691": {
+        "n8n": "Set text medoid id",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "qdrantApi"
+      },
+      "node_6f3c2d8dfe": {
+        "n8n": "Set text medoid id",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_1de5863f64": {
+        "n8n": "Prepare for Searching Threshold1",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_7c80022a46": {
+        "n8n": "Searching Score",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "qdrantApi"
+      },
+      "node_b115a5982e": {
+        "n8n": "Searching Score",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_82b2281f4b": {
+        "n8n": "Searching Text Medoid Score",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "qdrantApi"
+      },
+      "node_559d7af9e1": {
+        "n8n": "Searching Text Medoid Score",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_4f16eb4557": {
+        "n8n": "Threshold Score",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_322a68e968": {
+        "n8n": "Threshold Score1",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_b894dbab26": {
+        "n8n": "Set medoid threshold score",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "qdrantApi"
+      },
+      "node_20765ee984": {
+        "n8n": "Set medoid threshold score",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_3073c8ad34": {
+        "n8n": "Set text medoid threshold score",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "qdrantApi"
+      },
+      "node_949e2049ff": {
+        "n8n": "Set text medoid threshold score",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_1222c11532": {
+        "n8n": "__end:Set medoid id",
+        "n8nType": "synthetic"
+      },
+      "node_238c6d3c95": {
+        "n8n": "__end:Set text medoid id",
+        "n8nType": "synthetic"
+      },
+      "node_ef6f6f95ff": {
+        "n8n": "__end:Set medoid threshold score",
+        "n8nType": "synthetic"
+      },
+      "node_06ad155c00": {
+        "n8n": "__end:Set text medoid threshold score",
+        "n8nType": "synthetic"
+      },
+      "node_07dc5f2584": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

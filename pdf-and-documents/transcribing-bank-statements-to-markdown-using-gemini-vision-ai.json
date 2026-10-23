@@ -1,0 +1,788 @@
+{
+  "name": "Transcribing Bank Statements To Markdown Using Gemini Vision AI",
+  "workflowSlug": "transcribing-bank-statements-to-markdown-using-gemini-vision-ai",
+  "description": "Converted from the n8n template \"Transcribing Bank Statements To Markdown Using Gemini Vision AI\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_bbc0f0c45a",
+      "actorId": "actor_bbc0f0c45a",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f2c1352154",
+      "actorId": "actor_f2c1352154",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_DOWNLOAD_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive",
+        "action": "GOOGLESUPER_DOWNLOAD_FILE",
+        "params": {
+          "file_id": "{{driveFileId}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_c21606349d",
+      "actorId": "actor_c21606349d",
+      "type": "NodeTransform",
+      "label": "Params: Split PDF into Images",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The upstream file as { contentBase64 | fileUrl, filename, mimeType }: n8n binary data travels as base64 bytes or a file URL on Yantra.\nconst __b64 = (t) => { const b = new TextEncoder().encode(String(t)); let s = ''; for (let i = 0; i < b.length; i += 1) s += String.fromCharCode(b[i]); return btoa(s); };\nconst __fileRef = (v, prop) => {\n  const s = (x) => (typeof x === 'string' && x !== '' ? x : undefined);\n  let r = Array.isArray(v) ? v[0] : v;\n  const bin = r && typeof r === 'object' && r.binary && typeof r.binary === 'object' ? r.binary[prop] ?? Object.values(r.binary)[0] : undefined;\n  if (bin && s(bin.data)) return { contentBase64: bin.data, filename: s(r.filename) ?? s(bin.fileName) ?? 'file', mimeType: s(bin.mimeType) };\n  if (r && typeof r === 'object' && r.data && typeof r.data === 'object' && !Array.isArray(r.data)) r = { ...r, ...r.data };\n  const dl = r?.downloaded_file_content ?? r?.file;\n  const filename = s(r?.filename) ?? s(r?.fileName) ?? s(dl?.name) ?? s(r?.name) ?? 'file';\n  const mimeType = s(r?.mimeType) ?? s(r?.contentType) ?? s(dl?.mimetype) ?? s(r?.mimetype);\n  if (s(r?.bodyBase64)) return { contentBase64: r.bodyBase64, filename, mimeType };\n  const url = s(dl?.s3url) ?? s(r?.s3url) ?? s(r?.fileUrl) ?? s(r?.imageUrl) ?? s(r?.imageUrls?.[0]) ?? s(r?.audioUrl) ?? s(r?.videoUrl) ?? s(r?.secure_url);\n  if (url) return { fileUrl: url, filename, mimeType };\n  if (s(r?.data)) return { contentBase64: r.encoding !== 'base64' && /^(?:text\\/|application\\/(?:json|xml|javascript|x-tex))|\\+(?:xml|json)$/.test(mimeType ?? '') ? __b64(r.data) : r.data, filename, mimeType };\n  throw new Error('No file on the upstream step: expected file bytes (base64) or a file URL.');\n};\n// Params for yantra-storage/YANTRA_STORAGE_HTTP_SEND (n8n node \"Split PDF into Images\").\nreturn { \"url\": \"http://stirling-pdf:8080/api/v1/convert/pdf/img\", \"method\": \"POST\", \"bodyType\": \"multipart\", \"fields\": { \"imageFormat\": \"jpg\", \"singleOrMultiple\": \"multiple\", \"dpi\": \"300\" }, \"files\": [{ \"field\": \"fileInput\", ...__fileRef(source, \"data\") }], \"responseType\": \"auto\" };"
+      }
+    },
+    {
+      "nodeId": "node_d2d47eed7d",
+      "actorId": "actor_d2d47eed7d",
+      "type": "NodeCdeConnector",
+      "label": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-storage",
+        "connectorLabel": "Yantra storage",
+        "action": "YANTRA_STORAGE_HTTP_SEND"
+      }
+    },
+    {
+      "nodeId": "node_b6fbd4c1ab",
+      "actorId": "actor_b6fbd4c1ab",
+      "type": "NodeTransform",
+      "label": "Split PDF into Images: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The response the way the n8n HTTP node handed it on: the parsed body; a file body is { bodyBase64, filename, mimeType }.\nconst __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' && 'status' in source.data ? source.data : source;\nconst __body = __r?.bodyBase64 !== undefined ? { bodyBase64: __r.bodyBase64, filename: __r.filename, mimeType: __r.contentType, bytes: __r.bytes } : __r?.bodyJson !== undefined ? __r.bodyJson : __r?.bodyText;\nreturn __body;"
+      }
+    },
+    {
+      "nodeId": "node_e8e90927bb",
+      "actorId": "actor_e8e90927bb",
+      "type": "NodeTransform",
+      "label": "Extract Zip File",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// compression (compress): handle archives in a sandbox agent.\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_8c7748d00b",
+      "actorId": "actor_8c7748d00b",
+      "type": "NodeTransform",
+      "label": "Images To List",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst items = __items.map((json) => ({ json }));\n// Ported from n8n Code node \"Images To List\".\nconst __one = (i) => (i && typeof i === 'object' && 'json' in i ? (i.binary && typeof i.binary === 'object' ? { ...i.json, binary: i.binary } : i.json) : i);\nconst __unwrap = (v) => Array.isArray(v) ? v.map(__one) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? __one(v) : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  let item, key; // declared for strict mode (n8n ran this code in sloppy mode)\n  let results = [];\n  \n  for (item of items) {\n   for (key of Object.keys(item.binary)) {\n   results.push({\n   json: {\n   fileName: item.binary[key].fileName\n   },\n   binary: {\n   data: item.binary[key],\n   }\n   });\n   }\n  }\n  \n  return results;\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_fb7f024139",
+      "actorId": "actor_fb7f024139",
+      "type": "NodeTransform",
+      "label": "Sort Pages",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\nreturn [...__items].sort((x, y) => {\n  { const a = __get(x, \"fileName\"); const b = __get(y, \"fileName\"); if (a !== b) return (a > b ? 1 : -1) * 1; }\n  return 0;\n});"
+      }
+    },
+    {
+      "nodeId": "node_9f2789d9a4",
+      "actorId": "actor_9f2789d9a4",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-editing/YANTRA_IMAGE_EDIT_RESIZE",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-editing",
+        "connectorLabel": "Image editing",
+        "action": "YANTRA_IMAGE_EDIT_RESIZE",
+        "params": {
+          "width": 75,
+          "height": 75,
+          "fit": "percent"
+        }
+      }
+    },
+    {
+      "nodeId": "node_57e1a64518",
+      "actorId": "actor_57e1a64518",
+      "type": "NodeLlmChain",
+      "label": "Transcribe to Markdown",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "You help transcribe documents to markdown, keeping faithful to all text printed and visible to the best of your ability. Ensure you capture all headings, subheadings, titles as well as small print.\nFor any tables found with the document, convert them to markdown tables. If table row descriptions overflow into more than 1 row, concatanate and fit them into a single row. If two or more tables are adjacent horizontally, stack the tables vertically instead. There should be a newline after every markdown table.\nFor any graphics, use replace with a description of the image. Images of scanned checks should be converted to the phrase \"<scanned image of check>\".",
+        "prompt": "transcribe the image to markdown.",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_c9adf0bfd6",
+      "actorId": "actor_c9adf0bfd6",
+      "type": "NodeTransform",
+      "label": "Combine All Pages",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\nreturn {\n  \"pages\": __items.map((i) => __get(i, \"text\")),\n};"
+      }
+    },
+    {
+      "nodeId": "node_5a185e1461",
+      "actorId": "actor_5a185e1461",
+      "type": "NodeLlmChain",
+      "label": "Extract All Deposit Table Rows",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "date": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "items"
+          ],
+          "additionalProperties": false
+        },
+        "system": "This statement contains tables with rows showing deposit and withdrawal made to the user's account. Deposits and withdrawals are identified by have the amount in their respective columns. What are the deposits to the account found in this statement?",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_2074be4d61",
+      "actorId": "actor_2074be4d61",
+      "type": "NodeTransform",
+      "label": "Prompt: Extract All Deposit Table Rows",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Extract All Deposit Table Rows.\nconst __promptValue = ` ${$json.pages.join('---')}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_2505c62864",
+      "actorId": "actor_2505c62864",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_8efb6734ac",
+      "actorId": "actor_8efb6734ac",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "driveFileId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_99a31d4f05",
+      "actorId": "actor_99a31d4f05",
+      "type": "NodeChatModel",
+      "label": "Transcribe to Markdown: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3500,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "gemini",
+        "model": "models/gemini-1.5-pro-latest"
+      }
+    },
+    {
+      "nodeId": "node_5fda780482",
+      "actorId": "actor_5fda780482",
+      "type": "NodeChatModel",
+      "label": "Extract All Deposit Table Rows: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4640,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "gemini",
+        "model": "models/gemini-1.5-pro-latest"
+      }
+    },
+    {
+      "nodeId": "node_e3af8d5c20",
+      "actorId": "actor_e3af8d5c20",
+      "type": "NodeTransform",
+      "label": "Extract All Deposit Table Rows: array output",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 720
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// LLMChain validates an object; preserve the original array output.\nreturn source.items;"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_c21606349d",
+      "target": "node_d2d47eed7d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_c21606349d",
+      "target": "node_d2d47eed7d",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d2d47eed7d",
+      "target": "node_b6fbd4c1ab",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d2d47eed7d",
+      "target": "node_b6fbd4c1ab",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2074be4d61",
+      "target": "node_5a185e1461",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_bbc0f0c45a",
+      "target": "node_f2c1352154",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_fb7f024139",
+      "target": "node_9f2789d9a4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_f2c1352154",
+      "target": "node_c21606349d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f2c1352154",
+      "target": "node_c21606349d",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b6fbd4c1ab",
+      "target": "node_e8e90927bb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b6fbd4c1ab",
+      "target": "node_e8e90927bb",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e8e90927bb",
+      "target": "node_8c7748d00b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e8e90927bb",
+      "target": "node_8c7748d00b",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8c7748d00b",
+      "target": "node_fb7f024139",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8c7748d00b",
+      "target": "node_fb7f024139",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9f2789d9a4",
+      "target": "node_57e1a64518",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_c9adf0bfd6",
+      "target": "node_2074be4d61",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c9adf0bfd6",
+      "target": "node_2074be4d61",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_57e1a64518",
+      "target": "node_c9adf0bfd6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_57e1a64518",
+      "target": "node_c9adf0bfd6",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e3af8d5c20",
+      "target": "node_2505c62864",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_99a31d4f05",
+      "target": "node_57e1a64518",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_5fda780482",
+      "target": "node_5a185e1461",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_5a185e1461",
+      "target": "node_e3af8d5c20",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5a185e1461",
+      "target": "node_e3af8d5c20",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "pdf-and-documents",
+    "categoryLabel": "PDF and Document Processing",
+    "department": "",
+    "connectors": [
+      "gemini",
+      "googlesuper",
+      "yantra-image-editing",
+      "yantra-storage"
+    ],
+    "setupVars": [
+      {
+        "key": "driveFileId",
+        "label": "Drive File id",
+        "type": "id",
+        "example": "1AbC...xyz",
+        "usedBy": [
+          "Get Bank Statement"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 12,
+      "yantraSteps": 16,
+      "foldedHelpers": [
+        "Google Gemini Chat Model",
+        "Google Gemini Chat Model1"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "PDF_and_Document_Processing/Transcribing Bank Statements To Markdown Using Gemini Vision AI.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "hard-approximation",
+        "node": "Split PDF into Images",
+        "detail": "httpRequest.multipart-form-data -> yantra-storage/YANTRA_STORAGE_HTTP_SEND: the request is a plain-http request (http://stirling-pdf:8080/api/v1/convert/pdf/img); yantra-storage HTTP_SEND only reaches public https hosts"
+      },
+      {
+        "code": "action-pending-publish",
+        "node": "Split PDF into Images",
+        "detail": "yantra-storage/YANTRA_STORAGE_HTTP_SEND waits for the yantra-storage HTTP send and signatures patch (1.4.1) to be published"
+      }
+    ],
+    "setup": [
+      "\"Split PDF into Images\" (httpRequest.multipart-form-data): the request is a plain-http request (http://stirling-pdf:8080/api/v1/convert/pdf/img); yantra-storage HTTP_SEND only reaches public https hosts; review it before relying on the result.",
+      "\"Split PDF into Images\": yantra-storage/YANTRA_STORAGE_HTTP_SEND comes from the yantra-storage HTTP send and signatures patch (1.4.1), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
+      "Setup value driveFileId: Drive File id (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
+      "Connect the gemini connector (credential).",
+      "Connect the googlesuper connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Split PDF into Images",
+          "n8n": "httpRequest.multipart-form-data",
+          "action": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+          "reason": "the request is a plain-http request (http://stirling-pdf:8080/api/v1/convert/pdf/img); yantra-storage HTTP_SEND only reaches public https hosts"
+        },
+        {
+          "node": "Extract Zip File",
+          "n8n": "compression",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "Google Gemini Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+          "into": "Transcribe to Markdown",
+          "model": "models/gemini-1.5-pro-latest"
+        },
+        {
+          "node": "Google Gemini Chat Model1",
+          "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+          "into": "Extract All Deposit Table Rows",
+          "model": "models/gemini-1.5-pro-latest"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Split PDF into Images\" (httpRequest.multipart-form-data): the request is a plain-http request (http://stirling-pdf:8080/api/v1/convert/pdf/img); yantra-storage HTTP_SEND only reaches public https hosts.",
+        "\"Extract Zip File\" (compression): Zip/unzip needs the agent sandbox or an external tool; this step passes the payload through.",
+        "\"Extract Zip File\" compressed or extracted an archive in n8n; use a sandbox agent (or a file connector) for zip/unzip on Yantra.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Try Me Out!\n\n### This workflow converts a bank statement to markdown, faithfully capturing the details using the power of Vision Language Models (\"VLMs\"). The resulting markdown can then be parsed again by your standard LLM to extract data such as identifying all deposit table rows in the document.\n\nThis workflow is able to handle both downloaded PDFs as well as scanned PDFs. Be sure to protect sensitive data before running this workflow.\n\n### Need Help?\nJoin the [Discord](https://discord.com/invite/XPKeKXeB7d) or ask in the [Forum](https://community.n8n.io/)!",
+      "## 1. Download Bank Statement PDF\n[Read more about Google Drive node](https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.googledrive)\n\nFor this demonstration, we'll pull an example bank statement off Google Drive however, you can also swap this out for other triggers such as webhook.\n\nYou can use the example bank statement created specifically for this workflow here: https://drive.google.com/file/d/[id removed]/view?usp=sharing",
+      "## 2. Split PDF Pages into Seperate Images\n\nCurrently, the vision model we'll be using can't accept raw PDFs so we'll have to convert our PDF to a image in order to use it. To achieve this, we'll use the free [Stirling PDF webservice](https://stirlingpdf.io/) for convenience but if we need data privacy (recommended!), we could self-host our own [Stirling PDF instance](https://github.com/Stirling-Tools/Stirling-PDF/) instead. Alternatively, feel free to swap this service out for one of your own as long as it can convert PDFs into images!\n\nWe will ask the PDF service to return each page of our statement as separate images, which it does so as a zip file. Next steps is to just unzip the file and convert the output as a list of images.",
+      "## 3. Convert PDF Pages to Markdown Using Vision Model\n[Learn more about using the Basic LLM node](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.chainllm)\n\nUnlike traditional OCR, vision models (\"VLMs\") \"transcribe\" what they see so while we shouldn't expect an exact replication of a document, they may perform better making sense of complex document layouts ie. such as with horizontally stacked tables.\n \nIn this demonstration, we can transcribe our bank statement scans to markdown text for the purpose of further processing. With markdown, we can retain tables or columnar data found in the document. We'll employ two optimisations however as a workaround for token and timeout limits (1) we'll only transcribe one page at a time and (2) we'll shrink the pages just a little just enough to speed up processing but not enough to reduce our required resolution.",
+      "## 4. Extract Key Data Confidently From Statement\n[Read more about the Information Extractor](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.information-extractor)\n\nWith our newly generated transcript, let's pull just the deposit line items from our statement. Processing all pages together as images may have been compute-extensive but as text, this is usually no problem at all for our LLM.\n\nFor our example bank statement PDF, the resulting extraction should be 8 table rows where a value exists in the \"deposits\" column.",
+      "### 💡 About the Example PDF\nScanned PDFs (ie. where each page is a scanned image) are a use-case where extracting PDF text content will not work. Vision models are a great solution as this workflow aims to demonstrate!",
+      "### Privacy Warning!\nThis example uses a public third party service. If your data is senstive, please swap this out for the self-hosted version!",
+      "### 💡 Don't use Google?\nFeel free to swap the model out for any state-of-the-art multimodal model which supports image inputs such as GPT4o(-mini) or Claude Sonnet/Opus. Note, I've found Gemini to produce the most accurate and consistent for this example use-case so no guarantees if you switch!"
+    ],
+    "nodes": {
+      "node_bbc0f0c45a": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_f2c1352154": {
+        "n8n": "Get Bank Statement",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_c21606349d": {
+        "n8n": "Split PDF into Images",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_d2d47eed7d": {
+        "n8n": "Split PDF into Images",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_b6fbd4c1ab": {
+        "n8n": "Split PDF into Images",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_e8e90927bb": {
+        "n8n": "Extract Zip File",
+        "n8nType": "n8n-nodes-base.compression"
+      },
+      "node_8c7748d00b": {
+        "n8n": "Images To List",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_fb7f024139": {
+        "n8n": "Sort Pages",
+        "n8nType": "n8n-nodes-base.sort"
+      },
+      "node_9f2789d9a4": {
+        "n8n": "Resize Images For AI",
+        "n8nType": "n8n-nodes-base.editImage"
+      },
+      "node_57e1a64518": {
+        "n8n": "Transcribe to Markdown",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_c9adf0bfd6": {
+        "n8n": "Combine All Pages",
+        "n8nType": "n8n-nodes-base.aggregate"
+      },
+      "node_5a185e1461": {
+        "n8n": "Extract All Deposit Table Rows",
+        "n8nType": "@n8n/n8n-nodes-langchain.informationExtractor"
+      },
+      "node_2074be4d61": {
+        "n8n": "Extract All Deposit Table Rows",
+        "n8nType": "@n8n/n8n-nodes-langchain.informationExtractor"
+      },
+      "node_2505c62864": {
+        "n8n": "__end:Extract All Deposit Table Rows",
+        "n8nType": "synthetic"
+      },
+      "node_8efb6734ac": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_99a31d4f05": {
+        "n8n": "Transcribe to Markdown",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_5fda780482": {
+        "n8n": "Extract All Deposit Table Rows",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_e3af8d5c20": {
+        "n8n": "Extract All Deposit Table Rows",
+        "n8nType": "synthetic",
+        "role": "llm-chain-array"
+      }
+    }
+  }
+}

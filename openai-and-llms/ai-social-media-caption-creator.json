@@ -1,0 +1,568 @@
+{
+  "name": "AI Social Media Caption Creator",
+  "workflowSlug": "ai-social-media-caption-creator",
+  "description": "Converted from the n8n template \"AI Social Media Caption Creator\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_e96efa429d",
+      "actorId": "actor_e96efa429d",
+      "type": "NodeCdeWebhookTrigger",
+      "label": "Webhook: airtable/AIRTABLE_VIEW_CREATED_TRIGGER",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "connector": "airtable",
+        "webhookEndpointId": "",
+        "triggerSlug": "AIRTABLE_VIEW_CREATED_TRIGGER",
+        "connectedAccountId": "",
+        "config": {},
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "nodeId": "node_2d0a356e9a",
+      "actorId": "actor_2d0a356e9a",
+      "type": "NodeTransform",
+      "label": "Wait 1 Minute",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The original waited here (1 minutes).\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_8b3500423f",
+      "actorId": "actor_8b3500423f",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_GET_RECORD",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_GET_RECORD",
+        "params": {
+          "baseId": "{{airtableBaseId}}",
+          "tableIdOrName": "{{airtableTableId}}",
+          "recordId": "{{last.transformed.id}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_debe98f979",
+      "actorId": "actor_debe98f979",
+      "type": "NodeCdecliAgent",
+      "label": "AI Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "gpt-4o",
+        "sessionId": "{{sessionId}}",
+        "system": "{{llm_system_a1a58e58f8}}",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_a1a58e58f8",
+      "actorId": "actor_a1a58e58f8",
+      "type": "NodeTransform",
+      "label": "System: AI Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: AI Agent.\nconst __promptValue = `<system_prompt> \nYOU ARE AN EXPERT CAPTION CREATOR AGENT FOR INSTAGRAM, DESIGNED FOR USE IN N8N WORKFLOWS. YOUR TASK IS TO CREATE A CREATIVE, TARGET AUDIENCE-ORIENTED, AND MEMORABLE CAPTION BASED ON THE BRIEFING: \\`${$json['Briefing']}\\`. YOU SHOULD RETRIEVE ADDITIONAL INFORMATION ABOUT THE TARGET AUDIENCE AND PREFERRED WORDING USING THE TOOL \"BACKGROUND INFO\" TO MAXIMIZE THE QUALITY AND RELEVANCE OF THE CAPTION. \n\n###INSTRUCTIONS### \n\n- YOU MUST: \n 1. READ AND UNDERSTAND THE BRIEFING CAREFULLY. \n 2. RETRIEVE ADDITIONAL DATA ABOUT THE TARGET AUDIENCE AND COMMUNICATION STYLE USING THE \"BACKGROUND INFO\" TOOL. \n 3. CREATE A CAPTION THAT IS CREATIVE, ENGAGING, AND TAILORED TO THE TARGET AUDIENCE. \n 4. ENSURE THAT THE CAPTION INCLUDES A CLEAR CALL-TO-ACTION (CTA) THAT ENCOURAGES USERS TO TAKE ACTION (E.G., LIKE, COMMENT, OR CLICK). \n 5. OUTPUT ONLY THE FINAL CAPTION WITHOUT ANY ACCOMPANYING EXPLANATIONS, FEEDBACK, OR COMMENTS. \n\n###CHAIN OF THOUGHTS### \n\n1. **UNDERSTANDING THE BRIEFING**: \n - THOROUGHLY READ THE BRIEFING PROVIDED UNDER \\`${$json['Briefing/Notizen']}\\`. \n - IDENTIFY THE MAIN FOCUS OF THE POST (E.G., PRODUCT PROMOTION, INSPIRATION, INFORMATION). \n - NOTE THE KEY THEMES, MOOD, AND DESIRED IMPACT. \n\n2. **TARGET AUDIENCE ANALYSIS**: \n - USE THE \"BACKGROUND INFO\" TOOL TO: \n - RETRIEVE THE TARGET AUDIENCE'S AGE, INTERESTS, AND NEEDS. \n - DEFINE THE APPROPRIATE TONE (FRIENDLY, PROFESSIONAL, INSPIRATIONAL, ETC.). \n\n3. **CREATIVE CAPTION DEVELOPMENT**: \n - DEVELOP AN OPENING SENTENCE THAT GRABS THE TARGET AUDIENCE'S ATTENTION. \n - WRITE A BODY THAT CONVEYS THE CORE MESSAGE OF THE POST AND RESONATES WITH THE TARGET AUDIENCE. \n - ADD AN INVITING CTA (E.G., \"What do you think? Share your thoughts in the comments!\" OR \"Click the link in our bio!\"). \n\n4. **FINALIZATION**: \n - CHECK THE CAPTION FOR CLARITY, CONSISTENCY, AND GRAMMAR. \n - ENSURE THAT IT ALIGNS WITH THE TARGET AUDIENCE AND THE IDENTIFIED TONE. \n - MAXIMIZE CREATIVITY AND ENTERTAINMENT VALUE WITHOUT LOSING THE ESSENTIAL MESSAGE. \n\n5. **OUTPUT**: \n - OUTPUT ONLY THE FINAL CAPTION WITHOUT ANY ACCOMPANYING COMMENTS, FEEDBACK, OR EXPLANATIONS. \n\n###WHAT NOT TO DO### \n\n- **DO NOT OUTPUT ANY ACCOMPANYING TEXTS, EXPLANATIONS, OR FEEDBACK** ABOUT THE CAPTION. \n- **DO NOT WORK WITHOUT PRIOR TARGET AUDIENCE ANALYSIS**. \n- **DO NOT USE CLICHÉ PHRASES** THAT HAVE NO RELEVANCE TO THE TARGET AUDIENCE. \n- **DO NOT ALLOW ANY SPELLING OR GRAMMATICAL ERRORS**. \n\n</system_prompt>\n`;\nreturn { \"llm_system_a1a58e58f8\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_38a29f3af2",
+      "actorId": "actor_38a29f3af2",
+      "type": "NodeUpdateContext",
+      "label": "Save System: AI Agent",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_5a406ebb65",
+      "actorId": "actor_5a406ebb65",
+      "type": "NodeTransform",
+      "label": "Prompt: AI Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: AI Agent.\nconst __promptValue = ($json['Briefing']);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_aa23fcaa4e",
+      "actorId": "actor_aa23fcaa4e",
+      "type": "NodeTransform",
+      "label": "Format Fields",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"SoMe Text\"] = ($json);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_657c73a039",
+      "actorId": "actor_657c73a039",
+      "type": "NodeTransform",
+      "label": "Params: Post Caption into Airtable Record",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Wait 1 Minute\": {{steps.xf_2d0a356e9a.result}}, \"Get Airtable Record Data\": {{steps.AIRTABLE_GET_RECORD.result}}, \"Format Fields\": {{steps.xf_aa23fcaa4e.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for airtable/AIRTABLE_UPDATE_RECORD (n8n node \"Post Caption into Airtable Record\").\nreturn {\n  \"baseId\": \"{{airtableBaseId}}\",\n  \"tableIdOrName\": \"{{airtableTableId2}}\",\n  \"recordId\": ($('Get Airtable Record Data').item.json.id),\n  \"fields\": { \"Posten\": false, \"SoMe_Text_KI\": ($json['SoMe Text']), \"Werbeanzeige\": false },\n};"
+      }
+    },
+    {
+      "nodeId": "node_6476f16b07",
+      "actorId": "actor_6476f16b07",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_UPDATE_RECORD",
+      "color": "#6366F1",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_UPDATE_RECORD"
+      }
+    },
+    {
+      "nodeId": "node_052c5790d9",
+      "actorId": "actor_052c5790d9",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_70174976a6",
+      "actorId": "actor_70174976a6",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "sessionId": "",
+          "airtableBaseId": "",
+          "airtableTableId": "",
+          "airtableTableId2": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_a1a58e58f8",
+      "target": "node_38a29f3af2",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_a1a58e58f8",
+      "target": "node_38a29f3af2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_38a29f3af2",
+      "target": "node_5a406ebb65",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5a406ebb65",
+      "target": "node_debe98f979",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_657c73a039",
+      "target": "node_6476f16b07",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_657c73a039",
+      "target": "node_6476f16b07",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_debe98f979",
+      "target": "node_aa23fcaa4e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_debe98f979",
+      "target": "node_aa23fcaa4e",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8b3500423f",
+      "target": "node_a1a58e58f8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8b3500423f",
+      "target": "node_a1a58e58f8",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8b3500423f",
+      "target": "node_5a406ebb65",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2d0a356e9a",
+      "target": "node_8b3500423f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_aa23fcaa4e",
+      "target": "node_657c73a039",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_aa23fcaa4e",
+      "target": "node_657c73a039",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e96efa429d",
+      "target": "node_2d0a356e9a",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e96efa429d",
+      "target": "node_2d0a356e9a",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6476f16b07",
+      "target": "node_052c5790d9",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "",
+    "connectors": [
+      "airtable"
+    ],
+    "setupVars": [
+      {
+        "key": "airtableBaseId",
+        "label": "Airtable base id",
+        "type": "id",
+        "example": "appXXXX (from the base URL)",
+        "usedBy": [
+          "Get Airtable Record Data",
+          "Post Caption into Airtable Record"
+        ]
+      },
+      {
+        "key": "airtableTableId",
+        "label": "Airtable table id",
+        "type": "id",
+        "example": "tblXXXX (from the table URL)",
+        "usedBy": [
+          "Get Airtable Record Data"
+        ]
+      },
+      {
+        "key": "airtableTableId2",
+        "label": "Airtable table id",
+        "type": "id",
+        "example": "tblXXXX (from the table URL)",
+        "usedBy": [
+          "Post Caption into Airtable Record"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeCdeWebhookTrigger",
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 9,
+      "yantraSteps": 10,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "Background Info",
+        "Window Buffer Memory"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/AI Social Media Caption Creator creates social media post captions in Airtable.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "AI Social Media Caption Creator"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "webhook-registration",
+        "node": "Airtable Trigger: New Record",
+        "detail": "webhook trigger airtable/AIRTABLE_VIEW_CREATED_TRIGGER needs webhookEndpointId, connectedAccountId"
+      }
+    ],
+    "setup": [
+      "\"Airtable Trigger: New Record\": after import, register the airtable webhook (`cdecli webhook endpoint create -c airtable`, then `cdecli trigger instance upsert --slug AIRTABLE_VIEW_CREATED_TRIGGER`) and set webhookEndpointId, connectedAccountId on the trigger node.",
+      "Setup value airtableBaseId: Airtable base id (for example appXXXX (from the base URL)). Write it into the Workflow Configs initialContext before import.",
+      "Setup value airtableTableId: Airtable table id (for example tblXXXX (from the table URL)). Write it into the Workflow Configs initialContext before import.",
+      "Setup value airtableTableId2: Airtable table id (for example tblXXXX (from the table URL)). Write it into the Workflow Configs initialContext before import.",
+      "Connect the airtable connector (credential).",
+      "Provide run inputs: sessionId, llm_system_a1a58e58f8."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Wait 1 Minute",
+          "n8n": "wait",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "AI Agent",
+          "model": "gpt-4o"
+        },
+        {
+          "node": "Background Info",
+          "type": "n8n-nodes-base.airtableTool",
+          "into": "AI Agent",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Window Buffer Memory",
+          "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+          "into": "AI Agent",
+          "as": "ai_memory"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Airtable Trigger: New Record",
+          "type": "n8n-nodes-base.airtableTrigger",
+          "as": "NodeCdeWebhookTrigger"
+        }
+      ],
+      "hints": [
+        "\"Airtable Trigger: New Record\" is a provider webhook (airtable/AIRTABLE_VIEW_CREATED_TRIGGER). Create the endpoint and trigger instance, then paste the we_… id and connected account into this node before the first run: `cdecli webhook endpoint create -c airtable --client-id <id>`, `cdecli webhook endpoint set-data <we_id> --signing-secret <secret>`, `cdecli trigger instance upsert --slug AIRTABLE_VIEW_CREATED_TRIGGER --account <connectedAccountId>`.",
+        "\"Wait 1 Minute\" paused the original (1 minutes); Yantra has no delay node, so this step passes data straight through.",
+        "\"Wait 1 Minute\" (wait): Wait/delay is a soft passthrough; add a schedule or external delay if timing matters.",
+        "\"AI Agent\" kept conversation memory (memoryBufferWindow); sessionId is set to the run-input sessionId.",
+        "\"AI Agent\" used agent tools in the original: Background Info (airtableTool). The cdecli agent calls connectors directly; connect credentials for the services those tools reached. Prefer connectors: airtable.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect airtable: `cdecli credential create -n \"airtable\" -p airtable --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "# Welcome to my AI Social Media Caption Creator Workflow!\n\nThis workflow automatically creates a social media post caption in an editorial plan in Airtable. It also uses background information on the target group, tonality, etc. stored in Airtable.\n\n## This workflow has the following sequence:\n\n1. Airtable trigger (scan for new records every minute)\n2. Wait 1 Minute so the Airtable record creator has time to write the Briefing field\n3. retrieval of Airtable record data\n4. AI Agent to write a caption for a social media post. The agent is instructed to use background information stored in Airtable (such as target group, tonality, etc.) to create the post.\n5. Format the output and assign it to the correct field in Airtable.\n6. Post the caption into Airtable record.\n\n## The following accesses are required for the workflow:\n- Airtable Database: [Documentation](https://docs.n8n.io/integrations/builtin/credentials/airtable)\n- AI API access (e.g. via OpenAI, Anthropic, Google or Ollama)\n\n### Example of an editorial plan in Airtable: https://airtable.com/[id removed]/shrwcY45g48RpcvvC\nFor this workflow you need the Airtable fields \"created_at\", \"Briefing\" and \"SoMe_Text_AI\"\n\nYou can contact me via LinkedIn, if you have any questions: https://www.linkedin.com/in/friedemann-schuetz"
+    ],
+    "nodes": {
+      "node_e96efa429d": {
+        "n8n": "Airtable Trigger: New Record",
+        "n8nType": "n8n-nodes-base.airtableTrigger"
+      },
+      "node_2d0a356e9a": {
+        "n8n": "Wait 1 Minute",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_8b3500423f": {
+        "n8n": "Get Airtable Record Data",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_debe98f979": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_a1a58e58f8": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_38a29f3af2": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_5a406ebb65": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_aa23fcaa4e": {
+        "n8n": "Format Fields",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_657c73a039": {
+        "n8n": "Post Caption into Airtable Record",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_6476f16b07": {
+        "n8n": "Post Caption into Airtable Record",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_052c5790d9": {
+        "n8n": "__end:Post Caption into Airtable Record",
+        "n8nType": "synthetic"
+      },
+      "node_70174976a6": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

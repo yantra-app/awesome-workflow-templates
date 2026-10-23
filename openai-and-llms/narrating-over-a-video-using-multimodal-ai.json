@@ -1,0 +1,1326 @@
+{
+  "name": "Narrating over a Video using Multimodal AI",
+  "workflowSlug": "narrating-over-a-video-using-multimodal-ai",
+  "description": "Converted from the n8n template \"Narrating over a Video using Multimodal AI\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_5dedaee09a",
+      "actorId": "actor_5dedaee09a",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_e520fe6681",
+      "actorId": "actor_e520fe6681",
+      "type": "NodeHttpRequest",
+      "label": "Download Video",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://cdn.pixabay.com/video/2016/05/12/3175-166339863_small.mp4"
+      }
+    },
+    {
+      "nodeId": "node_0e01931f40",
+      "actorId": "actor_0e01931f40",
+      "type": "NodeTransform",
+      "label": "Capture Frames",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// Original n8n node was Python Code; no Python runtime on Transform.\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_38749516bc",
+      "actorId": "actor_38749516bc",
+      "type": "NodeTransform",
+      "label": "Split Out Frames",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"output\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"output\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"output\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_52ab1b54c6",
+      "actorId": "actor_52ab1b54c6",
+      "type": "NodeTransform",
+      "label": "Items: For Every 15 Frames",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(15);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_65b2f7fe27",
+      "actorId": "actor_65b2f7fe27",
+      "type": "NodeLoop",
+      "label": "For Every 15 Frames",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_ea82f678cf",
+      "actorId": "actor_ea82f678cf",
+      "type": "NodeTransform",
+      "label": "Item: For Every 15 Frames",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_4c9d53a5cc",
+      "actorId": "actor_4c9d53a5cc",
+      "type": "NodeTransform",
+      "label": "Results: For Every 15 Frames",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_83c1e8af0c",
+      "actorId": "actor_83c1e8af0c",
+      "type": "NodeTransform",
+      "label": "Combine Script",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nreturn { \"data\": __items };"
+      }
+    },
+    {
+      "nodeId": "node_2c36a5f165",
+      "actorId": "actor_2c36a5f165",
+      "type": "NodeTransform",
+      "label": "Items: Each item: Convert to Binary",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_0517fbb31f",
+      "actorId": "actor_0517fbb31f",
+      "type": "NodeLoop",
+      "label": "Each item: Convert to Binary",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_a85a2dbd06",
+      "actorId": "actor_a85a2dbd06",
+      "type": "NodeTransform",
+      "label": "Item: Each item: Convert to Binary",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_d6ffd894d8",
+      "actorId": "actor_d6ffd894d8",
+      "type": "NodeTransform",
+      "label": "Results: Each item: Convert to Binary",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_a892f6e97f",
+      "actorId": "actor_a892f6e97f",
+      "type": "NodeTransform",
+      "label": "Convert to Binary",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// The field already holds base64 file content.\nconst __v = $json?.[\"output\"];\nreturn { data: typeof __v === 'string' ? __v : JSON.stringify(__v), fileName: \"file\", mimeType: \"application/octet-stream\", encoding: 'base64' };"
+      }
+    },
+    {
+      "nodeId": "node_85974b46b8",
+      "actorId": "actor_85974b46b8",
+      "type": "NodeTransform",
+      "label": "Params: Use Text-to-Speech",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for yantra-voicebox/YANTRA_VOICEBOX_SPEAK (n8n node \"Use Text-to-Speech\").\nreturn {\n  \"text\": ($json.data.map(item => item.text).join('\\n')),\n};"
+      }
+    },
+    {
+      "nodeId": "node_afcd48f590",
+      "actorId": "actor_afcd48f590",
+      "type": "NodeCdeConnector",
+      "label": "yantra-voicebox/YANTRA_VOICEBOX_SPEAK",
+      "color": "#6366F1",
+      "position": {
+        "x": 3500,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-voicebox",
+        "connectorLabel": "Audio",
+        "action": "YANTRA_VOICEBOX_SPEAK"
+      }
+    },
+    {
+      "nodeId": "node_656fbd8a52",
+      "actorId": "actor_656fbd8a52",
+      "type": "NodeTransform",
+      "label": "Items: Each item: Resize Frame",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_667afbc35e",
+      "actorId": "actor_667afbc35e",
+      "type": "NodeLoop",
+      "label": "Each item: Resize Frame",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_946cabd14a",
+      "actorId": "actor_946cabd14a",
+      "type": "NodeTransform",
+      "label": "Item: Each item: Resize Frame",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_c21f40fc99",
+      "actorId": "actor_c21f40fc99",
+      "type": "NodeTransform",
+      "label": "Results: Each item: Resize Frame",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_3913fbf136",
+      "actorId": "actor_3913fbf136",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-editing/YANTRA_IMAGE_EDIT_RESIZE",
+      "color": "#6366F1",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-editing",
+        "connectorLabel": "Image editing",
+        "action": "YANTRA_IMAGE_EDIT_RESIZE",
+        "params": {
+          "width": 768,
+          "height": 768
+        }
+      }
+    },
+    {
+      "nodeId": "node_629fa43fab",
+      "actorId": "actor_629fa43fab",
+      "type": "NodeTransform",
+      "label": "Params: Upload to GDrive",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// The upstream file as { contentBase64 | fileUrl, filename, mimeType }: n8n binary data travels as base64 bytes or a file URL on Yantra.\nconst __b64 = (t) => { const b = new TextEncoder().encode(String(t)); let s = ''; for (let i = 0; i < b.length; i += 1) s += String.fromCharCode(b[i]); return btoa(s); };\nconst __fileRef = (v, prop) => {\n  const s = (x) => (typeof x === 'string' && x !== '' ? x : undefined);\n  let r = Array.isArray(v) ? v[0] : v;\n  const bin = r && typeof r === 'object' && r.binary && typeof r.binary === 'object' ? r.binary[prop] ?? Object.values(r.binary)[0] : undefined;\n  if (bin && s(bin.data)) return { contentBase64: bin.data, filename: s(r.filename) ?? s(bin.fileName) ?? 'file', mimeType: s(bin.mimeType) };\n  if (r && typeof r === 'object' && r.data && typeof r.data === 'object' && !Array.isArray(r.data)) r = { ...r, ...r.data };\n  const dl = r?.downloaded_file_content ?? r?.file;\n  const filename = s(r?.filename) ?? s(r?.fileName) ?? s(dl?.name) ?? s(r?.name) ?? 'file';\n  const mimeType = s(r?.mimeType) ?? s(r?.contentType) ?? s(dl?.mimetype) ?? s(r?.mimetype);\n  if (s(r?.bodyBase64)) return { contentBase64: r.bodyBase64, filename, mimeType };\n  const url = s(dl?.s3url) ?? s(r?.s3url) ?? s(r?.fileUrl) ?? s(r?.imageUrl) ?? s(r?.imageUrls?.[0]) ?? s(r?.audioUrl) ?? s(r?.videoUrl) ?? s(r?.secure_url);\n  if (url) return { fileUrl: url, filename, mimeType };\n  if (s(r?.data)) return { contentBase64: r.encoding !== 'base64' && /^(?:text\\/|application\\/(?:json|xml|javascript|x-tex))|\\+(?:xml|json)$/.test(mimeType ?? '') ? __b64(r.data) : r.data, filename, mimeType };\n  throw new Error('No file on the upstream step: expected file bytes (base64) or a file URL.');\n};\n// Params for googlesuper/GOOGLESUPER_UPLOAD_FILE (n8n node \"Upload to GDrive\").\nreturn Object.assign({ \"file_name\": `narrating-video-using-vision-ai-${$now.format('yyyyMMddHHmmss')}.mp3`, \"parent_id\": \"{{driveFolderId}}\" }, (() => { const __f = __fileRef(source, \"data\"); if (__f.fileUrl === undefined) throw new Error(\"expected a file URL from Use Text-to-Speech\"); return { \"file_url\": __f.fileUrl, \"mime_type\": __f.mimeType }; })());"
+      }
+    },
+    {
+      "nodeId": "node_3f5af11730",
+      "actorId": "actor_3f5af11730",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_UPLOAD_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive",
+        "action": "GOOGLESUPER_UPLOAD_FILE"
+      }
+    },
+    {
+      "nodeId": "node_4ab8f6c6df",
+      "actorId": "actor_4ab8f6c6df",
+      "type": "NodeTransform",
+      "label": "Aggregate Frames",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nreturn { \"data\": __items };"
+      }
+    },
+    {
+      "nodeId": "node_f571a5e1c5",
+      "actorId": "actor_f571a5e1c5",
+      "type": "NodeLlmChain",
+      "label": "Generate Narration Script",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_eb4c951f26",
+      "actorId": "actor_eb4c951f26",
+      "type": "NodeTransform",
+      "label": "Prompt: Generate Narration Script",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Generate Narration Script.\nconst __promptValue = `These are frames of a video. Create a short voiceover script in the style of David Attenborough. Only include the narration.\n${$('Generate Narration Script').isExecuted\n ? `Continue from this script:\\n${$('Generate Narration Script').all().map(item => item.json.text.replace(/\\n/g,'')).join('\\n')}`\n : ''}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_a5e7901c8f",
+      "actorId": "actor_a5e7901c8f",
+      "type": "NodeTransform",
+      "label": "Stay Within Service Limits",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The original waited here (1 seconds).\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_e254319d46",
+      "actorId": "actor_e254319d46",
+      "type": "NodeTransform",
+      "label": "Return: Stay Within Service Limits",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_add9cb4999",
+      "actorId": "actor_add9cb4999",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 4640,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_c79c9ce914",
+      "actorId": "actor_c79c9ce914",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "driveFolderId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_ab6da74b88",
+      "actorId": "actor_ab6da74b88",
+      "type": "NodeChatModel",
+      "label": "Generate Narration Script: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 5780,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-2024-08-06"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_52ab1b54c6",
+      "target": "node_65b2f7fe27",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_52ab1b54c6",
+      "target": "node_65b2f7fe27",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_65b2f7fe27",
+      "target": "node_ea82f678cf",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_65b2f7fe27",
+      "target": "node_ea82f678cf",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_65b2f7fe27",
+      "target": "node_4c9d53a5cc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_65b2f7fe27",
+      "target": "node_4c9d53a5cc",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2c36a5f165",
+      "target": "node_0517fbb31f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_2c36a5f165",
+      "target": "node_0517fbb31f",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_0517fbb31f",
+      "target": "node_a85a2dbd06",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0517fbb31f",
+      "target": "node_a85a2dbd06",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0517fbb31f",
+      "target": "node_d6ffd894d8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0517fbb31f",
+      "target": "node_d6ffd894d8",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a85a2dbd06",
+      "target": "node_a892f6e97f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a85a2dbd06",
+      "target": "node_a892f6e97f",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a892f6e97f",
+      "target": "node_0517fbb31f",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_a892f6e97f",
+      "target": "node_0517fbb31f",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_85974b46b8",
+      "target": "node_afcd48f590",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_85974b46b8",
+      "target": "node_afcd48f590",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_656fbd8a52",
+      "target": "node_667afbc35e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_656fbd8a52",
+      "target": "node_667afbc35e",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_667afbc35e",
+      "target": "node_946cabd14a",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_667afbc35e",
+      "target": "node_946cabd14a",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_667afbc35e",
+      "target": "node_c21f40fc99",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_667afbc35e",
+      "target": "node_c21f40fc99",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_946cabd14a",
+      "target": "node_3913fbf136",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_3913fbf136",
+      "target": "node_667afbc35e",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_3913fbf136",
+      "target": "node_667afbc35e",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_629fa43fab",
+      "target": "node_3f5af11730",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_629fa43fab",
+      "target": "node_3f5af11730",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_eb4c951f26",
+      "target": "node_f571a5e1c5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_0e01931f40",
+      "target": "node_38749516bc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0e01931f40",
+      "target": "node_38749516bc",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_38749516bc",
+      "target": "node_52ab1b54c6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_38749516bc",
+      "target": "node_52ab1b54c6",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e520fe6681",
+      "target": "node_0e01931f40",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e520fe6681",
+      "target": "node_0e01931f40",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d6ffd894d8",
+      "target": "node_656fbd8a52",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d6ffd894d8",
+      "target": "node_656fbd8a52",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5dedaee09a",
+      "target": "node_e520fe6681",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_83c1e8af0c",
+      "target": "node_85974b46b8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_83c1e8af0c",
+      "target": "node_85974b46b8",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4c9d53a5cc",
+      "target": "node_83c1e8af0c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4c9d53a5cc",
+      "target": "node_83c1e8af0c",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ea82f678cf",
+      "target": "node_2c36a5f165",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ea82f678cf",
+      "target": "node_2c36a5f165",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c21f40fc99",
+      "target": "node_4ab8f6c6df",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c21f40fc99",
+      "target": "node_4ab8f6c6df",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4ab8f6c6df",
+      "target": "node_eb4c951f26",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4ab8f6c6df",
+      "target": "node_eb4c951f26",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_afcd48f590",
+      "target": "node_629fa43fab",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_afcd48f590",
+      "target": "node_629fa43fab",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f571a5e1c5",
+      "target": "node_a5e7901c8f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f571a5e1c5",
+      "target": "node_a5e7901c8f",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a5e7901c8f",
+      "target": "node_e254319d46",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a5e7901c8f",
+      "target": "node_e254319d46",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e254319d46",
+      "target": "node_65b2f7fe27",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_e254319d46",
+      "target": "node_65b2f7fe27",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_3f5af11730",
+      "target": "node_add9cb4999",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_ab6da74b88",
+      "target": "node_f571a5e1c5",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "",
+    "connectors": [
+      "googlesuper",
+      "openai",
+      "yantra-image-editing",
+      "yantra-voicebox"
+    ],
+    "setupVars": [
+      {
+        "key": "driveFolderId",
+        "label": "Drive Folder id",
+        "type": "id",
+        "example": "1AbC...xyz",
+        "usedBy": [
+          "Upload to GDrive"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeLoop",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 14,
+      "yantraSteps": 29,
+      "foldedHelpers": [
+        "OpenAI Chat Model"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/Narrating over a Video using Multimodal AI.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "action-pending-publish",
+        "node": "Upload to GDrive",
+        "detail": "googlesuper/GOOGLESUPER_UPLOAD_FILE waits for the googlesuper Drive content upload patch (12.1.10) to be published"
+      }
+    ],
+    "setup": [
+      "\"Upload to GDrive\": googlesuper/GOOGLESUPER_UPLOAD_FILE comes from the googlesuper Drive content upload patch (12.1.10), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
+      "Setup value driveFolderId: Drive Folder id (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Capture Frames",
+          "n8n": "code.python",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Convert to Binary",
+          "n8n": "convertToFile.toBinary",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Use Text-to-Speech",
+          "n8n": "audio.generate",
+          "action": "yantra-voicebox/YANTRA_VOICEBOX_SPEAK",
+          "soft": true
+        },
+        {
+          "node": "Upload to GDrive",
+          "n8n": "file.upload",
+          "action": "googlesuper/GOOGLESUPER_UPLOAD_FILE",
+          "soft": true
+        },
+        {
+          "node": "Stay Within Service Limits",
+          "n8n": "wait",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Generate Narration Script",
+          "model": "gpt-4o-2024-08-06"
+        }
+      ],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Capture Frames\" (code.python): Python Code has no Transform runtime; payload passes through unchanged.",
+        "\"Capture Frames\": Python Code was not executed - port the logic to JavaScript Transform or run it in an agent sandbox.",
+        "\"For Every 15 Frames\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "\"Each item: Convert to Binary\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "\"Convert to Binary\" (convertToFile.toBinary): The file is a `{ data, fileName, mimeType }` object (text, or base64 for toBinary); point the next step at `data`.",
+        "\"Use Text-to-Speech\" used OpenAI text to speech; the platform voice speaks the text and returns audioUrl (a stored audio file) instead of binary audio.",
+        "\"Each item: Resize Frame\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "\"Upload to GDrive\" uploads the file from \"Use Text-to-Speech\" to Google Drive (bytes or URL) with GOOGLESUPER_UPLOAD_FILE.",
+        "\"Stay Within Service Limits\" paused the original (1 seconds); Yantra has no delay node, so this step passes data straight through.",
+        "\"Stay Within Service Limits\" (wait): Wait/delay is a soft passthrough; add a schedule or external delay if timing matters.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Try It Out!\n\n### This n8n template takes a video and extracts frames from it which are used with a multimodal LLM to generate a script. The script is then passed to the same multimodal LLM to generate a voiceover clip.\n\nThis template was inspired by [Processing and narrating a video with GPT's visual capabilities and the TTS API](https://cookbook.openai.com/examples/gpt_with_vision_for_video_understanding)\n\n* Video is downloaded using the HTTP node.\n* Python code node is used to extract the frames using OpenCV.\n* Loop node is used o batch the frames for the LLM to generate partial scripts.\n* All partial scripts are combined to form the full script which is then sent to OpenAI to generate audio from it.\n* The finished voiceover clip is uploaded to Google Drive.\n\nSample the finished product here: https://drive.google.com/file/d/[id removed]/view?usp=sharing\n\n\n### Need Help?\nJoin the [Discord](https://discord.com/invite/XPKeKXeB7d) or ask in the [Forum](https://community.n8n.io/)!",
+      "## 1. Download Video\n[Learn more about the HTTP Request node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.httprequest/)\n\nIn this demonstration, we'll download a stock video from pixabay using the HTTP Request node. Feel free to use other sources but ensure they are in a format support by OpenCV ([See docs](https://docs.opencv.org/3.4/dd/d43/tutorial_py_video_display.html))",
+      "## 2. Split Video into Frames\n[Learn more about the Code node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.code/)\n\nWe need to think of videos are a sum of 2 parts; a visual track and an audio track. The visual track is technically just a collection of images displayed one after the other and are typically referred to as frames. When we want LLM to understand videos, most of the time we can do so by giving it a series of frames as images to process.\n\nHere, we use the Python Code node to extract the frames from the video using OpenCV, a computer vision library. For performance reasons, we'll also capture only a max of 90 frames from the video but ensure they are evenly distributed across the video. This step takes about 1-2 mins to complete on a 3mb video.",
+      "### 🚨 PERFORMANCE WARNING!\nUsing large videos or capturing a large number of frames is really memory intensive and could crash your n8n instance. Be sure you have sufficient memory and to optimise the video beforehand!",
+      "## 3. Use Vision AI to Narrate on Batches of Frames\n[Read more about the Basic LLM node](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.chainllm/)\n\nTo keep within token limits of our LLM, we'll need to send our frames in sequential batches to represent chunks of our original video. We'll use the loop node to create batches of 15 frames - this is because of our max of 90 frames, this fits perfectly for a total of 6 loops. Next, we'll convert each frame to a binary image so we can resize for and attach to the Basic LLM node. One trick to point out is that within the Basic LLM node, previous iterations of the generation are prepended to form a cohesive script. Without, the LLM will assume it needs to start fresh for each batch of frames.\n\nA wait node is used to stay within service rate limits. This is useful for new users who are still on lower tiers. If you do not have such restrictions, feel free to remove this wait node!",
+      "## 4. Generate Voice Over Clip Using TTS\n[Read more about the OpenAI node](https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-langchain.openai)\n\nFinally with our generated script parts, we can combine them into one and use OpenAI's Audio generation capabilities to generate a voice over from the full script. Once we have the output mp3, we can upload it to somewhere like Google Drive for later use.\n\nHave a listen to the finished product here: https://drive.google.com/file/d/[id removed]/view?usp=sharing",
+      "**The video used in this demonstration is**\n&copy; [Coverr-Free-Footage](https://pixabay.com/users/coverr-free-footage-1281706/) via [Pixabay](https://pixabay.com/videos/india-street-busy-rickshaw-people-3175/)\n![](https://res.cloudinary.com/daglih2g8/image/upload/f_auto,q_auto/v1/n8n-workflows/jhx2tma2gxaabkeiqlgp#full-width)"
+    ],
+    "nodes": {
+      "node_5dedaee09a": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_e520fe6681": {
+        "n8n": "Download Video",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_0e01931f40": {
+        "n8n": "Capture Frames",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_38749516bc": {
+        "n8n": "Split Out Frames",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_52ab1b54c6": {
+        "n8n": "For Every 15 Frames",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_65b2f7fe27": {
+        "n8n": "For Every 15 Frames",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_ea82f678cf": {
+        "n8n": "For Every 15 Frames",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_4c9d53a5cc": {
+        "n8n": "For Every 15 Frames",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_83c1e8af0c": {
+        "n8n": "Combine Script",
+        "n8nType": "n8n-nodes-base.aggregate"
+      },
+      "node_2c36a5f165": {
+        "n8n": "Each item: Convert to Binary",
+        "n8nType": "synthetic"
+      },
+      "node_0517fbb31f": {
+        "n8n": "Each item: Convert to Binary",
+        "n8nType": "synthetic"
+      },
+      "node_a85a2dbd06": {
+        "n8n": "Each item: Convert to Binary",
+        "n8nType": "synthetic"
+      },
+      "node_d6ffd894d8": {
+        "n8n": "Each item: Convert to Binary",
+        "n8nType": "synthetic"
+      },
+      "node_a892f6e97f": {
+        "n8n": "Convert to Binary",
+        "n8nType": "n8n-nodes-base.convertToFile"
+      },
+      "node_85974b46b8": {
+        "n8n": "Use Text-to-Speech",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_afcd48f590": {
+        "n8n": "Use Text-to-Speech",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_656fbd8a52": {
+        "n8n": "Each item: Resize Frame",
+        "n8nType": "synthetic"
+      },
+      "node_667afbc35e": {
+        "n8n": "Each item: Resize Frame",
+        "n8nType": "synthetic"
+      },
+      "node_946cabd14a": {
+        "n8n": "Each item: Resize Frame",
+        "n8nType": "synthetic"
+      },
+      "node_c21f40fc99": {
+        "n8n": "Each item: Resize Frame",
+        "n8nType": "synthetic"
+      },
+      "node_3913fbf136": {
+        "n8n": "Resize Frame",
+        "n8nType": "n8n-nodes-base.editImage"
+      },
+      "node_629fa43fab": {
+        "n8n": "Upload to GDrive",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_3f5af11730": {
+        "n8n": "Upload to GDrive",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_4ab8f6c6df": {
+        "n8n": "Aggregate Frames",
+        "n8nType": "n8n-nodes-base.aggregate"
+      },
+      "node_f571a5e1c5": {
+        "n8n": "Generate Narration Script",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_eb4c951f26": {
+        "n8n": "Generate Narration Script",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_a5e7901c8f": {
+        "n8n": "Stay Within Service Limits",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_e254319d46": {
+        "n8n": "Stay Within Service Limits",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_add9cb4999": {
+        "n8n": "__end:Upload to GDrive",
+        "n8nType": "synthetic"
+      },
+      "node_c79c9ce914": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_ab6da74b88": {
+        "n8n": "Generate Narration Script",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

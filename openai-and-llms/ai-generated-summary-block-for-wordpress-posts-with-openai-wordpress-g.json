@@ -1,0 +1,1654 @@
+{
+  "name": "AI-Generated Summary Block for WordPress Posts - with OpenAI, WordPress, Google Sheets & Slack",
+  "workflowSlug": "ai-generated-summary-block-for-wordpress-posts-with-openai-wordpress-g",
+  "description": "Converted from the n8n template \"AI-Generated Summary Block for WordPress Posts - with OpenAI, WordPress, Google Sheets & Slack\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_f421c9e20b",
+      "actorId": "actor_f421c9e20b",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_215969205f",
+      "actorId": "actor_215969205f",
+      "type": "NodeTransform",
+      "label": "Set fields - From Webhook input",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"post_id\"] = ($json.body.post_id);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_d686a9ffe3",
+      "actorId": "actor_d686a9ffe3",
+      "type": "NodeTransform",
+      "label": "Date & Time - Substract",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Date math (n8n subtractFromDate). Format strings are not applied.\nconst __d = new Date(($json.timestamp));\nreturn { ...$json, \"last_execution_date\": new Date(__d.getTime() - Number(30) * 1000).toISOString() };"
+      }
+    },
+    {
+      "nodeId": "node_c4addd6e56",
+      "actorId": "actor_c4addd6e56",
+      "type": "NodeCdeConnector",
+      "label": "wordpress/WORDPRESS_GETALL_POST",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "wordpress",
+        "connectorLabel": "WordPress",
+        "action": "WORDPRESS_GETALL_POST",
+        "params": {}
+      }
+    },
+    {
+      "nodeId": "node_03696e2389",
+      "actorId": "actor_03696e2389",
+      "type": "NodeCdeConnector",
+      "label": "wordpress/WORDPRESS_GET_POST",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "wordpress",
+        "connectorLabel": "WordPress",
+        "action": "WORDPRESS_GET_POST",
+        "params": {
+          "id": "{{last.transformed.post_id}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_ccfbcc842f",
+      "actorId": "actor_ccfbcc842f",
+      "type": "NodeCdeConnector",
+      "label": "wordpress/WORDPRESS_GETALL_POST",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "wordpress",
+        "connectorLabel": "WordPress",
+        "action": "WORDPRESS_GETALL_POST",
+        "params": {}
+      }
+    },
+    {
+      "nodeId": "node_13f7cc4802",
+      "actorId": "actor_13f7cc4802",
+      "type": "NodeTransform",
+      "label": "Items: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_a1ed555a0e",
+      "actorId": "actor_a1ed555a0e",
+      "type": "NodeLoop",
+      "label": "Loop Over Items",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_a7cc23f09f",
+      "actorId": "actor_a7cc23f09f",
+      "type": "NodeTransform",
+      "label": "Item: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_e4ec03885f",
+      "actorId": "actor_e4ec03885f",
+      "type": "NodeTransform",
+      "label": "Results: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_b2af91b4c4",
+      "actorId": "actor_b2af91b4c4",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_BATCH_GET",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_BATCH_GET",
+        "params": {
+          "spreadsheet_id": "{{spreadsheetId}}",
+          "ranges": [
+            "AI-Summarized Posts"
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_a38c6c35b2",
+      "actorId": "actor_a38c6c35b2",
+      "type": "NodeTransform",
+      "label": "If: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.post_id)) != null));"
+      }
+    },
+    {
+      "nodeId": "node_f84f5f4a7c",
+      "actorId": "actor_f84f5f4a7c",
+      "type": "NodeBranch",
+      "label": "If: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_000e582d42",
+      "actorId": "actor_000e582d42",
+      "type": "NodeTransform",
+      "label": "Params: WordPress - Get Post2",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Loop Over Items\": __namedCtx.steps?.[\"Item: Loop Over Items\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for wordpress/WORDPRESS_GET_POST (n8n node \"WordPress - Get Post2\").\nreturn {\n  \"id\": ($('Loop Over Items').item.json.id),\n};"
+      }
+    },
+    {
+      "nodeId": "node_f3329893ff",
+      "actorId": "actor_f3329893ff",
+      "type": "NodeCdeConnector",
+      "label": "wordpress/WORDPRESS_GET_POST",
+      "color": "#6366F1",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "wordpress",
+        "connectorLabel": "WordPress",
+        "action": "WORDPRESS_GET_POST"
+      }
+    },
+    {
+      "nodeId": "node_f424d46c33",
+      "actorId": "actor_f424d46c33",
+      "type": "NodeTransform",
+      "label": "HTML to Markdown",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst __md = String(null ?? '');\nconst __html = __md.replace(/^### (.*)$/gm, '<h3>$1</h3>').replace(/^## (.*)$/gm, '<h2>$1</h2>').replace(/^# (.*)$/gm, '<h1>$1</h1>').replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>').replace(/\\*(.+?)\\*/g, '<em>$1</em>').replace(/\\[(.+?)\\]\\((.+?)\\)/g, '<a href=\"$2\">$1</a>').replace(/\\n{2,}/g, '</p><p>');\nreturn { ...$json, \"data\": '<p>' + __html + '</p>' };"
+      }
+    },
+    {
+      "nodeId": "node_ca6e3c9053",
+      "actorId": "actor_ca6e3c9053",
+      "type": "NodeLlmChain",
+      "label": "Text Classifier",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string",
+              "enum": [
+                "not_summarized",
+                "=summarized"
+              ],
+              "description": "One of: not_summarized, =summarized"
+            }
+          },
+          "required": [
+            "category"
+          ],
+          "additionalProperties": false
+        },
+        "system": "Classify the input into exactly one category.\n- not_summarized: Content that does not contain an 'AI Summary'.\n- =summarized: Content that contains an 'AI Summary'.\nAnalyze the provided text and classify it into one of the following categories: {categories}. \n- If the text contains an 'AI Summary', classify it as \"summarized\".\n- If the text does not contain an 'AI Summary', classify it as \"not_summarized\".\n\nFollow these instructions strictly:\n- Provide the result in JSON format.\n- Do not include any explanations, comments, or additional text.\n",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_99db1cd09a",
+      "actorId": "actor_99db1cd09a",
+      "type": "NodeTransform",
+      "label": "Prompt: Text Classifier",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Text Classifier.\nconst __promptValue = ($json.data);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_6e6fdfe573",
+      "actorId": "actor_6e6fdfe573",
+      "type": "NodeTransform",
+      "label": "Text Classifier: category = not_summarized",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.category ?? '') === \"not_summarized\";"
+      }
+    },
+    {
+      "nodeId": "node_d20267cf62",
+      "actorId": "actor_d20267cf62",
+      "type": "NodeBranch",
+      "label": "Text Classifier: category = not_summarized?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_0ed8011610",
+      "actorId": "actor_0ed8011610",
+      "type": "NodeTransform",
+      "label": "Text Classifier: category = =summarized",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return String(source?.category ?? '') === \"=summarized\";"
+      }
+    },
+    {
+      "nodeId": "node_f7a2730e3a",
+      "actorId": "actor_f7a2730e3a",
+      "type": "NodeBranch",
+      "label": "Text Classifier: category = =summarized?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_5502dd6adc",
+      "actorId": "actor_5502dd6adc",
+      "type": "NodeLlmChain",
+      "label": "OpenAI",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 6160,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "You are an expert in content summarization and web-optimized writing. \nYour mission is to analyze the HTML content of an article from a website focused on electric vehicles and green mobility and extract the key information. \n\nGenerate only an HTML block containing a concise summary in bullet point format, strictly following this structure:\n\n\n<!-- wp:html -->\n<div class=\"wp-block-group has-background\" style=\"background-color:#f8faff; border-radius:4px; padding:10px;\">\n <p style=\"font-style:normal; font-weight:1000; font-size:1.1em; margin:0 0 10px 0;\">\n <strong>✨ AI Summary</strong> :\n </p>\n\n <li>[Key point 1]</li>\n <li>[Key point 2]</li>\n <li>[Key point 3]</li>\n <li>[Key point 4]</li>\n\n</div>\n<!-- /wp:html -->\n\n<!-- wp:separator -->\n<hr class=\"wp-block-separator has-alpha-channel-opacity\"/>\n<!-- /wp:separator -->\n\n## Important: Strict Guidelines to Follow\n\n- Ensure the summary is **clear, concise, and informative**, focusing only on key points. \n- **Avoid unnecessary introductions**, such as \"This article presents\" or similar phrases. \n- **Output only the required HTML block**, without any additional explanations or commentary. \n- The output must **start with** the `<!-- wp:html -->` tag and **end with** the closing separator tag. \n- The summary must be **in the user's language**, including the phrase `\"✨ AI Summary\"`, which should also be translated accordingly. \n- **Do not add** any extra text, comments, or formatting outside the specified HTML block. \n\n\n## Example of a GOOD output:\n\n<!-- wp:html -->\n<div class=\"wp-block-group has-background\" style=\"background-color:#f8faff; border-radius:4px; padding:10px;\">\n <p style=\"font-style:normal; font-weight:1000; font-size:1.1em; margin:0 0 10px 0;\">\n <strong>✨ AI Summary</strong> :\n </p>\n\n <li>In March 2022, France had 43,700 public charging points for electric vehicles.</li>\n <li>Half of the highway service areas are equipped with ultra-fast charging stations.</li>\n <li>France is among the most equipped European countries, with 20% of the charging points in Europe.</li>\n <li>The goal is to reach 100,000 charging stations to support future demand for electric vehicles.</li>\n\n</div>\n<!-- /wp:html -->\n\n<!-- wp:separator -->\n<hr class=\"wp-block-separator has-alpha-channel-opacity\"/>\n<!-- /wp:separator -->\n\n## Example of a BAD output:\n```html\n<!-- wp:html -->\n<div class=\"wp-block-group has-background\" style=\"background-color:#f8faff; border-radius:4px; padding:10px;\">\n <p style=\"font-style:normal; font-weight:1000; font-size:1.1em; margin:0 0 10px 0;\">\n <strong>✨ AI Summary</strong> :\n </p>\n\n <li>In March 2022, France had 43,700 public charging points for electric vehicles.</li>\n <li>Half of the highway service areas are equipped with ultra-fast charging stations.</li>\n <li>France is among the most equipped European countries, with 20% of the charging points in Europe.</li>\n <li>The goal is to reach 100,000 charging stations to support future demand for electric vehicles.</li>\n\n</div>\n<!-- /wp:html -->\n```",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_5c3146947a",
+      "actorId": "actor_5c3146947a",
+      "type": "NodeTransform",
+      "label": "Prompt: OpenAI",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: OpenAI.\nconst __promptValue = ($json.data);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_0dbbec9373",
+      "actorId": "actor_0dbbec9373",
+      "type": "NodeHttpRequest",
+      "label": "Wordpress - Update Post",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "headers": {
+          "Authorization": "Basic {{domainBasicAuth}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_ea4727ebff",
+      "actorId": "actor_ea4727ebff",
+      "type": "NodeTransform",
+      "label": "URL: Wordpress - Update Post",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Loop Over Items\": __namedCtx.steps?.[\"Item: Loop Over Items\"]?.[\"transformed\"] };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"Wordpress - Update Post\".\nreturn `https://{{domainCom}}/wp-json/wp/v2/posts/${$('Loop Over Items').item.json.id}`;"
+      }
+    },
+    {
+      "nodeId": "node_db975e069d",
+      "actorId": "actor_db975e069d",
+      "type": "NodeTransform",
+      "label": "Body: Wordpress - Update Post",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"Wordpress - Update Post\".\nconst __body = { \"=content\": (`${$json} ${$('Text Classifier').item.json.content.raw}`), \"excerpt\": ($('Text Classifier').item.json.excerpt.rendered) };\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_8f9f2110e4",
+      "actorId": "actor_8f9f2110e4",
+      "type": "NodeTransform",
+      "label": "Set fields - Prepare data for Gsheets & Slack",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7680,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"post_id\"] = ($json.id);\n  out[\"title\"] = ($json.title.rendered);\n  out[\"post_link\"] = ($json.link);\n  out[\"edit_link\"] = `https://{{domainCom}}/wp-admin/post.php?post=${$json.id}&action=edit`;\n  out[\"summary\"] = ($('OpenAI').item.json.message.content);\n  out[\"summary_date\"] = ($now);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_47d630d1ab",
+      "actorId": "actor_47d630d1ab",
+      "type": "NodeTransform",
+      "label": "Params: Google Sheets - Add Row",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8060,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Params for googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND (n8n node \"Google Sheets - Add Row\").\nreturn {\n  \"spreadsheetId\": \"{{spreadsheetId}}\",\n  \"range\": \"AI-Summarized Posts\",\n  \"values\": [[($json.id), ($json.ai_summary), ($json.edit_link), ($json.link), ($now)]],\n  \"valueInputOption\": \"USER_ENTERED\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_5a15d2b2e1",
+      "actorId": "actor_5a15d2b2e1",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 8440,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_SPREADSHEETS_VALUES_APPEND"
+      }
+    },
+    {
+      "nodeId": "node_22b7bf9a85",
+      "actorId": "actor_22b7bf9a85",
+      "type": "NodeCdeConnector",
+      "label": "slack/SLACK_CHAT_POST_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 8820,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "slack",
+        "connectorLabel": "Slack",
+        "action": "SLACK_CHAT_POST_MESSAGE",
+        "params": {
+          "channel": "{{slackChannel}}",
+          "text": "📄🔔 *New WordPress Post Updated with AI Summary*\n\nThe post *{{steps.xf_8f9f2110e4.result.title}}* has been updated with an AI-generated summary at the top of the article. \nYou can view it here: {{steps.xf_8f9f2110e4.result.post_link}}\n\n• *Post ID*: {{steps.xf_8f9f2110e4.result.post_id}}\n• *Edit Link*: {{steps.xf_8f9f2110e4.result.edit_link}}\n"
+        }
+      }
+    },
+    {
+      "nodeId": "node_1ba200c208",
+      "actorId": "actor_1ba200c208",
+      "type": "NodeTransform",
+      "label": "Return: Text Classifier",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_61bc279a0b",
+      "actorId": "actor_61bc279a0b",
+      "type": "NodeTransform",
+      "label": "Return: If",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_9133f0c2e9",
+      "actorId": "actor_9133f0c2e9",
+      "type": "NodeTransform",
+      "label": "Return: Slack - Notify Channel",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9200,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_282bc9c7b4",
+      "actorId": "actor_282bc9c7b4",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_6387cd9c6b",
+      "actorId": "actor_6387cd9c6b",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 1220,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_4ee500c6fa",
+      "actorId": "actor_4ee500c6fa",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_c30c51c902",
+      "actorId": "actor_c30c51c902",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "spreadsheetId": "",
+          "domainCom": "",
+          "slackChannel": "",
+          "domainBasicAuth": {
+            "$workflowSecret": "DOMAIN_BASIC_AUTH"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_f692807af5",
+      "actorId": "actor_f692807af5",
+      "type": "NodeChatModel",
+      "label": "Text Classifier: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4640,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    },
+    {
+      "nodeId": "node_8308568396",
+      "actorId": "actor_8308568396",
+      "type": "NodeChatModel",
+      "label": "OpenAI: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 6160,
+        "y": 680
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_13f7cc4802",
+      "target": "node_a1ed555a0e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_13f7cc4802",
+      "target": "node_a1ed555a0e",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_a1ed555a0e",
+      "target": "node_a7cc23f09f",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a1ed555a0e",
+      "target": "node_a7cc23f09f",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a1ed555a0e",
+      "target": "node_e4ec03885f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a1ed555a0e",
+      "target": "node_e4ec03885f",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a38c6c35b2",
+      "target": "node_f84f5f4a7c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_a38c6c35b2",
+      "target": "node_f84f5f4a7c",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_000e582d42",
+      "target": "node_f3329893ff",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_000e582d42",
+      "target": "node_f3329893ff",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_99db1cd09a",
+      "target": "node_ca6e3c9053",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_ca6e3c9053",
+      "target": "node_6e6fdfe573",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ca6e3c9053",
+      "target": "node_6e6fdfe573",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6e6fdfe573",
+      "target": "node_d20267cf62",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_6e6fdfe573",
+      "target": "node_d20267cf62",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_ca6e3c9053",
+      "target": "node_0ed8011610",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d20267cf62",
+      "target": "node_0ed8011610",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0ed8011610",
+      "target": "node_f7a2730e3a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_0ed8011610",
+      "target": "node_f7a2730e3a",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_5c3146947a",
+      "target": "node_5502dd6adc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_ea4727ebff",
+      "target": "node_0dbbec9373",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_ea4727ebff",
+      "target": "node_db975e069d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_db975e069d",
+      "target": "node_0dbbec9373",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_db975e069d",
+      "target": "node_0dbbec9373",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_47d630d1ab",
+      "target": "node_5a15d2b2e1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_47d630d1ab",
+      "target": "node_5a15d2b2e1",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_f421c9e20b",
+      "target": "node_c4addd6e56",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d20267cf62",
+      "target": "node_5c3146947a",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f424d46c33",
+      "target": "node_5c3146947a",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a7cc23f09f",
+      "target": "node_b2af91b4c4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_f84f5f4a7c",
+      "target": "node_000e582d42",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b2af91b4c4",
+      "target": "node_000e582d42",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0dbbec9373",
+      "target": "node_8f9f2110e4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0dbbec9373",
+      "target": "node_8f9f2110e4",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b2af91b4c4",
+      "target": "node_a38c6c35b2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b2af91b4c4",
+      "target": "node_a38c6c35b2",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f424d46c33",
+      "target": "node_99db1cd09a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f424d46c33",
+      "target": "node_99db1cd09a",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5502dd6adc",
+      "target": "node_ea4727ebff",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5502dd6adc",
+      "target": "node_ea4727ebff",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5a15d2b2e1",
+      "target": "node_22b7bf9a85",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_215969205f",
+      "target": "node_03696e2389",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_d686a9ffe3",
+      "target": "node_ccfbcc842f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_8f9f2110e4",
+      "target": "node_47d630d1ab",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8f9f2110e4",
+      "target": "node_47d630d1ab",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f3329893ff",
+      "target": "node_f424d46c33",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f3329893ff",
+      "target": "node_f424d46c33",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c4addd6e56",
+      "target": "node_13f7cc4802",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c4addd6e56",
+      "target": "node_13f7cc4802",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f7a2730e3a",
+      "target": "node_1ba200c208",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f424d46c33",
+      "target": "node_1ba200c208",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1ba200c208",
+      "target": "node_a1ed555a0e",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_1ba200c208",
+      "target": "node_a1ed555a0e",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_f84f5f4a7c",
+      "target": "node_61bc279a0b",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b2af91b4c4",
+      "target": "node_61bc279a0b",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_61bc279a0b",
+      "target": "node_a1ed555a0e",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_61bc279a0b",
+      "target": "node_a1ed555a0e",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_22b7bf9a85",
+      "target": "node_9133f0c2e9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_22b7bf9a85",
+      "target": "node_9133f0c2e9",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9133f0c2e9",
+      "target": "node_a1ed555a0e",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_9133f0c2e9",
+      "target": "node_a1ed555a0e",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_f421c9e20b",
+      "target": "node_215969205f",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f421c9e20b",
+      "target": "node_d686a9ffe3",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_03696e2389",
+      "target": "node_282bc9c7b4",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_ccfbcc842f",
+      "target": "node_6387cd9c6b",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_e4ec03885f",
+      "target": "node_4ee500c6fa",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_f692807af5",
+      "target": "node_ca6e3c9053",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_8308568396",
+      "target": "node_5502dd6adc",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "",
+    "connectors": [
+      "googlesuper",
+      "openai",
+      "slack",
+      "wordpress"
+    ],
+    "setupVars": [
+      {
+        "key": "spreadsheetId",
+        "label": "Spreadsheet id",
+        "type": "id",
+        "example": "1AbC...xyz",
+        "usedBy": [
+          "Google Sheets - Add Row",
+          "Google Sheets - Get rows"
+        ]
+      },
+      {
+        "key": "domainCom",
+        "label": "Domain Com",
+        "type": "url",
+        "usedBy": [
+          "Set fields - Prepare data for Gsheets & Slack",
+          "Wordpress - Update Post"
+        ]
+      },
+      {
+        "key": "slackChannel",
+        "label": "Slack channel (name or id)",
+        "type": "channel",
+        "example": "#general",
+        "usedBy": [
+          "Slack - Notify Channel"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "DOMAIN_BASIC_AUTH",
+        "label": "<your-domain.com> WordPress application password as Basic auth (base64 of \"user:app-password\")",
+        "host": "<your-domain.com>",
+        "headerFormat": "Authorization: Basic <secret>",
+        "contextKey": "domainBasicAuth",
+        "usedBy": [
+          "Wordpress - Update Post"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeLoop",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 19,
+      "yantraSteps": 36,
+      "foldedHelpers": [
+        "OpenAI Chat Model"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/AI-Generated Summary Block for WordPress Posts.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "AI-Generated Summary Block for WordPress Posts - with OpenAI, WordPress, Google Sheets & Slack"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Setup value spreadsheetId: Spreadsheet id (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
+      "Setup value domainCom: Domain Com. Write it into the Workflow Configs initialContext before import.",
+      "Setup value slackChannel: Slack channel (name or id) (for example #general). Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret DOMAIN_BASIC_AUTH: <your-domain.com> WordPress application password as Basic auth (base64 of \"user:app-password\") for <your-domain.com> (Authorization: Basic <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "Connect the slack connector (credential).",
+      "Connect the wordpress connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "HTML to Markdown",
+          "n8n": "markdown.markdownToHtml",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "Webhook",
+          "type": "n8n-nodes-base.webhook",
+          "reason": "disabled in the original"
+        },
+        {
+          "node": "Schedule Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "reason": "disabled in the original"
+        },
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Text Classifier"
+        }
+      ],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Loop Over Items\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "\"HTML to Markdown\" (markdown.markdownToHtml): Markdown to HTML is a minimal converter on Yantra.",
+        "\"HTML to Markdown\": Markdown to HTML is a minimal converter on Yantra; swap in a connector if you need full fidelity.",
+        "\"Wordpress - Update Post\" authenticated with wordpressApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Wordpress - Update Post\": a request field used $('OtherNode'); on Yantra $() resolves via the named upstream map when that node ran earlier, else the immediate upstream - check that expression.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect slack: `cdecli credential create -n \"slack\" -p slack --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect wordpress: `cdecli credential create -n \"wordpress\" -p wordpress --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Trigger - Two Options\nTo use this workflow, you have two trigger options.\n\nThe default trigger is **\"When clicking 'Test workflow'\"**, allowing you to manually test the scenario.\n\nIf you want to use this workflow in production, you can choose one of the following triggers. You'll need to **select the one you prefer and enable it**.:\n\n### Schedule Trigger \nThis trigger checks at regular intervals (e.g., every 5 minutes) if a new post has been published on your WordPress blog and triggers the workflow accordingly. \n\n✅ **Easy to set up** \n✅ **Automates AI summaries without manual intervention** \n\n⚠️ If you run the workflow manually once, the AI-generated summaries will be added to Google Sheets and processed in later steps to prevent duplication. \n\n💡 **Recommended follow-up nodes:** If you choose this trigger, the following nodes are suggested in the template: \n- **`Date & Time - Subtract`**: Subtracts the scheduled interval from the current execution timestamp. For example, if the workflow runs every 5 minutes, it subtracts 5 minutes from the execution time. \n- **`WordPress - Get Posts`**: Uses the output of the `Date & Time - Subtract` node as a filter to retrieve only posts published after the last execution. \n\n### Webhook Trigger \nIf you're familiar with webhooks, you can set up a webhook that triggers when a new post is published. \n\n✅ **Faster than scheduled triggers** \n✅ **More event-driven** \n\nYou can implement this using either: \n- A **Webhook plugin** on WordPress (not recommended due to plugin dependency). \n- A **PHP function** that triggers the webhook with authentication for security. \n\n⚠️ **Be cautious** with how the webhook is triggered-you may not want it to fire on every post edit. \n\n💡 **Recommended follow-up nodes for this option:** \n- **`Set Fields - From Webhook Input`**: Configures the fields based on the data sent to the webhook. \n- **`WordPress - Get Post`**: Retrieves the post using the `post_id` received from the webhook, ensuring higher accuracy than the schedule trigger approach.",
+      "## WordPress - Get All Posts \n\nThis node is used for the **initial/test run**. In production, you should use the WordPress node that follows the **Scheduled Trigger** or **Webhook Trigger** instead. \n\nIt retrieves all existing WordPress posts to generate an AI Summary. \n\n### 🔹 Considerations: \n- In this template, the query is **limited to 5 posts** to prevent accidental large-scale execution. This makes it easier to fix any issues. \n- You can **add filters** (category, tag, date, etc.) to target only the posts for which you want an AI Summary. \n- You can enable the **\"Get All Posts\"** option in the node if you want summaries for all posts-**but make sure this is intentional**. \n- The **more posts** you process, the **higher the cost** in OpenAI API usage.",
+      "## Loop Over Items \n\nSince multiple posts may be retrieved from the previous step, a **\"Loop Over Items\"** node is used to process each post individually, optimizing the execution of subsequent nodes. \n\n### 🔹 In Production - Using the \"Schedule Trigger\" \nYou can continue using the **\"Loop Over Items\"** approach in production. Depending on your **publication frequency** and the **schedule interval** you've chosen, multiple posts could be retrieved in a single execution. This ensures each post is processed sequentially. \n\n### 🔹 In Production - Using the \"Webhook Trigger\" \nWith a **Webhook Trigger**, the workflow typically runs for **one post at a time**, meaning the **\"Loop Over Items\"** node is not strictly necessary. \n\n- **You can remove it** for a slightly more efficient workflow. \n- **However, keeping it won’t cause any issues**-it will simply loop over one item instead of multiple.",
+      "## Google Sheets - Get Rows & IF Nodes \n\nThis step is used to **check whether a post already has an AI Summary**. \n\nFor the Google Sheets node, you can **[make a copy of this Google Sheets template](https://docs.google.com/spreadsheets/d/[id removed]/)** by going to **File → Make a copy**.\n\n\n### 🔹 How It Works: \n1. **On the first execution**, posts retrieved from WordPress and processed for AI summarization are added to a **Google Sheet**. \n2. **On subsequent executions**, when the workflow retrieves new posts, it checks if the `post_id` is already recorded in Google Sheets. \n\n### 🔹 IF Node Logic: \n- ✅ **If a row exists for the `post_id`** → The post already has an AI Summary. The workflow **skips processing** and moves to the `\"Loop Over Items\"` node. \n- ❌ **If no row exists for the `post_id`** → The post **does not have an AI Summary**, so the workflow continues along the execution path that leads to AI Summary generation.",
+      "## WordPress - Get Post & HTML to Markdown Nodes \n\nThis step retrieves the WordPress post data using the `post_id` and converts the HTML content to Markdown. This ensures that the text is formatted in a **clean and structured way** before being sent to the **Text Classifier** node (which works with AI). More details about this step are provided in the next sticky note. \n\n### 🔹 WordPress - Get Post \n- The **`context=edit`** option is enabled to retrieve the **raw** post data. \n- This is necessary because the post content will be **updated later in the workflow**. \n\n### 🔹 HTML to Markdown \n- Converts the retrieved HTML content into **Markdown** format. \n- This makes the text **easier to process** for the LLM (Large Language Model) in the next step. \n- Markdown ensures that the AI better understands the structure and formatting of the content.",
+      "## Text Classifier \n\nThis step **classifies posts into categories**: \n\n- **`not_summarized`** → If the post **does not** have a summary, the following nodes execute the AI summary generation. \n- **`summarized`** → If the post **already** has a summary, the workflow **skips processing**: \n - The workflow moves to `\"Loop Over Items\"`. \n - The `\"Done\"` branch goes to the `\"Do Nothing\"` node. \n\nThe LLM model used is **`gpt-4o-mini`**-it's efficient and cost-effective, but you can choose another model if needed. \n\n### 🔹 Why Use a Text Classifier? \nThe previous node already filters posts **based on Google Sheets**, but adding this classification step makes the workflow even **more robust**: \n\n- ✅ **Extra validation**: If a post already has an AI Summary but, for some reason, is **not listed in Google Sheets**, this step **prevents duplicate summaries**. \n- ✅ **Avoids redundancy**: If a post already contains a **manual or pre-existing summary** at the top (not necessarily AI-generated), this step prevents adding an AI Summary that would be redundant.",
+      "## OpenAI - Message a Model \n\nThis step sends the **Markdown-formatted post** to **GPT-4o-mini**, using a **System Prompt** to instruct the LLM to generate an AI Summary. \nYou can review and modify the **System Prompt** directly within this node. \n\n### 🔹 Customization Required \nTo ensure optimal results, you should: \n- **Specify your website's theme** in the system prompt. The default example uses **electric mobility**, but you can replace it with a more relevant theme (e.g., **\"sustainable mobility\"**, \"urban transport,\" etc.). \n- **Modify the \"Good\" and \"Bad\" output examples**-since the template is pre-configured for electric mobility, make sure to adapt the examples to match your content. \n\n### 🔹 Output Format \nThe model is instructed to return the summary in **HTML format**, which will be used to update the WordPress post. \n\n💡 **Customization Tip**: \nYou may want to adjust the **HTML styling** to better match your WordPress theme. \nConsider modifying the following elements: \n- **Background color, text color, and font weight** \n- **Section title** (e.g., rename `\"AI Summary\"`) \n- **Padding, margins, and border styling** \n- **Removing or customizing the separator** \n\n\n\n\n\n\n\n\n\n\n### 🔹 Default Generated HTML \n\n***\n\n<!-- wp:html -->\n<div class=\"wp-block-group has-background\" style=\"background-color:#f8faff; border-radius:4px; padding:10px;\">\n <p style=\"font-style:normal; font-weight:1000; font-size:1.1em; margin:0 0 10px 0;\">\n <strong>✨ AI Summary</strong> :\n </p>\n\n <li>[Key point 1]</li>\n <li>[Key point 2]</li>\n <li>[Key point 3]</li>\n <li>[Key point 4]</li>\n\n</div>\n<!-- /wp:html -->\n\n<!-- wp:separator -->\n<hr class=\"wp-block-separator has-alpha-channel-opacity\"/>\n<!-- /wp:separator -->\n\n***",
+      "## WordPress - Update Post \n\nThis API call updates the **WordPress post** and its **excerpt**. \n\n**https://<your-domain.com>/wp-json/wp/v2/posts/{{ $('Loop Over Items').item.json.id }}**\n\n\n### 🔹 What It Does \n- **Adds the AI Summary** at the **top** of the post. \n- **Updates the post excerpt** using data retrieved from the `WordPress - Get Post2` node: \n- If a **manual excerpt** exists, it is **preserved**. \n- If the excerpt was simply the **beginning of the article**, it remains unchanged. \n- This prevents the **AI Summary from replacing the excerpt**, ensuring a **better user experience** on your blog’s article listing page.",
+      "## Set Fields - Prepare Data for Google Sheets & Slack \n\nThis node **sets fields** that will be used in **Google Sheets** and **Slack**. \nYou can **add or modify fields** as needed to fit your specific use case. \n### 🔹 Default Fields in This Template: \nThe following fields are pre-configured: \n- **`post_id`** → The WordPress post ID (`{{ $json.id }}`) \n- **`title`** → The rendered title of the post (`{{ $json.title.rendered }}`) \n- **`post_link`** → The direct URL to the post (`{{ $json.link }}`) \n- **`edit_link`** → A direct link to edit the post in WordPress (**https://<your-domain>/wp-admin/post.php?post=`{{ $json.id }}`&action=edit**) \n- **`summary`** → The AI-generated summary from the OpenAI node (`{{ $('OpenAI').item.json.message.content }}`) \n- **`summary_date`** → The date and time when the AI Summary was generated and added to the post.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n💡 **Customization Tip**: \n- You can **add additional fields** if you want to include more data (e.g., **post category, author name, publication date**). \n- This step ensures that the necessary information is properly structured before sending it to **Google Sheets** and **Slack**.",
+      "## Google Sheets - Add Row & Slack - Notify \n\nThis step **logs the post with an AI Summary** into **Google Sheets** and **sends a notification** to Slack. \n\nFor the Google Sheets node, you can **[make a copy of this Google Sheets template](https://docs.google.com/spreadsheets/d/[id removed]/)** by going to **File → Make a copy**.\n\n\n---\n\n### 🔹 Google Sheets - Add Row \n\nThis node **automatically maps the columns** in Google Sheets, meaning you **don't need to manually define each field**. \n\n#### 🛠 **Configuration Details** \n- **Google Sheets Document** → `AI Summary WordPress` \n- **Sheet Name** → `AI Summarized Posts` \n- **Mapping Mode** → **Auto-map columns based on field names** \n- **Automatically added fields** (examples, based on your setup): \n - `post_id` \n - `summary` \n - `post_link` \n - `edit_link` \n - `summary_date` \n\n💡 **Since columns are mapped automatically, ensure the column names in Google Sheets match the field names in n8n.** \n\n---\n\n### 🔹 Slack - Notify \n\nThis node **sends a message to Slack** when a post has been updated with an **AI Summary**. \n\n#### 🛠 **Configuration Details** \n- **Channel** → `wp-posts-ai` (you can choose another channel) \n- **Message Format** → Simple Text Message \n- **Notification Text** -> *Configured inside the node* (check the \"Message Text\" field)\n\n\n💡 **Best Practices**: \n- 🔕 *On the first execution, consider **deactivating** this node if you have many posts to avoid excessive notifications.* \n- 📢 *Consider **creating a dedicated Slack channel** for this workflow to keep AI summary updates separate from other discussions.*",
+      "# 📝 AI-Generated Summary Block for WordPress Posts \n\n## 🚀 What is this workflow? \nThis **n8n template** automates the process of adding an **AI-generated summary** at the top of your WordPress posts. \nIt **retrieves, processes, and updates** your posts dynamically, ensuring efficiency and flexibility without relying on a heavy WordPress plugin. \n\n## Example of AI Summary Section\n\n![Example of AI Summary Section](https://i.imgur.com/XkNKJsJ.png) \n\n## 🔄 How It Works \n1. **Triggers** → Runs on a **scheduled interval** or via a **webhook** when a new post is published. \n2. **Retrieves posts** → Fetches content from WordPress and converts HTML to Markdown for AI processing. \n3. **AI Summary Generation** → Uses OpenAI to create a concise summary. \n4. **Post Update** → Inserts the summary at the top of the post while keeping the original excerpt intact. \n5. **Data Logging & Notifications** → Saves processed posts to **Google Sheets** and notifies a **Slack channel**. \n\n## 🎯 Why use this workflow? \n✅ **No need for a WordPress plugin** → Keeps your site lightweight. \n✅ **Highly flexible** → Easily connect with **Google Sheets, Slack, or other services**. \n✅ **Customizable** → Adapt AI prompts, formatting, and integrations to your needs. \n✅ **Smart filtering** → Ensures posts are not reprocessed unnecessarily. \n\n💡 *Check the detailed sticky notes for setup instructions and customization options!*"
+    ],
+    "nodes": {
+      "node_f421c9e20b": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_215969205f": {
+        "n8n": "Set fields - From Webhook input",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_d686a9ffe3": {
+        "n8n": "Date & Time - Substract",
+        "n8nType": "n8n-nodes-base.dateTime"
+      },
+      "node_c4addd6e56": {
+        "n8n": "WordPress - Get All Posts",
+        "n8nType": "n8n-nodes-base.wordpress"
+      },
+      "node_03696e2389": {
+        "n8n": "WordPress - Get Post1",
+        "n8nType": "n8n-nodes-base.wordpress"
+      },
+      "node_ccfbcc842f": {
+        "n8n": "WordPress - Get Last Posts",
+        "n8nType": "n8n-nodes-base.wordpress"
+      },
+      "node_13f7cc4802": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_a1ed555a0e": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_a7cc23f09f": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_e4ec03885f": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_b2af91b4c4": {
+        "n8n": "Google Sheets - Get rows",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_a38c6c35b2": {
+        "n8n": "If",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_f84f5f4a7c": {
+        "n8n": "If",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_000e582d42": {
+        "n8n": "WordPress - Get Post2",
+        "n8nType": "n8n-nodes-base.wordpress"
+      },
+      "node_f3329893ff": {
+        "n8n": "WordPress - Get Post2",
+        "n8nType": "n8n-nodes-base.wordpress"
+      },
+      "node_f424d46c33": {
+        "n8n": "HTML to Markdown",
+        "n8nType": "n8n-nodes-base.markdown"
+      },
+      "node_ca6e3c9053": {
+        "n8n": "Text Classifier",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_99db1cd09a": {
+        "n8n": "Text Classifier",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_6e6fdfe573": {
+        "n8n": "Text Classifier",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_d20267cf62": {
+        "n8n": "Text Classifier",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_0ed8011610": {
+        "n8n": "Text Classifier",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_f7a2730e3a": {
+        "n8n": "Text Classifier",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_5502dd6adc": {
+        "n8n": "OpenAI",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_5c3146947a": {
+        "n8n": "OpenAI",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_0dbbec9373": {
+        "n8n": "Wordpress - Update Post",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "wordpressApi"
+      },
+      "node_ea4727ebff": {
+        "n8n": "Wordpress - Update Post",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_db975e069d": {
+        "n8n": "Wordpress - Update Post",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_8f9f2110e4": {
+        "n8n": "Set fields - Prepare data for Gsheets & Slack",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_47d630d1ab": {
+        "n8n": "Google Sheets - Add Row",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_5a15d2b2e1": {
+        "n8n": "Google Sheets - Add Row",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_22b7bf9a85": {
+        "n8n": "Slack - Notify Channel",
+        "n8nType": "n8n-nodes-base.slack"
+      },
+      "node_1ba200c208": {
+        "n8n": "Text Classifier",
+        "n8nType": "@n8n/n8n-nodes-langchain.textClassifier"
+      },
+      "node_61bc279a0b": {
+        "n8n": "If",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_9133f0c2e9": {
+        "n8n": "Slack - Notify Channel",
+        "n8nType": "n8n-nodes-base.slack"
+      },
+      "node_282bc9c7b4": {
+        "n8n": "__end:WordPress - Get Post1",
+        "n8nType": "synthetic"
+      },
+      "node_6387cd9c6b": {
+        "n8n": "__end:WordPress - Get Last Posts",
+        "n8nType": "synthetic"
+      },
+      "node_4ee500c6fa": {
+        "n8n": "__end:Loop Over Items",
+        "n8nType": "synthetic"
+      },
+      "node_c30c51c902": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_f692807af5": {
+        "n8n": "Text Classifier",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_8308568396": {
+        "n8n": "OpenAI",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

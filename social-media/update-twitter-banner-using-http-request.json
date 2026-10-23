@@ -1,0 +1,208 @@
+{
+  "name": "Update Twitter banner using HTTP request",
+  "workflowSlug": "update-twitter-banner-using-http-request",
+  "description": "Updates a Twitter banner using HTTP requests.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_9ffb29e48e",
+      "actorId": "actor_9ffb29e48e",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_b11a9b5eed",
+      "actorId": "actor_b11a9b5eed",
+      "type": "NodeHttpRequest",
+      "label": "HTTP Request",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://unsplash.com/photos/lUDMZUWFUXE/download?ixid=MnwxMjA3fDB8MXxhbGx8Mnx8fHx8fDJ8fDE2MzczMjY4Mjc&force=true"
+      }
+    },
+    {
+      "nodeId": "node_1d4b338d04",
+      "actorId": "actor_1d4b338d04",
+      "type": "NodeHttpRequest",
+      "label": "HTTP Request1",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://api.twitter.com/1.1/account/update_profile_banner.json"
+      }
+    },
+    {
+      "nodeId": "node_d6ee3df922",
+      "actorId": "actor_d6ee3df922",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_8d8d43334b",
+      "actorId": "actor_8d8d43334b",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": ""
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_9ffb29e48e",
+      "target": "node_b11a9b5eed",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_b11a9b5eed",
+      "target": "node_1d4b338d04",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_1d4b338d04",
+      "target": "node_d6ee3df922",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "social-media",
+    "categoryLabel": "Instagram, X and Social Media",
+    "department": "Marketing/Development",
+    "connectors": [],
+    "nodeTypes": [
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 4,
+      "yantraSteps": 3,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Instagram_Twitter_Social_Media/Update Twitter banner using HTTP request.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "http-auth-missing",
+        "node": "HTTP Request1",
+        "detail": "api.twitter.com needs the oAuth1 credential"
+      }
+    ],
+    "setup": [
+      "\"HTTP Request1\": api.twitter.com needs authentication (the original used oAuth1). Add the Authorization header, or replace the step with that service's connector."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "On clicking 'execute'",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Start",
+          "type": "n8n-nodes-base.start",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"HTTP Request1\" authenticated with oAuth1 in the original; add the matching Authorization header (or use the service's connector).",
+        "\"HTTP Request1\": the original signed requests with OAuth 1.0a (oAuth1); a static header cannot do that. Use the service's connector instead.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_9ffb29e48e": {
+        "n8n": "On clicking 'execute'",
+        "n8nType": "n8n-nodes-base.manualTrigger",
+        "also": [
+          "Start"
+        ]
+      },
+      "node_b11a9b5eed": {
+        "n8n": "HTTP Request",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_1d4b338d04": {
+        "n8n": "HTTP Request1",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "oAuth1"
+      },
+      "node_d6ee3df922": {
+        "n8n": "__end:HTTP Request1",
+        "n8nType": "synthetic"
+      },
+      "node_8d8d43334b": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

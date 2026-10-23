@@ -1,0 +1,615 @@
+{
+  "name": "Enrich Pipedrive's Organization Data with OpenAI GPT-4o & Notify it in Slack",
+  "workflowSlug": "enrich-pipedrive-s-organization-data-with-openai-gpt-4o-notify-it-in-s",
+  "description": "Enriches Pipedrive organization data by scraping website content, using OpenAI GPT-4o to generate a summary, and adding it as a note in Pipedrive, then notifying a Slack channel.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_f3e14321f7",
+      "actorId": "actor_f3e14321f7",
+      "type": "NodeCdeWebhookTrigger",
+      "label": "Webhook: pipedrive/PIPEDRIVE_NEW_DEAL_TRIGGER",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "connector": "pipedrive",
+        "webhookEndpointId": "",
+        "triggerSlug": "PIPEDRIVE_NEW_DEAL_TRIGGER",
+        "connectedAccountId": "",
+        "config": {},
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "nodeId": "node_7680c37c29",
+      "actorId": "actor_7680c37c29",
+      "type": "NodeHttpRequest",
+      "label": "Scrapingbee - Get Organization's URL content",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET"
+      }
+    },
+    {
+      "nodeId": "node_8f0337e364",
+      "actorId": "actor_8f0337e364",
+      "type": "NodeTransform",
+      "label": "URL: Scrapingbee - Get Organization's URL content",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request URL for \"Scrapingbee - Get Organization's URL content\".\nreturn `https://app.scrapingbee.com/api/v1?api_key=<{{apiKey}}>&url=${$json.current[\"random_api_id_custom_website_field\"]}&render_js=false`;"
+      }
+    },
+    {
+      "nodeId": "node_6307459753",
+      "actorId": "actor_6307459753",
+      "type": "NodeLlmChain",
+      "label": "OpenAI - Message GPT-4o with Scraped Data",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "You're an assistant that summarizes website content for CRM entries. The user will provide HTML content from a company's website. Your task is to analyze the HTML content and create a concise summary that includes:\n\n1. A brief description of the company's services or products.\n2. Any information about the company's target market or customer base.\n3. Key points about the company's unique selling propositions or competitive advantages.\n4. Based on the provided information, suggest potential competitors if you know any.\n\nFormat your response as HTML.\n\nExample response :\n\n <h1>Company Description</h1>\n <p>Company1 specializes in services related to electric vehicles. The company focuses on providing resources and information about electric car chargers, battery life, different car brands, and the environmental impact of electric vehicles.</p>\n\n <h2>Target Market</h2>\n <p>The target market for Company1 includes electric vehicle owners and potential buyers who are interested in making the shift from traditional fossil fuel vehicles to electric cars. The company also targets environmentally conscious consumers who are looking for sustainable mobility solutions.</p>\n\n <h2>Unique Selling Propositions</h2>\n <ul>\n <li>Comprehensive information about electric vehicle charging solutions, including how to install home charging stations.</li>\n <li>Detailed articles on the advantages of electric vehicles such as ecology and reliability.</li>\n <li>Educational resources on the autonomy and battery life of different electric car models.</li>\n <li>Insights into premier electric vehicle brands.</li>\n </ul>\n\n <h2>Potential Competitors</h2>\n <table border=\"1\">\n <tr>\n <th>Competitor Name</th>\n <th>Website</th>\n </tr>\n <tr>\n <td>Competitor1</td>\n <td><a href=\"https://www.example1.com\">https://www.example1.com</a></td>\n </tr>\n <tr>\n <td>Competitor2</td>\n <td><a href=\"https://www.example2.com\">https://www.example2.com</a></td>\n </tr>\n <tr>\n <td>Competitor3</td>\n <td><a href=\"https://www.example3.com\">https://www.example3.com</a></td>\n </tr>\n <tr>\n <td>Competitor4</td>\n <td><a href=\"https://www.example4.com\">https://www.example4.com</a></td>\n </tr>\n </table>\n",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_f2ac6d3e71",
+      "actorId": "actor_f2ac6d3e71",
+      "type": "NodeTransform",
+      "label": "Prompt: OpenAI - Message GPT-4o with Scraped Data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: OpenAI - Message GPT-4o with Scraped Data.\nconst __promptValue = ($json.data);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_fa53ffc574",
+      "actorId": "actor_fa53ffc574",
+      "type": "NodeTransform",
+      "label": "Params: Pipedrive - Create a Note with OpenAI output",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for pipedrive/PIPEDRIVE_ADD_A_NOTE (n8n node \"Pipedrive - Create a Note with OpenAI output\").\nreturn {\n  \"content\": ($json),\n  \"org_id\": ($('Pipedrive Trigger - An Organization is created').item.json.meta.id),\n};"
+      }
+    },
+    {
+      "nodeId": "node_6fd03decf8",
+      "actorId": "actor_6fd03decf8",
+      "type": "NodeCdeConnector",
+      "label": "pipedrive/PIPEDRIVE_ADD_A_NOTE",
+      "color": "#6366F1",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "pipedrive",
+        "connectorLabel": "Pipedrive",
+        "action": "PIPEDRIVE_ADD_A_NOTE"
+      }
+    },
+    {
+      "nodeId": "node_d5d0cfaf4a",
+      "actorId": "actor_d5d0cfaf4a",
+      "type": "NodeTransform",
+      "label": "HTML To Markdown",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst __md = String(null ?? '');\nconst __html = __md.replace(/^### (.*)$/gm, '<h3>$1</h3>').replace(/^## (.*)$/gm, '<h2>$1</h2>').replace(/^# (.*)$/gm, '<h1>$1</h1>').replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>').replace(/\\*(.+?)\\*/g, '<em>$1</em>').replace(/\\[(.+?)\\]\\((.+?)\\)/g, '<a href=\"$2\">$1</a>').replace(/\\n{2,}/g, '</p><p>');\nreturn { ...$json, \"data\": '<p>' + __html + '</p>' };"
+      }
+    },
+    {
+      "nodeId": "node_97a9da0a63",
+      "actorId": "actor_97a9da0a63",
+      "type": "NodeTransform",
+      "label": "Code - Markdown to Slack Markdown",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst items = __items.map((json) => ({ json }));\n// Ported from n8n Code node \"Code - Markdown to Slack Markdown\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const inputMarkdown = items[0].json.data;\n  \n  function convertMarkdownToSlackFormat(markdown) {\n   let slackFormatted = markdown;\n   \n   // Convert headers\n   slackFormatted = slackFormatted.replace(/^# (.*$)/gim, '*$1*');\n   slackFormatted = slackFormatted.replace(/^## (.*$)/gim, '*$1*');\n   \n   // Convert unordered lists\n   slackFormatted = slackFormatted.replace(/^\\* (.*$)/gim, '➡️ $1');\n   \n   // Convert tables\n   const tableRegex = /\\n\\|.*\\|\\n\\|.*\\|\\n((\\|.*\\|\\n)+)/;\n   const tableMatch = slackFormatted.match(tableRegex);\n   if (tableMatch) {\n   const table = tableMatch[0];\n   const rows = table.split('\\n').slice(3, -1);\n   const formattedRows = rows.map(row => {\n   const columns = row.split('|').slice(1, -1).map(col => col.trim());\n   return `*${columns[0]}*: ${columns[1]}`;\n   }).join('\\n');\n   slackFormatted = slackFormatted.replace(table, formattedRows);\n   }\n   \n   return slackFormatted;\n  }\n  \n  const slackMarkdown = convertMarkdownToSlackFormat(inputMarkdown);\n  console.log(slackMarkdown);\n  \n  // Return data\n  return [{ slackFormattedMarkdown: slackMarkdown }];\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_89e967c025",
+      "actorId": "actor_89e967c025",
+      "type": "NodeTransform",
+      "label": "Params: Slack - Notify",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Pipedrive - Create a Note with OpenAI output\": {{steps.PIPEDRIVE_ADD_A_NOTE.result}}, \"HTML To Markdown\": {{steps.xf_d5d0cfaf4a.result}}, \"Code - Markdown to Slack Markdown\": {{steps.xf_97a9da0a63.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for slack/SLACK_CHAT_POST_MESSAGE (n8n node \"Slack - Notify \").\nreturn {\n  \"text\": `*New Organizaton ${$('Pipedrive Trigger - An Organization is created').item.json.current.name} created on Pipedrive* :\n\n\n ${$json.slackFormattedMarkdown}`,\n  \"channel\": \"{{slackChannel}}\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_f4ca27ebec",
+      "actorId": "actor_f4ca27ebec",
+      "type": "NodeCdeConnector",
+      "label": "slack/SLACK_CHAT_POST_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "slack",
+        "connectorLabel": "Slack",
+        "action": "SLACK_CHAT_POST_MESSAGE"
+      }
+    },
+    {
+      "nodeId": "node_53333a2996",
+      "actorId": "actor_53333a2996",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_54d7114abb",
+      "actorId": "actor_54d7114abb",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "slackChannel": "",
+          "apiKey": {
+            "$workflowSecret": "API_KEY"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_6bf19b0cb7",
+      "actorId": "actor_6bf19b0cb7",
+      "type": "NodeChatModel",
+      "label": "OpenAI - Message GPT-4o with Scraped Data: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1600,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_8f0337e364",
+      "target": "node_7680c37c29",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_8f0337e364",
+      "target": "node_7680c37c29",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_f2ac6d3e71",
+      "target": "node_6307459753",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_fa53ffc574",
+      "target": "node_6fd03decf8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_fa53ffc574",
+      "target": "node_6fd03decf8",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_89e967c025",
+      "target": "node_f4ca27ebec",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_89e967c025",
+      "target": "node_f4ca27ebec",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_f3e14321f7",
+      "target": "node_8f0337e364",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f3e14321f7",
+      "target": "node_8f0337e364",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6fd03decf8",
+      "target": "node_d5d0cfaf4a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6fd03decf8",
+      "target": "node_d5d0cfaf4a",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_97a9da0a63",
+      "target": "node_89e967c025",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_97a9da0a63",
+      "target": "node_89e967c025",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7680c37c29",
+      "target": "node_f2ac6d3e71",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7680c37c29",
+      "target": "node_f2ac6d3e71",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d5d0cfaf4a",
+      "target": "node_97a9da0a63",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d5d0cfaf4a",
+      "target": "node_97a9da0a63",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6307459753",
+      "target": "node_fa53ffc574",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6307459753",
+      "target": "node_fa53ffc574",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f4ca27ebec",
+      "target": "node_53333a2996",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_6bf19b0cb7",
+      "target": "node_6307459753",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "slack",
+    "categoryLabel": "Slack",
+    "department": "Sales",
+    "connectors": [
+      "openai",
+      "pipedrive",
+      "slack"
+    ],
+    "setupVars": [
+      {
+        "key": "slackChannel",
+        "label": "Slack channel (name or id)",
+        "type": "channel",
+        "example": "#general",
+        "usedBy": [
+          "Slack - Notify "
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "API_KEY",
+        "label": "api key",
+        "headerFormat": "read inside the step code",
+        "contextKey": "apiKey",
+        "usedBy": [
+          "Scrapingbee - Get Organization's URL content"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeCdeWebhookTrigger",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 7,
+      "yantraSteps": 12,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Slack/Enrich Pipedrive_s Organization Data with OpenAI GPT-4o & Notify it in Slack.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "piepdrive-test"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "webhook-registration",
+        "node": "Pipedrive Trigger - An Organization is created",
+        "detail": "webhook trigger pipedrive/PIPEDRIVE_NEW_DEAL_TRIGGER needs webhookEndpointId, connectedAccountId"
+      }
+    ],
+    "setup": [
+      "\"Pipedrive Trigger - An Organization is created\": after import, register the pipedrive webhook (`cdecli webhook endpoint create -c pipedrive`, then `cdecli trigger instance upsert --slug PIPEDRIVE_NEW_DEAL_TRIGGER`) and set webhookEndpointId, connectedAccountId on the trigger node.",
+      "Setup value slackChannel: Slack channel (name or id) (for example #general). Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret API_KEY: api key (read inside the step code). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the openai connector (credential).",
+      "Connect the pipedrive connector (credential).",
+      "Connect the slack connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "HTML To Markdown",
+          "n8n": "markdown.markdownToHtml",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Pipedrive Trigger - An Organization is created",
+          "type": "n8n-nodes-base.pipedriveTrigger",
+          "as": "NodeCdeWebhookTrigger"
+        }
+      ],
+      "hints": [
+        "\"Pipedrive Trigger - An Organization is created\" is a provider webhook (pipedrive/PIPEDRIVE_NEW_DEAL_TRIGGER). Create the endpoint and trigger instance, then paste the we_… id and connected account into this node before the first run: `cdecli webhook endpoint create -c pipedrive --client-id <id>`, `cdecli webhook endpoint set-data <we_id> --signing-secret <secret>`, `cdecli trigger instance upsert --slug PIPEDRIVE_NEW_DEAL_TRIGGER --account <connectedAccountId>`.",
+        "\"HTML To Markdown\" (markdown.markdownToHtml): Markdown to HTML is a minimal converter on Yantra.",
+        "\"HTML To Markdown\": Markdown to HTML is a minimal converter on Yantra; swap in a connector if you need full fidelity.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect pipedrive: `cdecli credential create -n \"pipedrive\" -p pipedrive --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect slack: `cdecli credential create -n \"slack\" -p slack --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "# Enrich Pipedrive's Organization Data with GPT-4o When an Organization is Created in Pipedrive\n\nThis workflow **enriches a Pipedrive organization's data by adding a note to the organization object in Pipedrive**. It assumes there is a custom \"website\" field in your Pipedrive setup, as data will be scraped from this website to generate a note using OpenAI.\n\n## ⚠️ Disclaimer\n**These workflows use a scraping API. Before using it, ensure you comply with the regulations regarding web scraping in your country or state**.\n\n## Important Notes\n- The OpenAI model used is GPT-4o, chosen for its large input token context capacity. However, it is also **the most expensive option**, you should take cost into consideration.\n\n- The system prompt in the OpenAI Node generates output with relevant information, but feel free to improve or **modify it according to your needs**.\n\n## **How It Works**\n\n### Node 1: `Pipedrive Trigger - An Organization is Created`\nThis is the trigger of the workflow. When **an organization object is created in Pipedrive**, this node is triggered and retrieves the data. Make sure you have a \"website\" custom field (the name of the field in the n8n node will appear as a random ID and not with the Pipedrive custom field name).\n\n### Node 2: `ScrapingBee - Get Organization's Website's Homepage Content`\nThis node **scrapes the content** from the URL of the website associated with the **Pipedrive Organization** created in Node 1. The workflow uses the [ScrapingBee](https://www.scrapingbee.com/) API, but you can use any preferred API or simply the HTTP request node in n8n.\n\n### Node 3: `OpenAI - Message GPT-4o with Scraped Data`\nThis node sends HTML-scraped data from the previous node to the **OpenAI GPT-4 model**. The system prompt instructs the model to **extract company data**, such as products or services offered and competitors (if known by the model), and format it as HTML for optimal use in a Pipedrive Note.\n\n### Node 4: `Pipedrive - Create a Note with OpenAI Output`\nThis node **adds a Note to the Organization created in Pipedrive** using the OpenAI node output. The Note will include the company description, target market, selling products, and competitors (if GPT-4 was able to determine them).\n\n### Node 5 & 6: `HTML To Markdown` & `Code - Markdown to Slack Markdown`\nThese two nodes **format the HTML output to Slack Markdown**.\n\nThe Note created in Pipedrive is in HTML format, **as specified by the System Prompt of the OpenAI Node**. To send it to Slack, it needs to be converted to Markdown and then to Slack-specific Markdown.\n\n### Node 7: `Slack - Notify`\nThis node **sends a message in Slack containing the Pipedrive Organization Note** created with this workflow."
+    ],
+    "nodes": {
+      "node_f3e14321f7": {
+        "n8n": "Pipedrive Trigger - An Organization is created",
+        "n8nType": "n8n-nodes-base.pipedriveTrigger"
+      },
+      "node_7680c37c29": {
+        "n8n": "Scrapingbee - Get Organization's URL content",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_8f0337e364": {
+        "n8n": "Scrapingbee - Get Organization's URL content",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_6307459753": {
+        "n8n": "OpenAI - Message GPT-4o with Scraped Data",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_f2ac6d3e71": {
+        "n8n": "OpenAI - Message GPT-4o with Scraped Data",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_fa53ffc574": {
+        "n8n": "Pipedrive - Create a Note with OpenAI output",
+        "n8nType": "n8n-nodes-base.pipedrive"
+      },
+      "node_6fd03decf8": {
+        "n8n": "Pipedrive - Create a Note with OpenAI output",
+        "n8nType": "n8n-nodes-base.pipedrive"
+      },
+      "node_d5d0cfaf4a": {
+        "n8n": "HTML To Markdown",
+        "n8nType": "n8n-nodes-base.markdown"
+      },
+      "node_97a9da0a63": {
+        "n8n": "Code - Markdown to Slack Markdown",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_89e967c025": {
+        "n8n": "Slack - Notify ",
+        "n8nType": "n8n-nodes-base.slack"
+      },
+      "node_f4ca27ebec": {
+        "n8n": "Slack - Notify ",
+        "n8nType": "n8n-nodes-base.slack"
+      },
+      "node_53333a2996": {
+        "n8n": "__end:Slack - Notify ",
+        "n8nType": "synthetic"
+      },
+      "node_54d7114abb": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_6bf19b0cb7": {
+        "n8n": "OpenAI - Message GPT-4o with Scraped Data",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

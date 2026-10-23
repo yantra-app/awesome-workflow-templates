@@ -1,0 +1,478 @@
+{
+  "name": "Email Summary Agent",
+  "workflowSlug": "email-summary-agent",
+  "description": "Converted from the n8n template \"Email Summary Agent\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_b6030e7165",
+      "actorId": "actor_b6030e7165",
+      "type": "NodeCron",
+      "label": "Daily 7AM Trigger",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 7 * * *"
+      }
+    },
+    {
+      "nodeId": "node_f3fa83cbe0",
+      "actorId": "actor_f3fa83cbe0",
+      "type": "NodeTransform",
+      "label": "Params: Fetch Emails - Past 24 Hours",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// Params for googlesuper/GOOGLESUPER_FETCH_EMAILS (n8n node \"Fetch Emails - Past 24 Hours\").\nreturn {\n  \"query\": ((() => {\n const yesterday = new Date();\n yesterday.setDate(yesterday.getDate() - 1);\n return `{{contactEmail}} after:${yesterday.getFullYear()}/${(yesterday.getMonth() + 1).toString().padStart(2, '0')}/${yesterday.getDate().toString().padStart(2, '0')}`;\n })()),\n};"
+      }
+    },
+    {
+      "nodeId": "node_c6e33ea978",
+      "actorId": "actor_c6e33ea978",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_FETCH_EMAILS",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_FETCH_EMAILS"
+      }
+    },
+    {
+      "nodeId": "node_00c070a8fd",
+      "actorId": "actor_00c070a8fd",
+      "type": "NodeTransform",
+      "label": "Organize Email Data - Morning",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nreturn { \"data\": __items };"
+      }
+    },
+    {
+      "nodeId": "node_9f45fa282e",
+      "actorId": "actor_9f45fa282e",
+      "type": "NodeLlmChain",
+      "label": "Summarize Emails with OpenAI - Morning",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_5ea1698a17",
+      "actorId": "actor_5ea1698a17",
+      "type": "NodeTransform",
+      "label": "Prompt: Summarize Emails with OpenAI - Morning",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst items = __items.map((json) => ({ json }));\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Array.prototype, { toJsonString() { return JSON.stringify(this); } });\n__def(Object.prototype, { toJsonString() { return JSON.stringify(this); } });\n// Prompt: Summarize Emails with OpenAI - Morning.\nconst __promptValue = `Go through this email summary and identify all key details mentioned, any specific issues to look at, and action items.\nUse this format to output\n{\n \"summary_of_emails\": [\n \"Point 1\",\n \"Point 2\",\n \"Point 3\"\n ],\n \"actions\": [\n {\n \"name\": \"Name 1\",\n \"action\": \"Action 1\"\n },\n {\n \"name\": \"Name 1\",\n \"action\": \"Action 2\"\n },\n {\n \"name\": \"Name 2\",\n \"action\": \"Action 3\"\n }\n ]\n}\n\nInput Data:\n\n ${$json.data.toJsonString()}\n\n`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_26efa4a854",
+      "actorId": "actor_26efa4a854",
+      "type": "NodeTransform",
+      "label": "Params: Send Summary - Morning",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Params for googlesuper/GOOGLESUPER_SEND_EMAIL (n8n node \"Send Summary - Morning\").\nreturn {\n  \"recipient_email\": \"team-email@example.com\",\n  \"subject\": `ESAgent - ${new Date(new Date().setDate(new Date().getDate() - 1)).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}-00:00 to ${new Date(new Date().setDate(new Date().getDate())).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}-07:00AM`,\n  \"body\": `<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n <meta charset=\"UTF-8\">\n <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n <title>Email Summary - {{contactEmail2}}</title>\n <style>\n body {\n font-family: Arial, sans-serif;\n margin: 0;\n padding: 0;\n background-color: #f9f9f9;\n color: #333;\n line-height: 1.6;\n }\n .email-container {\n max-width: 600px;\n margin: 20px auto;\n background: #ffffff;\n border: 1px solid #ddd;\n border-radius: 10px;\n box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);\n }\n .email-header {\n background-color: #0073e6;\n color: #fff;\n padding: 20px;\n text-align: center;\n border-top-left-radius: 10px;\n border-top-right-radius: 10px;\n }\n .email-header h1 {\n margin: 0;\n font-size: 24px;\n }\n .email-content {\n padding: 20px;\n }\n .section-title {\n font-size: 20px;\n color: #0073e6;\n margin-bottom: 10px;\n }\n ul {\n list-style: none;\n padding: 0;\n }\n ul li {\n margin: 10px 0;\n padding: 10px;\n background: #f4f4f4;\n border-left: 4px solid #0073e6;\n border-radius: 5px;\n }\n .action-item {\n font-weight: bold;\n margin: 5px 0;\n }\n .action-detail {\n margin-left: 10px;\n }\n .email-footer {\n background-color: #0073e6;\n color: #fff;\n text-align: center;\n padding: 10px;\n font-size: 14px;\n border-bottom-left-radius: 10px;\n border-bottom-right-radius: 10px;\n }\n </style>\n</head>\n<body>\n <div class=\"email-container\">\n <div class=\"email-header\">\n <h1>Email Summary</h1>\n </div>\n <div class=\"email-content\">\n <div>\n <h2 class=\"section-title\">Summary of Emails:</h2>\n <ul>\n ${$json.message.content.summary_of_emails.map(email => `[\"li\"]${email}[\"/li\"]`).join('')}\n </ul>\n </div>\n <div>\n <h2 class=\"section-title\">Actions:</h2>\n <ul>\n ${$json.message.content.actions.map(action => `\n [\"li\"]\n [\"span class=\\\"action-item\\\"\"]${action.name}:[\"/span\"]\n [\"span class=\\\"action-detail\\\"\"]${action.action}[\"/span\"]\n [\"/li\"]\n `).join('')}\n </ul>\n </div>\n </div>\n <div class=\"email-footer\">\n <p>Generated by Quantana ESAgent <br /> A Quantana AI Labs Initiative\n </div>\n </div>\n</body>\n</html>`,\n  \"cc\": \"cc-list@example.com\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_2d13f0b61f",
+      "actorId": "actor_2d13f0b61f",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_SEND_EMAIL"
+      }
+    },
+    {
+      "nodeId": "node_c86f8ed469",
+      "actorId": "actor_c86f8ed469",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_4d5abbe438",
+      "actorId": "actor_4d5abbe438",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "contactEmail": "",
+          "contactEmail2": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_df3192f1c7",
+      "actorId": "actor_df3192f1c7",
+      "type": "NodeChatModel",
+      "label": "Summarize Emails with OpenAI - Morning: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_f3fa83cbe0",
+      "target": "node_c6e33ea978",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_f3fa83cbe0",
+      "target": "node_c6e33ea978",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_5ea1698a17",
+      "target": "node_9f45fa282e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_26efa4a854",
+      "target": "node_2d13f0b61f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_26efa4a854",
+      "target": "node_2d13f0b61f",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_b6030e7165",
+      "target": "node_f3fa83cbe0",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b6030e7165",
+      "target": "node_f3fa83cbe0",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c6e33ea978",
+      "target": "node_00c070a8fd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c6e33ea978",
+      "target": "node_00c070a8fd",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_00c070a8fd",
+      "target": "node_5ea1698a17",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_00c070a8fd",
+      "target": "node_5ea1698a17",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9f45fa282e",
+      "target": "node_26efa4a854",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9f45fa282e",
+      "target": "node_26efa4a854",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2d13f0b61f",
+      "target": "node_c86f8ed469",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_df3192f1c7",
+      "target": "node_9f45fa282e",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "gmail-and-email",
+    "categoryLabel": "Gmail and Email Automation",
+    "department": "",
+    "connectors": [
+      "googlesuper",
+      "openai"
+    ],
+    "setupVars": [
+      {
+        "key": "contactEmail",
+        "label": "Email address",
+        "type": "email",
+        "example": "you@example.com",
+        "usedBy": [
+          "Fetch Emails - Past 24 Hours"
+        ]
+      },
+      {
+        "key": "contactEmail2",
+        "label": "Email address",
+        "type": "email",
+        "example": "you@example.com",
+        "usedBy": [
+          "Send Summary - Morning"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate email-summary-agent",
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 5,
+      "yantraSteps": 9,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Gmail_and_Email_Automation/Email Summary Agent.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Email Summary Agent"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Setup value contactEmail: Email address (for example you@example.com). Write it into the Workflow Configs initialContext before import.",
+      "Setup value contactEmail2: Email address (for example you@example.com). Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "After import, start the schedule: cdecli cron activate email-summary-agent."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Daily 7AM Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "- Starts the workflow every day at 7 AM.\n- Adjust the time if you want the workflow to run at a different hour.",
+      "Fetches all emails received in the past 24 hours from the email address",
+      "Organizes the fetched email data, extracting fields like sender, receiver, CC, and a preview snippet.",
+      "- Sends the summarized email report to recipients with a styled HTML layout.\n- Update the \"sendTo\" and \"ccList\" fields with the email addresses of your recipients."
+    ],
+    "nodes": {
+      "node_b6030e7165": {
+        "n8n": "Daily 7AM Trigger",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_f3fa83cbe0": {
+        "n8n": "Fetch Emails - Past 24 Hours",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_c6e33ea978": {
+        "n8n": "Fetch Emails - Past 24 Hours",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_00c070a8fd": {
+        "n8n": "Organize Email Data - Morning",
+        "n8nType": "n8n-nodes-base.aggregate"
+      },
+      "node_9f45fa282e": {
+        "n8n": "Summarize Emails with OpenAI - Morning",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_5ea1698a17": {
+        "n8n": "Summarize Emails with OpenAI - Morning",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_26efa4a854": {
+        "n8n": "Send Summary - Morning",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_2d13f0b61f": {
+        "n8n": "Send Summary - Morning",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_c86f8ed469": {
+        "n8n": "__end:Send Summary - Morning",
+        "n8nType": "synthetic"
+      },
+      "node_4d5abbe438": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_df3192f1c7": {
+        "n8n": "Summarize Emails with OpenAI - Morning",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

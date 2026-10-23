@@ -1,0 +1,489 @@
+{
+  "name": "RAG Chatbot for Company Documents using Google Drive and Gemini",
+  "workflowSlug": "rag-chatbot-for-company-documents-using-google-drive-and-gemini",
+  "description": "Creates a Retrieval-Augmented Generation (RAG) chatbot that answers questions based on company documents stored in Google Drive, leveraging Google Gemini.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_51bcd5e8cc",
+      "actorId": "actor_51bcd5e8cc",
+      "type": "NodeCdeWebhookTrigger",
+      "label": "Webhook: googlesuper/GOOGLESUPER_FILE_CREATED_TRIGGER",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "connector": "googlesuper",
+        "webhookEndpointId": "",
+        "triggerSlug": "GOOGLESUPER_FILE_CREATED_TRIGGER",
+        "connectedAccountId": "",
+        "config": {},
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "nodeId": "node_30b212ffdc",
+      "actorId": "actor_30b212ffdc",
+      "type": "NodeCdeWebhookTrigger",
+      "label": "Webhook: googlesuper/GOOGLESUPER_FILE_CREATED_TRIGGER 2",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "connector": "googlesuper",
+        "webhookEndpointId": "",
+        "triggerSlug": "GOOGLESUPER_FILE_CREATED_TRIGGER",
+        "connectedAccountId": "",
+        "config": {},
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "nodeId": "node_101b41af10",
+      "actorId": "actor_101b41af10",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_37ab701b1e",
+      "actorId": "actor_37ab701b1e",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_DOWNLOAD_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive",
+        "action": "GOOGLESUPER_DOWNLOAD_FILE",
+        "params": {
+          "file_id": "{{last.payload.id}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_eb3b4f58a7",
+      "actorId": "actor_eb3b4f58a7",
+      "type": "NodeCdecliAgent",
+      "label": "AI Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "models/gemini-2.0-flash-exp",
+        "sessionId": "{{sessionId}}",
+        "system": "You are a helpful HR assistant designed to answer employee questions based on company policies.\n\nRetrieve relevant information from the provided internal documents and provide a concise, accurate, and informative answer to the employee's question.\n\nUse the tool called \"company_documents_tool\" to retrieve any information from the company's documents.\n\nIf the answer cannot be found in the provided documents, respond with \"I cannot find the answer in the available resources.\"",
+        "message": "{{chatInput}}"
+      }
+    },
+    {
+      "nodeId": "node_ff0899785b",
+      "actorId": "actor_ff0899785b",
+      "type": "NodeTransform",
+      "label": "Params: Pinecone Vector Store",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Params for pinecone/PINECONE_UPSERT_RECORDS_NAMESPACE (n8n node \"Pinecone Vector Store\").\nreturn {\n  \"index_host\": \"{{pineconeIndexHost}}\",\n  \"namespace\": \"{{pineconeNamespace}}\",\n  \"records\": (() => {\n  const __docs = __items.flatMap((d) => (Array.isArray(d) ? d : [d]));\n  return __docs.map((d) => {\n    const text = typeof d === 'string' ? d : d?.pageContent ?? d?.text ?? d?.content ?? d?.chunk ?? JSON.stringify(d);\n    const meta = d && typeof d === 'object' ? (d.metadata && typeof d.metadata === 'object' ? d.metadata : d) : {};\n    const flat = {};\n    for (const [k, v] of Object.entries(meta)) if (!['pageContent', 'text', '_id'].includes(k) && ['string', 'number', 'boolean'].includes(typeof v)) flat[k] = v;\n    return { ...flat, _id: String(d?.id ?? meta.id ?? crypto.randomUUID()), text: String(text) };\n  });\n})(),\n};"
+      }
+    },
+    {
+      "nodeId": "node_719e6439d3",
+      "actorId": "actor_719e6439d3",
+      "type": "NodeCdeConnector",
+      "label": "pinecone/PINECONE_UPSERT_RECORDS_NAMESPACE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "pinecone",
+        "connectorLabel": "Pinecone",
+        "action": "PINECONE_UPSERT_RECORDS_NAMESPACE"
+      }
+    },
+    {
+      "nodeId": "node_57f27452a7",
+      "actorId": "actor_57f27452a7",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_22581f159e",
+      "actorId": "actor_22581f159e",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_7a133ca494",
+      "actorId": "actor_7a133ca494",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "chatInput": "",
+          "sessionId": "",
+          "pineconeNamespace": "",
+          "pineconeIndexHost": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_ff0899785b",
+      "target": "node_719e6439d3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ff0899785b",
+      "target": "node_719e6439d3",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_37ab701b1e",
+      "target": "node_ff0899785b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_37ab701b1e",
+      "target": "node_ff0899785b",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_51bcd5e8cc",
+      "target": "node_37ab701b1e",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_30b212ffdc",
+      "target": "node_37ab701b1e",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_101b41af10",
+      "target": "node_eb3b4f58a7",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_eb3b4f58a7",
+      "target": "node_57f27452a7",
+      "sourceOutput": "text",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_719e6439d3",
+      "target": "node_22581f159e",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "google-drive-and-sheets",
+    "categoryLabel": "Google Drive and Google Sheets",
+    "department": "Support",
+    "connectors": [
+      "googlesuper",
+      "pinecone"
+    ],
+    "setupVars": [
+      {
+        "key": "pineconeNamespace",
+        "label": "Pinecone namespace for this collection",
+        "type": "text",
+        "example": "documents",
+        "usedBy": [
+          "Pinecone Vector Store"
+        ]
+      },
+      {
+        "key": "pineconeIndexHost",
+        "label": "Pinecone index host (create the index with integrated embedding and field map text=text)",
+        "type": "url",
+        "example": "my-index-abc123.svc.aped-4627-b74a.pinecone.io",
+        "usedBy": [
+          "Pinecone Vector Store"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeCdeWebhookTrigger",
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 15,
+      "yantraSteps": 7,
+      "foldedHelpers": [
+        "Google Gemini Chat Model",
+        "Vector Store Tool",
+        "Window Buffer Memory",
+        "Default Data Loader",
+        "Embeddings Google Gemini"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Google_Drive_and_Google_Sheets/RAG Chatbot for Company Documents using Google Drive and Gemini.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "RAG Workflow For Company Documents stored in Google Drive"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "webhook-registration",
+        "node": "Google Drive File Created",
+        "detail": "webhook trigger googlesuper/GOOGLESUPER_FILE_CREATED_TRIGGER needs webhookEndpointId, connectedAccountId"
+      },
+      {
+        "code": "webhook-registration",
+        "node": "Google Drive File Updated",
+        "detail": "webhook trigger googlesuper/GOOGLESUPER_FILE_CREATED_TRIGGER needs webhookEndpointId, connectedAccountId"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "When chat message received",
+        "detail": "@n8n/n8n-nodes-langchain.chatTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Google Drive File Created\": after import, register the googlesuper webhook (`cdecli webhook endpoint create -c googlesuper`, then `cdecli trigger instance upsert --slug GOOGLESUPER_FILE_CREATED_TRIGGER`) and set webhookEndpointId, connectedAccountId on the trigger node.",
+      "\"Google Drive File Updated\": after import, register the googlesuper webhook (`cdecli webhook endpoint create -c googlesuper`, then `cdecli trigger instance upsert --slug GOOGLESUPER_FILE_CREATED_TRIGGER`) and set webhookEndpointId, connectedAccountId on the trigger node.",
+      "\"When chat message received\" (chatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value pineconeNamespace: Pinecone namespace for this collection (for example documents). Write it into the Workflow Configs initialContext before import.",
+      "Setup value pineconeIndexHost: Pinecone index host (create the index with integrated embedding and field map text=text) (for example my-index-abc123.svc.aped-4627-b74a.pinecone.io). Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the pinecone connector (credential).",
+      "Provide run inputs: chatInput, sessionId."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Pinecone Vector Store",
+          "n8n": "vectorStorePinecone.insert",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "Google Gemini Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+          "into": "AI Agent",
+          "model": "models/gemini-2.0-flash-exp"
+        },
+        {
+          "node": "Vector Store Tool",
+          "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+          "into": "AI Agent",
+          "as": "ai_tool"
+        },
+        {
+          "node": "Window Buffer Memory",
+          "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+          "into": "AI Agent",
+          "as": "ai_memory"
+        },
+        {
+          "node": "Default Data Loader",
+          "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+          "into": "Pinecone Vector Store",
+          "as": "ai_document"
+        },
+        {
+          "node": "Embeddings Google Gemini",
+          "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+          "into": "Pinecone Vector Store",
+          "as": "ai_embedding"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Google Drive File Updated",
+          "type": "n8n-nodes-base.googleDriveTrigger",
+          "as": "NodeCdeWebhookTrigger"
+        },
+        {
+          "node": "Google Drive File Created",
+          "type": "n8n-nodes-base.googleDriveTrigger",
+          "as": "NodeCdeWebhookTrigger"
+        },
+        {
+          "node": "When chat message received",
+          "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Google Drive File Updated\" is a provider webhook (googlesuper/GOOGLESUPER_FILE_CREATED_TRIGGER). Create the endpoint and trigger instance, then paste the we_… id and connected account into this node before the first run: `cdecli webhook endpoint create -c googlesuper --client-id <id>`, `cdecli webhook endpoint set-data <we_id> --signing-secret <secret>`, `cdecli trigger instance upsert --slug GOOGLESUPER_FILE_CREATED_TRIGGER --account <connectedAccountId>`.",
+        "\"Google Drive File Created\" is a provider webhook (googlesuper/GOOGLESUPER_FILE_CREATED_TRIGGER). Create the endpoint and trigger instance, then paste the we_… id and connected account into this node before the first run: `cdecli webhook endpoint create -c googlesuper --client-id <id>`, `cdecli webhook endpoint set-data <we_id> --signing-secret <secret>`, `cdecli trigger instance upsert --slug GOOGLESUPER_FILE_CREATED_TRIGGER --account <connectedAccountId>`.",
+        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
+        "\"AI Agent\" kept conversation memory (memoryBufferWindow); sessionId is set to the run-input sessionId.",
+        "\"AI Agent\" used agent tools in the original: Vector Store Tool (toolVectorStore). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
+        "\"Pinecone Vector Store\" folded a document (documentDefaultDataLoader); retrieved text is expected on the upstream payload as context/documents.",
+        "\"Pinecone Vector Store\" (vectorStorePinecone.insert): The original used a Pinecone index with a separate embeddings node; here the default vector store is a Pinecone index with integrated embedding (upsert records), so Pinecone embeds the text itself.",
+        "\"Pinecone Vector Store\": create a Pinecone index with integrated embedding (for example llama-text-embed-v2, field map text=text) and set pineconeIndexHost; the store uses the namespace \"{{pineconeNamespace}}\".",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect pinecone: `cdecli credential create -n \"pinecone\" -p pinecone --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Chat with company documents",
+      "## Add docuemnts to vector store when updating or creating new documents in Google Drive",
+      "## Set up steps\n\n1. Google Cloud Project and Vertex AI API:\n* Create a Google Cloud project.\n* Enable the Vertex AI API for your project.\n2. Google AI API Key:\n* Obtain a Google AI API key from Google AI Studio.\n3. Pinecone Account:\n* Create a free account on the Pinecone website.\nObtain your API key from your Pinecone dashboard.\n* Create an index named company-files in your Pinecone project.\n4. Google Drive:\n* Create a dedicated folder in your Google Drive where company documents will be stored.\n5. Credentials in n8n: Configure credentials in your n8n environment for:\n* Google Drive OAuth2\n* Google Gemini(PaLM) Api (using your Google AI API key)\n* Pinecone API (using your Pinecone API key)\n5. Import the Workflow:\n* Import this workflow into your n8n instance.\n6. Configure the Workflow:\n* Update both Google Drive Trigger nodes to watch the specific folder you created in your Google Drive.\n* Configure the Pinecone Vector Store nodes to use your company-files index."
+    ],
+    "nodes": {
+      "node_51bcd5e8cc": {
+        "n8n": "Google Drive File Updated",
+        "n8nType": "n8n-nodes-base.googleDriveTrigger"
+      },
+      "node_30b212ffdc": {
+        "n8n": "Google Drive File Created",
+        "n8nType": "n8n-nodes-base.googleDriveTrigger"
+      },
+      "node_101b41af10": {
+        "n8n": "When chat message received",
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
+      },
+      "node_37ab701b1e": {
+        "n8n": "Download File From Google Drive",
+        "n8nType": "n8n-nodes-base.googleDrive"
+      },
+      "node_eb3b4f58a7": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_ff0899785b": {
+        "n8n": "Pinecone Vector Store",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStorePinecone"
+      },
+      "node_719e6439d3": {
+        "n8n": "Pinecone Vector Store",
+        "n8nType": "@n8n/n8n-nodes-langchain.vectorStorePinecone"
+      },
+      "node_57f27452a7": {
+        "n8n": "__end:AI Agent",
+        "n8nType": "synthetic"
+      },
+      "node_22581f159e": {
+        "n8n": "__end:Pinecone Vector Store",
+        "n8nType": "synthetic"
+      },
+      "node_7a133ca494": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

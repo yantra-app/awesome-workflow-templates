@@ -1,0 +1,798 @@
+{
+  "name": "Obsidian Notes Read Aloud",
+  "workflowSlug": "obsidian-notes-read-aloud",
+  "description": "Converts Obsidian notes into audio format as a podcast feed.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_5065fefa5e",
+      "actorId": "actor_5065fefa5e",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_2a0e9b0a84",
+      "actorId": "actor_2a0e9b0a84",
+      "type": "NodeCdeConnector",
+      "label": "yantra-voicebox/YANTRA_VOICEBOX_SPEAK",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-voicebox",
+        "connectorLabel": "Audio",
+        "action": "YANTRA_VOICEBOX_SPEAK",
+        "params": {
+          "text": "{{body.content}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_d6540ddc72",
+      "actorId": "actor_d6540ddc72",
+      "type": "NodeLlmChain",
+      "label": "OpenAI",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "Based on the user input text, write a concise and engaging description of 50-150 characters. Highlight the key idea or takeaway while making it compelling and easy to understand. Avoid unnecessary details or repetition.",
+        "prompt": "{{body.content}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_dee56343f3",
+      "actorId": "actor_dee56343f3",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_BATCH_GET",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_BATCH_GET",
+        "params": {
+          "spreadsheet_id": "{{spreadsheetId}}",
+          "ranges": [
+            "Blad1"
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_99584b3857",
+      "actorId": "actor_99584b3857",
+      "type": "NodeTransform",
+      "label": "Give Audio Unique Name",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook GET Note\": {{ctx}}, \"Webhook GET Podcast Feed\": {{ctx}}, \"OpenAI1\": {{steps.YANTRA_VOICEBOX_SPEAK.result}}, \"OpenAI\": {{steps.llm_d6540ddc72.result}}, \"Get Items from Google Sheets\": {{steps.GOOGLESUPER_BATCH_GET.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"fileName\"] = `${$('Webhook GET Note').item.json.body.timestamp}.mp3`;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_34212bbdd8",
+      "actorId": "actor_34212bbdd8",
+      "type": "NodeTransform",
+      "label": "Manually Enter Other Data for Podcast Feed",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"baseUrl\"] = \"https://n8n.io\";\n  out[\"podcastTitle\"] = \"My Notes to Podcast\";\n  out[\"podcastDescription\"] = \"My Notes Read Aloud\";\n  out[\"authorName\"] = \"Your Name\";\n  out[\"ownerName\"] = \"Owner Name\";\n  out[\"ownerEmail\"] = \"owner@email.com\";\n  out[\"coverImageUrl\"] = \"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRPDcMnpgGkzIFxDpDaHEIFVg_D6nVG5Z0pPA&s\";\n  out[\"language\"] = \"en-us\";\n  out[\"explicitContent\"] = \"false\";\n  out[\"itunesCategory\"] = \"Technology\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_7cb63f342d",
+      "actorId": "actor_7cb63f342d",
+      "type": "NodeTransform",
+      "label": "Params: Upload Audio to Cloudinary",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for cloudinary/CLOUDINARY_UPLOAD (n8n node \"Upload Audio to Cloudinary\").\nreturn {\n  \"file\": ($json.url ?? $json.imageUrl ?? $json.secure_url ?? ('data:' + ($json.mimeType || $json.mime_type || 'application/octet-stream') + ';base64,' + ($json.data ?? ''))),\n  \"resource_type\": null,\n  \"upload_preset\": \"rb_preset\",\n  \"folder\": null,\n  \"public_id\": null,\n  \"tags\": null,\n};"
+      }
+    },
+    {
+      "nodeId": "node_8587a9693e",
+      "actorId": "actor_8587a9693e",
+      "type": "NodeCdeConnector",
+      "label": "cloudinary/CLOUDINARY_UPLOAD",
+      "color": "#6366F1",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "cloudinary",
+        "connectorLabel": "Cloudinary",
+        "action": "CLOUDINARY_UPLOAD"
+      }
+    },
+    {
+      "nodeId": "node_2240c24b45",
+      "actorId": "actor_2240c24b45",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_99305b3d75",
+      "actorId": "actor_99305b3d75",
+      "type": "NodeTransform",
+      "label": "Write RSS Feed",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $node = new Proxy({}, { get: () => ({ json: source, parameter: {} }) });\nconst items = __items.map((json) => ({ json }));\n// Ported from n8n Code node \"Write RSS Feed\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  let version, url, length, type; // declared for strict mode (n8n ran this code in sloppy mode)\n  // Variables from a separate edit node\n  const baseUrl = $node[\"Manually Enter Other Data for Podcast Feed\"].data.baseUrl; \n  const podcastTitle = $node[\"Manually Enter Other Data for Podcast Feed\"].data.podcastTitle;\n  const podcastDescription = $node[\"Manually Enter Other Data for Podcast Feed\"].data.podcastDescription;\n  const authorName = $node[\"Manually Enter Other Data for Podcast Feed\"].data.authorName;\n  const ownerName = $node[\"Manually Enter Other Data for Podcast Feed\"].data.ownerName;\n  const ownerEmail = $node[\"Manually Enter Other Data for Podcast Feed\"].data.ownerEmail;\n  const coverImageUrl = $node[\"Manually Enter Other Data for Podcast Feed\"].data.coverImageUrl;\n  const language = $node[\"Manually Enter Other Data for Podcast Feed\"].data.language || 'en-us';\n  const explicitContent = $node[\"Manually Enter Other Data for Podcast Feed\"].data.explicitContent || false;\n  const itunesCategory = $node[\"Manually Enter Other Data for Podcast Feed\"].data.itunesCategory;\n  const webhookUrl = $node[\"Webhook GET Podcast Feed\"].data.webhookUrl\n  \n  // Get the input items\n  const inputItems = items;\n  \n  // Function to format date to RFC 822 format\n  function formatDate(dateString) {\n   return new Date(dateString || new Date()).toUTCString();\n  }\n  \n  // Function to convert duration from seconds to HH:MM:SS\n  function formatDuration(seconds = 0) {\n   const hours = Math.floor(seconds / 3600);\n   const minutes = Math.floor((seconds % 3600) / 60);\n   const remainingSeconds = Math.floor(seconds % 60);\n  \n   const minutesStr = minutes.toString().padStart(2, '0');\n   const secondsStr = remainingSeconds.toString().padStart(2, '0');\n   \n   if (hours > 0) {\n   return `${hours}:${minutesStr}:${secondsStr}`;\n   }\n   return `${minutesStr}:${secondsStr}`;\n  }\n  \n  // Function to safely sanitize text\n  function sanitizeText(text) {\n   if (text === undefined || text === null) {\n   return '';\n   }\n   return String(text)\n   .replace(/&/g, '&amp;')\n   .replace(/</g, '&lt;')\n   .replace(/>/g, '&gt;')\n   .replace(/\"/g, '&quot;')\n   .replace(/'/g, '&apos;');\n  }\n  \n  // Generate the RSS feed header\n  let rssFeed = `<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n  <rss xmlns:itunes=\"http://www.itunes.com/dtds/podcast-1.0.dtd\" \n   xmlns:content=\"http://purl.org/rss/1.0/modules/content/\"\n   xmlns:atom=\"http://www.w3.org/2005/Atom\"\n   version=\"2.0\">\n   <channel>\n   <title>${sanitizeText(podcastTitle)}</title>\n   <description>${sanitizeText(podcastDescription)}</description>\n   <link>${sanitizeText(baseUrl)}</link>\n   <atom:link href=\"${sanitizeText(webhookUrl)}\" rel=\"self\" type=\"application/rss+xml\"/>\n   <language>${sanitizeText(language)}</language>\n   <copyright>© ${new Date().getFullYear()} ${sanitizeText(authorName)}</copyright>\n   <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>\n   <itunes:author>${sanitizeText(authorName)}</itunes:author>\n   <itunes:owner>\n   <itunes:name>${sanitizeText(ownerName)}</itunes:name>\n   <itunes:email>${sanitizeText(ownerEmail)}</itunes:email>\n   </itunes:owner>\n   <itunes:image href=\"${sanitizeText(coverImageUrl)}\"/>\n   <itunes:category text=\"${sanitizeText(itunesCategory)}\"/>\n   <itunes:explicit>${explicitContent}</itunes:explicit>\n   <itunes:type>episodic</itunes:type>\\n`;\n  \n  // Generate items\n  for (const item of inputItems) {\n   const json = item.json;\n   \n   // Extract values from the json object\n   const title = sanitizeText(json.title);\n   const description = sanitizeText(json.description);\n   const link = sanitizeText(json.link);\n   const date = json.date;\n   const duration = json.duration;\n   \n   // Assign episode and season numbers dynamically based on row_number\n   const episodeNumber = json.row_number; // Use row_number for the episode number\n   const seasonNumber = 1; // You can adjust this logic if your episodes span multiple seasons\n  \n   rssFeed += ` <item>\n   <title>${title}</title>\n   <description>${description}</description>\n   <link>${link}</link>\n   <guid isPermaLink=\"false\">${link}</guid>\n   <pubDate>${formatDate(date)}</pubDate>\n   <enclosure \n   url=\"${link}\"\n   length=\"0\"\n   type=\"audio/mpeg\"/>\n   <itunes:duration>${formatDuration(duration)}</itunes:duration>\n   <itunes:summary>${description}</itunes:summary>\n   <itunes:episodeType>full</itunes:episodeType>\n   <itunes:episode>${episodeNumber}</itunes:episode>\n   <itunes:season>${seasonNumber}</itunes:season>\n   <itunes:explicit>${explicitContent}</itunes:explicit>\n   <content:encoded>\n   <![CDATA[\n   <p>${description}</p>\n   ]]>\n   </content:encoded>\n   </item>\\n`;\n  }\n  \n  // Close the RSS feed\n  rssFeed += ` </channel>\n  </rss>`;\n  \n  // Return the complete RSS feed\n  return [{\n   json: {\n   rssFeed\n   }\n  }];\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_38e2b1e97d",
+      "actorId": "actor_38e2b1e97d",
+      "type": "NodeSync",
+      "label": "Merge",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_6951922e8f",
+      "actorId": "actor_6951922e8f",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f6e81f2e22",
+      "actorId": "actor_f6e81f2e22",
+      "type": "NodeTransform",
+      "label": "Aggregate",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nreturn { \"data\": __items };"
+      }
+    },
+    {
+      "nodeId": "node_1199e80e90",
+      "actorId": "actor_1199e80e90",
+      "type": "NodeTransform",
+      "label": "Rename Fields",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Webhook GET Note\": {{ctx}}, \"Webhook GET Podcast Feed\": {{ctx}}, \"OpenAI1\": {{steps.YANTRA_VOICEBOX_SPEAK.result}}, \"OpenAI\": {{steps.llm_d6540ddc72.result}}, \"Get Items from Google Sheets\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Give Audio Unique Name\": {{steps.xf_99584b3857.result}}, \"Manually Enter Other Data for Podcast Feed\": {\"baseUrl\":\"https://n8n.io\",\"podcastTitle\":\"My Notes to Podcast\",\"podcastDescription\":\"My Notes Read Aloud\",\"authorName\":\"Your Name\",\"ownerName\":\"Owner Name\",\"ownerEmail\":\"owner@email.com\",\"coverImageUrl\":\"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRPDcMnpgGkzIFxDpDaHEIFVg_D6nVG5Z0pPA&s\",\"language\":\"en-us\",\"explicitContent\":\"false\",\"itunesCategory\":\"Technology\"}, \"Upload Audio to Cloudinary\": {{steps.CLOUDINARY_UPLOAD.result}}, \"Write RSS Feed\": {{steps.xf_99305b3d75.result}}, \"Aggregate\": {{steps.xf_f6e81f2e22.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"title\"] = ($('Webhook GET Note').item.json.body.filename.split('.md')[0]);\n  out[\"link\"] = ($json.data[0].url);\n  out[\"description\"] = ($json.data[1].message.content);\n  out[\"date\"] = ($json.data[0].created_at);\n  out[\"duration\"] = Number(($json.data[0].duration));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_a257f0b2d1",
+      "actorId": "actor_a257f0b2d1",
+      "type": "NodeTransform",
+      "label": "Params: Append Item to Google Sheet",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Params for googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND (n8n node \"Append Item to Google Sheet\").\nreturn {\n  \"spreadsheetId\": \"{{spreadsheetId}}\",\n  \"range\": \"Blad1\",\n  \"values\": ($input.all().map((i) => Object.values(i.json ?? {}))),\n  \"valueInputOption\": \"USER_ENTERED\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_f39e887623",
+      "actorId": "actor_f39e887623",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_SPREADSHEETS_VALUES_APPEND"
+      }
+    },
+    {
+      "nodeId": "node_56f80fefe5",
+      "actorId": "actor_56f80fefe5",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_956d04cfd5",
+      "actorId": "actor_956d04cfd5",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {},
+          "spreadsheetId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_e7a5f52640",
+      "actorId": "actor_e7a5f52640",
+      "type": "NodeChatModel",
+      "label": "OpenAI: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 980
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_7cb63f342d",
+      "target": "node_8587a9693e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_7cb63f342d",
+      "target": "node_8587a9693e",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_a257f0b2d1",
+      "target": "node_f39e887623",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_a257f0b2d1",
+      "target": "node_f39e887623",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_2a0e9b0a84",
+      "target": "node_99584b3857",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2a0e9b0a84",
+      "target": "node_99584b3857",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5065fefa5e",
+      "target": "node_2a0e9b0a84",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_5065fefa5e",
+      "target": "node_d6540ddc72",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_5065fefa5e",
+      "target": "node_dee56343f3",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_8587a9693e",
+      "target": "node_38e2b1e97d",
+      "sourceOutput": "result",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_d6540ddc72",
+      "target": "node_38e2b1e97d",
+      "sourceOutput": "text",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_38e2b1e97d",
+      "target": "node_f6e81f2e22",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_38e2b1e97d",
+      "target": "node_f6e81f2e22",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f6e81f2e22",
+      "target": "node_1199e80e90",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f6e81f2e22",
+      "target": "node_1199e80e90",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_99584b3857",
+      "target": "node_7cb63f342d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_99584b3857",
+      "target": "node_7cb63f342d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_99584b3857",
+      "target": "node_2240c24b45",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_1199e80e90",
+      "target": "node_a257f0b2d1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1199e80e90",
+      "target": "node_a257f0b2d1",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dee56343f3",
+      "target": "node_34212bbdd8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dee56343f3",
+      "target": "node_34212bbdd8",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_99305b3d75",
+      "target": "node_6951922e8f",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_34212bbdd8",
+      "target": "node_99305b3d75",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_34212bbdd8",
+      "target": "node_99305b3d75",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f39e887623",
+      "target": "node_56f80fefe5",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_e7a5f52640",
+      "target": "node_d6540ddc72",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "other-integrations",
+    "categoryLabel": "Other Integrations and Use Cases",
+    "department": "Productivity/Content",
+    "connectors": [
+      "cloudinary",
+      "googlesuper",
+      "openai",
+      "yantra-voicebox"
+    ],
+    "setupVars": [
+      {
+        "key": "spreadsheetId",
+        "label": "Spreadsheet id",
+        "type": "id",
+        "example": "1AbC...xyz",
+        "usedBy": [
+          "Append Item to Google Sheet",
+          "Get Items from Google Sheets"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 15,
+      "yantraSteps": 15,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Other_Integrations_and_Use_Cases/Obsidian Notes Read Aloud using AI_ Available as a Podcast Feed.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Obsidian Notes Read Aloud: Available as a Podcast Feed"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Webhook GET Note",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "Webhook GET Podcast Feed",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Webhook GET Note\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Webhook GET Podcast Feed\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value spreadsheetId: Spreadsheet id (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
+      "Connect the cloudinary connector (credential).",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "Provide run inputs: body, query, headers."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "OpenAI1",
+          "n8n": "audio.generate",
+          "action": "yantra-voicebox/YANTRA_VOICEBOX_SPEAK",
+          "soft": true
+        },
+        {
+          "node": "Upload Audio to Cloudinary",
+          "n8n": "cloudinary.upload.binary",
+          "action": "cloudinary/CLOUDINARY_UPLOAD",
+          "soft": true
+        },
+        {
+          "node": "Append Item to Google Sheet",
+          "n8n": "sheet.append.autoMap",
+          "action": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Webhook GET Note",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Webhook GET Podcast Feed",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /64fac784-9b98-4bbc-aaf2-dd45763d3362). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "The original started from an inbound webhook (POST /2f0a6706-54da-4b89-91f4-5e147b393bd8h). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "\"OpenAI1\" used OpenAI text to speech; the platform voice speaks the text and returns audioUrl (a stored audio file) instead of binary audio.",
+        "\"Upload Audio to Cloudinary\" authenticated with httpCustomAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Upload Audio to Cloudinary\" uploaded to Cloudinary with a multipart form; CLOUDINARY_UPLOAD sends the file as a URL or base64 data URI from the previous step, and the cloud name comes from the Cloudinary credential.",
+        "\"Merge\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was append).",
+        "\"Append Item to Google Sheet\" mapped columns automatically; here each item's fields are appended in their own order, so keep them in the same order as the sheet's header row.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect cloudinary: `cdecli credential create -n \"cloudinary\" -p cloudinary --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Send Notes to Webhook\n**Setup:**\n- Install [Post Webhook Plugin](https://github.com/Masterb1234/obsidian-post-webhook/) in Obsidian\n- Enter n8n Webhook URL and name in plugin settings\n\n**Usage:**\n- Select text or use full note\n- Open Command Palette (Ctrl+P)\n- Choose 'Send Note/Selection to [name]'\n- Audio file appears in Podcast Feed and note",
+      "## Generic Podcast Feed Module\nA reusable module for any 'X-to-Podcast' workflow. Generates standard RSS feed from:\n- Source data (Google Sheets)\n- Podcast metadata\n\nCompatible with all major podcast platforms (Apple, Google, Spotify, etc.).",
+      "## Create Audio and Write Description\nOpenAI TTS converts notes to audio while the messaging model generates concise descriptions for podcast apps.",
+      "## Append Row to Google Sheets\nSaves essential podcast parameters (<title>, <link>, <description>, <duration>) to Google Sheets for Feed generation.",
+      "## Podcast Feed Configuration\n- Static: Configure podcast metadata in 'Edit Fields'\n- Dynamic: Episodes automatically pulled from Google Sheets",
+      "## Write Podcast Feed\nGenerates RSS feed XML from collected data.",
+      "## Audio to Cloudinary and Obsidian\nCloudinary stores audio files and provides duration metadata for podcast feed.\n\nSetup:\n- Create Custom Auth credentials\n- Set CLOUDINARY_ENV to your environment",
+      "## Prepare Relevant Data\nConsolidates and formats data for Google Sheets storage."
+    ],
+    "nodes": {
+      "node_5065fefa5e": {
+        "n8n": "Webhook GET Note",
+        "n8nType": "n8n-nodes-base.webhook",
+        "also": [
+          "Webhook GET Podcast Feed"
+        ]
+      },
+      "node_2a0e9b0a84": {
+        "n8n": "OpenAI1",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_d6540ddc72": {
+        "n8n": "OpenAI",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_dee56343f3": {
+        "n8n": "Get Items from Google Sheets",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_99584b3857": {
+        "n8n": "Give Audio Unique Name",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_34212bbdd8": {
+        "n8n": "Manually Enter Other Data for Podcast Feed",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_7cb63f342d": {
+        "n8n": "Upload Audio to Cloudinary",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_8587a9693e": {
+        "n8n": "Upload Audio to Cloudinary",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_2240c24b45": {
+        "n8n": "Send Audio to Obsidian",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_99305b3d75": {
+        "n8n": "Write RSS Feed",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_38e2b1e97d": {
+        "n8n": "Merge",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_6951922e8f": {
+        "n8n": "Return Podcast Feed to Webhook",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_f6e81f2e22": {
+        "n8n": "Aggregate",
+        "n8nType": "n8n-nodes-base.aggregate"
+      },
+      "node_1199e80e90": {
+        "n8n": "Rename Fields",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_a257f0b2d1": {
+        "n8n": "Append Item to Google Sheet",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_f39e887623": {
+        "n8n": "Append Item to Google Sheet",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_56f80fefe5": {
+        "n8n": "__end:Append Item to Google Sheet",
+        "n8nType": "synthetic"
+      },
+      "node_956d04cfd5": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_e7a5f52640": {
+        "n8n": "OpenAI",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

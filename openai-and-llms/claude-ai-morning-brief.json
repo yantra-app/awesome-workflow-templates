@@ -1,0 +1,487 @@
+{
+  "name": "Claude AI Morning Brief",
+  "workflowSlug": "claude-ai-morning-brief",
+  "description": "Runs daily at 8:00 AM, compiles a personalized briefing with Claude AI, and delivers it via LINE or email.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_90a399e310",
+      "actorId": "actor_90a399e310",
+      "type": "NodeCron",
+      "label": "Every Day 8am",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 8 * * *"
+      }
+    },
+    {
+      "nodeId": "node_efc91db8bc",
+      "actorId": "actor_efc91db8bc",
+      "type": "NodeTransform",
+      "label": "Build Context",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// Ported from n8n Code node \"Build Context\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Build today's context for Claude\n  const now = new Date();\n  const dateStr = now.toLocaleDateString('en-US', {\n    weekday: 'long',\n    year: 'numeric',\n    month: 'long',\n    day: 'numeric'\n  });\n  \n  // Customize: add your tasks/calendar data here\n  const todaysTasks = [\n    'Check emails',\n    'Team standup at 10am',\n    'Review pull requests'\n  ];\n  \n  return [{\n    json: {\n      date: dateStr,\n      tasks: todaysTasks.join('\\n- '),\n      prompt: `Today is ${dateStr}.\\n\\nMy tasks for today:\\n- ${todaysTasks.join('\\n- ')}\\n\\nPlease give me a motivating, concise morning brief (3-5 sentences) that:\\n1. Acknowledges today's date/day\\n2. Highlights the key priorities\\n3. Ends with one actionable focus tip`\n    }\n  }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_d10e9fe828",
+      "actorId": "actor_d10e9fe828",
+      "type": "NodeLlmChain",
+      "label": "Generate Brief",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{llm_system_30b29843c8}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_30b29843c8",
+      "actorId": "actor_30b29843c8",
+      "type": "NodeTransform",
+      "label": "System: Generate Brief",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: Generate Brief.\nconst __promptValue = (() => { const __b = (() => { const __v = `{\n  \"model\": \"claude-haiku-4-5\",\n  \"max_tokens\": 300,\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"${$json.prompt}\"\n    }\n  ]\n}`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn __t(__b.system); })();\nreturn { \"llm_system_30b29843c8\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_6d0f4aea97",
+      "actorId": "actor_6d0f4aea97",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Generate Brief",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_41014a0e5b",
+      "actorId": "actor_41014a0e5b",
+      "type": "NodeTransform",
+      "label": "Prompt: Generate Brief",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Generate Brief.\nconst __promptValue = (() => { const __b = (() => { const __v = `{\n  \"model\": \"claude-haiku-4-5\",\n  \"max_tokens\": 300,\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"${$json.prompt}\"\n    }\n  ]\n}`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn (() => { const u = __b.messages || []; return __b.__raw ?? (u.length === 1 ? __t(u[0].content) : u.map((m) => m.role + ': ' + __t(m.content)).join('\\n\\n')); })(); })();\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_a6750bb793",
+      "actorId": "actor_a6750bb793",
+      "type": "NodeHttpRequest",
+      "label": "Send via LINE",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "headers": {
+          "Authorization": "Bearer {{lineChannelAccessToken}}",
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "nodeId": "node_2bc9942671",
+      "actorId": "actor_2bc9942671",
+      "type": "NodeTransform",
+      "label": "Body: Send via LINE",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// n8n $env values come from the Workflow Configs initialContext (setup values and workflow secrets).\nconst __envCtx = {{ctx}};\nconst $env = { \"LINE_USER_ID\": __envCtx[\"lineUserId\"] };\n// Request body for \"Send via LINE\".\nconst __body = `{\n  \"to\": \"${$env.LINE_USER_ID}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"🌅 Morning Brief\\\\n\\\\n${$json}\"\n    }\n  ]\n}`;\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_6315f7efd8",
+      "actorId": "actor_6315f7efd8",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_409186369c",
+      "actorId": "actor_409186369c",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "lineUserId": "",
+          "lineChannelAccessToken": {
+            "$workflowSecret": "LINE_CHANNEL_ACCESS_TOKEN"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_3ab8c65f36",
+      "actorId": "actor_3ab8c65f36",
+      "type": "NodeChatModel",
+      "label": "Generate Brief: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "anthropic",
+        "model": "claude-haiku-4-5",
+        "maxTokens": 300
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_30b29843c8",
+      "target": "node_6d0f4aea97",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_30b29843c8",
+      "target": "node_6d0f4aea97",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_6d0f4aea97",
+      "target": "node_41014a0e5b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_41014a0e5b",
+      "target": "node_d10e9fe828",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_2bc9942671",
+      "target": "node_a6750bb793",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_2bc9942671",
+      "target": "node_a6750bb793",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_90a399e310",
+      "target": "node_efc91db8bc",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_90a399e310",
+      "target": "node_efc91db8bc",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_efc91db8bc",
+      "target": "node_30b29843c8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_efc91db8bc",
+      "target": "node_30b29843c8",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_efc91db8bc",
+      "target": "node_41014a0e5b",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d10e9fe828",
+      "target": "node_2bc9942671",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d10e9fe828",
+      "target": "node_2bc9942671",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a6750bb793",
+      "target": "node_6315f7efd8",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_3ab8c65f36",
+      "target": "node_d10e9fe828",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "Productivity/AI/Automation",
+    "connectors": [
+      "anthropic"
+    ],
+    "setupVars": [
+      {
+        "key": "lineUserId",
+        "label": "line user id (was the n8n environment variable LINE_USER_ID)",
+        "type": "id",
+        "usedBy": [
+          "Send via LINE"
+        ]
+      }
+    ],
+    "setupSecrets": [
+      {
+        "key": "LINE_CHANNEL_ACCESS_TOKEN",
+        "label": "LINE channel access token",
+        "host": "api.line.me",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "lineChannelAccessToken",
+        "usedBy": [
+          "Send via LINE"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate claude-ai-morning-brief",
+    "nodeTypes": [
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 4,
+      "yantraSteps": 9,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/Claude AI Morning Brief.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "[n8n Template] AI Morning Brief"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "missing-required-param",
+        "node": "Generate Brief",
+        "detail": "Chat Model provider anthropic is not supported by the current node catalog"
+      }
+    ],
+    "setup": [
+      "\"Generate Brief\": the original provider \"anthropic\" and model are preserved. Select a supported Chat Model provider and matching model, or add its adapter in Yantra before running.",
+      "Setup value lineUserId: line user id (was the n8n environment variable LINE_USER_ID). Write it into the Workflow Configs initialContext before import.",
+      "Workflow secret LINE_CHANNEL_ACCESS_TOKEN: LINE channel access token for api.line.me (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the anthropic connector (credential).",
+      "After import, start the schedule: cdecli cron activate claude-ai-morning-brief.",
+      "Provide run inputs: llm_system_30b29843c8."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Generate Brief",
+          "n8n": "httpRequest.anthropic.chat",
+          "action": "NodeLlmChain",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Every Day 8am",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "\"Generate Brief\" called the Anthropic API (claude-haiku-4-5) over HTTP; it now runs on LLMChain with a Chat Model and provider connector credential, and later steps read the answer text instead of the provider's JSON.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_90a399e310": {
+        "n8n": "Every Day 8am",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_efc91db8bc": {
+        "n8n": "Build Context",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_d10e9fe828": {
+        "n8n": "Generate Brief",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "llmProvider": "anthropic"
+      },
+      "node_30b29843c8": {
+        "n8n": "Generate Brief",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_6d0f4aea97": {
+        "n8n": "Generate Brief",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_41014a0e5b": {
+        "n8n": "Generate Brief",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_a6750bb793": {
+        "n8n": "Send via LINE",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_2bc9942671": {
+        "n8n": "Send via LINE",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_6315f7efd8": {
+        "n8n": "__end:Send via LINE",
+        "n8nType": "synthetic"
+      },
+      "node_409186369c": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_3ab8c65f36": {
+        "n8n": "Generate Brief",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

@@ -1,0 +1,568 @@
+{
+  "name": "Gmail AI auto-responder: create draft replies to incoming emails",
+  "workflowSlug": "gmail-ai-auto-responder-create-draft-replies-to-incoming-emails",
+  "description": "Converted from the n8n template \"Gmail AI auto-responder: create draft replies to incoming emails\".",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_4d02cd487a",
+      "actorId": "actor_4d02cd487a",
+      "type": "NodeCdeWebhookTrigger",
+      "label": "Webhook: googlesuper/GOOGLESUPER_NEW_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "connector": "googlesuper",
+        "webhookEndpointId": "",
+        "triggerSlug": "GOOGLESUPER_NEW_MESSAGE",
+        "connectedAccountId": "",
+        "config": {},
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "nodeId": "node_45781034a2",
+      "actorId": "actor_45781034a2",
+      "type": "NodeLlmChain",
+      "label": "Assess if message needs a reply",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "needsReply": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "needsReply"
+          ]
+        },
+        "system": "Your task is to assess if the message requires a response. Return in JSON format true if it does, false otherwise.\nMarketing emails don't require a response.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_f04e1791ec",
+      "actorId": "actor_f04e1791ec",
+      "type": "NodeTransform",
+      "label": "Prompt: Assess if message needs a reply",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Assess if message needs a reply.\nconst __promptValue = `Subject: ${$json.subject}\nMessage:\n${$json.textAsHtml} `;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_41a51af054",
+      "actorId": "actor_41a51af054",
+      "type": "NodeTransform",
+      "label": "If Needs Reply: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.needsReply)) === true || (($json.needsReply)) === 'true'));"
+      }
+    },
+    {
+      "nodeId": "node_703ea042bf",
+      "actorId": "actor_703ea042bf",
+      "type": "NodeBranch",
+      "label": "If Needs Reply: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_4ef7b15df1",
+      "actorId": "actor_4ef7b15df1",
+      "type": "NodeLlmChain",
+      "label": "Generate email reply",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "You're a helpful personal assistant and your task is to draft replies on my behalf to my incoming emails. Whenever I provide some text from an email, return an appropriate draft reply for it and nothing else.\nEnsure that the reply is suitable for a professional email setting and addresses the topic in a clear, structured, and detailed manner.\nDo not make things up.\n\nDetailed instructions:\n- Be concise and maintain a business casual tone.\n- Start with \"Hello,\", and end with \"Best,\"\n- When replying to yes-no questions, draft 2 responses: one affirmative and one negative separated by \" - - - - - - - OR - - - - - - - \"\n- If you don't know an answer, you can leave placeholders like \"{{yourAnswerHere}}\".\n- Don't use any special formatting, only plain text.\n- Reply in the same language as the inbound email.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_ee2676e5bf",
+      "actorId": "actor_ee2676e5bf",
+      "type": "NodeTransform",
+      "label": "Prompt: Generate email reply",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Gmail Trigger\": __namedCtx.steps?.[\"Webhook: googlesuper/GOOGLESUPER_NEW_MESSAGE\"]?.[\"payload\"], \"Assess if message needs a reply\": ((output) => ({ ...output, output }))(__namedCtx.steps?.[\"Assess if message needs a reply\"]?.[\"object\"]) };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Generate email reply.\nconst __promptValue = `Subject: ${$('Gmail Trigger').item.json.subject}\nMessage: ${$('Gmail Trigger').item.json.textAsHtml}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_be439a781f",
+      "actorId": "actor_be439a781f",
+      "type": "NodeTransform",
+      "label": "Params: Gmail - Create Draft",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for googlesuper/GOOGLESUPER_CREATE_EMAIL_DRAFT (n8n node \"Gmail - Create Draft\").\nreturn {\n  \"recipient_email\": ($('Gmail Trigger').item.json.headers.from),\n  \"subject\": `Re: ${$('Gmail Trigger').item.json.headers.subject}`,\n  \"body\": (\"«$json.replace(/\\\\n/g, \\\"<br />\\\\n\\\")»\"),\n  \"thread_id\": ($('Gmail Trigger').item.json.threadId),\n};"
+      }
+    },
+    {
+      "nodeId": "node_9ed702be64",
+      "actorId": "actor_9ed702be64",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_CREATE_EMAIL_DRAFT",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_CREATE_EMAIL_DRAFT"
+      }
+    },
+    {
+      "nodeId": "node_a9b7379035",
+      "actorId": "actor_a9b7379035",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_544a2ce424",
+      "actorId": "actor_544a2ce424",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "yourAnswerHere": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_2e587faaa4",
+      "actorId": "actor_2e587faaa4",
+      "type": "NodeChatModel",
+      "label": "Assess if message needs a reply: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 840,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o"
+      }
+    },
+    {
+      "nodeId": "node_fb92f66b0d",
+      "actorId": "actor_fb92f66b0d",
+      "type": "NodeChatModel",
+      "label": "Generate email reply: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2360,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4-turbo"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_f04e1791ec",
+      "target": "node_45781034a2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_41a51af054",
+      "target": "node_703ea042bf",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_41a51af054",
+      "target": "node_703ea042bf",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_ee2676e5bf",
+      "target": "node_4ef7b15df1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_be439a781f",
+      "target": "node_9ed702be64",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_be439a781f",
+      "target": "node_9ed702be64",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_4d02cd487a",
+      "target": "node_f04e1791ec",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4d02cd487a",
+      "target": "node_f04e1791ec",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeWebhookTrigger",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_703ea042bf",
+      "target": "node_ee2676e5bf",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_45781034a2",
+      "target": "node_ee2676e5bf",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_45781034a2",
+      "target": "node_41a51af054",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_45781034a2",
+      "target": "node_41a51af054",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4ef7b15df1",
+      "target": "node_be439a781f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4ef7b15df1",
+      "target": "node_be439a781f",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9ed702be64",
+      "target": "node_a9b7379035",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_2e587faaa4",
+      "target": "node_45781034a2",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_fb92f66b0d",
+      "target": "node_4ef7b15df1",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "gmail-and-email",
+    "categoryLabel": "Gmail and Email Automation",
+    "department": "",
+    "connectors": [
+      "googlesuper",
+      "openai"
+    ],
+    "setupVars": [
+      {
+        "key": "yourAnswerHere",
+        "label": "Your Answer Here",
+        "type": "text",
+        "usedBy": [
+          "Generate email reply"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeCdeWebhookTrigger",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 8,
+      "yantraSteps": 11,
+      "foldedHelpers": [
+        "OpenAI Chat",
+        "JSON Parser",
+        "OpenAI Chat Model"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Gmail_and_Email_Automation/Gmail AI Auto-Responder_ Create Draft Replies to incoming emails.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Gmail AI auto-responder: create draft replies to incoming emails"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "webhook-registration",
+        "node": "Gmail Trigger",
+        "detail": "webhook trigger googlesuper/GOOGLESUPER_NEW_MESSAGE needs webhookEndpointId, connectedAccountId"
+      }
+    ],
+    "setup": [
+      "\"Gmail Trigger\": after import, register the googlesuper webhook (`cdecli webhook endpoint create -c googlesuper`, then `cdecli trigger instance upsert --slug GOOGLESUPER_NEW_MESSAGE`) and set webhookEndpointId, connectedAccountId on the trigger node.",
+      "Setup value yourAnswerHere: Your Answer Here. Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [
+        {
+          "node": "OpenAI Chat",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Assess if message needs a reply",
+          "model": "gpt-4o"
+        },
+        {
+          "node": "JSON Parser",
+          "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+          "into": "Assess if message needs a reply",
+          "as": "ai_outputParser"
+        },
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Generate email reply",
+          "model": "gpt-4-turbo"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Gmail Trigger",
+          "type": "n8n-nodes-base.gmailTrigger",
+          "as": "NodeCdeWebhookTrigger"
+        }
+      ],
+      "hints": [
+        "\"Gmail Trigger\" is a provider webhook (googlesuper/GOOGLESUPER_NEW_MESSAGE). Create the endpoint and trigger instance, then paste the we_… id and connected account into this node before the first run: `cdecli webhook endpoint create -c googlesuper --client-id <id>`, `cdecli webhook endpoint set-data <we_id> --signing-secret <secret>`, `cdecli trigger instance upsert --slug GOOGLESUPER_NEW_MESSAGE --account <connectedAccountId>`.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## When I receive an Email",
+      "## ... that Needs a Reply",
+      "## Generate a Reply",
+      "## ...as a Draft in the conversation"
+    ],
+    "nodes": {
+      "node_4d02cd487a": {
+        "n8n": "Gmail Trigger",
+        "n8nType": "n8n-nodes-base.gmailTrigger"
+      },
+      "node_45781034a2": {
+        "n8n": "Assess if message needs a reply",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_f04e1791ec": {
+        "n8n": "Assess if message needs a reply",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_41a51af054": {
+        "n8n": "If Needs Reply",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_703ea042bf": {
+        "n8n": "If Needs Reply",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_4ef7b15df1": {
+        "n8n": "Generate email reply",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_ee2676e5bf": {
+        "n8n": "Generate email reply",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_be439a781f": {
+        "n8n": "Gmail - Create Draft",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_9ed702be64": {
+        "n8n": "Gmail - Create Draft",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_a9b7379035": {
+        "n8n": "__end:Gmail - Create Draft",
+        "n8nType": "synthetic"
+      },
+      "node_544a2ce424": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_2e587faaa4": {
+        "n8n": "Assess if message needs a reply",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_fb92f66b0d": {
+        "n8n": "Generate email reply",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

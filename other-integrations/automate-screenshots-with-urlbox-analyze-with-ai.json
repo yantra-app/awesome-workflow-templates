@@ -1,0 +1,361 @@
+{
+  "name": "Automate Screenshots with URLbox & Analyze with AI",
+  "workflowSlug": "automate-screenshots-with-urlbox-analyze-with-ai",
+  "description": "Takes screenshots of webpages and analyzes them using AI.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_55abc43fec",
+      "actorId": "actor_55abc43fec",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_30af6259bd",
+      "actorId": "actor_30af6259bd",
+      "type": "NodeTransform",
+      "label": "Setup",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"website_name\"] = `n8n`;\n  out[\"url\"] = \"https://n8n.io/\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_bb3252cd78",
+      "actorId": "actor_bb3252cd78",
+      "type": "NodeHttpRequest",
+      "label": "URLbox API Request",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://api.urlbox.io/v1/render/sync",
+        "headers": {
+          "Authorization": "{{urlboxAuthorization}}"
+        },
+        "body": {
+          "url": "{{last.transformed.url}}",
+          "full_page": true
+        }
+      }
+    },
+    {
+      "nodeId": "node_3c7e936ef5",
+      "actorId": "actor_3c7e936ef5",
+      "type": "NodeCdeConnector",
+      "label": "openai/OPENAI_CREATE_RESPONSE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "openai",
+        "connectorLabel": "OpenAI",
+        "action": "OPENAI_CREATE_RESPONSE",
+        "params": {
+          "model": "gpt-4o-mini",
+          "input": [
+            {
+              "role": "user",
+              "content": [
+                {
+                  "type": "input_text",
+                  "text": "Your Input is a Screenshot of a Website.\nDescribe the content of the Website in one sentence."
+                },
+                {
+                  "type": "input_image",
+                  "image_url": "renderURL"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "nodeId": "node_b1fb790f60",
+      "actorId": "actor_b1fb790f60",
+      "type": "NodeTransform",
+      "label": "Analyze the Screenshot: answer",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The Responses API answer as the n8n image-analysis output ({ content }).\nconst __r = source?.data ?? source;\nconst __text = __r?.output_text ?? (__r?.output || []).flatMap((o) => o?.content || []).map((c) => c?.text || '').join('');\nreturn { content: __text, text: __text };"
+      }
+    },
+    {
+      "nodeId": "node_eabdd75742",
+      "actorId": "actor_eabdd75742",
+      "type": "NodeSync",
+      "label": "Merge Name & Description",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_c4e642b004",
+      "actorId": "actor_c4e642b004",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_63da9cfbb5",
+      "actorId": "actor_63da9cfbb5",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "urlboxAuthorization": {
+            "$workflowSecret": "URLBOX_AUTHORIZATION"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_3c7e936ef5",
+      "target": "node_b1fb790f60",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3c7e936ef5",
+      "target": "node_b1fb790f60",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_30af6259bd",
+      "target": "node_bb3252cd78",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_30af6259bd",
+      "target": "node_eabdd75742",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_bb3252cd78",
+      "target": "node_3c7e936ef5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_b1fb790f60",
+      "target": "node_eabdd75742",
+      "sourceOutput": "transformed",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_55abc43fec",
+      "target": "node_30af6259bd",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_eabdd75742",
+      "target": "node_c4e642b004",
+      "sourceOutput": "data1",
+      "targetInput": "result",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "other-integrations",
+    "categoryLabel": "Other Integrations and Use Cases",
+    "department": "Development/Marketing",
+    "connectors": [
+      "openai"
+    ],
+    "setupSecrets": [
+      {
+        "key": "URLBOX_AUTHORIZATION",
+        "label": "api.urlbox.io Authorization credential",
+        "host": "api.urlbox.io",
+        "headerFormat": "Authorization: <secret>",
+        "contextKey": "urlboxAuthorization",
+        "usedBy": [
+          "URLbox API Request"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 5,
+      "yantraSteps": 6,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Other_Integrations_and_Use_Cases/Automate Screenshots with URLbox & Analyze them with AI.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Analyze Screenshots with AI"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Workflow secret URLBOX_AUTHORIZATION: api.urlbox.io Authorization credential for api.urlbox.io (Authorization: <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the openai connector (credential)."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Analyze the Screenshot",
+          "n8n": "image.analyze",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Manual Execution",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Analyze the Screenshot\" (image.analyze): Vision call through OpenAI Responses with the image URL as an input_image item.",
+        "\"Merge Name & Description\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect openai: `cdecli credential create -n \"openai\" -p openai --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Setup \n**For Testing use the Setup node to put in test name & url.**\n\nIf you want to use this workflow in production, you can expand it to load data from other sources like a DB or Google Sheet",
+      "## URLbox API call \n[URLbox](https://urlbox.com/) is a Screenshot API. With this API you can automate making screenshots based on website url's.\n\nYou have to replace the Placeholder with your API Key",
+      "## Analyze the Screenshot \nAnalyze the screenshot using OpenAI.\n\nAdd your OpenAI Credentials on the top of the node.\n\nThe prompt is an example. Change it based on what you want to extract from the screenshot.",
+      "## Merge\nMerge the description with the name of the website & the url."
+    ],
+    "nodes": {
+      "node_55abc43fec": {
+        "n8n": "Manual Execution",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_30af6259bd": {
+        "n8n": "Setup",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_bb3252cd78": {
+        "n8n": "URLbox API Request",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_3c7e936ef5": {
+        "n8n": "Analyze the Screenshot",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_b1fb790f60": {
+        "n8n": "Analyze the Screenshot",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_eabdd75742": {
+        "n8n": "Merge Name & Description",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_c4e642b004": {
+        "n8n": "__end:Merge Name & Description",
+        "n8nType": "synthetic"
+      },
+      "node_63da9cfbb5": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

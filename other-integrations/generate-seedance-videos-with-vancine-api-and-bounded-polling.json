@@ -1,0 +1,2129 @@
+{
+  "name": "Generate Seedance videos with Vancine API and bounded polling",
+  "workflowSlug": "generate-seedance-videos-with-vancine-api-and-bounded-polling",
+  "description": "Submits a Seedance video generation task, polls its asynchronous status, and handles completion, failure, and bounded timeout paths.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_77fc61bbac",
+      "actorId": "actor_77fc61bbac",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_86b48de71d",
+      "actorId": "actor_86b48de71d",
+      "type": "NodeTransform",
+      "label": "setFields",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"model\"] = \"Doubao-Seedance-1.5-pro\";\n  out[\"prompt\"] = \"A timelapse of a flower blooming at sunrise\";\n  out[\"size\"] = \"1280x720\";\n  out[\"base_url\"] = \"https://vancine.com\";\n  out[\"intervalSeconds\"] = Number(5);\n  out[\"maxPolls\"] = Number(120);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_52df8fb9c0",
+      "actorId": "actor_52df8fb9c0",
+      "type": "NodeHttpRequest",
+      "label": "submitTask",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "{{last.transformed.base_url}}/v1/video/generations",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "{{apiKey}}"
+        },
+        "body": {
+          "model": "{{last.transformed.model}}",
+          "prompt": "{{last.transformed.prompt}}",
+          "size": "{{last.transformed.size}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_8e2d171940",
+      "actorId": "actor_8e2d171940",
+      "type": "NodeTransform",
+      "label": "saveTaskId",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"setFields\": {\"model\":\"Doubao-Seedance-1.5-pro\",\"prompt\":\"A timelapse of a flower blooming at sunrise\",\"size\":\"1280x720\",\"base_url\":\"https://vancine.com\",\"intervalSeconds\":5,\"maxPolls\":120} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"task_id\"] = ($json.task_id || $json.id || ($json.data && $json.data.task_id) || ($json.data && $json.data.id));\n  out[\"base_url\"] = ($('setFields').first().json.base_url || 'https://vancine.com'\n);\n  out[\"intervalSeconds\"] = Number(($('setFields').first().json.intervalSeconds || 5));\n  out[\"maxPolls\"] = Number(($('setFields').first().json.maxPolls || 120));\n  out[\"poll_index\"] = Number(0);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_dff74687fb",
+      "actorId": "actor_dff74687fb",
+      "type": "NodeTransform",
+      "label": "Before repeat: waitInterval",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_8311cf1372",
+      "actorId": "actor_8311cf1372",
+      "type": "NodeRepeatUntil",
+      "label": "Repeat: waitInterval",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "delaySeconds": 0,
+        "maxAttempts": 30
+      }
+    },
+    {
+      "nodeId": "node_fd51eaef71",
+      "actorId": "actor_fd51eaef71",
+      "type": "NodeTransform",
+      "label": "Attempt limit: waitInterval",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Number($json.maxPolls || 120);"
+      }
+    },
+    {
+      "nodeId": "node_bcd1aa4f83",
+      "actorId": "actor_bcd1aa4f83",
+      "type": "NodeTransform",
+      "label": "Return to repeat: waitInterval",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8820,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_ebdbd250f5",
+      "actorId": "actor_ebdbd250f5",
+      "type": "NodeTransform",
+      "label": "Ready: waitInterval",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9200,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.ready;"
+      }
+    },
+    {
+      "nodeId": "node_c9143808ec",
+      "actorId": "actor_c9143808ec",
+      "type": "NodeTransform",
+      "label": "Check input: waitInterval",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "const ctx = {{ctx}};\nreturn ctx.steps?.[\"Repeat: waitInterval\"]?.[\"attempt\"] === 1 ? ctx.steps?.[\"Before repeat: waitInterval\"]?.[\"transformed\"] : ctx.steps?.[\"Return to repeat: waitInterval\"]?.[\"transformed\"]?.value;"
+      }
+    },
+    {
+      "nodeId": "node_401d5dc692",
+      "actorId": "actor_401d5dc692",
+      "type": "NodeTransform",
+      "label": "Failed: Repeat: waitInterval",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "throw Object.assign(new Error(source?.message || 'Repeat Until failed'), { name: source?.name || 'Error' });"
+      }
+    },
+    {
+      "nodeId": "node_74d0a33a76",
+      "actorId": "actor_74d0a33a76",
+      "type": "NodeTransform",
+      "label": "Before wait: waitInterval",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_e8c7305cc1",
+      "actorId": "actor_e8c7305cc1",
+      "type": "NodeTransform",
+      "label": "Seconds: waitInterval",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Number(($json.intervalSeconds || 5)) * 1;"
+      }
+    },
+    {
+      "nodeId": "node_a16a7c9ec1",
+      "actorId": "actor_a16a7c9ec1",
+      "type": "NodeRepeatUntil",
+      "label": "waitInterval",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "delaySeconds": 0,
+        "maxAttempts": 2
+      }
+    },
+    {
+      "nodeId": "node_56f3478b81",
+      "actorId": "actor_56f3478b81",
+      "type": "NodeTransform",
+      "label": "Wait elapsed: waitInterval",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source === 2;"
+      }
+    },
+    {
+      "nodeId": "node_5a2a3569d7",
+      "actorId": "actor_5a2a3569d7",
+      "type": "NodeTransform",
+      "label": "Failed: waitInterval",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "throw Object.assign(new Error(source?.message || 'Repeat Until failed'), { name: source?.name || 'Error' });"
+      }
+    },
+    {
+      "nodeId": "node_33bdf1883c",
+      "actorId": "actor_33bdf1883c",
+      "type": "NodeHttpRequest",
+      "label": "pollTask",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "{{last.transformed.base_url}}/v1/video/generations/{{last.transformed.task_id}}",
+        "headers": {
+          "Authorization": "{{apiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_156f45a8ce",
+      "actorId": "actor_156f45a8ce",
+      "type": "NodeTransform",
+      "label": "pollTask: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "const ctx = {{ctx}};\nconst response = ctx.steps[\"pollTask\"];\nif (response.error && (response.statusCode == null || true)) throw new Error(response.error.message || 'HTTP check failed');\nif (response.body == null) throw new Error('HTTP check returned an empty body');\nreturn response.body;"
+      }
+    },
+    {
+      "nodeId": "node_216e657eb3",
+      "actorId": "actor_216e657eb3",
+      "type": "NodeTransform",
+      "label": "carryState",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"task_id\"] = ($json.task_id);\n  out[\"poll_index\"] = Number(($json.poll_index || 0));\n  out[\"maxPolls\"] = Number(($json.maxPolls || 120));\n  out[\"intervalSeconds\"] = Number(($json.intervalSeconds || 5));\n  out[\"base_url\"] = ($json.base_url || 'https://vancine.com'\n);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_c2b3fb27f6",
+      "actorId": "actor_c2b3fb27f6",
+      "type": "NodeTransform",
+      "label": "mergeResults",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_97fab40858",
+      "actorId": "actor_97fab40858",
+      "type": "NodeTransform",
+      "label": "mergeState",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"mergeState\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Merge the HTTP poll response with the carried loop state. NO network calls.\n  // Items arrive via Merge(append): one from pollTask (response), one from carryState.\n  const items = $input.all();\n  const response = items.find(i => i.json.status !== undefined && i.json.object !== undefined) || items[0];\n  const carried = items.find(i => i.json.poll_index !== undefined) || items[items.length > 1 ? 1 : 0] || items[0];\n  const pollIndex = (carried.json.poll_index || 0) + 1;\n  const taskId = response.json.task_id || response.json.id || (response.json.data && response.json.data.task_id) || (response.json.data && response.json.data.id) || carried.json.task_id;\n  const status = response.json.status || (response.json.data && response.json.data.status);\n  const metadata = response.json.metadata || (response.json.data && response.json.data.metadata);\n  const data = response.json.data;\n  const error = response.json.error || (response.json.data && response.json.data.error);\n  const resultUrl = (metadata && metadata.url)\n    || (data && data.result_url)\n    || (data && data.data && data.data.content && data.data.content.video_url)\n    || '';\n  return [{ json: {\n    task_id: taskId,\n    status: status,\n    metadata: metadata,\n    data: data,\n    error: error,\n    poll_index: pollIndex,\n    maxPolls: carried.json.maxPolls || 120,\n    intervalSeconds: carried.json.intervalSeconds || 5,\n    base_url: carried.json.base_url || 'https://vancine.com',\n    result_url: resultUrl\n  }}];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_2a5361f768",
+      "actorId": "actor_2a5361f768",
+      "type": "NodeTransform",
+      "label": "ifCompleted: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((Boolean(($json.status === 'completed' || $json.status === 'SUCCESS' || ($json.data && ($json.data.status === 'completed' || $json.data.status === 'SUCCESS')))) === Boolean(true)));"
+      }
+    },
+    {
+      "nodeId": "node_9a5bf1342f",
+      "actorId": "actor_9a5bf1342f",
+      "type": "NodeBranch",
+      "label": "ifCompleted: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6160,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_e781e9d3eb",
+      "actorId": "actor_e781e9d3eb",
+      "type": "NodeTransform",
+      "label": "outputResult",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"result_url\"] = ($json.result_url);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_7958a25a26",
+      "actorId": "actor_7958a25a26",
+      "type": "NodeTransform",
+      "label": "ifFailed: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((Boolean(($json.status === 'failed' || $json.status === 'FAILURE' || ($json.data && ($json.data.status === 'failed' || $json.data.status === 'FAILURE')))) === Boolean(true)));"
+      }
+    },
+    {
+      "nodeId": "node_68181fb540",
+      "actorId": "actor_68181fb540",
+      "type": "NodeBranch",
+      "label": "ifFailed: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_1ec3f377be",
+      "actorId": "actor_1ec3f377be",
+      "type": "NodeTransform",
+      "label": "Stop: failNode",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nthrow new Error(String(('Seedance task ' + $json.task_id + ' failed: ' + (($json.error && $json.error.message) || ($json.data && $json.data.fail_reason) || 'unknown'))));"
+      }
+    },
+    {
+      "nodeId": "node_ddee046a7b",
+      "actorId": "actor_ddee046a7b",
+      "type": "NodeTransform",
+      "label": "ifTimeout: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((Boolean((($json.poll_index || 0) >= ($json.maxPolls || 120))) === Boolean(true)));"
+      }
+    },
+    {
+      "nodeId": "node_9a1d0783af",
+      "actorId": "actor_9a1d0783af",
+      "type": "NodeBranch",
+      "label": "ifTimeout: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 7680,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_5768b99331",
+      "actorId": "actor_5768b99331",
+      "type": "NodeTransform",
+      "label": "Stop: timeoutFail",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nthrow new Error(String(('Polling exceeded ' + ($json.maxPolls || 120) + ' attempts for task ' + $json.task_id)));"
+      }
+    },
+    {
+      "nodeId": "node_9c766221f2",
+      "actorId": "actor_9c766221f2",
+      "type": "NodeTransform",
+      "label": "continuePolling",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8060,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"task_id\"] = ($json.task_id);\n  out[\"poll_index\"] = Number(($json.poll_index));\n  out[\"maxPolls\"] = Number(($json.maxPolls || 120));\n  out[\"intervalSeconds\"] = Number(($json.intervalSeconds || 5));\n  out[\"base_url\"] = ($json.base_url || 'https://vancine.com'\n);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_795692e30f",
+      "actorId": "actor_795692e30f",
+      "type": "NodeTransform",
+      "label": "Branches: mergeResults",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return [0, 1].map((branch) => ({ branch, item: source }));"
+      }
+    },
+    {
+      "nodeId": "node_ab6fecb884",
+      "actorId": "actor_ab6fecb884",
+      "type": "NodeLoop",
+      "label": "Join: mergeResults",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_f71e6addc1",
+      "actorId": "actor_f71e6addc1",
+      "type": "NodeTransform",
+      "label": "First branch: mergeResults",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.branch === 0;"
+      }
+    },
+    {
+      "nodeId": "node_b695ac98b2",
+      "actorId": "actor_b695ac98b2",
+      "type": "NodeBranch",
+      "label": "Select branch: mergeResults",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5400,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_0878d2f9bb",
+      "actorId": "actor_0878d2f9bb",
+      "type": "NodeTransform",
+      "label": "Branch 1: mergeResults",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "const ctx = {{ctx}};\nreturn ctx.steps[\"Join: mergeResults\"].item.item;"
+      }
+    },
+    {
+      "nodeId": "node_b86815328a",
+      "actorId": "actor_b86815328a",
+      "type": "NodeTransform",
+      "label": "Branch 2: mergeResults",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "const ctx = {{ctx}};\nreturn ctx.steps[\"Join: mergeResults\"].item.item;"
+      }
+    },
+    {
+      "nodeId": "node_e5aad38503",
+      "actorId": "actor_e5aad38503",
+      "type": "NodeTransform",
+      "label": "Retry: continuePolling (0)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8440,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return { ready: false, route: 0, value: source };"
+      }
+    },
+    {
+      "nodeId": "node_77a414e846",
+      "actorId": "actor_77a414e846",
+      "type": "NodeTransform",
+      "label": "Finish: ifCompleted (0)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return { ready: true, route: 1, value: source };"
+      }
+    },
+    {
+      "nodeId": "node_83fb7790ce",
+      "actorId": "actor_83fb7790ce",
+      "type": "NodeTransform",
+      "label": "Exit 1: waitInterval",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.route === 1;"
+      }
+    },
+    {
+      "nodeId": "node_055c21e456",
+      "actorId": "actor_055c21e456",
+      "type": "NodeBranch",
+      "label": "Select exit 1: waitInterval",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_44a1541beb",
+      "actorId": "actor_44a1541beb",
+      "type": "NodeTransform",
+      "label": "Result 1: waitInterval",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.value;"
+      }
+    },
+    {
+      "nodeId": "node_be147fde79",
+      "actorId": "actor_be147fde79",
+      "type": "NodeTransform",
+      "label": "Finish: ifFailed (0)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return { ready: true, route: 2, value: source };"
+      }
+    },
+    {
+      "nodeId": "node_0afc8f9fb7",
+      "actorId": "actor_0afc8f9fb7",
+      "type": "NodeTransform",
+      "label": "Exit 2: waitInterval",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.route === 2;"
+      }
+    },
+    {
+      "nodeId": "node_6eeaa83b8e",
+      "actorId": "actor_6eeaa83b8e",
+      "type": "NodeBranch",
+      "label": "Select exit 2: waitInterval",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_bd852c7b0e",
+      "actorId": "actor_bd852c7b0e",
+      "type": "NodeTransform",
+      "label": "Result 2: waitInterval",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.value;"
+      }
+    },
+    {
+      "nodeId": "node_e484d4f187",
+      "actorId": "actor_e484d4f187",
+      "type": "NodeTransform",
+      "label": "Finish: ifTimeout (0)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8060,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return { ready: true, route: 3, value: source };"
+      }
+    },
+    {
+      "nodeId": "node_80205fab18",
+      "actorId": "actor_80205fab18",
+      "type": "NodeTransform",
+      "label": "Exit 3: waitInterval",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 1140
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.route === 3;"
+      }
+    },
+    {
+      "nodeId": "node_661e6de18a",
+      "actorId": "actor_661e6de18a",
+      "type": "NodeBranch",
+      "label": "Select exit 3: waitInterval",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 880
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_53e156540c",
+      "actorId": "actor_53e156540c",
+      "type": "NodeTransform",
+      "label": "Result 3: waitInterval",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source.value;"
+      }
+    },
+    {
+      "nodeId": "node_88214f206f",
+      "actorId": "actor_88214f206f",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 4260,
+        "y": 880
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_c2e5c485ee",
+      "actorId": "actor_c2e5c485ee",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 1400
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "apiKey": {
+            "$workflowSecret": "API_KEY"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_dff74687fb",
+      "target": "node_fd51eaef71",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dff74687fb",
+      "target": "node_fd51eaef71",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fd51eaef71",
+      "target": "node_8311cf1372",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_fd51eaef71",
+      "target": "node_8311cf1372",
+      "sourceOutput": "transformed",
+      "targetInput": "maxAttempts",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_bcd1aa4f83",
+      "target": "node_ebdbd250f5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bcd1aa4f83",
+      "target": "node_ebdbd250f5",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ebdbd250f5",
+      "target": "node_8311cf1372",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_ebdbd250f5",
+      "target": "node_8311cf1372",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_bcd1aa4f83",
+      "target": "node_8311cf1372",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_8311cf1372",
+      "target": "node_c9143808ec",
+      "sourceOutput": "onCheck",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8311cf1372",
+      "target": "node_401d5dc692",
+      "sourceOutput": "onError",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8311cf1372",
+      "target": "node_401d5dc692",
+      "sourceOutput": "error",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_74d0a33a76",
+      "target": "node_e8c7305cc1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_74d0a33a76",
+      "target": "node_e8c7305cc1",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e8c7305cc1",
+      "target": "node_a16a7c9ec1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_e8c7305cc1",
+      "target": "node_a16a7c9ec1",
+      "sourceOutput": "transformed",
+      "targetInput": "delaySeconds",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_a16a7c9ec1",
+      "target": "node_56f3478b81",
+      "sourceOutput": "onCheck",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a16a7c9ec1",
+      "target": "node_56f3478b81",
+      "sourceOutput": "attempt",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_56f3478b81",
+      "target": "node_a16a7c9ec1",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_56f3478b81",
+      "target": "node_a16a7c9ec1",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_74d0a33a76",
+      "target": "node_a16a7c9ec1",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeRepeatUntil"
+    },
+    {
+      "source": "node_a16a7c9ec1",
+      "target": "node_5a2a3569d7",
+      "sourceOutput": "onError",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a16a7c9ec1",
+      "target": "node_5a2a3569d7",
+      "sourceOutput": "error",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_33bdf1883c",
+      "target": "node_156f45a8ce",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2a5361f768",
+      "target": "node_9a5bf1342f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_2a5361f768",
+      "target": "node_9a5bf1342f",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_7958a25a26",
+      "target": "node_68181fb540",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_7958a25a26",
+      "target": "node_68181fb540",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_ddee046a7b",
+      "target": "node_9a1d0783af",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_ddee046a7b",
+      "target": "node_9a1d0783af",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_77fc61bbac",
+      "target": "node_86b48de71d",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_86b48de71d",
+      "target": "node_52df8fb9c0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_52df8fb9c0",
+      "target": "node_8e2d171940",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_52df8fb9c0",
+      "target": "node_8e2d171940",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c2b3fb27f6",
+      "target": "node_97fab40858",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c2b3fb27f6",
+      "target": "node_97fab40858",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_97fab40858",
+      "target": "node_2a5361f768",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_97fab40858",
+      "target": "node_2a5361f768",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9a5bf1342f",
+      "target": "node_7958a25a26",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_97fab40858",
+      "target": "node_7958a25a26",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_68181fb540",
+      "target": "node_ddee046a7b",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_97fab40858",
+      "target": "node_ddee046a7b",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9a1d0783af",
+      "target": "node_9c766221f2",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_97fab40858",
+      "target": "node_9c766221f2",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a16a7c9ec1",
+      "target": "node_795692e30f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a16a7c9ec1",
+      "target": "node_795692e30f",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_795692e30f",
+      "target": "node_ab6fecb884",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_795692e30f",
+      "target": "node_ab6fecb884",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_ab6fecb884",
+      "target": "node_f71e6addc1",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ab6fecb884",
+      "target": "node_f71e6addc1",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f71e6addc1",
+      "target": "node_b695ac98b2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_f71e6addc1",
+      "target": "node_b695ac98b2",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_b695ac98b2",
+      "target": "node_0878d2f9bb",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0878d2f9bb",
+      "target": "node_33bdf1883c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_156f45a8ce",
+      "target": "node_ab6fecb884",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_156f45a8ce",
+      "target": "node_ab6fecb884",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_b695ac98b2",
+      "target": "node_b86815328a",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b86815328a",
+      "target": "node_216e657eb3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b86815328a",
+      "target": "node_216e657eb3",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_216e657eb3",
+      "target": "node_ab6fecb884",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_216e657eb3",
+      "target": "node_ab6fecb884",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_ab6fecb884",
+      "target": "node_c2b3fb27f6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ab6fecb884",
+      "target": "node_c2b3fb27f6",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c9143808ec",
+      "target": "node_74d0a33a76",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c9143808ec",
+      "target": "node_74d0a33a76",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8e2d171940",
+      "target": "node_dff74687fb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8e2d171940",
+      "target": "node_dff74687fb",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9c766221f2",
+      "target": "node_e5aad38503",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9c766221f2",
+      "target": "node_e5aad38503",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e5aad38503",
+      "target": "node_bcd1aa4f83",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e5aad38503",
+      "target": "node_bcd1aa4f83",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9a5bf1342f",
+      "target": "node_77a414e846",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_97fab40858",
+      "target": "node_77a414e846",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_77a414e846",
+      "target": "node_bcd1aa4f83",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_77a414e846",
+      "target": "node_bcd1aa4f83",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8311cf1372",
+      "target": "node_83fb7790ce",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8311cf1372",
+      "target": "node_83fb7790ce",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_83fb7790ce",
+      "target": "node_055c21e456",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_83fb7790ce",
+      "target": "node_055c21e456",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_055c21e456",
+      "target": "node_44a1541beb",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8311cf1372",
+      "target": "node_44a1541beb",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_44a1541beb",
+      "target": "node_e781e9d3eb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_44a1541beb",
+      "target": "node_e781e9d3eb",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_68181fb540",
+      "target": "node_be147fde79",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_97fab40858",
+      "target": "node_be147fde79",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_be147fde79",
+      "target": "node_bcd1aa4f83",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_be147fde79",
+      "target": "node_bcd1aa4f83",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8311cf1372",
+      "target": "node_0afc8f9fb7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8311cf1372",
+      "target": "node_0afc8f9fb7",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0afc8f9fb7",
+      "target": "node_6eeaa83b8e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_0afc8f9fb7",
+      "target": "node_6eeaa83b8e",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_6eeaa83b8e",
+      "target": "node_bd852c7b0e",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8311cf1372",
+      "target": "node_bd852c7b0e",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bd852c7b0e",
+      "target": "node_1ec3f377be",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bd852c7b0e",
+      "target": "node_1ec3f377be",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9a1d0783af",
+      "target": "node_e484d4f187",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_97fab40858",
+      "target": "node_e484d4f187",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e484d4f187",
+      "target": "node_bcd1aa4f83",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e484d4f187",
+      "target": "node_bcd1aa4f83",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8311cf1372",
+      "target": "node_80205fab18",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8311cf1372",
+      "target": "node_80205fab18",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_80205fab18",
+      "target": "node_661e6de18a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_80205fab18",
+      "target": "node_661e6de18a",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_661e6de18a",
+      "target": "node_53e156540c",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8311cf1372",
+      "target": "node_53e156540c",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRepeatUntil",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_53e156540c",
+      "target": "node_5768b99331",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_53e156540c",
+      "target": "node_5768b99331",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e781e9d3eb",
+      "target": "node_88214f206f",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "other-integrations",
+    "categoryLabel": "Other Integrations and Use Cases",
+    "department": "Engineering",
+    "connectors": [],
+    "setupSecrets": [
+      {
+        "key": "API_KEY",
+        "label": "API credential header value (for example \"Bearer <key>\"; rename the header if the API expects another one)",
+        "headerFormat": "Authorization: <secret>",
+        "contextKey": "apiKey",
+        "usedBy": [
+          "pollTask",
+          "submitTask"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLoop",
+      "NodeRepeatUntil",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 16,
+      "yantraSteps": 50,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Other_Integrations_and_Use_Cases/Generate Seedance videos with Vancine API and bounded polling.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Generate Seedance videos with Vancine API and bounded polling"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Workflow secret API_KEY: API credential header value (for example \"Bearer <key>\"; rename the header if the API expects another one) (Authorization: <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "manualTrigger",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"submitTask\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Repeat: waitInterval\" uses NodeRepeatUntil: carry each retry's state, return readiness through NEXT, and resume the selected exit only after onDone. Original interval waits are preserved. maxPolls controls the attempt limit. Exhaustion stops with an error.",
+        "\"pollTask\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "## Seedance\n\n### How it works\n\nThis workflow manually starts a Seedance video generation request, submits the configured prompt and model to a video generation API, then polls for completion. It carries loop state through each wait-and-poll cycle, merges the API response with that state, and routes the result to success, failure, timeout, or another polling iteration.\n\n### Setup steps\n\n- Configure the HTTP Request nodes with the required API authentication for the Seedance-compatible video generation service.\n- Update the setFields node with the desired model, prompt, output size, and base_url.\n- Adjust intervalSeconds and maxPolls in saveTaskId or related loop-state Set nodes to control polling frequency and timeout behavior.\n- Run the workflow manually from the manualTrigger node to test the full generation and polling flow.\n\n### Customization\n\nChange the prompt, model, size, polling interval, and maximum poll count to match the desired video output and service limits.",
+      "## Start and configure\n\nManual entry point and initial request configuration, including the model, prompt, size, and API base URL.",
+      "## Submit generation job\n\nSends the video generation POST request and extracts the task metadata needed for later polling.",
+      "## Wait before polling\n\nPauses between task submission or retry iterations before checking the generation status again.",
+      "## Poll and merge state\n\nFetches the current task status, carries loop counters and configuration alongside it, then merges the API response with the retained polling state.",
+      "## Completion output routing\n\nChecks whether the generation completed and, if so, outputs the final result URL.",
+      "## Failure error handling\n\nEvaluates failed task states and stops the workflow with an error when the API reports generation failure.",
+      "## Timeout and retry\n\nDetermines whether polling has exceeded the maximum number of attempts, raises a timeout error if needed, or updates state to continue polling."
+    ],
+    "nodes": {
+      "node_77fc61bbac": {
+        "n8n": "manualTrigger",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_86b48de71d": {
+        "n8n": "setFields",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_52df8fb9c0": {
+        "n8n": "submitTask",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_8e2d171940": {
+        "n8n": "saveTaskId",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_dff74687fb": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_8311cf1372": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_fd51eaef71": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_bcd1aa4f83": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_ebdbd250f5": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_c9143808ec": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_401d5dc692": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_74d0a33a76": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_e8c7305cc1": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_a16a7c9ec1": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_56f3478b81": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_5a2a3569d7": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_33bdf1883c": {
+        "n8n": "pollTask",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_156f45a8ce": {
+        "n8n": "pollTask",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_216e657eb3": {
+        "n8n": "carryState",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_c2b3fb27f6": {
+        "n8n": "mergeResults",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_97fab40858": {
+        "n8n": "mergeState",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_2a5361f768": {
+        "n8n": "ifCompleted",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_9a5bf1342f": {
+        "n8n": "ifCompleted",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_e781e9d3eb": {
+        "n8n": "outputResult",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_7958a25a26": {
+        "n8n": "ifFailed",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_68181fb540": {
+        "n8n": "ifFailed",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_1ec3f377be": {
+        "n8n": "failNode",
+        "n8nType": "n8n-nodes-base.stopAndError"
+      },
+      "node_ddee046a7b": {
+        "n8n": "ifTimeout",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_9a1d0783af": {
+        "n8n": "ifTimeout",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_5768b99331": {
+        "n8n": "timeoutFail",
+        "n8nType": "n8n-nodes-base.stopAndError"
+      },
+      "node_9c766221f2": {
+        "n8n": "continuePolling",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_795692e30f": {
+        "n8n": "mergeResults",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_ab6fecb884": {
+        "n8n": "mergeResults",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_f71e6addc1": {
+        "n8n": "mergeResults",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_b695ac98b2": {
+        "n8n": "mergeResults",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_0878d2f9bb": {
+        "n8n": "mergeResults",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_b86815328a": {
+        "n8n": "mergeResults",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_e5aad38503": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_77a414e846": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_83fb7790ce": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_055c21e456": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_44a1541beb": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_be147fde79": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_0afc8f9fb7": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_6eeaa83b8e": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_bd852c7b0e": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_e484d4f187": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_80205fab18": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_661e6de18a": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_53e156540c": {
+        "n8n": "waitInterval",
+        "n8nType": "n8n-nodes-base.wait"
+      },
+      "node_88214f206f": {
+        "n8n": "__end:outputResult",
+        "n8nType": "synthetic"
+      },
+      "node_c2e5c485ee": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

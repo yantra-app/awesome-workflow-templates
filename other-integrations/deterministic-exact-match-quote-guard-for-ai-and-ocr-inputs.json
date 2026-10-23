@@ -1,0 +1,457 @@
+{
+  "name": "Deterministic Exact-Match Quote Guard for AI and OCR Inputs",
+  "workflowSlug": "deterministic-exact-match-quote-guard-for-ai-and-ocr-inputs",
+  "description": "Validates untrusted extracted line items, accepts only exact synthetic catalog references, ignores claimed prices, and returns HTTP 422 with `NEEDS_REVIEW` and no total for caller-side handling.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_5342c2a06e",
+      "actorId": "actor_5342c2a06e",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_31755dd3e0",
+      "actorId": "actor_31755dd3e0",
+      "type": "NodeTransform",
+      "label": "Validate Untrusted Extraction",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Ported from n8n Code node \"Validate Untrusted Extraction\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const input = $json.body ?? $json;\n  const requestId = typeof input.request_id === 'string' ? input.request_id : '';\n  const sourceDescription = typeof input.source_description === 'string' ? input.source_description : '';\n  const laborHours = input.labor_hours;\n  const travelRequired = input.travel_required;\n  const extractedItems = Array.isArray(input.extracted_items) ? input.extracted_items : [];\n  const errors = [];\n  if (!/^quote-[a-z0-9-]{3,40}$/i.test(requestId)) errors.push('request_id');\n  if (!sourceDescription || sourceDescription.length > 1000) errors.push('source_description');\n  const laborHundredths = typeof laborHours === 'number' ? laborHours * 100 : Number.NaN;\n  if (typeof laborHours !== 'number' || !Number.isFinite(laborHours) || laborHours < 0 || laborHours > 24 || Math.abs(Math.round(laborHundredths) - laborHundredths) > 1e-9) errors.push('labor_hours');\n  if (typeof travelRequired !== 'boolean') errors.push('travel_required');\n  if (extractedItems.length < 1 || extractedItems.length > 10) errors.push('extracted_items');\n  const normalizedItems = extractedItems.map((item, index) => {\n    const reference = typeof item?.reference === 'string' ? item.reference : '';\n    const quantity = item?.quantity;\n    if (!/^SYN-[A-Z]+-[0-9]{3}$/.test(reference)) errors.push(`extracted_items[${index}].reference`);\n    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 20) errors.push(`extracted_items[${index}].quantity`);\n    if (item?.claimed_unit_price_chf !== undefined && (typeof item.claimed_unit_price_chf !== 'number' || !Number.isFinite(item.claimed_unit_price_chf))) errors.push(`extracted_items[${index}].claimed_unit_price_chf`);\n    return { reference, quantity, claimed_unit_price_chf: item?.claimed_unit_price_chf ?? null };\n  });\n  return [{ json: {\n    ok: errors.length === 0,\n    status: errors.length === 0 ? 'VALIDATED' : 'REJECTED',\n    request_id: requestId || null,\n    invalid_fields: [...new Set(errors)],\n    source_description: sourceDescription,\n    labor_hours: laborHours,\n    travel_required: travelRequired,\n    extracted_items: normalizedItems,\n    extraction_boundary: 'untrusted_synthetic_fixture'\n  } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_3d0294c4ef",
+      "actorId": "actor_3d0294c4ef",
+      "type": "NodeTransform",
+      "label": "Is Input Valid: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((Boolean(($json.ok)) === Boolean(true)));"
+      }
+    },
+    {
+      "nodeId": "node_37765cc301",
+      "actorId": "actor_37765cc301",
+      "type": "NodeBranch",
+      "label": "Is Input Valid: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_666f6c6d30",
+      "actorId": "actor_666f6c6d30",
+      "type": "NodeTransform",
+      "label": "Exact Match and Calculate",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Ported from n8n Code node \"Exact Match and Calculate\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const catalog = Object.freeze({\n    'SYN-VALVE-100': Object.freeze({ name: 'Synthetic isolation valve 100', unit_price_cents: 12000 }),\n    'SYN-PIPE-200': Object.freeze({ name: 'Synthetic pipe section 200', unit_price_cents: 8550 }),\n    'SYN-SEAL-300': Object.freeze({ name: 'Synthetic seal kit 300', unit_price_cents: 3240 })\n  });\n  const centsToChf = (value) => Number((value / 100).toFixed(2));\n  const matchedItems = [];\n  const missingReferences = [];\n  let ignoredClaimedPrices = false;\n  for (const item of $json.extracted_items) {\n    const catalogItem = catalog[item.reference];\n    if (!catalogItem) {\n      missingReferences.push(item.reference);\n      continue;\n    }\n    if (item.claimed_unit_price_chf !== null && Math.round(item.claimed_unit_price_chf * 100) !== catalogItem.unit_price_cents) ignoredClaimedPrices = true;\n    const lineTotalCents = catalogItem.unit_price_cents * item.quantity;\n    matchedItems.push({\n      reference: item.reference,\n      name: catalogItem.name,\n      quantity: item.quantity,\n      unit_price_chf: centsToChf(catalogItem.unit_price_cents),\n      line_total_chf: centsToChf(lineTotalCents),\n      line_total_cents: lineTotalCents\n    });\n  }\n  if (missingReferences.length > 0) {\n    return [{ json: {\n      ok: false,\n      status: 'NEEDS_REVIEW',\n      request_id: $json.request_id,\n      exact_match: false,\n      matched_items: matchedItems.map(({ line_total_cents, ...item }) => item),\n      missing_references: missingReferences,\n      ignored_claimed_prices: ignoredClaimedPrices,\n      totals: null,\n      reason: 'exact_catalog_match_required'\n    } }];\n  }\n  const materialsCents = matchedItems.reduce((sum, item) => sum + item.line_total_cents, 0);\n  const marginCents = Math.round(materialsCents * 0.15);\n  const laborCents = Math.round($json.labor_hours * 9500);\n  const travelCents = $json.travel_required ? 4500 : 0;\n  const netCents = materialsCents + marginCents + laborCents + travelCents;\n  const vatCents = Math.round(netCents * 0.081);\n  const totalCents = netCents + vatCents;\n  return [{ json: {\n    ok: true,\n    status: 'QUOTABLE',\n    request_id: $json.request_id,\n    exact_match: true,\n    matched_items: matchedItems.map(({ line_total_cents, ...item }) => item),\n    missing_references: [],\n    ignored_claimed_prices: ignoredClaimedPrices,\n    rates: { material_margin_percent: 15, labor_hour_chf: 95, travel_flat_chf: 45, vat_percent: 8.1 },\n    totals: {\n      materials_chf: centsToChf(materialsCents),\n      material_margin_chf: centsToChf(marginCents),\n      labor_chf: centsToChf(laborCents),\n      travel_chf: centsToChf(travelCents),\n      net_chf: centsToChf(netCents),\n      vat_chf: centsToChf(vatCents),\n      total_chf: centsToChf(totalCents)\n    }\n  } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_f38999143e",
+      "actorId": "actor_f38999143e",
+      "type": "NodeTransform",
+      "label": "Build Rejected Response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Build Rejected Response\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  return $input.all().map((item) => ({ json: {\n    ok: false,\n    status: 'REJECTED',\n    request_id: item.json.request_id,\n    invalid_fields: item.json.invalid_fields\n  } }));\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_675ad3fcc1",
+      "actorId": "actor_675ad3fcc1",
+      "type": "NodeTransform",
+      "label": "Is Quote Ready: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((Boolean(($json.ok)) === Boolean(true)));"
+      }
+    },
+    {
+      "nodeId": "node_cb1481aa72",
+      "actorId": "actor_cb1481aa72",
+      "type": "NodeBranch",
+      "label": "Is Quote Ready: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_b1acad7988",
+      "actorId": "actor_b1acad7988",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_8a1f2eac40",
+      "actorId": "actor_8a1f2eac40",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 1980,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_7ddf2e816d",
+      "actorId": "actor_7ddf2e816d",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 1980,
+        "y": 880
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_80c1fa9a8e",
+      "actorId": "actor_80c1fa9a8e",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 1140
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {}
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_3d0294c4ef",
+      "target": "node_37765cc301",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_3d0294c4ef",
+      "target": "node_37765cc301",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_675ad3fcc1",
+      "target": "node_cb1481aa72",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_675ad3fcc1",
+      "target": "node_cb1481aa72",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_f38999143e",
+      "target": "node_b1acad7988",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_5342c2a06e",
+      "target": "node_31755dd3e0",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_31755dd3e0",
+      "target": "node_3d0294c4ef",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_31755dd3e0",
+      "target": "node_3d0294c4ef",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_37765cc301",
+      "target": "node_666f6c6d30",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_31755dd3e0",
+      "target": "node_666f6c6d30",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_37765cc301",
+      "target": "node_f38999143e",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_31755dd3e0",
+      "target": "node_f38999143e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_666f6c6d30",
+      "target": "node_675ad3fcc1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_666f6c6d30",
+      "target": "node_675ad3fcc1",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_666f6c6d30",
+      "target": "node_8a1f2eac40",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_666f6c6d30",
+      "target": "node_7ddf2e816d",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "other-integrations",
+    "categoryLabel": "Other Integrations and Use Cases",
+    "department": "Finance/QA/Workflow Reliability",
+    "connectors": [],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeEnd",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 9,
+      "yantraSteps": 8,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Other_Integrations_and_Use_Cases/Deterministic Exact-Match Quote Guard for AI and OCR Inputs.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Deterministic Exact-Match Quote Guard for AI and OCR Inputs"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Receive Synthetic Request",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Receive Synthetic Request\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Provide run inputs: body, query, headers."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Receive Synthetic Request",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /deterministic-exact-match-quote). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "## Setup and safety boundary\n- The catalog, prices, labor rate, travel fee, and VAT are synthetic fixtures. Replace them with an authenticated source and approved business rules.\n- The webhook has no authentication in this template. Add Header Auth or JWT Auth before publishing it.\n- Treat `extracted_items` as untrusted AI or OCR output. Prices supplied by that input are ignored.\n- Unknown references return `NEEDS_REVIEW` with `totals: null`. Keep a human approval step before sending a quote.\n- Test concurrency, rounding, taxes, discounts, audit storage, and retries against your own acceptance cases."
+    ],
+    "nodes": {
+      "node_5342c2a06e": {
+        "n8n": "Receive Synthetic Request",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_31755dd3e0": {
+        "n8n": "Validate Untrusted Extraction",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_3d0294c4ef": {
+        "n8n": "Is Input Valid",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_37765cc301": {
+        "n8n": "Is Input Valid",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_666f6c6d30": {
+        "n8n": "Exact Match and Calculate",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_f38999143e": {
+        "n8n": "Build Rejected Response",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_675ad3fcc1": {
+        "n8n": "Is Quote Ready",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_cb1481aa72": {
+        "n8n": "Is Quote Ready",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_b1acad7988": {
+        "n8n": "Respond Rejected",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_8a1f2eac40": {
+        "n8n": "Respond Quotable",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_7ddf2e816d": {
+        "n8n": "Respond Needs Review",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_80c1fa9a8e": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

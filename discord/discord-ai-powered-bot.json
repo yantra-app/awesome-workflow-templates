@@ -1,0 +1,663 @@
+{
+  "name": "Discord AI-powered bot",
+  "workflowSlug": "discord-ai-powered-bot",
+  "description": "This workflow creates an AI-powered Discord bot that categorizes user messages (success story, urgent issue, ticket) and routes them to the appropriate department (customer success, IT, customer support).",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_0f231af1fa",
+      "actorId": "actor_0f231af1fa",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_1965b5c621",
+      "actorId": "actor_1965b5c621",
+      "type": "NodeLlmChain",
+      "label": "Analyze user request",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "Act as a service desk agent and help to categorize user messages. Return back only JSON without quotations. Do not return anything else.",
+        "prompt": "Here is a user feedback: \"{{body.feedback}}\". Please analyse it and put into one of the categories:\n1. \"success-story\" for user appraisal or success story. this will be processed by customer success department\n2. \"urgent-issue\" for extreme dissatisfaction or an urgent problem. this will be escalated to the IT team. Please assess if the request is really urgent and whether it has an immediate impact on the client. If the ticket doesn't look like an immediate problem or an extreme dissatisfaction then proceed as a normal ticket.\n3. \"ticket\" for everything else. This will be processed as normal by customer support team.\n\nPlease return back a JSON with the following structure: category (string), feedback (string), instruction (string).\nCategory must match the analysed category. feedback must match the original text. instruction should contain a text for a department according to the category with a one sentense summary of the feedback. Please be polite and friendly to the colleagues.",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_243d960dbd",
+      "actorId": "actor_243d960dbd",
+      "type": "NodeTransform",
+      "label": "Parse JSON",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"gpt_reply\"] = (JSON.parse( $json.replace(/\\n(?=[^\"]*\"(?:[^\"]*\"[^\"]*\")*[^\"]*$)/g, '\\\\n')));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_de9d9824dd",
+      "actorId": "actor_de9d9824dd",
+      "type": "NodeTransform",
+      "label": "Select category: rule 1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(String(($json.gpt_reply.category.toLowerCase()) ?? '') === String(\"success-story\" ?? ''));"
+      }
+    },
+    {
+      "nodeId": "node_7caa76837e",
+      "actorId": "actor_7caa76837e",
+      "type": "NodeBranch",
+      "label": "Select category: rule 1?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_831ab3a0b2",
+      "actorId": "actor_831ab3a0b2",
+      "type": "NodeTransform",
+      "label": "Select category: rule 2",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(String(($json.gpt_reply.category.toLowerCase()) ?? '') === String(\"urgent-issue\" ?? ''));"
+      }
+    },
+    {
+      "nodeId": "node_ed7bc01321",
+      "actorId": "actor_ed7bc01321",
+      "type": "NodeBranch",
+      "label": "Select category: rule 2?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_814d86cea9",
+      "actorId": "actor_814d86cea9",
+      "type": "NodeTransform",
+      "label": "Select category: rule 3",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(String(($json.gpt_reply.category.toLowerCase()) ?? '') === String(\"ticket\" ?? ''));"
+      }
+    },
+    {
+      "nodeId": "node_dd9b6805aa",
+      "actorId": "actor_dd9b6805aa",
+      "type": "NodeBranch",
+      "label": "Select category: rule 3?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_79ea3b0d6e",
+      "actorId": "actor_79ea3b0d6e",
+      "type": "NodeCdeConnector",
+      "label": "discordbot/DISCORDBOT_CREATE_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "discordbot",
+        "connectorLabel": "Discord",
+        "action": "DISCORDBOT_CREATE_MESSAGE",
+        "params": {
+          "content": "{{last.transformed.gpt_reply.instruction}}",
+          "channel_id": "{{discordChannelId}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_7585ffe3f8",
+      "actorId": "actor_7585ffe3f8",
+      "type": "NodeCdeConnector",
+      "label": "discordbot/DISCORDBOT_CREATE_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "discordbot",
+        "connectorLabel": "Discord",
+        "action": "DISCORDBOT_CREATE_MESSAGE",
+        "params": {
+          "content": "{{last.transformed.gpt_reply.instruction}}",
+          "channel_id": "{{discordChannelId}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_a9f8992a95",
+      "actorId": "actor_a9f8992a95",
+      "type": "NodeCdeConnector",
+      "label": "discordbot/DISCORDBOT_CREATE_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "discordbot",
+        "connectorLabel": "Discord",
+        "action": "DISCORDBOT_CREATE_MESSAGE",
+        "params": {
+          "content": "{{last.transformed.gpt_reply.instruction}}",
+          "channel_id": "{{discordChannelId}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_631447d586",
+      "actorId": "actor_631447d586",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_47f68ef2e3",
+      "actorId": "actor_47f68ef2e3",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_9f02bd6198",
+      "actorId": "actor_9f02bd6198",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_c2a5350caf",
+      "actorId": "actor_c2a5350caf",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {},
+          "discordChannelId": ""
+        }
+      }
+    },
+    {
+      "nodeId": "node_23600f998d",
+      "actorId": "actor_23600f998d",
+      "type": "NodeChatModel",
+      "label": "Analyze user request: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_de9d9824dd",
+      "target": "node_7caa76837e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_de9d9824dd",
+      "target": "node_7caa76837e",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_7caa76837e",
+      "target": "node_831ab3a0b2",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_831ab3a0b2",
+      "target": "node_ed7bc01321",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_831ab3a0b2",
+      "target": "node_ed7bc01321",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_ed7bc01321",
+      "target": "node_814d86cea9",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_814d86cea9",
+      "target": "node_dd9b6805aa",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_814d86cea9",
+      "target": "node_dd9b6805aa",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_0f231af1fa",
+      "target": "node_1965b5c621",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_1965b5c621",
+      "target": "node_243d960dbd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1965b5c621",
+      "target": "node_243d960dbd",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7caa76837e",
+      "target": "node_79ea3b0d6e",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ed7bc01321",
+      "target": "node_7585ffe3f8",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_dd9b6805aa",
+      "target": "node_a9f8992a95",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_243d960dbd",
+      "target": "node_de9d9824dd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_243d960dbd",
+      "target": "node_de9d9824dd",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_243d960dbd",
+      "target": "node_831ab3a0b2",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_243d960dbd",
+      "target": "node_814d86cea9",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_79ea3b0d6e",
+      "target": "node_631447d586",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_7585ffe3f8",
+      "target": "node_47f68ef2e3",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_a9f8992a95",
+      "target": "node_9f02bd6198",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_23600f998d",
+      "target": "node_1965b5c621",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "discord",
+    "categoryLabel": "Discord",
+    "department": "Customer Support",
+    "connectors": [
+      "discordbot",
+      "openai"
+    ],
+    "setupVars": [
+      {
+        "key": "discordChannelId",
+        "label": "Channel id",
+        "type": "id",
+        "example": "123456789012345678",
+        "usedBy": [
+          "Helpdesk",
+          "IT Dept",
+          "User Success Dept"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 9,
+      "yantraSteps": 13,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Discord/Discord AI-powered bot.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Discord AI bot"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Webhook",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Webhook\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value discordChannelId: Channel id (for example 123456789012345678). Write it into the Workflow Configs initialContext before import.",
+      "Connect the discordbot connector (credential).",
+      "Connect the openai connector (credential).",
+      "Provide run inputs: body, query, headers."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking \"Execute Workflow\"",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Webhook",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /d0cdd428-be96-4821-85bc-65342cf928d0). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect discordbot: `cdecli credential create -n \"discordbot\" -p discordbot --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_0f231af1fa": {
+        "n8n": "When clicking \"Execute Workflow\"",
+        "n8nType": "n8n-nodes-base.manualTrigger",
+        "also": [
+          "Webhook"
+        ]
+      },
+      "node_1965b5c621": {
+        "n8n": "Analyze user request",
+        "n8nType": "n8n-nodes-base.openAi"
+      },
+      "node_243d960dbd": {
+        "n8n": "Parse JSON",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_de9d9824dd": {
+        "n8n": "Select category",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_7caa76837e": {
+        "n8n": "Select category",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_831ab3a0b2": {
+        "n8n": "Select category",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_ed7bc01321": {
+        "n8n": "Select category",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_814d86cea9": {
+        "n8n": "Select category",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_dd9b6805aa": {
+        "n8n": "Select category",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_79ea3b0d6e": {
+        "n8n": "User Success Dept",
+        "n8nType": "n8n-nodes-base.discord"
+      },
+      "node_7585ffe3f8": {
+        "n8n": "IT Dept",
+        "n8nType": "n8n-nodes-base.discord"
+      },
+      "node_a9f8992a95": {
+        "n8n": "Helpdesk",
+        "n8nType": "n8n-nodes-base.discord"
+      },
+      "node_631447d586": {
+        "n8n": "__end:User Success Dept",
+        "n8nType": "synthetic"
+      },
+      "node_47f68ef2e3": {
+        "n8n": "__end:IT Dept",
+        "n8nType": "synthetic"
+      },
+      "node_9f02bd6198": {
+        "n8n": "__end:Helpdesk",
+        "n8nType": "synthetic"
+      },
+      "node_c2a5350caf": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_23600f998d": {
+        "n8n": "Analyze user request",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

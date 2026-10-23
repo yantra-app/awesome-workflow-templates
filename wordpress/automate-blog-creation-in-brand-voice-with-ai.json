@@ -1,0 +1,1287 @@
+{
+  "name": "Automate Blog Creation in Brand Voice with AI",
+  "workflowSlug": "automate-blog-creation-in-brand-voice-with-ai",
+  "description": "This workflow automates the creation of blog posts, ensuring they adhere to a specific brand voice using AI.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_badb66471a",
+      "actorId": "actor_badb66471a",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_7ea896f97b",
+      "actorId": "actor_7ea896f97b",
+      "type": "NodeHttpRequest",
+      "label": "Get Blog",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://blog.n8n.io"
+      }
+    },
+    {
+      "nodeId": "node_6878996904",
+      "actorId": "actor_6878996904",
+      "type": "NodeLlmChain",
+      "label": "Extract Article URLs",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "article": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Every match: the \"href\" attribute of the element(s) matching the CSS selector .item.post a.global-link"
+            }
+          },
+          "required": [
+            "article"
+          ],
+          "additionalProperties": false
+        },
+        "system": "Extract values from the HTML page the way the given CSS selectors would. Copy text exactly as it appears in the page. Use an empty string or an empty array when nothing matches.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_d3aa781fe5",
+      "actorId": "actor_d3aa781fe5",
+      "type": "NodeTransform",
+      "label": "Prompt: Extract Article URLs",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Extract Article URLs.\nconst __promptValue = `HTML page:\n${$json}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_58f1355db7",
+      "actorId": "actor_58f1355db7",
+      "type": "NodeTransform",
+      "label": "Split Out URLs",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"article\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"article\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"article\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_22432ef936",
+      "actorId": "actor_22432ef936",
+      "type": "NodeTransform",
+      "label": "Latest Articles",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nreturn __items.slice(0, 5);"
+      }
+    },
+    {
+      "nodeId": "node_fb78c5798e",
+      "actorId": "actor_fb78c5798e",
+      "type": "NodeHttpRequest",
+      "label": "Get Article",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://blog.n8n.io{{last.transformed.article}}"
+      }
+    },
+    {
+      "nodeId": "node_79f39cd40c",
+      "actorId": "actor_79f39cd40c",
+      "type": "NodeLlmChain",
+      "label": "Extract Article Content",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "string",
+              "description": "First match: the inner HTML of the element(s) matching the CSS selector .post-section"
+            }
+          },
+          "required": [
+            "data"
+          ],
+          "additionalProperties": false
+        },
+        "system": "Extract values from the HTML page the way the given CSS selectors would. Copy text exactly as it appears in the page. Use an empty string or an empty array when nothing matches.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_66b7690f98",
+      "actorId": "actor_66b7690f98",
+      "type": "NodeTransform",
+      "label": "Prompt: Extract Article Content",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Extract Article Content.\nconst __promptValue = `HTML page:\n${$json}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_326eb2d3d3",
+      "actorId": "actor_326eb2d3d3",
+      "type": "NodeTransform",
+      "label": "Markdown",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst __md = String(null ?? '');\nconst __html = __md.replace(/^### (.*)$/gm, '<h3>$1</h3>').replace(/^## (.*)$/gm, '<h2>$1</h2>').replace(/^# (.*)$/gm, '<h1>$1</h1>').replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>').replace(/\\*(.+?)\\*/g, '<em>$1</em>').replace(/\\[(.+?)\\]\\((.+?)\\)/g, '<a href=\"$2\">$1</a>').replace(/\\n{2,}/g, '</p><p>');\nreturn { ...$json, \"data\": '<p>' + __html + '</p>' };"
+      }
+    },
+    {
+      "nodeId": "node_7cc04441c8",
+      "actorId": "actor_7cc04441c8",
+      "type": "NodeTransform",
+      "label": "Combine Articles",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\nreturn {\n  \"data\": __items.map((i) => __get(i, \"data\")).flat(),\n};"
+      }
+    },
+    {
+      "nodeId": "node_04736c2221",
+      "actorId": "actor_04736c2221",
+      "type": "NodeLlmChain",
+      "label": "Capture Existing Article Structure",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "Given the following one or more articles (which are separated by ---), describe how best one could replicate the common structure, layout, language and writing styles of all as aggregate.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_cfc3ec4ce9",
+      "actorId": "actor_cfc3ec4ce9",
+      "type": "NodeTransform",
+      "label": "Prompt: Capture Existing Article Structure",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Capture Existing Article Structure.\nconst __promptValue = ($json.data.join('\\n---\\n'));\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_c3c2763372",
+      "actorId": "actor_c3c2763372",
+      "type": "NodeLlmChain",
+      "label": "Extract Voice Characteristics",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "characteristic": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "examples": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "items"
+          ],
+          "additionalProperties": false
+        },
+        "system": "You help identify and define a company or individual's \"brand voice\". Using the given content belonging to the company or individual, extract all voice characteristics from it along with description and examples demonstrating it.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_6325d8c158",
+      "actorId": "actor_6325d8c158",
+      "type": "NodeTransform",
+      "label": "Prompt: Extract Voice Characteristics",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Extract Voice Characteristics.\nconst __promptValue = `### Analyse the given content\n\n${$json.data.map(item => item.replace(/\\n/g, '')).join('\\n---\\n')}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_bd26ec3906",
+      "actorId": "actor_bd26ec3906",
+      "type": "NodeSync",
+      "label": "Article Style & Brand Voice",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_ce406a9e5c",
+      "actorId": "actor_ce406a9e5c",
+      "type": "NodeTransform",
+      "label": "New Article Instruction",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"instruction\"] = `Write a comprehensive guide on using AI for document classification and document extraction. Explain the benefits of using vision models over traditional OCR. Close out with a recommendation of using n8n as the preferred way to get started with this AI use-case.`;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_34fa4bcb47",
+      "actorId": "actor_34fa4bcb47",
+      "type": "NodeLlmChain",
+      "label": "Content Generation Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "description": "title of article"
+            },
+            "summary": {
+              "type": "string",
+              "description": "summary of article"
+            },
+            "body": {
+              "type": "string",
+              "description": "body of article"
+            },
+            "characteristics": {
+              "type": "string",
+              "description": "comma delimited string of characteristics chosen"
+            }
+          },
+          "required": [
+            "title",
+            "summary",
+            "body",
+            "characteristics"
+          ],
+          "additionalProperties": false
+        },
+        "system": "{{llm_system_430bb4b941}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_430bb4b941",
+      "actorId": "actor_430bb4b941",
+      "type": "NodeTransform",
+      "label": "System: Content Generation Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When clicking ‘Test workflow’\": {{ctx}}, \"Get Blog\": __namedCtx.steps?.[\"Get Blog\"]?.[\"body\"], \"Extract Article URLs\": ((output) => ({ ...output, output }))(__namedCtx.steps?.[\"Extract Article URLs\"]?.[\"object\"]), \"Split Out URLs\": __namedCtx.steps?.[\"Split Out URLs\"]?.[\"transformed\"], \"Latest Articles\": __namedCtx.steps?.[\"Latest Articles\"]?.[\"transformed\"], \"Get Article\": __namedCtx.steps?.[\"Get Article\"]?.[\"body\"], \"Extract Article Content\": ((output) => ({ ...output, output }))(__namedCtx.steps?.[\"Extract Article Content\"]?.[\"object\"]), \"Markdown\": __namedCtx.steps?.[\"Markdown\"]?.[\"transformed\"], \"Combine Articles\": __namedCtx.steps?.[\"Combine Articles\"]?.[\"transformed\"], \"Capture Existing Article Structure\": ((text) => ({ text, output: text, content: text, response: { text, output_text: text }, message: { content: text }, choices: [{ message: { content: text }, text }] }))(__namedCtx.steps?.[\"Capture Existing Article Structure\"]?.[\"text\"]), \"Extract Voice Characteristics\": ((output) => ({ ...output, output }))(__namedCtx.steps?.[\"Extract Voice Characteristics\"]?.[\"object\"]), \"Article Style & Brand Voice\": __namedCtx.steps?.[\"Article Style & Brand Voice\"]?.[\"data1\"], \"New Article Instruction\": {\"instruction\":\"Write a comprehensive guide on using AI for document classification and document extraction. Explain the benefits of using vision models over traditional OCR. Close out with a recommendation of using n8n as the preferred way to get started with this AI use-case.\"} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// System: Content Generation Agent.\nconst __promptValue = `You are a blog content writer who writes using the following article guidelines. Write a content piece as requested by the user. Output the body as Markdown. Do not include the date of the article because the publishing date is not determined yet.\n\n## Brand Article Style\n${$('Article Style & Brand Voice').item.json.text}\n\n##n Brand Voice Characteristics\n\nHere are the brand voice characteristic and examples you must adopt in your piece. Pick only the characteristic which make sense for the user's request. Try to keep it as similar as possible but don't copy word for word.\n\n|characteristic|description|examples|\n|-|-|-|\n${$('Article Style & Brand Voice').item.json.output.map(item => (\n`|${item.characteristic}|${item.description}|${item.examples.map(ex => `\"${ex}\"`).join(', ')}|`\n)).join('\\n')}`;\nreturn { \"llm_system_430bb4b941\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_0bbca624e8",
+      "actorId": "actor_0bbca624e8",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Content Generation Agent",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_81661e9ccd",
+      "actorId": "actor_81661e9ccd",
+      "type": "NodeTransform",
+      "label": "Prompt: Content Generation Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Content Generation Agent.\nconst __promptValue = ($json.instruction);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_aa18953b2b",
+      "actorId": "actor_aa18953b2b",
+      "type": "NodeTransform",
+      "label": "Params: Save as Draft",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(String.prototype, { toSnakeCase() { return this.replace(/([a-z])([A-Z])/g, '$1_$2').replace(/[^A-Za-z0-9]+/g, '_').toLowerCase(); } });\n// Params for wordpress/WORDPRESS_CREATE_POST (n8n node \"Save as Draft\").\nreturn {\n  \"title\": ($json.title),\n  \"content\": ($json.body),\n  \"status\": \"draft\",\n  \"slug\": ($json.title.toSnakeCase()),\n};"
+      }
+    },
+    {
+      "nodeId": "node_365b92f01f",
+      "actorId": "actor_365b92f01f",
+      "type": "NodeCdeConnector",
+      "label": "wordpress/WORDPRESS_CREATE_POST",
+      "color": "#6366F1",
+      "position": {
+        "x": 7680,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "wordpress",
+        "connectorLabel": "WordPress",
+        "action": "WORDPRESS_CREATE_POST"
+      }
+    },
+    {
+      "nodeId": "node_91e3cbeccb",
+      "actorId": "actor_91e3cbeccb",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 8060,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_4f549d94dc",
+      "actorId": "actor_4f549d94dc",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": ""
+      }
+    },
+    {
+      "nodeId": "node_51b17b4990",
+      "actorId": "actor_51b17b4990",
+      "type": "NodeChatModel",
+      "label": "Extract Article URLs: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    },
+    {
+      "nodeId": "node_e8d171d3a6",
+      "actorId": "actor_e8d171d3a6",
+      "type": "NodeChatModel",
+      "label": "Extract Article Content: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3120,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    },
+    {
+      "nodeId": "node_5c2a7e572f",
+      "actorId": "actor_5c2a7e572f",
+      "type": "NodeChatModel",
+      "label": "Capture Existing Article Structure: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4640,
+        "y": 720
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    },
+    {
+      "nodeId": "node_a87996224f",
+      "actorId": "actor_a87996224f",
+      "type": "NodeChatModel",
+      "label": "Extract Voice Characteristics: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 4640,
+        "y": 980
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    },
+    {
+      "nodeId": "node_c0e43ccf5b",
+      "actorId": "actor_c0e43ccf5b",
+      "type": "NodeTransform",
+      "label": "Extract Voice Characteristics: array output",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 1280
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// LLMChain validates an object; preserve the original array output.\nreturn source.items;"
+      }
+    },
+    {
+      "nodeId": "node_6fd4a068b4",
+      "actorId": "actor_6fd4a068b4",
+      "type": "NodeChatModel",
+      "label": "Content Generation Agent: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 6920,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_d3aa781fe5",
+      "target": "node_6878996904",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_66b7690f98",
+      "target": "node_79f39cd40c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_cfc3ec4ce9",
+      "target": "node_04736c2221",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_6325d8c158",
+      "target": "node_c3c2763372",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_430bb4b941",
+      "target": "node_0bbca624e8",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_430bb4b941",
+      "target": "node_0bbca624e8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_0bbca624e8",
+      "target": "node_81661e9ccd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_81661e9ccd",
+      "target": "node_34fa4bcb47",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_aa18953b2b",
+      "target": "node_365b92f01f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_aa18953b2b",
+      "target": "node_365b92f01f",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_badb66471a",
+      "target": "node_7ea896f97b",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_c0e43ccf5b",
+      "target": "node_bd26ec3906",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_7ea896f97b",
+      "target": "node_d3aa781fe5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7ea896f97b",
+      "target": "node_d3aa781fe5",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fb78c5798e",
+      "target": "node_66b7690f98",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fb78c5798e",
+      "target": "node_66b7690f98",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6878996904",
+      "target": "node_58f1355db7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6878996904",
+      "target": "node_58f1355db7",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_58f1355db7",
+      "target": "node_22432ef936",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_58f1355db7",
+      "target": "node_22432ef936",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_22432ef936",
+      "target": "node_fb78c5798e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_79f39cd40c",
+      "target": "node_326eb2d3d3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_79f39cd40c",
+      "target": "node_326eb2d3d3",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7cc04441c8",
+      "target": "node_cfc3ec4ce9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7cc04441c8",
+      "target": "node_cfc3ec4ce9",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7cc04441c8",
+      "target": "node_6325d8c158",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7cc04441c8",
+      "target": "node_6325d8c158",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bd26ec3906",
+      "target": "node_ce406a9e5c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bd26ec3906",
+      "target": "node_ce406a9e5c",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_04736c2221",
+      "target": "node_bd26ec3906",
+      "sourceOutput": "text",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_326eb2d3d3",
+      "target": "node_7cc04441c8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_326eb2d3d3",
+      "target": "node_7cc04441c8",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_34fa4bcb47",
+      "target": "node_aa18953b2b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_34fa4bcb47",
+      "target": "node_aa18953b2b",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ce406a9e5c",
+      "target": "node_430bb4b941",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ce406a9e5c",
+      "target": "node_430bb4b941",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ce406a9e5c",
+      "target": "node_81661e9ccd",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_365b92f01f",
+      "target": "node_91e3cbeccb",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_51b17b4990",
+      "target": "node_6878996904",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_e8d171d3a6",
+      "target": "node_79f39cd40c",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_5c2a7e572f",
+      "target": "node_04736c2221",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_a87996224f",
+      "target": "node_c3c2763372",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_c3c2763372",
+      "target": "node_c0e43ccf5b",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c3c2763372",
+      "target": "node_c0e43ccf5b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6fd4a068b4",
+      "target": "node_34fa4bcb47",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "wordpress",
+    "categoryLabel": "WordPress",
+    "department": "Marketing/Content",
+    "connectors": [
+      "openai",
+      "wordpress"
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeSync",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 18,
+      "yantraSteps": 29,
+      "foldedHelpers": [
+        "OpenAI Chat Model2",
+        "OpenAI Chat Model",
+        "OpenAI Chat Model1"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "WordPress/Automate Blog Creation in Brand Voice with AI.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Connect the openai connector (credential).",
+      "Connect the wordpress connector (credential).",
+      "Provide run inputs: llm_system_430bb4b941."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Extract Article URLs",
+          "n8n": "html.extractHtmlContent",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Extract Article Content",
+          "n8n": "html.extractHtmlContent",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Markdown",
+          "n8n": "markdown.markdownToHtml",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model2",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Capture Existing Article Structure"
+        },
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Extract Voice Characteristics"
+        },
+        {
+          "node": "OpenAI Chat Model1",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Content Generation Agent"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "\"Extract Article URLs\" (html.extractHtmlContent): CSS selectors become a structured-output LLM extract; verify results on a real page.",
+        "\"Extract Article URLs\" extracted HTML with CSS selectors; on Yantra a structured-output step reads the page instead. Check the result on a real page, and trim very large pages before this step.",
+        "\"Extract Article Content\" (html.extractHtmlContent): CSS selectors become a structured-output LLM extract; verify results on a real page.",
+        "\"Extract Article Content\" extracted HTML with CSS selectors; on Yantra a structured-output step reads the page instead. Check the result on a real page, and trim very large pages before this step.",
+        "\"Markdown\" (markdown.markdownToHtml): Markdown to HTML is a minimal converter on Yantra.",
+        "\"Markdown\": Markdown to HTML is a minimal converter on Yantra; swap in a connector if you need full fidelity.",
+        "\"Article Style & Brand Voice\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect wordpress: `cdecli credential create -n \"wordpress\" -p wordpress --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## 1. Import Existing Content\n[Read more about the HTML node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.html/)\n\nFirst, we'll need to gather existing content for the brand voice we want to replicate. This content can be blogs, social media posts or internal documents - the idea is to use this content to \"train\" our AI to produce content from the provided examples. One call out is that the quality and consistency of the content is important to get the desired results.\n\nIn this demonstration, we'll grab the latest blog posts off a corporate blog to use as an example. Since, the blog articles are likely consistent because of the source and narrower focus of the medium, it'll serve well to showcase this workflow.",
+      "## 2. Convert HTML to Markdown\n[Learn more about the Markdown node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.markdown)\n\nMarkdown is a great way to optimise the article data we're sending to the LLM because it reduces the amount of tokens required but keeps all relevant writing structure information.\n\nAlso useful to get Markdown output as a response because typically it's the format authors will write in.",
+      "## 3. Using AI to Analyse Article Structure and Writing Styles\n[Read more about the Basic LLM Chain node](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.chainllm)\n\nOur approach is to first perform a high-level analysis of all available articles in order to replicate their content layout and writing styles. This will act as a guideline to help the AI to structure our future articles.",
+      "## 4. Using AI to Extract Voice Characteristics and Traits\n[Read more about the Information Extractor node](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.information-extractor/)\n\nSecond, we'll use AI to analysis the brand voice characteristics of the previous articles. This picks out the tone, style and choice of language used and identifies them into categories. These categories will be used as guidelines for the AI to keep the future article consistent in tone and voice.",
+      "## 5. Automate On-Brand Articles Using AI\n[Read more about the Information Extractor node](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.information-extractor)\n\nFinally with this approach, we can feed both content and voice guidelines into our final LLM - our content generation agent - to produce any number of on-brand articles, social media posts etc.\n\nWhen it comes to assessing the output, note the AI does a pretty good job at simulating format and reusing common phrases and wording for the target article. However, this could become repetitive very quickly! Whilst AI can help speed up the process, a human touch may still be required to add a some variety.",
+      "## 6. Save Draft to Wordpress\n[Learn more about the Wordpress node](https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.wordpress/)\n\nTo close out the template, we'll simple save our generated article as a draft which could allow human team members to review and validate the article before publishing.",
+      "### Q. Do I need to analyse Brand Voice for every article?\nA. No! I would recommend storing the results of the AI's analysis and re-use for a list of planned articles rather than generate anew every time.",
+      "### Q. Can I use other media than blog articles?\nA. Yes! This approach can use other source materials such as PDFs, as long as they can be produces in a text format to give to the LLM.",
+      "## Try It Out!\n### This n8n template demonstrates how to use AI to generate new on-brand written content by analysing previously published content.\n\nWith such an approach, it's possible to generate a steady stream of blog article drafts quickly with high consistency with your brand and existing content.\n\n### How it works\n* In this demonstration, the n8n.io blog is used as the source of existing published content and 5 of the latest articles are imported via the HTTP node.\n* The HTML node is extract the article bodies which are then converted to markdown for our LLMs.\n* We use LLM nodes to (1) understand the article structure and writing style and (2) identify the brand voice characteristics used in the posts.\n* These are then used as guidelines in our final LLM node when generating new articles.\n* Finally, a draft is saved to Wordpress for human editors to review or use as starting point for their own articles.\n\n### How to use\n* Update Step 1 to fetch data from your desired blog or change to fetch existing content in a different way.\n* Update Step 5 to provide your new article instruction. For optimal output, theme topics relevant to your brand.\n\n\n### Need Help?\nJoin the [Discord](https://discord.com/invite/XPKeKXeB7d) or ask in the [Forum](https://community.n8n.io/)!\n\nHappy Hacking!"
+    ],
+    "nodes": {
+      "node_badb66471a": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_7ea896f97b": {
+        "n8n": "Get Blog",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_6878996904": {
+        "n8n": "Extract Article URLs",
+        "n8nType": "n8n-nodes-base.html"
+      },
+      "node_d3aa781fe5": {
+        "n8n": "Extract Article URLs",
+        "n8nType": "n8n-nodes-base.html"
+      },
+      "node_58f1355db7": {
+        "n8n": "Split Out URLs",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_22432ef936": {
+        "n8n": "Latest Articles",
+        "n8nType": "n8n-nodes-base.limit"
+      },
+      "node_fb78c5798e": {
+        "n8n": "Get Article",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_79f39cd40c": {
+        "n8n": "Extract Article Content",
+        "n8nType": "n8n-nodes-base.html"
+      },
+      "node_66b7690f98": {
+        "n8n": "Extract Article Content",
+        "n8nType": "n8n-nodes-base.html"
+      },
+      "node_326eb2d3d3": {
+        "n8n": "Markdown",
+        "n8nType": "n8n-nodes-base.markdown"
+      },
+      "node_7cc04441c8": {
+        "n8n": "Combine Articles",
+        "n8nType": "n8n-nodes-base.aggregate"
+      },
+      "node_04736c2221": {
+        "n8n": "Capture Existing Article Structure",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_cfc3ec4ce9": {
+        "n8n": "Capture Existing Article Structure",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_c3c2763372": {
+        "n8n": "Extract Voice Characteristics",
+        "n8nType": "@n8n/n8n-nodes-langchain.informationExtractor"
+      },
+      "node_6325d8c158": {
+        "n8n": "Extract Voice Characteristics",
+        "n8nType": "@n8n/n8n-nodes-langchain.informationExtractor"
+      },
+      "node_bd26ec3906": {
+        "n8n": "Article Style & Brand Voice",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_ce406a9e5c": {
+        "n8n": "New Article Instruction",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_34fa4bcb47": {
+        "n8n": "Content Generation Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.informationExtractor"
+      },
+      "node_430bb4b941": {
+        "n8n": "Content Generation Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.informationExtractor"
+      },
+      "node_0bbca624e8": {
+        "n8n": "Content Generation Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.informationExtractor"
+      },
+      "node_81661e9ccd": {
+        "n8n": "Content Generation Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.informationExtractor"
+      },
+      "node_aa18953b2b": {
+        "n8n": "Save as Draft",
+        "n8nType": "n8n-nodes-base.wordpress"
+      },
+      "node_365b92f01f": {
+        "n8n": "Save as Draft",
+        "n8nType": "n8n-nodes-base.wordpress"
+      },
+      "node_91e3cbeccb": {
+        "n8n": "__end:Save as Draft",
+        "n8nType": "synthetic"
+      },
+      "node_4f549d94dc": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_51b17b4990": {
+        "n8n": "Extract Article URLs",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_e8d171d3a6": {
+        "n8n": "Extract Article Content",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_5c2a7e572f": {
+        "n8n": "Capture Existing Article Structure",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_a87996224f": {
+        "n8n": "Extract Voice Characteristics",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_c0e43ccf5b": {
+        "n8n": "Extract Voice Characteristics",
+        "n8nType": "synthetic",
+        "role": "llm-chain-array"
+      },
+      "node_6fd4a068b4": {
+        "n8n": "Content Generation Agent",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

@@ -1,0 +1,1231 @@
+{
+  "name": "B2B Demo Lead Rescue Desk - Enrich, Score, Route, and Escalate",
+  "workflowSlug": "b2b-demo-lead-rescue-desk-enrich-score-route-and-escalate",
+  "description": "Receives website leads by webhook, validates contact data, enriches page context, scores and routes each lead, logs the audit trail in Google Sheets, and sends tiered Gmail alerts with an executive SLA escalation path.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_ef5ad97f10",
+      "actorId": "actor_ef5ad97f10",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_a10a179fc9",
+      "actorId": "actor_a10a179fc9",
+      "type": "NodeTransform",
+      "label": "Normalize, Score, and Assign Owner",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Ported from n8n Code node \"Normalize, Score, and Assign Owner\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const body = $json.body || $json;\n  const pick = (...keys) => {\n    for (const key of keys) {\n      const value = body[key] ?? $json[key];\n      if (value !== undefined && value !== null && String(value).trim() !== '') return String(value).trim();\n    }\n    return '';\n  };\n  const lead = {\n    received_at: new Date().toISOString(),\n    name: pick('name', 'full_name', 'contact_name'),\n    email: pick('email', 'work_email', 'business_email').toLowerCase(),\n    phone: pick('phone', 'mobile', 'tel'),\n    company: pick('company', 'organization', 'account'),\n    role: pick('role', 'job_title', 'title'),\n    message: pick('message', 'details', 'project', 'notes'),\n    budget: pick('budget', 'estimated_budget'),\n    timeline: pick('timeline', 'requested_timeline', 'deadline'),\n    page_url: pick('page_url', 'url', 'landing_page', 'referrer'),\n    source: pick('source', 'utm_source') || 'website',\n    utm_campaign: pick('utm_campaign'),\n  };\n  const text = `${lead.message} ${lead.budget} ${lead.timeline} ${lead.page_url}`.toLowerCase();\n  const tags = [];\n  const tagIf = (condition, tag) => { if (condition) tags.push(tag); };\n  tagIf(/demo|book|call|meeting|trial/.test(text), 'demo_request');\n  tagIf(/pricing|quote|proposal|budget|cost|estimate/.test(text), 'commercial_intent');\n  tagIf(/urgent|asap|today|tomorrow|this week|deadline/.test(text), 'time_sensitive');\n  tagIf(/integration|api|crm|hubspot|salesforce|zapier|make|n8n|workflow|automation/.test(text), 'integration_need');\n  tagIf(/migration|broken|not working|failed|stuck|error/.test(text), 'rescue_need');\n  tagIf(/enterprise|security|compliance|sso|soc2|procurement/.test(text), 'enterprise_process');\n  const contactScore = lead.email.includes('@') ? 20 : (lead.phone.length >= 7 ? 12 : 0);\n  const companyScore = lead.company ? 10 : 0;\n  const roleScore = /founder|owner|ceo|cto|vp|director|head|ops|operations|revops|sales/i.test(lead.role) ? 10 : 0;\n  const budgetScore = lead.budget ? (/\\$|£|€|k|budget|approved/i.test(lead.budget) ? 18 : 8) : 0;\n  const tagScore = Math.min(42, tags.length * 7);\n  const score = Math.min(100, contactScore + companyScore + roleScore + budgetScore + tagScore + (lead.page_url ? 5 : 0));\n  lead.intent_tags = tags.join(', ') || 'general_inquiry';\n  lead.lead_score = score;\n  lead.priority = score >= 72 ? 'hot' : score >= 42 ? 'review' : 'normal';\n  lead.sla_minutes = score >= 72 ? 15 : score >= 42 ? 240 : 1440;\n  lead.owner_team = /integration|api|workflow|automation|crm|hubspot|salesforce|make|n8n/.test(text) ? 'automation_ops' : 'sales';\n  lead.needs_exec_escalation = score >= 82 || /enterprise|procurement|security|sso|soc2/.test(text);\n  lead.dedupe_key = `${lead.email || lead.phone || 'unknown'}:${lead.company || 'no-company'}:${lead.page_url || lead.source}`.toLowerCase().replace(/\\s+/g, '-');\n  lead.missing_contact = !(lead.email.includes('@') || lead.phone.length >= 7);\n  return [{ json: lead }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_508c3164b3",
+      "actorId": "actor_508c3164b3",
+      "type": "NodeTransform",
+      "label": "Has Usable Contact?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((Boolean(($json.missing_contact === false)) === Boolean(true)));"
+      }
+    },
+    {
+      "nodeId": "node_09690ff2a8",
+      "actorId": "actor_09690ff2a8",
+      "type": "NodeBranch",
+      "label": "Has Usable Contact?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_466a1cf242",
+      "actorId": "actor_466a1cf242",
+      "type": "NodeHttpRequest",
+      "label": "Fetch Submitted Page Context",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET"
+      }
+    },
+    {
+      "nodeId": "node_dc5590b9e5",
+      "actorId": "actor_dc5590b9e5",
+      "type": "NodeTransform",
+      "label": "URL: Fetch Submitted Page Context",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request URL for \"Fetch Submitted Page Context\".\nreturn ($json.page_url || \"https://example.com\"\n);"
+      }
+    },
+    {
+      "nodeId": "node_197a67eb12",
+      "actorId": "actor_197a67eb12",
+      "type": "NodeTransform",
+      "label": "Build Missing Contact Response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"ok\"] = ((v) => v === true || v === 'true')(\"{{false}}\");\n  out[\"status\"] = \"needs_contact\";\n  out[\"response_message\"] = \"Please include a work email or phone number so the team can follow up.\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_8f7b7fc84f",
+      "actorId": "actor_8f7b7fc84f",
+      "type": "NodeTransform",
+      "label": "Extract Page Signals",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Lead Intake Webhook\": {{ctx}}, \"Normalize, Score, and Assign Owner\": {{steps.xf_a10a179fc9.result}}, \"Build Missing Contact Response\": {\"status\":\"needs_contact\",\"response_message\":\"Please include a work email or phone number so the team can follow up.\"} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Extract Page Signals\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const lead = $('Normalize, Score, and Assign Owner').item.json;\n  const html = String($json.body || $json.data || '');\n  const title = (html.match(/<title[^>]*>([^<]+)<\\/title>/i)?.[1] || '').replace(/\\s+/g, ' ').trim();\n  const desc = (html.match(/<meta[^>]+name=[\"']description[\"'][^>]+content=[\"']([^\"']+)/i)?.[1] || '').replace(/\\s+/g, ' ').trim();\n  const pageText = `${title} ${desc}`.toLowerCase();\n  const pageTags = [];\n  for (const [term, tag] of [['pricing','pricing_page'], ['demo','demo_page'], ['case study','proof_page'], ['integration','integration_page'], ['contact','contact_page']]) {\n    if (pageText.includes(term)) pageTags.push(tag);\n  }\n  const pageBoost = pageTags.includes('pricing_page') || pageTags.includes('demo_page') ? 8 : pageTags.length ? 3 : 0;\n  const score = Math.min(100, Number(lead.lead_score || 0) + pageBoost);\n  return [{ json: { ...lead, page_title: title, page_description: desc, page_signal_tags: pageTags.join(', '), lead_score: score, priority: score >= 72 ? 'hot' : score >= 42 ? 'review' : 'normal', sla_minutes: score >= 72 ? 15 : score >= 42 ? 240 : 1440 } }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_d76be777dc",
+      "actorId": "actor_d76be777dc",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_92abb37c87",
+      "actorId": "actor_92abb37c87",
+      "type": "NodeTransform",
+      "label": "Build Audit Row",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"received_at\"] = ($json.received_at);\n  out[\"priority\"] = ($json.priority);\n  out[\"lead_score\"] = Number(($json.lead_score));\n  out[\"sla_minutes\"] = Number(($json.sla_minutes));\n  out[\"owner_team\"] = ($json.owner_team);\n  out[\"intent_tags\"] = ($json.intent_tags);\n  out[\"page_signal_tags\"] = ($json.page_signal_tags);\n  out[\"dedupe_key\"] = ($json.dedupe_key);\n  out[\"email\"] = ($json.email);\n  out[\"company\"] = ($json.company);\n  out[\"message\"] = ($json.message);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_fbc0794f12",
+      "actorId": "actor_fbc0794f12",
+      "type": "NodeTransform",
+      "label": "Params: Append Lead Audit Row",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Params for googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND (n8n node \"Append Lead Audit Row\").\nreturn {\n  \"spreadsheetId\": \"{{replaceWithSpreadsheetId}}\",\n  \"range\": \"Leads\",\n  \"values\": ($input.all().map((i) => Object.values(i.json ?? {}))),\n  \"valueInputOption\": \"USER_ENTERED\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_f4eaff09fe",
+      "actorId": "actor_f4eaff09fe",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Sheets",
+        "action": "GOOGLESUPER_SPREADSHEETS_VALUES_APPEND"
+      }
+    },
+    {
+      "nodeId": "node_0699087d6d",
+      "actorId": "actor_0699087d6d",
+      "type": "NodeTransform",
+      "label": "Route by Priority: rule 1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.priority) ?? '') === String(\"hot\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_817fa233d8",
+      "actorId": "actor_817fa233d8",
+      "type": "NodeBranch",
+      "label": "Route by Priority: rule 1?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_65133e3a53",
+      "actorId": "actor_65133e3a53",
+      "type": "NodeTransform",
+      "label": "Route by Priority: rule 2",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.priority) ?? '') === String(\"review\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_d3a6cee7d8",
+      "actorId": "actor_d3a6cee7d8",
+      "type": "NodeBranch",
+      "label": "Route by Priority: rule 2?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_17650bfb0d",
+      "actorId": "actor_17650bfb0d",
+      "type": "NodeTransform",
+      "label": "Build Hot Lead Alert",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"email_subject\"] = (`[HOT ${$json.lead_score}] ${$json.company || $json.name || $json.email} - ${$json.intent_tags}`);\n  out[\"email_body\"] = (`SLA: ${$json.sla_minutes} minutes\\nOwner: ${$json.owner_team}\\nTags: ${$json.intent_tags}\\nPage: ${$json.page_url}\\nPage signals: ${$json.page_signal_tags}\\nBudget: ${$json.budget}\\nTimeline: ${$json.timeline}\\nMessage: ${$json.message}\\nDedupe: ${$json.dedupe_key}`);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_08d61e2554",
+      "actorId": "actor_08d61e2554",
+      "type": "NodeTransform",
+      "label": "Build Review Queue Alert",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"email_subject\"] = (`[REVIEW ${$json.lead_score}] ${$json.company || $json.name || $json.email}`);\n  out[\"email_body\"] = (`Review today. Tags: ${$json.intent_tags}\\nOwner: ${$json.owner_team}\\nMessage: ${$json.message}\\nDedupe: ${$json.dedupe_key}`);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_1ac0118acc",
+      "actorId": "actor_1ac0118acc",
+      "type": "NodeTransform",
+      "label": "Build Normal Lead Note",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"email_subject\"] = (`[NORMAL ${$json.lead_score}] ${$json.company || $json.email}`);\n  out[\"email_body\"] = (`Next business day follow-up. Tags: ${$json.intent_tags}\\nMessage: ${$json.message}`);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_2ac178982c",
+      "actorId": "actor_2ac178982c",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 5020,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_SEND_EMAIL",
+        "params": {
+          "recipient_email": "{{recipientEmail}}",
+          "subject": "{{last.transformed.email_subject}}",
+          "body": "{{last.transformed.email_body}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_7ccdcbb449",
+      "actorId": "actor_7ccdcbb449",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_SEND_EMAIL",
+        "params": {
+          "recipient_email": "{{recipientEmail2}}",
+          "subject": "{{last.transformed.email_subject}}",
+          "body": "{{last.transformed.email_body}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_10f5fa873a",
+      "actorId": "actor_10f5fa873a",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 5780,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_SEND_EMAIL",
+        "params": {
+          "recipient_email": "{{recipientEmail3}}",
+          "subject": "{{last.transformed.email_subject}}",
+          "body": "{{last.transformed.email_body}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_95b3ce701d",
+      "actorId": "actor_95b3ce701d",
+      "type": "NodeTransform",
+      "label": "Needs Executive Escalation?: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((Boolean((Boolean($json.needs_exec_escalation))) === Boolean(true)));"
+      }
+    },
+    {
+      "nodeId": "node_2af1354258",
+      "actorId": "actor_2af1354258",
+      "type": "NodeBranch",
+      "label": "Needs Executive Escalation?: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5780,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_c04bc7ca21",
+      "actorId": "actor_c04bc7ca21",
+      "type": "NodeTransform",
+      "label": "Params: Send Executive Escalation",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for googlesuper/GOOGLESUPER_SEND_EMAIL (n8n node \"Send Executive Escalation\").\nreturn {\n  \"recipient_email\": \"leadership@example.com\",\n  \"subject\": (`[EXEC ESCALATION] ${$json.company || $json.email} - score ${$json.lead_score}`),\n  \"body\": (`Enterprise/high-score lead needs fast review.\\nOwner: ${$json.owner_team}\\nTags: ${$json.intent_tags}\\nBudget: ${$json.budget}\\nTimeline: ${$json.timeline}\\nMessage: ${$json.message}`),\n};"
+      }
+    },
+    {
+      "nodeId": "node_18e966dd3f",
+      "actorId": "actor_18e966dd3f",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_SEND_EMAIL"
+      }
+    },
+    {
+      "nodeId": "node_5ba74daf9b",
+      "actorId": "actor_5ba74daf9b",
+      "type": "NodeTransform",
+      "label": "Build Success Response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"ok\"] = ((v) => v === true || v === 'true')(\"{{true}}\");\n  out[\"status\"] = ($json.priority);\n  out[\"score\"] = Number(($json.lead_score));\n  out[\"sla_minutes\"] = Number(($json.sla_minutes));\n  out[\"owner_team\"] = ($json.owner_team);\n  out[\"dedupe_key\"] = ($json.dedupe_key);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_4affaf58d4",
+      "actorId": "actor_4affaf58d4",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_6fcdb09880",
+      "actorId": "actor_6fcdb09880",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {},
+          "replaceWithSpreadsheetId": "",
+          "recipientEmail": "",
+          "recipientEmail2": "",
+          "recipientEmail3": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_508c3164b3",
+      "target": "node_09690ff2a8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_508c3164b3",
+      "target": "node_09690ff2a8",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_dc5590b9e5",
+      "target": "node_466a1cf242",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_dc5590b9e5",
+      "target": "node_466a1cf242",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_fbc0794f12",
+      "target": "node_f4eaff09fe",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_fbc0794f12",
+      "target": "node_f4eaff09fe",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_0699087d6d",
+      "target": "node_817fa233d8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_0699087d6d",
+      "target": "node_817fa233d8",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_817fa233d8",
+      "target": "node_65133e3a53",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_65133e3a53",
+      "target": "node_d3a6cee7d8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_65133e3a53",
+      "target": "node_d3a6cee7d8",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_95b3ce701d",
+      "target": "node_2af1354258",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_95b3ce701d",
+      "target": "node_2af1354258",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_c04bc7ca21",
+      "target": "node_18e966dd3f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_c04bc7ca21",
+      "target": "node_18e966dd3f",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ef5ad97f10",
+      "target": "node_a10a179fc9",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a10a179fc9",
+      "target": "node_508c3164b3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a10a179fc9",
+      "target": "node_508c3164b3",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_09690ff2a8",
+      "target": "node_dc5590b9e5",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a10a179fc9",
+      "target": "node_dc5590b9e5",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_09690ff2a8",
+      "target": "node_197a67eb12",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a10a179fc9",
+      "target": "node_197a67eb12",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_197a67eb12",
+      "target": "node_d76be777dc",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_466a1cf242",
+      "target": "node_8f7b7fc84f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_466a1cf242",
+      "target": "node_8f7b7fc84f",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8f7b7fc84f",
+      "target": "node_92abb37c87",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8f7b7fc84f",
+      "target": "node_92abb37c87",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_92abb37c87",
+      "target": "node_fbc0794f12",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_92abb37c87",
+      "target": "node_fbc0794f12",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f4eaff09fe",
+      "target": "node_0699087d6d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f4eaff09fe",
+      "target": "node_0699087d6d",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f4eaff09fe",
+      "target": "node_65133e3a53",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_817fa233d8",
+      "target": "node_17650bfb0d",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f4eaff09fe",
+      "target": "node_17650bfb0d",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d3a6cee7d8",
+      "target": "node_08d61e2554",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f4eaff09fe",
+      "target": "node_08d61e2554",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d3a6cee7d8",
+      "target": "node_1ac0118acc",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f4eaff09fe",
+      "target": "node_1ac0118acc",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_17650bfb0d",
+      "target": "node_2ac178982c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_2ac178982c",
+      "target": "node_95b3ce701d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2ac178982c",
+      "target": "node_95b3ce701d",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_08d61e2554",
+      "target": "node_7ccdcbb449",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_7ccdcbb449",
+      "target": "node_5ba74daf9b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7ccdcbb449",
+      "target": "node_5ba74daf9b",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1ac0118acc",
+      "target": "node_10f5fa873a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_10f5fa873a",
+      "target": "node_5ba74daf9b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_10f5fa873a",
+      "target": "node_5ba74daf9b",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2af1354258",
+      "target": "node_c04bc7ca21",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2ac178982c",
+      "target": "node_c04bc7ca21",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2af1354258",
+      "target": "node_5ba74daf9b",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2ac178982c",
+      "target": "node_5ba74daf9b",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_18e966dd3f",
+      "target": "node_5ba74daf9b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_18e966dd3f",
+      "target": "node_5ba74daf9b",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5ba74daf9b",
+      "target": "node_4affaf58d4",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "google-drive-and-sheets",
+    "categoryLabel": "Google Drive and Google Sheets",
+    "department": "Sales/Ops",
+    "connectors": [
+      "googlesuper"
+    ],
+    "setupVars": [
+      {
+        "key": "replaceWithSpreadsheetId",
+        "label": "Replace With Spreadsheet Id",
+        "type": "id",
+        "usedBy": [
+          "Append Lead Audit Row"
+        ]
+      },
+      {
+        "key": "recipientEmail",
+        "label": "Recipient email address",
+        "type": "email",
+        "example": "you@example.com",
+        "usedBy": [
+          "Send Hot Lead Gmail Alert"
+        ]
+      },
+      {
+        "key": "recipientEmail2",
+        "label": "Recipient email address",
+        "type": "email",
+        "example": "you@example.com",
+        "usedBy": [
+          "Send Review Queue Gmail Alert"
+        ]
+      },
+      {
+        "key": "recipientEmail3",
+        "label": "Recipient email address",
+        "type": "email",
+        "example": "you@example.com",
+        "usedBy": [
+          "Send Normal Lead Gmail Alert"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 20,
+      "yantraSteps": 26,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "Google_Drive_and_Google_Sheets/B2B Demo Lead Rescue Desk - Enrich Score Route and Escalate.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "B2B Demo Lead Rescue Desk: Enrich, Score, Route, and SLA Escalate"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Lead Intake Webhook",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Lead Intake Webhook\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value replaceWithSpreadsheetId: Replace With Spreadsheet Id. Write it into the Workflow Configs initialContext before import.",
+      "Setup value recipientEmail: Recipient email address (for example you@example.com). Write it into the Workflow Configs initialContext before import.",
+      "Setup value recipientEmail2: Recipient email address (for example you@example.com). Write it into the Workflow Configs initialContext before import.",
+      "Setup value recipientEmail3: Recipient email address (for example you@example.com). Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "Provide run inputs: body, query, headers, false, true."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Append Lead Audit Row",
+          "n8n": "sheet.append.autoMap",
+          "action": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Lead Intake Webhook",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /b2b-demo-lead-rescue). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "\"Append Lead Audit Row\" mapped columns automatically; here each item's fields are appended in their own order, so keep them in the same order as the sheet's header row.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## B2B Demo Lead Rescue Desk: Enrich, Score, Route, and SLA Escalate\n\n### How it works\n\nThis workflow receives website demo, quote, and integration leads, normalizes inconsistent form payloads, enriches the submitted page context, scores buyer intent, assigns an SLA and owner, logs the lead to Google Sheets, routes Gmail alerts, and returns a structured webhook response.\n\n### Setup steps\n\n- Configure the Lead Intake Webhook URL in your website form or lead capture tool.\n- Replace placeholder Google Sheets credentials, sheet ID, and recipient Gmail addresses.\n- Test with one hot lead, one review lead, one normal lead, and one missing-contact payload.\n- Confirm SLA buckets, owner team routing, dedupe keys, and escalation terms match your sales process.\n\n### Customization\n\nAdjust scoring keywords, budget/timeline rules, recipient lists, and executive escalation thresholds to match your actual sales handoff.",
+      "## Receive and validate lead\n\nAccepts the incoming website lead webhook, normalizes common form field variants, scores contact quality, and rejects submissions that do not include a usable reply path.",
+      "## Score and audit lead\n\nFetches submitted-page context, extracts title and meta signals, combines page intent with message, budget, timeline, and integration keywords, builds a dedupe key, and appends a complete audit row to Google Sheets.",
+      "## Reject missing contact\n\nBuilds a clear missing-contact response and returns it through the webhook branch before the workflow spends time on enrichment, Sheets logging, or alerts.",
+      "## Evaluate routing decisions\n\nRoutes hot, review, and normal leads to different alert payloads, then checks whether high-priority leads also need executive escalation.",
+      "## Send alerts and response\n\nBuilds Gmail-ready messages for hot leads, review-queue leads, normal leads, and executive escalations, then returns a clean success payload to the website webhook caller."
+    ],
+    "nodes": {
+      "node_ef5ad97f10": {
+        "n8n": "Lead Intake Webhook",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_a10a179fc9": {
+        "n8n": "Normalize, Score, and Assign Owner",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_508c3164b3": {
+        "n8n": "Has Usable Contact?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_09690ff2a8": {
+        "n8n": "Has Usable Contact?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_466a1cf242": {
+        "n8n": "Fetch Submitted Page Context",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_dc5590b9e5": {
+        "n8n": "Fetch Submitted Page Context",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_197a67eb12": {
+        "n8n": "Build Missing Contact Response",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_8f7b7fc84f": {
+        "n8n": "Extract Page Signals",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_d76be777dc": {
+        "n8n": "Respond Missing Contact",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_92abb37c87": {
+        "n8n": "Build Audit Row",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_fbc0794f12": {
+        "n8n": "Append Lead Audit Row",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_f4eaff09fe": {
+        "n8n": "Append Lead Audit Row",
+        "n8nType": "n8n-nodes-base.googleSheets"
+      },
+      "node_0699087d6d": {
+        "n8n": "Route by Priority",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_817fa233d8": {
+        "n8n": "Route by Priority",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_65133e3a53": {
+        "n8n": "Route by Priority",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_d3a6cee7d8": {
+        "n8n": "Route by Priority",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_17650bfb0d": {
+        "n8n": "Build Hot Lead Alert",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_08d61e2554": {
+        "n8n": "Build Review Queue Alert",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_1ac0118acc": {
+        "n8n": "Build Normal Lead Note",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_2ac178982c": {
+        "n8n": "Send Hot Lead Gmail Alert",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_7ccdcbb449": {
+        "n8n": "Send Review Queue Gmail Alert",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_10f5fa873a": {
+        "n8n": "Send Normal Lead Gmail Alert",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_95b3ce701d": {
+        "n8n": "Needs Executive Escalation?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_2af1354258": {
+        "n8n": "Needs Executive Escalation?",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_c04bc7ca21": {
+        "n8n": "Send Executive Escalation",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_18e966dd3f": {
+        "n8n": "Send Executive Escalation",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_5ba74daf9b": {
+        "n8n": "Build Success Response",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_4affaf58d4": {
+        "n8n": "Respond Success",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_6fcdb09880": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

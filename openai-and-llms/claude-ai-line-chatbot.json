@@ -1,0 +1,445 @@
+{
+  "name": "Claude AI LINE Chatbot",
+  "workflowSlug": "claude-ai-line-chatbot",
+  "description": "Connects LINE messaging to Anthropic Claude AI. Receives LINE webhook, generates contextual reply with Claude, and sends response back to LINE user.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_45d8731d94",
+      "actorId": "actor_45d8731d94",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_57b19610ae",
+      "actorId": "actor_57b19610ae",
+      "type": "NodeTransform",
+      "label": "Extract Message",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Extract Message\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Validate LINE signature and extract message\n  const body = $input.first().json;\n  const events = body.events || [];\n  \n  const textEvent = events.find(\n    e => e.type === 'message' && e.message?.type === 'text'\n  );\n  \n  if (!textEvent) {\n    // Non-text event (sticker, image, etc.) - skip\n    return [];\n  }\n  \n  return [{\n    json: {\n      userId: textEvent.source.userId,\n      replyToken: textEvent.replyToken,\n      userMessage: textEvent.message.text\n    }\n  }];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_fe3d87f0d0",
+      "actorId": "actor_fe3d87f0d0",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_3eac28f56e",
+      "actorId": "actor_3eac28f56e",
+      "type": "NodeLlmChain",
+      "label": "Ask Claude",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{llm_system_e60179b7f8}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_e60179b7f8",
+      "actorId": "actor_e60179b7f8",
+      "type": "NodeTransform",
+      "label": "System: Ask Claude",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: Ask Claude.\nconst __promptValue = (() => { const __b = (() => { const __v = `{\n  \"model\": \"claude-opus-4-5\",\n  \"max_tokens\": 500,\n  \"system\": \"You are a helpful assistant. Reply concisely in the same language the user writes in.\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"${$json.userMessage}\"\n    }\n  ]\n}`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn __t(__b.system); })();\nreturn { \"llm_system_e60179b7f8\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_15f1a862fb",
+      "actorId": "actor_15f1a862fb",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Ask Claude",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_c86bcf3d56",
+      "actorId": "actor_c86bcf3d56",
+      "type": "NodeTransform",
+      "label": "Prompt: Ask Claude",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Ask Claude.\nconst __promptValue = (() => { const __b = (() => { const __v = `{\n  \"model\": \"claude-opus-4-5\",\n  \"max_tokens\": 500,\n  \"system\": \"You are a helpful assistant. Reply concisely in the same language the user writes in.\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"${$json.userMessage}\"\n    }\n  ]\n}`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn (() => { const u = __b.messages || []; return __b.__raw ?? (u.length === 1 ? __t(u[0].content) : u.map((m) => m.role + ': ' + __t(m.content)).join('\\n\\n')); })(); })();\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_22d1241b0e",
+      "actorId": "actor_22d1241b0e",
+      "type": "NodeHttpRequest",
+      "label": "Reply via LINE",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/reply",
+        "headers": {
+          "Authorization": "Bearer {{lineChannelAccessToken}}",
+          "Content-Type": "application/json"
+        },
+        "body": "{\n  \"replyToken\": \"{{steps.xf_57b19610ae.result.replyToken}}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"{{last.text}}\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "nodeId": "node_c6e2d46456",
+      "actorId": "actor_c6e2d46456",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_bab5e1a30b",
+      "actorId": "actor_bab5e1a30b",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {},
+          "lineChannelAccessToken": {
+            "$workflowSecret": "LINE_CHANNEL_ACCESS_TOKEN"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_45989d8c45",
+      "actorId": "actor_45989d8c45",
+      "type": "NodeChatModel",
+      "label": "Ask Claude: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "anthropic",
+        "model": "claude-opus-4-5",
+        "maxTokens": 500
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_e60179b7f8",
+      "target": "node_15f1a862fb",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_e60179b7f8",
+      "target": "node_15f1a862fb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_15f1a862fb",
+      "target": "node_c86bcf3d56",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c86bcf3d56",
+      "target": "node_3eac28f56e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_45d8731d94",
+      "target": "node_57b19610ae",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_57b19610ae",
+      "target": "node_e60179b7f8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_57b19610ae",
+      "target": "node_e60179b7f8",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_57b19610ae",
+      "target": "node_c86bcf3d56",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3eac28f56e",
+      "target": "node_22d1241b0e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_22d1241b0e",
+      "target": "node_c6e2d46456",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_45989d8c45",
+      "target": "node_3eac28f56e",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "AI/Customer Service",
+    "connectors": [
+      "anthropic"
+    ],
+    "setupSecrets": [
+      {
+        "key": "LINE_CHANNEL_ACCESS_TOKEN",
+        "label": "LINE channel access token",
+        "host": "api.line.me",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "lineChannelAccessToken",
+        "usedBy": [
+          "Reply via LINE"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 5,
+      "yantraSteps": 8,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/Claude AI LINE Chatbot.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "[n8n Template] Claude AI LINE Chatbot"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "missing-required-param",
+        "node": "Ask Claude",
+        "detail": "Chat Model provider anthropic is not supported by the current node catalog"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "LINE Webhook",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Ask Claude\": the original provider \"anthropic\" and model are preserved. Select a supported Chat Model provider and matching model, or add its adapter in Yantra before running.",
+      "\"LINE Webhook\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Workflow secret LINE_CHANNEL_ACCESS_TOKEN: LINE channel access token for api.line.me (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the anthropic connector (credential).",
+      "Provide run inputs: body, query, headers, llm_system_e60179b7f8."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Ask Claude",
+          "n8n": "httpRequest.anthropic.chat",
+          "action": "NodeLlmChain",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "LINE Webhook",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /claude-line-bot). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "\"Ask Claude\" called the Anthropic API (claude-opus-4-5) over HTTP; it now runs on LLMChain with a Chat Model and provider connector credential, and later steps read the answer text instead of the provider's JSON.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [],
+    "nodes": {
+      "node_45d8731d94": {
+        "n8n": "LINE Webhook",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_57b19610ae": {
+        "n8n": "Extract Message",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_fe3d87f0d0": {
+        "n8n": "Return 200",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_3eac28f56e": {
+        "n8n": "Ask Claude",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "llmProvider": "anthropic"
+      },
+      "node_e60179b7f8": {
+        "n8n": "Ask Claude",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_15f1a862fb": {
+        "n8n": "Ask Claude",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_c86bcf3d56": {
+        "n8n": "Ask Claude",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_22d1241b0e": {
+        "n8n": "Reply via LINE",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_c6e2d46456": {
+        "n8n": "__end:Reply via LINE",
+        "n8nType": "synthetic"
+      },
+      "node_bab5e1a30b": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_45989d8c45": {
+        "n8n": "Ask Claude",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

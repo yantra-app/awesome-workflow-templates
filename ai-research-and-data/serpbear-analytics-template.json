@@ -1,0 +1,543 @@
+{
+  "name": "SERPBear analytics template",
+  "workflowSlug": "serpbear-analytics-template",
+  "description": "Summarizes SERPBear data using AI (via Openrouter) and saves the insights to Baserow.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_82c5a148a3",
+      "actorId": "actor_82c5a148a3",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_c8828efea4",
+      "actorId": "actor_c8828efea4",
+      "type": "NodeCron",
+      "label": "Schedule Trigger",
+      "color": "#14B8A6",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "cronExpression": "0 0 * * 1"
+      }
+    },
+    {
+      "nodeId": "node_883fb84b38",
+      "actorId": "actor_883fb84b38",
+      "type": "NodeHttpRequest",
+      "label": "Get data from SerpBear",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://myserpbearinstance.com/api/keyword?id=22&domain=rumjahn.com",
+        "headers": {
+          "Authorization": "{{myserpbearinstanceApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_7a3bc778f4",
+      "actorId": "actor_7a3bc778f4",
+      "type": "NodeTransform",
+      "label": "Parse data from SerpBear",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst items = __items.map((json) => ({ json }));\n// Ported from n8n Code node \"Parse data from SerpBear\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const keywords = items[0].json.keywords;\n  const today = new Date().toISOString().split('T')[0];\n  \n  // Create summary for each keyword\n  const keywordSummaries = keywords.map(kw => {\n   const position = kw.position || 0;\n   const lastWeekPositions = Object.values(kw.history || {}).slice(-7);\n   const avgPosition = lastWeekPositions.reduce((a, b) => a + b, 0) / lastWeekPositions.length;\n   \n   return {\n   keyword: kw.keyword,\n   currentPosition: position,\n   averagePosition: Math.round(avgPosition * 10) / 10,\n   trend: position < avgPosition ? 'improving' : position > avgPosition ? 'declining' : 'stable',\n   url: kw.url || 'not ranking'\n   };\n  });\n  \n  // Create the prompt\n  const prompt = `Here's the SEO ranking data for rumjahn.com as of ${today}:\n  \n  ${keywordSummaries.map(kw => `\n  Keyword: \"${kw.keyword}\"\n  Current Position: ${kw.currentPosition}\n  7-Day Average: ${kw.averagePosition}\n  Trend: ${kw.trend}\n  Ranking URL: ${kw.url}\n  `).join('\\n')}\n  \n  Please analyze this data and provide:\n  1. Key observations about ranking performance\n  2. Keywords showing the most improvement\n  3. Keywords needing attention\n  4. Suggested actions for improvement`;\n  \n  return {\n   prompt\n  };\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_9e9c8c8475",
+      "actorId": "actor_9e9c8c8475",
+      "type": "NodeLlmChain",
+      "label": "Send data to A.I. for analysis",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "{{llm_system_bfec93ca52}}",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_bfec93ca52",
+      "actorId": "actor_bfec93ca52",
+      "type": "NodeTransform",
+      "label": "System: Send data to A.I. for analysis",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: Send data to A.I. for analysis.\nconst __promptValue = (() => { const __b = (() => { const __v = `{\n \"model\": \"meta-llama/llama-3.1-70b-instruct:free\",\n \"messages\": [\n {\n \"role\": \"user\",\n \"content\": \"You are an SEO expert. This is keyword data for my site. Can you summarize the data into a table and then give me some suggestions:${encodeURIComponent($json.prompt)}\" \n }\n ]\n}`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn (__b.messages || []).filter((m) => m?.role === 'system' || m?.role === 'developer').map((m) => __t(m.content)).join('\\n\\n'); })();\nreturn { \"llm_system_bfec93ca52\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_383af77ae8",
+      "actorId": "actor_383af77ae8",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Send data to A.I. for analysis",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_47ce489860",
+      "actorId": "actor_47ce489860",
+      "type": "NodeTransform",
+      "label": "Prompt: Send data to A.I. for analysis",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Send data to A.I. for analysis.\nconst __promptValue = (() => { const __b = (() => { const __v = `{\n \"model\": \"meta-llama/llama-3.1-70b-instruct:free\",\n \"messages\": [\n {\n \"role\": \"user\",\n \"content\": \"You are an SEO expert. This is keyword data for my site. Can you summarize the data into a table and then give me some suggestions:${encodeURIComponent($json.prompt)}\" \n }\n ]\n}`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })();\nconst __t = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map((x) => (typeof x === 'string' ? x : x?.text ?? '')).join('\\n') : c == null ? '' : JSON.stringify(c));\nreturn (() => { const u = (__b.messages || []).filter((m) => m && m.role !== 'system' && m.role !== 'developer'); return __b.__raw ?? (u.length === 1 ? __t(u[0].content) : u.map((m) => m.role + ': ' + __t(m.content)).join('\\n\\n')); })(); })();\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_8e33419ec0",
+      "actorId": "actor_8e33419ec0",
+      "type": "NodeTransform",
+      "label": "Params: Save data to Baserow",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Params for baserow/BASEROW_CREATE_ROW (n8n node \"Save data to Baserow\").\nreturn {\n  \"6264\": (DateTime.now().toFormat('yyyy-MM-dd')),\n  \"6265\": ($json),\n  \"6266\": \"Rumjahn\",\n  \"table_id\": 644,\n};"
+      }
+    },
+    {
+      "nodeId": "node_a0615ce76c",
+      "actorId": "actor_a0615ce76c",
+      "type": "NodeCdeConnector",
+      "label": "baserow/BASEROW_CREATE_ROW",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "baserow",
+        "connectorLabel": "Baserow",
+        "action": "BASEROW_CREATE_ROW"
+      }
+    },
+    {
+      "nodeId": "node_6d42de0473",
+      "actorId": "actor_6d42de0473",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_2411e7ffec",
+      "actorId": "actor_2411e7ffec",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "myserpbearinstanceApiKey": {
+            "$workflowSecret": "MYSERPBEARINSTANCE_API_KEY"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_c9975ce688",
+      "actorId": "actor_c9975ce688",
+      "type": "NodeChatModel",
+      "label": "Send data to A.I. for analysis: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 2360,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openrouter",
+        "model": "meta-llama/llama-3.1-70b-instruct:free"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_bfec93ca52",
+      "target": "node_383af77ae8",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_bfec93ca52",
+      "target": "node_383af77ae8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_383af77ae8",
+      "target": "node_47ce489860",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_47ce489860",
+      "target": "node_9e9c8c8475",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_8e33419ec0",
+      "target": "node_a0615ce76c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_8e33419ec0",
+      "target": "node_a0615ce76c",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_82c5a148a3",
+      "target": "node_883fb84b38",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_c8828efea4",
+      "target": "node_883fb84b38",
+      "sourceOutput": "onTick",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCron",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_883fb84b38",
+      "target": "node_7a3bc778f4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_883fb84b38",
+      "target": "node_7a3bc778f4",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7a3bc778f4",
+      "target": "node_bfec93ca52",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7a3bc778f4",
+      "target": "node_bfec93ca52",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7a3bc778f4",
+      "target": "node_47ce489860",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9e9c8c8475",
+      "target": "node_8e33419ec0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9e9c8c8475",
+      "target": "node_8e33419ec0",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a0615ce76c",
+      "target": "node_6d42de0473",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_c9975ce688",
+      "target": "node_9e9c8c8475",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "ai-research-and-data",
+    "categoryLabel": "AI Research, RAG and Data Analysis",
+    "department": "SEO, Data Analysis",
+    "connectors": [
+      "baserow",
+      "openrouter"
+    ],
+    "setupSecrets": [
+      {
+        "key": "MYSERPBEARINSTANCE_API_KEY",
+        "label": "myserpbearinstance.com API credential header value (for example \"Bearer <key>\"; rename the header if the API expects another one)",
+        "host": "myserpbearinstance.com",
+        "headerFormat": "Authorization: <secret>",
+        "contextKey": "myserpbearinstanceApiKey",
+        "usedBy": [
+          "Get data from SerpBear"
+        ]
+      }
+    ],
+    "activation": "cdecli cron activate serpbear-analytics-template",
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeCron",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 6,
+      "yantraSteps": 11,
+      "foldedHelpers": []
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "AI_Research_RAG_and_Data_Analysis/Summarize SERPBear data with AI (via Openrouter) and save it to Baserow.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "SERPBear analytics template"
+    },
+    "tier": "ready",
+    "blockers": [],
+    "setup": [
+      "Workflow secret MYSERPBEARINSTANCE_API_KEY: myserpbearinstance.com API credential header value (for example \"Bearer <key>\"; rename the header if the API expects another one) for myserpbearinstance.com (Authorization: <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the baserow connector (credential).",
+      "Connect the openrouter connector (credential).",
+      "After import, start the schedule: cdecli cron activate serpbear-analytics-template.",
+      "Provide run inputs: llm_system_bfec93ca52."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Send data to A.I. for analysis",
+          "n8n": "httpRequest.openai.chat",
+          "action": "NodeLlmChain",
+          "soft": true
+        }
+      ],
+      "folded": [],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Schedule Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "as": "NodeCron"
+        }
+      ],
+      "hints": [
+        "\"Get data from SerpBear\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Send data to A.I. for analysis\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Send data to A.I. for analysis\" called the OpenRouter API (meta-llama/llama-3.1-70b-instruct:free) over HTTP; it now runs on LLMChain with a Chat Model and provider connector credential, and later steps read the answer text instead of the provider's JSON.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect baserow: `cdecli credential create -n \"baserow\" -p baserow --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Send Matomo analytics to A.I. and save results to baserow\n\nThis workflow will check the Google keywords for your site and it's rank.\n\n[💡 You can read more about this workflow here](https://rumjahn.com/how-to-create-an-a-i-agent-to-analyze-serpbear-keyword-rankings-using-n8n-for-free-without-any-coding-skills-required/)",
+      "## Get SERPBear Data\n \n1. Enter your SerpBear API keys and URL. You need to find your website ID which is probably 1.\n2. Navigate to Administration > Personal > Security > Auth tokens within your Matomo dashboard. Click on Create new token and provide a purpose for reference.",
+      "## Send data to A.I.\n\nFill in your Openrouter A.I. credentials. Use Header Auth.\n- Username: Authorization\n- Password: Bearer {insert your API key}\n\nRemember to add a space after bearer. Also, feel free to modify the prompt to A.1.",
+      "## Send data to Baserow\n\nCreate a table first with the following columns:\n- Date\n- Note\n- Blog\n\nEnter the name of your website under \"Blog\" field."
+    ],
+    "nodes": {
+      "node_82c5a148a3": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_c8828efea4": {
+        "n8n": "Schedule Trigger",
+        "n8nType": "n8n-nodes-base.scheduleTrigger"
+      },
+      "node_883fb84b38": {
+        "n8n": "Get data from SerpBear",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "httpHeaderAuth"
+      },
+      "node_7a3bc778f4": {
+        "n8n": "Parse data from SerpBear",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_9e9c8c8475": {
+        "n8n": "Send data to A.I. for analysis",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "llmProvider": "openrouter"
+      },
+      "node_bfec93ca52": {
+        "n8n": "Send data to A.I. for analysis",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_383af77ae8": {
+        "n8n": "Send data to A.I. for analysis",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_47ce489860": {
+        "n8n": "Send data to A.I. for analysis",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_8e33419ec0": {
+        "n8n": "Save data to Baserow",
+        "n8nType": "n8n-nodes-base.baserow"
+      },
+      "node_a0615ce76c": {
+        "n8n": "Save data to Baserow",
+        "n8nType": "n8n-nodes-base.baserow"
+      },
+      "node_6d42de0473": {
+        "n8n": "__end:Save data to Baserow",
+        "n8nType": "synthetic"
+      },
+      "node_2411e7ffec": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_c9975ce688": {
+        "n8n": "Send data to A.I. for analysis",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

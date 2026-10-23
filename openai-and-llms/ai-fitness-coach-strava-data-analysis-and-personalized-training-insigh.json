@@ -1,0 +1,606 @@
+{
+  "name": "AI Fitness Coach Strava Data Analysis and Personalized Training Insights",
+  "workflowSlug": "ai-fitness-coach-strava-data-analysis-and-personalized-training-insigh",
+  "description": "Fitness coaching via Strava data analysis.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_7287edf114",
+      "actorId": "actor_7287edf114",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_fc4618a8fd",
+      "actorId": "actor_fc4618a8fd",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Gmail",
+        "action": "GOOGLESUPER_SEND_EMAIL",
+        "params": {
+          "recipient_email": "{{recipientEmail}}",
+          "subject": "",
+          "body": "{{html}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_e88ca7bc93",
+      "actorId": "actor_e88ca7bc93",
+      "type": "NodeCdeConnector",
+      "label": "whatsapp/WHATSAPP_SEND_MESSAGE",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "whatsapp",
+        "connectorLabel": "WhatsApp",
+        "action": "WHATSAPP_SEND_MESSAGE",
+        "params": {
+          "text": "{{whatsappMessage}}",
+          "to_number": "{{recipientPhone}}",
+          "phone_number_id": "{{whatsappPhoneNumberId}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_761d7ab1ca",
+      "actorId": "actor_761d7ab1ca",
+      "type": "NodeTransform",
+      "label": "Code",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\nconst items = __items.map((json) => ({ json }));\n// Ported from n8n Code node \"Code\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Loop over input items and add a new field called 'myNewField' to the JSON of each one\n  for (const item of $input.all()) {\n   item.json.myNewField = 1;\n  }\n  \n  return $input.all();\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_0141811a13",
+      "actorId": "actor_0141811a13",
+      "type": "NodeTransform",
+      "label": "Combine Everything",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Combine Everything\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Recursive function to flatten JSON into a single string\n  function flattenJson(obj, prefix = '') {\n   let str = '';\n   for (const key in obj) {\n   if (typeof obj[key] === 'object' && obj[key] !== null) {\n   str += flattenJson(obj[key], `${prefix}${key}.`);\n   } else {\n   str += `${prefix}${key}: ${obj[key]}\\n`;\n   }\n   }\n   return str;\n  }\n  \n  // Get input data\n  const data = $input.all();\n  \n  // Initialize a variable to store the final output\n  let output = '';\n  \n  // Process each item\n  data.forEach(item => {\n   output += flattenJson(item.json);\n   output += '\\n---\\n'; // Separator between records\n  });\n  \n  // Return the merged string as output\n  return [{ json: { data: output } }];\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_e2ce6b6c8c",
+      "actorId": "actor_e2ce6b6c8c",
+      "type": "NodeCdecliAgent",
+      "label": "Fitness Coach",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "models/gemini-2.0-flash-exp",
+        "sessionId": "",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_44743e67bc",
+      "actorId": "actor_44743e67bc",
+      "type": "NodeTransform",
+      "label": "Prompt: Fitness Coach",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Fitness Coach.\nconst __promptValue = `You are an Triathlon Coach specializing in guiding the athlete on running, swimming, and cycling. Your role is to analyze Strava data and provide personalized coaching to help users improve their performance. Your responses must be motivational, data-driven, and tailored to the user's fitness level, goals, and recent activity trends.\n\n#### Key Abilities:\n1. **Analyze Activity Data**:\n - Evaluate performance metrics such as distance, pace, heart rate, power, elevation, cadence, and swim strokes.\n - Identify trends, strengths, and areas for improvement.\n\n2. **Provide Feedback**:\n - Break down the user's activities and explain their performance in detail (e.g., pacing consistency, effort levels, technique).\n - Highlight achievements and areas that need focus.\n\n3. **Create Improvement Plans**:\n - Suggest actionable steps to improve fitness, endurance, speed, or technique based on the user's goals and performance data.\n - Recommend specific workouts, recovery plans, or cross-training exercises tailored to the user's needs.\n\n4. **Set Goals and Challenges**:\n - Help the user set realistic short-term and long-term goals (e.g., achieving a new personal best, improving endurance, or preparing for a triathlon).\n - Suggest weekly or monthly challenges to stay motivated.\n\n5. **Motivational Coaching**:\n - Provide positive reinforcement and encouragement.\n - Help the user maintain consistency and avoid burnout.\n\n6. ** Data Analysis **\n - Do some data formatting also when doing activities ensure to analyze the duration, time, pace etc, too many seonds will not make differnece, try to see the duration which is easy to understand, moreoover, the time of the day when i did activity and so on.\n\n***Capabilities as a Triathlong Coach:***\n** Data Categorization and Context:**\n\nIdentify whether the activity is swimming, cycling, or running.\n-For swimming, distinguish between pool swimming (laps, strokes) and open water swimming (long-distance, sighting).\nAdapt recommendations based on activity type, terrain, weather, or other environmental factors.\n**Activity-Specific Metrics:**\n\n -- Swim: Focus on distance, pace, SWOLF, stroke count, and stroke efficiency.\n -- Bike: Analyze distance, average speed, cadence, power zones, heart rate, and elevation gain.\n -- Run: Examine distance, pace, cadence, stride length, heart rate zones, and elevation changes.\nPerformance Analysis and Recommendations:\n\n** Tailor feedback and advice based on the unique demands of each sport:\n - Swimming: Emphasize technique (catch, pull, body position), pacing, and breathing drills.\n - Cycling: Focus on power output, cadence optimization, endurance rides, and interval training.\n - Running: Analyze pace consistency, cadence, stride efficiency, and running economy.\nEnvironment-Specific Adjustments:\n\n - For swimming, account for differences in pool vs. open water conditions (e.g., sighting, drafting, and waves).\nFor cycling, consider terrain (flat, hilly, or rolling) and wind resistance.\n- For running, factor in surface type (road, trail, or track) and weather conditions.\nIntegrated Triathlon Insights:\n- \nProvide guidance on how each discipline complements the others.\nSuggest \"brick workouts\" (e.g., bike-to-run) for race-specific adaptations.\nRecommend recovery strategies that address multi-sport training fatigue.\nBehavior:\nBe precise, detailed, and motivational.\nTailor insights and recommendations to the specific activity type and the athlete’s experience level (beginner, intermediate, advanced).\nUse clear, actionable language and explain the reasoning behind suggestions.\nInputs You Will Receive:\nStrava activity data in JSON or tabular format.\nAthlete’s profile information, including goals, upcoming events, and experience level.\nMetrics such as distance, pace, speed, cadence, heart rate zones, power, SWOLF, stroke count, and elevation.\nOutput Requirements (Activity-Specific):\nSwim (Pool):\n\nAnalyze stroke efficiency, pace consistency, SWOLF, and technique.\nSuggest drills for stroke improvement (e.g., catch-up, fingertip drag).\nRecommend pacing intervals (e.g., 10x100m at target pace with rest).\nSwim (Open Water):\n\nEvaluate long-distance pacing and sighting frequency.\nProvide tips on drafting, breathing bilaterally, and adapting to waves or currents.\nSuggest open water-specific workouts (e.g., race-pace simulations with buoy turns).\nBike:\n\nAnalyze power distribution across zones, cadence, and heart rate trends.\nHighlight inefficiencies (e.g., low cadence on climbs or inconsistent power).\nRecommend specific workouts (e.g., 3x12-minute FTP intervals with 5-minute rest).\nSuggest gear and bike fit optimizations if needed.\nRun:\n\nEvaluate pacing strategy, cadence, and heart rate zones.\nIdentify inefficiencies in stride length or cadence.\nRecommend workouts like tempo runs, intervals, or long runs with negative splits.\nProvide race-day pacing strategies or tips for improving running economy.\nCross-Discipline Integration:\n\nSuggest brick workouts to improve transitions (e.g., 30-minute bike + 10-minute run at race pace).\nRecommend recovery sessions (e.g., easy swim or bike after a hard run).\nAdvise on balancing training load across disciplines.\n\n#### Expectations:\n- **Personalized Responses**: Always consider the user's activity history, goals, and fitness level when offering insights or advice.\n- **Practical Guidance**: Provide clear, actionable recommendations.\n- **Encouragement**: Keep the tone positive and motivational, celebrating progress while constructively addressing areas for improvement.\n\n#### Context Awareness:\nYou have access to the user's Strava data, including:\n- Activity type (e.g., run, swim, bike)\n- Distance, pace, and time\n- Heart rate and effort levels\n- Elevation gain and route details\n- Historical performance trends\n\n#### Example Prompts You Will Receive:\n- \"Here are my recent running activities. How can I improve my pace?\"\n- \"This is my swimming data from this week. What should I focus on to improve my technique?\"\n- \"Analyze my cycling activity and tell me how I can climb better next time.\"\n\n\n#### Goal:\nHelp the user achieve their athletic potential by providing precise, actionable feedback and a customized plan to enhance their performance and enjoyment of their activities.\n\nHere is the Activity Data : \n${$json.data}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_ba6fd51d7a",
+      "actorId": "actor_ba6fd51d7a",
+      "type": "NodeTransform",
+      "label": "Structure Output",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Ported from n8n Code node \"Structure Output\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Input JSON from the previous node\n  const input = $json;\n  \n  // Split the input into sections based on double newlines\n  const sections = input.split('\\n\\n');\n  \n  // Initialize the result array\n  const result = [];\n  \n  // Process each section\n  sections.forEach((section) => {\n   const trimmedSection = section.trim();\n  \n   // Handle headings marked with ** (bold)\n   if (/^\\*\\*(.*?)\\*\\*$/.test(trimmedSection)) {\n   result.push({ type: 'heading', content: trimmedSection.replace(/\\*\\*(.*?)\\*\\*/, '<b>$1</b>') });\n   }\n   // Handle bullet lists marked with *\n   else if (trimmedSection.startsWith('*')) {\n   const listItems = trimmedSection.split('\\n').map((item) => item.trim().replace(/^\\*\\s/, ''));\n   result.push({ type: 'list', items: listItems });\n   }\n   // Handle numbered lists\n   else if (/^\\d+\\.\\s/.test(trimmedSection)) {\n   const numberedItems = trimmedSection.split('\\n').map((item) => item.trim().replace(/^\\d+\\.\\s/, ''));\n   result.push({ type: 'numbered-list', items: numberedItems });\n   }\n   // Handle paragraphs\n   else {\n   result.push({ type: 'paragraph', content: trimmedSection });\n   }\n  });\n  \n  // Return the result array\n  return result.map(item => ({ json: item }));\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_d267c928a8",
+      "actorId": "actor_d267c928a8",
+      "type": "NodeTransform",
+      "label": "Conver to HTML",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\nconst items = __items.map((json) => ({ json }));\n// Ported from n8n Code node \"Conver to HTML\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Get input data from n8n\n  const inputData = $input.all(); // Fetch all input data items\n  \n  // Function to convert JSON data into a single HTML string\n  function convertToHTML(data) {\n   let html = '';\n  \n   data.forEach((item) => {\n   switch (item.json.type) {\n   case 'paragraph':\n   html += `<p>${item.json.content}</p>`;\n   break;\n   case 'heading':\n   html += `<h2>${item.json.content}</h2>`;\n   break;\n   case 'list':\n   html += '<ul>';\n   item.json.items.forEach((listItem) => {\n   html += `<li>${listItem}</li>`;\n   });\n   html += '</ul>';\n   break;\n   case 'numbered-list':\n   html += '<ol>';\n   item.json.items.forEach((listItem) => {\n   html += `<li>${listItem}</li>`;\n   });\n   html += '</ol>';\n   break;\n   default:\n   break;\n   }\n   });\n  \n   return html;\n  }\n  \n  // Convert inputData to a single HTML string\n  const singleHTML = convertToHTML(inputData);\n  \n  // Return as a single item\n  return [{ json: { html: singleHTML } }];\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_9caa5939cd",
+      "actorId": "actor_9caa5939cd",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
+      "color": "#6366F1",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Email (SMTP original)",
+        "action": "GOOGLESUPER_SEND_EMAIL",
+        "params": {
+          "recipient_email": "{{recipientEmail2}}",
+          "subject": "New Activity on Strava",
+          "body": "{{last.transformed.html}}",
+          "is_html": true
+        }
+      }
+    },
+    {
+      "nodeId": "node_b4534d2c4e",
+      "actorId": "actor_b4534d2c4e",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_7f37d4ce17",
+      "actorId": "actor_7f37d4ce17",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 840,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_50d86b6c37",
+      "actorId": "actor_50d86b6c37",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_fc99e30b58",
+      "actorId": "actor_fc99e30b58",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "event": {},
+          "whatsappMessage": "",
+          "recipientPhone": "",
+          "whatsappPhoneNumberId": "",
+          "recipientEmail": "",
+          "recipientEmail2": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_44743e67bc",
+      "target": "node_e2ce6b6c8c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_7287edf114",
+      "target": "node_761d7ab1ca",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0141811a13",
+      "target": "node_44743e67bc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0141811a13",
+      "target": "node_44743e67bc",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e2ce6b6c8c",
+      "target": "node_ba6fd51d7a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e2ce6b6c8c",
+      "target": "node_ba6fd51d7a",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ba6fd51d7a",
+      "target": "node_d267c928a8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ba6fd51d7a",
+      "target": "node_d267c928a8",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d267c928a8",
+      "target": "node_9caa5939cd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_761d7ab1ca",
+      "target": "node_0141811a13",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_761d7ab1ca",
+      "target": "node_0141811a13",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7287edf114",
+      "target": "node_fc4618a8fd",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_7287edf114",
+      "target": "node_e88ca7bc93",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_fc4618a8fd",
+      "target": "node_b4534d2c4e",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_e88ca7bc93",
+      "target": "node_7f37d4ce17",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_9caa5939cd",
+      "target": "node_50d86b6c37",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "Fitness/AI/Data Analysis",
+    "connectors": [
+      "googlesuper",
+      "whatsapp"
+    ],
+    "setupVars": [
+      {
+        "key": "whatsappMessage",
+        "label": "WhatsApp message text (the original node left it blank)",
+        "type": "text",
+        "example": "Thanks, we received your message.",
+        "usedBy": [
+          "WhatsApp Business Cloud"
+        ]
+      },
+      {
+        "key": "recipientPhone",
+        "label": "Recipient phone number (E.164)",
+        "type": "text",
+        "example": "+15551234567",
+        "usedBy": [
+          "WhatsApp Business Cloud"
+        ]
+      },
+      {
+        "key": "whatsappPhoneNumberId",
+        "label": "WhatsApp Business phone number id",
+        "type": "id",
+        "example": "123456789012345",
+        "usedBy": [
+          "WhatsApp Business Cloud"
+        ]
+      },
+      {
+        "key": "recipientEmail",
+        "label": "Recipient email address",
+        "type": "email",
+        "example": "you@example.com",
+        "usedBy": [
+          "Gmail"
+        ]
+      },
+      {
+        "key": "recipientEmail2",
+        "label": "Recipient email address",
+        "type": "email",
+        "example": "you@example.com",
+        "usedBy": [
+          "Send Email"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdeConnector",
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 10,
+      "yantraSteps": 10,
+      "foldedHelpers": [
+        "Google Gemini Chat Model"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/AI Fitness Coach Strava Data Analysis and Personalized Training Insights.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Strava Trigger",
+        "detail": "n8n-nodes-base.stravaTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Strava Trigger\" (stravaTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Setup value whatsappMessage: WhatsApp message text (the original node left it blank) (for example Thanks, we received your message.). Write it into the Workflow Configs initialContext before import.",
+      "Setup value recipientPhone: Recipient phone number (E.164) (for example +15551234567). Write it into the Workflow Configs initialContext before import.",
+      "Setup value whatsappPhoneNumberId: WhatsApp Business phone number id (for example 123456789012345). Write it into the Workflow Configs initialContext before import.",
+      "Setup value recipientEmail: Recipient email address (for example you@example.com). Write it into the Workflow Configs initialContext before import.",
+      "Setup value recipientEmail2: Recipient email address (for example you@example.com). Write it into the Workflow Configs initialContext before import.",
+      "Connect the googlesuper connector (credential).",
+      "Connect the whatsapp connector (credential).",
+      "Provide run inputs: event, html."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [
+        {
+          "node": "Google Gemini Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+          "into": "Fitness Coach",
+          "model": "models/gemini-2.0-flash-exp"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Strava Trigger",
+          "type": "n8n-nodes-base.stravaTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from stravaTrigger; Yantra has no webhook slug for it, so run on demand, on a schedule (add a NodeCron), or via the workflow API with the event under the run input `event`.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect whatsapp: `cdecli credential create -n \"whatsapp\" -p whatsapp --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "### Customer Experience Agent (AI)\nThe AI Triathlon Coach is an intelligent, data-driven virtual assistant designed to help triathletes optimize their training and performance across swimming, cycling, and running. Using advanced algorithms, it analyzes activity data from platforms like Strava and provides actionable insights tailored to the athlete’s goals, experience level, and specific disciplines.\nThis is connected to Gemini 2.0 Flash",
+      "### Convert to HTML\nNow the data will be structured and covnerted to HTML",
+      "### Get Strava Trigger\nIf you are using Strava, you can create API Key by logging in to : https://developers.strava.com/\n\nOnce data is capture you can then structure it, i am commbining all the activity data and sending to next node",
+      "## Developed by Amjid Ali\n\nThank you for using this workflow template. It has taken me countless hours of hard work, research, and dedication to develop, and I sincerely hope it adds value to your work.\n\nIf you find this template helpful, I kindly ask you to consider supporting my efforts. Your support will help me continue improving and creating more valuable resources.\n\nYou can contribute via PayPal here:\n\nhttp://paypal.me/pmptraining\n\nFor Full Course about ERPNext or Automation using AI follow below link\n\nhttp://lms.syncbricks.com\n\nAdditionally, when sharing this template, I would greatly appreciate it if you include my original information to ensure proper credit is given.\n\nThank you for your generosity and support!\nEmail : [email removed]\nhttps://linkedin.com/in/amjidali\nhttps://syncbricks.com\nhttps://youtube.com/@syncbricks",
+      "### Send Personalized Response\nActivity is analized you can either get the response by Whatsapp , emal, a blog or anything"
+    ],
+    "nodes": {
+      "node_7287edf114": {
+        "n8n": "Strava Trigger",
+        "n8nType": "n8n-nodes-base.stravaTrigger"
+      },
+      "node_fc4618a8fd": {
+        "n8n": "Gmail",
+        "n8nType": "n8n-nodes-base.gmail"
+      },
+      "node_e88ca7bc93": {
+        "n8n": "WhatsApp Business Cloud",
+        "n8nType": "n8n-nodes-base.whatsApp"
+      },
+      "node_761d7ab1ca": {
+        "n8n": "Code",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_0141811a13": {
+        "n8n": "Combine Everything",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_e2ce6b6c8c": {
+        "n8n": "Fitness Coach",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_44743e67bc": {
+        "n8n": "Fitness Coach",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_ba6fd51d7a": {
+        "n8n": "Structure Output",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_d267c928a8": {
+        "n8n": "Conver to HTML",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_9caa5939cd": {
+        "n8n": "Send Email",
+        "n8nType": "n8n-nodes-base.emailSend"
+      },
+      "node_b4534d2c4e": {
+        "n8n": "__end:Gmail",
+        "n8nType": "synthetic"
+      },
+      "node_7f37d4ce17": {
+        "n8n": "__end:WhatsApp Business Cloud",
+        "n8nType": "synthetic"
+      },
+      "node_50d86b6c37": {
+        "n8n": "__end:Send Email",
+        "n8nType": "synthetic"
+      },
+      "node_fc99e30b58": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

@@ -1,0 +1,87 @@
+{
+ "name": "fixture-multipart-private-host",
+ "nodes": [
+  {
+   "name": "Start",
+   "type": "n8n-nodes-base.manualTrigger",
+   "typeVersion": 1,
+   "position": [
+    0,
+    0
+   ],
+   "parameters": {}
+  },
+  {
+   "name": "To HTML",
+   "type": "n8n-nodes-base.convertToFile",
+   "typeVersion": 1,
+   "position": [
+    220,
+    0
+   ],
+   "parameters": {
+    "operation": "toBinary",
+    "sourceProperty": "encoded",
+    "options": {
+     "fileName": "index.html",
+     "mimeType": "text/html"
+    }
+   }
+  },
+  {
+   "name": "Gotenberg",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 1,
+   "position": [
+    440,
+    0
+   ],
+   "parameters": {
+    "method": "POST",
+    "url": "http://gotenberg:3000/forms/chromium/convert/html",
+    "sendBody": true,
+    "contentType": "multipart-form-data",
+    "bodyParameters": {
+     "parameters": [
+      {
+       "parameterType": "formBinaryData",
+       "name": "files",
+       "inputDataFieldName": "data"
+      }
+     ]
+    },
+    "options": {
+     "response": {
+      "response": {
+       "responseFormat": "file"
+      }
+     }
+    }
+   }
+  }
+ ],
+ "connections": {
+  "Start": {
+   "main": [
+    [
+     {
+      "node": "To HTML",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "To HTML": {
+   "main": [
+    [
+     {
+      "node": "Gotenberg",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ }
+}

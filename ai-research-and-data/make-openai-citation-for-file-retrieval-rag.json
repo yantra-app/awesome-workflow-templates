@@ -1,0 +1,522 @@
+{
+  "name": "Make OpenAI Citation for File Retrieval RAG",
+  "workflowSlug": "make-openai-citation-for-file-retrieval-rag",
+  "description": "Generates citations for file retrieval in RAG systems using OpenAI.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_db10f2c7d5",
+      "actorId": "actor_db10f2c7d5",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_0f5759b86d",
+      "actorId": "actor_0f5759b86d",
+      "type": "NodeCdecliAgent",
+      "label": "OpenAI Assistant with Vector Store",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "sessionId": "{{sessionId}}",
+        "message": "{{chatInput}}"
+      }
+    },
+    {
+      "nodeId": "node_fbcfe6c91f",
+      "actorId": "actor_fbcfe6c91f",
+      "type": "NodeHttpRequest",
+      "label": "Get ALL Thread Content",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://api.openai.com/v1/threads/{{last.text.threadId}}/messages",
+        "headers": {
+          "OpenAI-Beta": "assistants=v2",
+          "Authorization": "Bearer {{openaiApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_8cde5ddc83",
+      "actorId": "actor_8cde5ddc83",
+      "type": "NodeTransform",
+      "label": "Split all message iterations from a thread",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"data\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"data\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"data\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_5fcd3775f9",
+      "actorId": "actor_5fcd3775f9",
+      "type": "NodeTransform",
+      "label": "Split all content from a single message",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"content\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"content\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"content\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_b12fcd33d1",
+      "actorId": "actor_b12fcd33d1",
+      "type": "NodeTransform",
+      "label": "Split all citations from a single message",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"text.annotations\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"text.annotations\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"text.annotations\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_aa9efc0111",
+      "actorId": "actor_aa9efc0111",
+      "type": "NodeHttpRequest",
+      "label": "Retrieve file name from a file ID",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://api.openai.com/v1/files/{{last.transformed.file_citation.file_id}}?limit=1",
+        "headers": {
+          "Authorization": "Bearer {{openaiApiKey}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_c23695b112",
+      "actorId": "actor_c23695b112",
+      "type": "NodeTransform",
+      "label": "Regularize output",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Create a simple Trigger to have the Chat button within N8N\": {{ctx}}, \"OpenAI Assistant with Vector Store\": {{steps.llm_0f5759b86d.result}}, \"Get ALL Thread Content\": {{steps.http_fbcfe6c91f.result}}, \"Split all message iterations from a thread\": {{steps.xf_8cde5ddc83.result}}, \"Split all content from a single message\": {{steps.xf_5fcd3775f9.result}}, \"Split all citations from a single message\": {{steps.xf_b12fcd33d1.result}}, \"Retrieve file name from a file ID\": {{steps.http_aa9efc0111.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"id\"] = ($json.id);\n  out[\"filename\"] = ($json.filename);\n  out[\"text\"] = ($('Split all citations from a single message').item.json.text);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_2b71082aaa",
+      "actorId": "actor_2b71082aaa",
+      "type": "NodeTransform",
+      "label": "Aggregate",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nreturn { \"data\": __items };"
+      }
+    },
+    {
+      "nodeId": "node_c620f1de63",
+      "actorId": "actor_c620f1de63",
+      "type": "NodeTransform",
+      "label": "Finnaly format the output",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Create a simple Trigger to have the Chat button within N8N\": {{ctx}}, \"OpenAI Assistant with Vector Store\": {{steps.llm_0f5759b86d.result}}, \"Get ALL Thread Content\": {{steps.http_fbcfe6c91f.result}}, \"Split all message iterations from a thread\": {{steps.xf_8cde5ddc83.result}}, \"Split all content from a single message\": {{steps.xf_5fcd3775f9.result}}, \"Split all citations from a single message\": {{steps.xf_b12fcd33d1.result}}, \"Retrieve file name from a file ID\": {{steps.http_aa9efc0111.result}}, \"Regularize output\": {{steps.xf_c23695b112.result}}, \"Aggregate\": {{steps.xf_2b71082aaa.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Finnaly format the output\" (run once for each item).\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __results = __items.map((__item) => {\n  const $json = __item;\n  const item = { json: __item };\n  const $input = { item: { json: __item }, first: () => ({ json: __item }), all: () => [{ json: __item }] };\n  return (() => {\n  let saida = $('OpenAI Assistant with Vector Store').item.json.output;\n  \n  for (let i of $input.item.json.data) {\n   saida = saida.replaceAll(i.text, \" _(\"+ i.filename+\")_ \");\n  }\n  \n  $input.item.json.output = saida;\n  return $input.item;\n  })();\n});\nreturn __single(__results.map(__unwrap));"
+      }
+    },
+    {
+      "nodeId": "node_f0f146f2b5",
+      "actorId": "actor_f0f146f2b5",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_2a9c7cae36",
+      "actorId": "actor_2a9c7cae36",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "chatInput": "",
+          "sessionId": "",
+          "openaiApiKey": {
+            "$workflowSecret": "OPENAI_API_KEY"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_2b71082aaa",
+      "target": "node_c620f1de63",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2b71082aaa",
+      "target": "node_c620f1de63",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_db10f2c7d5",
+      "target": "node_0f5759b86d",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_0f5759b86d",
+      "target": "node_fbcfe6c91f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_fbcfe6c91f",
+      "target": "node_8cde5ddc83",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fbcfe6c91f",
+      "target": "node_8cde5ddc83",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8cde5ddc83",
+      "target": "node_5fcd3775f9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8cde5ddc83",
+      "target": "node_5fcd3775f9",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5fcd3775f9",
+      "target": "node_b12fcd33d1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5fcd3775f9",
+      "target": "node_b12fcd33d1",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b12fcd33d1",
+      "target": "node_aa9efc0111",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_aa9efc0111",
+      "target": "node_c23695b112",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_aa9efc0111",
+      "target": "node_c23695b112",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c23695b112",
+      "target": "node_2b71082aaa",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c23695b112",
+      "target": "node_2b71082aaa",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c620f1de63",
+      "target": "node_f0f146f2b5",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "ai-research-and-data",
+    "categoryLabel": "AI Research, RAG and Data Analysis",
+    "department": "AI Research, Documentation",
+    "connectors": [],
+    "setupSecrets": [
+      {
+        "key": "OPENAI_API_KEY",
+        "label": "OpenAI API key",
+        "host": "api.openai.com",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "openaiApiKey",
+        "usedBy": [
+          "Get ALL Thread Content",
+          "Retrieve file name from a file ID"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeCdecliAgent",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 11,
+      "yantraSteps": 10,
+      "foldedHelpers": [
+        "Window Buffer Memory"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "AI_Research_RAG_and_Data_Analysis/Make OpenAI Citation for File Retrieval RAG.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Make OpenAI Citation for File Retrieval RAG"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Create a simple Trigger to have the Chat button within N8N",
+        "detail": "@n8n/n8n-nodes-langchain.chatTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Create a simple Trigger to have the Chat button within N8N\" (chatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Workflow secret OPENAI_API_KEY: OpenAI API key for api.openai.com (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Provide run inputs: chatInput, sessionId."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [],
+      "folded": [
+        {
+          "node": "Optional Markdown to HTML",
+          "type": "n8n-nodes-base.markdown",
+          "reason": "disabled in the original"
+        },
+        {
+          "node": "Window Buffer Memory",
+          "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+          "into": "OpenAI Assistant with Vector Store",
+          "as": "ai_memory"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Create a simple Trigger to have the Chat button within N8N",
+          "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
+        "\"OpenAI Assistant with Vector Store\" kept conversation memory (memoryBufferWindow); sessionId is set to the run-input sessionId.",
+        "\"Get ALL Thread Content\" authenticated with openAiApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Retrieve file name from a file ID\" authenticated with openAiApi in the original; add the matching Authorization header (or use the service's connector).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+      ]
+    },
+    "notes": [
+      "## Within N8N, there will be a chat button to test",
+      "## Make OpenAI Citation for File Retrieval RAG\n\n## Use case\n\nIn this example, we will ensure that all texts from the OpenAI assistant search for citations and sources in the vector store files. We can also format the output for Markdown or HTML tags.\n\nThis is necessary because the assistant sometimes generates strange characters, and we can also use dynamic references such as citations 1, 2, 3, for example.\n\n## What this workflow does\n\nIn this workflow, we will use an OpenAI assistant created within their interface, equipped with a vector store containing some files for file retrieval.\n\nThe assistant will perform the file search within the OpenAI infrastructure and will return the content with citations.\n\n- We will make an HTTP request to retrieve all the details we need to format the text output.\n\n## Setup\n\nInsert an OpenAI Key\n\n## How to adjust it to your needs\n\nAt the end of the workflow, we have a block of code that will format the output, and there we can add Markdown tags to create links. Optionally, we can transform the Markdown formatting into HTML.\n\n\nby Davi Saranszky Mesquita\nhttps://www.linkedin.com/in/mesquitadavi/",
+      "## Setup\n\n- Configure OpenAI Key\n\n### In this step, we will use an assistant created within the OpenAI platform that contains a vector store a.k.a file retrieval",
+      "### Retrieving all thread content is necessary because the OpenAI tool does not retrieve all citations upon request.",
+      "### A file retrieval request contains a lot of information, and we want only the text that will be substituted and the file name.\n\n- id\n- filename\n- text",
+      "### With the last three splits, we may have many citations and texts to substitute. By doing an aggregation, it will be possible to handle everything as a single request.",
+      "### This simple code will take all the previous files and citations and alter the original text, formatting the output. In this way, we can use Markdown tags to create links, or if you prefer, we can add an HTML transformation node."
+    ],
+    "nodes": {
+      "node_db10f2c7d5": {
+        "n8n": "Create a simple Trigger to have the Chat button within N8N",
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
+      },
+      "node_0f5759b86d": {
+        "n8n": "OpenAI Assistant with Vector Store",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_fbcfe6c91f": {
+        "n8n": "Get ALL Thread Content",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "openAiApi"
+      },
+      "node_8cde5ddc83": {
+        "n8n": "Split all message iterations from a thread",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_5fcd3775f9": {
+        "n8n": "Split all content from a single message",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_b12fcd33d1": {
+        "n8n": "Split all citations from a single message",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_aa9efc0111": {
+        "n8n": "Retrieve file name from a file ID",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "openAiApi"
+      },
+      "node_c23695b112": {
+        "n8n": "Regularize output",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_2b71082aaa": {
+        "n8n": "Aggregate",
+        "n8nType": "n8n-nodes-base.aggregate"
+      },
+      "node_c620f1de63": {
+        "n8n": "Finnaly format the output",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_f0f146f2b5": {
+        "n8n": "__end:Finnaly format the output",
+        "n8nType": "synthetic"
+      },
+      "node_2a9c7cae36": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      }
+    }
+  }
+}

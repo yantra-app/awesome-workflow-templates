@@ -1,0 +1,46 @@
+{
+ "name": "fixture-code-crypto-webhook",
+ "nodes": [
+  {
+   "name": "Meta webhook",
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 1,
+   "position": [
+    0,
+    0
+   ],
+   "parameters": {
+    "httpMethod": "POST",
+    "path": "wa",
+    "options": {
+     "rawBody": true
+    }
+   }
+  },
+  {
+   "name": "Verify",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 1,
+   "position": [
+    220,
+    0
+   ],
+   "parameters": {
+    "jsCode": "const crypto = require('crypto');\nconst item = $('Meta webhook').first();\nconst raw = item.binary?.data ? Buffer.from(item.binary.data.data, 'base64').toString() : JSON.stringify(item.json.body || {});\nconst expected = 'sha256=' + crypto.createHmac('sha256', 'k').update(raw).digest('hex');\nconst ok = String(item.json.headers['x-hub-signature-256'] || '') === expected;\nreturn [{ json: { ok } }];"
+   }
+  }
+ ],
+ "connections": {
+  "Meta webhook": {
+   "main": [
+    [
+     {
+      "node": "Verify",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ }
+}

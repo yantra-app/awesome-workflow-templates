@@ -1,0 +1,1152 @@
+{
+  "name": "Auto-Tag Blog Posts in WordPress with AI",
+  "workflowSlug": "auto-tag-blog-posts-in-wordpress-with-ai",
+  "description": "This workflow automatically tags WordPress blog posts using AI, improving SEO and content discoverability.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_c51be5231c",
+      "actorId": "actor_c51be5231c",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_4b41c7ec93",
+      "actorId": "actor_4b41c7ec93",
+      "type": "NodeLlmChain",
+      "label": "Generate tags for article",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "tags"
+          ],
+          "additionalProperties": false
+        },
+        "prompt": "Please provide 3-5 suitable tags for the following article:\n\n{{content}}\n\nTag Formatting Rules:\n1. Tags should be in title case",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_8f4cea1fc4",
+      "actorId": "actor_8f4cea1fc4",
+      "type": "NodeTransform",
+      "label": "Items: Loop over articles",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_5b29f7a670",
+      "actorId": "actor_5b29f7a670",
+      "type": "NodeLoop",
+      "label": "Loop over articles",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_d40933e483",
+      "actorId": "actor_d40933e483",
+      "type": "NodeTransform",
+      "label": "Item: Loop over articles",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_1f46acc7e2",
+      "actorId": "actor_1f46acc7e2",
+      "type": "NodeTransform",
+      "label": "Results: Loop over articles",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_c312f913c7",
+      "actorId": "actor_c312f913c7",
+      "type": "NodeTransform",
+      "label": "MOCK article",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"RSS Feed Trigger\": {{ctx}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"title\"] = ($('RSS Feed Trigger').item.json.title);\n  out[\"content\"] = ($('RSS Feed Trigger').item.json.content);\n  out[\"categories\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($('RSS Feed Trigger').item.json.categories));\n  out[\"tags\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json.tags));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_8cf6241b6b",
+      "actorId": "actor_8cf6241b6b",
+      "type": "NodeTransform",
+      "label": "SET initial record",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_d358b6fce2",
+      "actorId": "actor_d358b6fce2",
+      "type": "NodeTransform",
+      "label": "Auto-Tag Posts in WordPress",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// executeWorkflow: compose the subflow manually (original workflow: siXUnQhJpCJ9rHzu).\nreturn source;"
+      }
+    },
+    {
+      "nodeId": "node_07ac5fa5d1",
+      "actorId": "actor_07ac5fa5d1",
+      "type": "NodeHttpRequest",
+      "label": "GET WP tags",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://www.example.com/wp-json/wp/v2/tags",
+        "headers": {
+          "Authorization": "Basic {{exampleBasicAuth}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_d9742b73d7",
+      "actorId": "actor_d9742b73d7",
+      "type": "NodeTransform",
+      "label": "Return article details",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"MOCK article\": {{steps.xf_c312f913c7.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"tag_ids\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json.tag_ids));\n  out[\"title\"] = ($('MOCK article').item.json.title);\n  out[\"content\"] = ($('MOCK article').item.json.content);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_771b0aa511",
+      "actorId": "actor_771b0aa511",
+      "type": "NodeTransform",
+      "label": "Combine slugs",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\nreturn {\n  \"tags\": __items.map((i) => __get(i, \"slug\")),\n};"
+      }
+    },
+    {
+      "nodeId": "node_38692bbdad",
+      "actorId": "actor_38692bbdad",
+      "type": "NodeCdeConnector",
+      "label": "wordpress/WORDPRESS_CREATE_POST",
+      "color": "#6366F1",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "wordpress",
+        "connectorLabel": "WordPress",
+        "action": "WORDPRESS_CREATE_POST",
+        "params": {
+          "title": "Demo tagging post: {{last.transformed.title}}",
+          "content": "This is a post to demo automatic tagging a WordPress postvia n8n. The following content could be rewritten in full or part with commentary using AI.\n\n{{last.transformed.content}}",
+          "tags": "{{last.transformed.tag_ids}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_7919a15450",
+      "actorId": "actor_7919a15450",
+      "type": "NodeTransform",
+      "label": "Return missing tags",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"SET initial record\": {{steps.xf_8cf6241b6b.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Return missing tags\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const new_ary = $('SET initial record').first().json.tags.map(x => x.toLowerCase().replaceAll(\" \",\"-\")).filter(x => !$input.first().json.tags.includes(x))\n  \n  return {\"missing_tags\": new_ary};\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_e27062bf20",
+      "actorId": "actor_e27062bf20",
+      "type": "NodeTransform",
+      "label": "If: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((((v) => v == null || v === '' || (Array.isArray(v) && v.length === 0) || (typeof v === 'object' && Object.keys(v).length === 0))(($json.missing_tags))));"
+      }
+    },
+    {
+      "nodeId": "node_e186987280",
+      "actorId": "actor_e186987280",
+      "type": "NodeBranch",
+      "label": "If: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_4b9710195e",
+      "actorId": "actor_4b9710195e",
+      "type": "NodeTransform",
+      "label": "Split Out",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"missing_tags\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"missing_tags\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"missing_tags\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_fe8b404974",
+      "actorId": "actor_fe8b404974",
+      "type": "NodeHttpRequest",
+      "label": "POST WP tags",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "headers": {
+          "Authorization": "Basic {{exampleBasicAuth}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_c331a8bc1c",
+      "actorId": "actor_c331a8bc1c",
+      "type": "NodeTransform",
+      "label": "URL: POST WP tags",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(String.prototype, { toTitleCase() { return this.replace(/\\w\\S*/g, (w) => w[0].toUpperCase() + w.slice(1).toLowerCase()); } });\n// Request URL for \"POST WP tags\".\nreturn `https://www.example.com/wp-json/wp/v2/tags?slug=${$json.missing_tag}&name=${$json.missing_tag.replaceAll(\"-\",\" \").toTitleCase()}`;"
+      }
+    },
+    {
+      "nodeId": "node_358c745c66",
+      "actorId": "actor_358c745c66",
+      "type": "NodeHttpRequest",
+      "label": "GET updated WP tags",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://www.example.com/wp-json/wp/v2/tags",
+        "headers": {
+          "Authorization": "Basic {{exampleBasicAuth}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_82a6d33d2b",
+      "actorId": "actor_82a6d33d2b",
+      "type": "NodeTransform",
+      "label": "Keep matches",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"SET initial record\": {{steps.xf_8cf6241b6b.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn __items.filter(($json) => Boolean(((Array.isArray(($('SET initial record').first().json.tags.map(item => item.toLowerCase().replaceAll(\" \",\"-\")))) ? ($('SET initial record').first().json.tags.map(item => item.toLowerCase().replaceAll(\" \",\"-\"))) : []).includes(($json.slug)))));"
+      }
+    },
+    {
+      "nodeId": "node_233270f14d",
+      "actorId": "actor_233270f14d",
+      "type": "NodeTransform",
+      "label": "Combine tag_ids",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\nreturn {\n  \"tag_ids\": __items.map((i) => __get(i, \"id\")),\n};"
+      }
+    },
+    {
+      "nodeId": "node_aacdee6e85",
+      "actorId": "actor_aacdee6e85",
+      "type": "NodeTransform",
+      "label": "Return: Combine tag_ids",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_0b17946f1a",
+      "actorId": "actor_0b17946f1a",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_ac4553121f",
+      "actorId": "actor_ac4553121f",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_41dea331b5",
+      "actorId": "actor_41dea331b5",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "event": {},
+          "exampleBasicAuth": {
+            "$workflowSecret": "EXAMPLE_BASIC_AUTH"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_354cad480b",
+      "actorId": "actor_354cad480b",
+      "type": "NodeChatModel",
+      "label": "Generate tags for article: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 460,
+        "y": 720
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_8f4cea1fc4",
+      "target": "node_5b29f7a670",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_8f4cea1fc4",
+      "target": "node_5b29f7a670",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_5b29f7a670",
+      "target": "node_d40933e483",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5b29f7a670",
+      "target": "node_d40933e483",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5b29f7a670",
+      "target": "node_1f46acc7e2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_5b29f7a670",
+      "target": "node_1f46acc7e2",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e27062bf20",
+      "target": "node_e186987280",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_e27062bf20",
+      "target": "node_e186987280",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_c331a8bc1c",
+      "target": "node_fe8b404974",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_c331a8bc1c",
+      "target": "node_fe8b404974",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_c51be5231c",
+      "target": "node_4b41c7ec93",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_d9742b73d7",
+      "target": "node_38692bbdad",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_4b9710195e",
+      "target": "node_c331a8bc1c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4b9710195e",
+      "target": "node_c331a8bc1c",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d40933e483",
+      "target": "node_8cf6241b6b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d40933e483",
+      "target": "node_8cf6241b6b",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8cf6241b6b",
+      "target": "node_07ac5fa5d1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_07ac5fa5d1",
+      "target": "node_771b0aa511",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_07ac5fa5d1",
+      "target": "node_771b0aa511",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_fe8b404974",
+      "target": "node_358c745c66",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_358c745c66",
+      "target": "node_82a6d33d2b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_358c745c66",
+      "target": "node_82a6d33d2b",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_82a6d33d2b",
+      "target": "node_233270f14d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_82a6d33d2b",
+      "target": "node_233270f14d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_771b0aa511",
+      "target": "node_7919a15450",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_771b0aa511",
+      "target": "node_7919a15450",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e186987280",
+      "target": "node_358c745c66",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_e186987280",
+      "target": "node_4b9710195e",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7919a15450",
+      "target": "node_4b9710195e",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c312f913c7",
+      "target": "node_d358b6fce2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c312f913c7",
+      "target": "node_d358b6fce2",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7919a15450",
+      "target": "node_e27062bf20",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7919a15450",
+      "target": "node_e27062bf20",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c51be5231c",
+      "target": "node_8f4cea1fc4",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d358b6fce2",
+      "target": "node_d9742b73d7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d358b6fce2",
+      "target": "node_d9742b73d7",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4b41c7ec93",
+      "target": "node_c312f913c7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4b41c7ec93",
+      "target": "node_c312f913c7",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_233270f14d",
+      "target": "node_aacdee6e85",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_233270f14d",
+      "target": "node_aacdee6e85",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_aacdee6e85",
+      "target": "node_5b29f7a670",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_aacdee6e85",
+      "target": "node_5b29f7a670",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_1f46acc7e2",
+      "target": "node_0b17946f1a",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_38692bbdad",
+      "target": "node_ac4553121f",
+      "sourceOutput": "result",
+      "targetInput": "result",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_354cad480b",
+      "target": "node_4b41c7ec93",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "wordpress",
+    "categoryLabel": "WordPress",
+    "department": "Marketing/Content",
+    "connectors": [
+      "openai",
+      "wordpress"
+    ],
+    "setupSecrets": [
+      {
+        "key": "EXAMPLE_BASIC_AUTH",
+        "label": "www.example.com WordPress application password as Basic auth (base64 of \"user:app-password\")",
+        "host": "www.example.com",
+        "headerFormat": "Authorization: Basic <secret>",
+        "contextKey": "exampleBasicAuth",
+        "usedBy": [
+          "GET WP tags",
+          "GET updated WP tags",
+          "POST WP tags"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeLoop",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 22,
+      "yantraSteps": 24,
+      "foldedHelpers": [
+        "OpenAI Chat Model",
+        "Auto-fixing Output Parser"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "WordPress/Auto-Tag Blog Posts in WordPress with AI.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Auto-Tag Blog Posts in WordPress with AI"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Demo Usage in Another Workflow",
+        "detail": "n8n-nodes-base.executeWorkflowTrigger became the Start node"
+      },
+      {
+        "code": "trigger-replaced",
+        "node": "RSS Feed Trigger",
+        "detail": "n8n-nodes-base.rssFeedReadTrigger became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Demo Usage in Another Workflow\" (executeWorkflowTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"RSS Feed Trigger\" (rssFeedReadTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Workflow secret EXAMPLE_BASIC_AUTH: www.example.com WordPress application password as Basic auth (base64 of \"user:app-password\") for www.example.com (Authorization: Basic <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the openai connector (credential).",
+      "Connect the wordpress connector (credential).",
+      "Provide run inputs: event, content."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Auto-Tag Posts in WordPress",
+          "n8n": "executeWorkflow",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Generate tags for article"
+        },
+        {
+          "node": "Auto-fixing Output Parser",
+          "type": "@n8n/n8n-nodes-langchain.outputParserAutofixing",
+          "into": "Generate tags for article",
+          "as": "ai_outputParser"
+        }
+      ],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "RSS Feed Trigger",
+          "type": "n8n-nodes-base.rssFeedReadTrigger",
+          "as": "NodeStart"
+        },
+        {
+          "node": "Demo Usage in Another Workflow",
+          "type": "n8n-nodes-base.executeWorkflowTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from rssFeedReadTrigger; Yantra has no webhook slug for it, so run on demand, on a schedule (add a NodeCron), or via the workflow API with the event under the run input `event`.",
+        "The original was a sub-workflow called by another workflow; pass its inputs as run inputs.",
+        "\"Loop over articles\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "\"Auto-Tag Posts in WordPress\" (executeWorkflow): Sub-workflow calls are not imported automatically; compose the child graph by hand or paste its steps inline.",
+        "\"Auto-Tag Posts in WordPress\" called another n8n workflow (siXUnQhJpCJ9rHzu); on Yantra, open that workflow as its own template (or rebuild it) and replace this passthrough with a call into it.",
+        "\"GET WP tags\" authenticated with wordpressApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"POST WP tags\" authenticated with wordpressApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"GET updated WP tags\" authenticated with wordpressApi in the original; add the matching Authorization header (or use the service's connector).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect wordpress: `cdecli credential create -n \"wordpress\" -p wordpress --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Demo Usage in Another Workflow (Tagging an article discovered with an RSS feed)",
+      "## Auto-Tag Posts in WordPress\n\nThis workflow allows you to hand off the responsibility of tagging content for WordPress to an AI Agent in n8n with no data entry required.",
+      "## Copy this workflow\n\nYou can use it inline by removing the Called by Another Workflow trigger, or as-is as a subworkflow",
+      "Handing off tagging and categorization fully to AI lets you **put your WordPress account on autopilot** without a human-in-the-loop.\n\nIn this example the application is use-case agnostic, but with this workflow you can:\n1. Use AI to rewrite content with original thoughts and tags\n2. Ensure healthy information architecture on your site\n3. Quickly generate multivariate tag and category combinations for optimal SEO",
+      "### To ensure data can be passed to subsequent nodes, make sure to select \"Run Once for Each Item\" if executing a subworkflow",
+      "## What's this? \nIf there are missing tags we create them in WP, otherwise we keep get them all from WP and keep the relevant ones.",
+      "## What's this? \nOne of the few potential failure points in this workflow, when checking for missing tags it's important that both the generated tags and the existing tags are in the same case (snake, dash, title).",
+      "## ! A note about cases !\nIf you want your tags to follow a different case than I am using (dash case for slug, title case for name), then you will need to update a few nodes in this workflow.",
+      "## Ready for a challenge?\n\nMake this subworkflow executable for both categories and tags, accounting for different API calls to different endpoints.",
+      "## About the maker\n**[Find Ludwig Gerdes on LinkedIn](https://www.linkedin.com/in/ludwiggerdes)**"
+    ],
+    "nodes": {
+      "node_c51be5231c": {
+        "n8n": "RSS Feed Trigger",
+        "n8nType": "n8n-nodes-base.rssFeedReadTrigger",
+        "also": [
+          "Demo Usage in Another Workflow"
+        ]
+      },
+      "node_4b41c7ec93": {
+        "n8n": "Generate tags for article",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_8f4cea1fc4": {
+        "n8n": "Loop over articles",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_5b29f7a670": {
+        "n8n": "Loop over articles",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_d40933e483": {
+        "n8n": "Loop over articles",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_1f46acc7e2": {
+        "n8n": "Loop over articles",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_c312f913c7": {
+        "n8n": "MOCK article",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_8cf6241b6b": {
+        "n8n": "SET initial record",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_d358b6fce2": {
+        "n8n": "Auto-Tag Posts in WordPress",
+        "n8nType": "n8n-nodes-base.executeWorkflow"
+      },
+      "node_07ac5fa5d1": {
+        "n8n": "GET WP tags",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "wordpressApi"
+      },
+      "node_d9742b73d7": {
+        "n8n": "Return article details",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_771b0aa511": {
+        "n8n": "Combine slugs",
+        "n8nType": "n8n-nodes-base.aggregate"
+      },
+      "node_38692bbdad": {
+        "n8n": "Wordpress",
+        "n8nType": "n8n-nodes-base.wordpress"
+      },
+      "node_7919a15450": {
+        "n8n": "Return missing tags",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_e27062bf20": {
+        "n8n": "If",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_e186987280": {
+        "n8n": "If",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_4b9710195e": {
+        "n8n": "Split Out",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_fe8b404974": {
+        "n8n": "POST WP tags",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "wordpressApi"
+      },
+      "node_c331a8bc1c": {
+        "n8n": "POST WP tags",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_358c745c66": {
+        "n8n": "GET updated WP tags",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "wordpressApi"
+      },
+      "node_82a6d33d2b": {
+        "n8n": "Keep matches",
+        "n8nType": "n8n-nodes-base.filter"
+      },
+      "node_233270f14d": {
+        "n8n": "Combine tag_ids",
+        "n8nType": "n8n-nodes-base.aggregate"
+      },
+      "node_aacdee6e85": {
+        "n8n": "Combine tag_ids",
+        "n8nType": "n8n-nodes-base.aggregate"
+      },
+      "node_0b17946f1a": {
+        "n8n": "__end:Loop over articles",
+        "n8nType": "synthetic"
+      },
+      "node_ac4553121f": {
+        "n8n": "__end:Wordpress",
+        "n8nType": "synthetic"
+      },
+      "node_41dea331b5": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_354cad480b": {
+        "n8n": "Generate tags for article",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

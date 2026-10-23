@@ -1,0 +1,989 @@
+{
+  "name": "Write a WordPress post with AI (starting from a few keywords)",
+  "workflowSlug": "write-a-wordpress-post-with-ai-starting-from-a-few-keywords",
+  "description": "This workflow uses AI to write WordPress posts based on a few keywords, simplifying the content creation process.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_816ff5a768",
+      "actorId": "actor_816ff5a768",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_f6c8e0a601",
+      "actorId": "actor_f6c8e0a601",
+      "type": "NodeTransform",
+      "label": "Settings",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"wordpress_url\"] = \"https://you-wordpress-url-here.com/\";\n  out[\"keywords\"] = ($json['Keywords (comma-separated)']);\n  out[\"chapters\"] = Number(($json['Number of chapters']));\n  out[\"words\"] = Number(($json['Max words count']));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_11e8215f34",
+      "actorId": "actor_11e8215f34",
+      "type": "NodeLlmChain",
+      "label": "Create post title and structure",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "prompt": "{{last.transformed}}",
+        "outputMode": "structured",
+        "schemaMode": "prompt"
+      }
+    },
+    {
+      "nodeId": "node_2cb81699a1",
+      "actorId": "actor_2cb81699a1",
+      "type": "NodeTransform",
+      "label": "Prompt: Create post title and structure",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Create post title and structure.\nconst __promptValue = `Write the title, the subtitle, the chapters details, the introduction, the conclusions, and an image prompt for a SEO-friendly article about these topics:\n${$json.keywords}.\n\nInstructions:\n- Place the article title in a JSON field called \\`title\\`\n- Place the subtitle in a JSON field called \\`subtitle\\`\n- Place the introduction in a JSON field called \\`introduction\\`\n- In the introduction introduce the topic that is then explored in depth in the rest of the text\n- The introduction should be around 60 words\n- Place the conclusions in a JSON field called \\`conclusions\\`\n- The conclusions should be around 60 words\n- Use the conclusions to sum all said in the article and offer a conclusion to the reader\n- The image prompt will be used to produce a photographic cover image for the article and should depict the topics discussed in the article\n- Place the image prompt in a JSON field called \\`imagePrompt\\`\n- There should be ${$json.chapters.toString()} chapters.\n- For each chapter provide a title and an exaustive prompt that will be used to write the chapter text.\n- Place the chapters in an array field called \\`chapters\\`\n- For each chapter provide the fields \\`title\\` and \\`prompt\\`\n- The chapters should follow a logical flow and not repeat the same concepts.\n- The chapters should be one related to the other and not isolated blocks of text. The text should be fluent and folow a linear logic.\n- Don't start the chapters with \"Chapter 1\", \"Chapter 2\", \"Chapter 3\"... just write the title of the chapter\n- For the title and the capthers' titles don't use colons (\\`:\\`)\n- For the text, use HTML for formatting, but limited to bold, italic and lists.\n- Don't use markdown for formatting.\n- Always search on Wikipedia for useful information or verify the accuracy of what you write.\n- Never mention it if you don't find information on Wikipedia or the web\n- Go deep in the topic you treat, don't just throw some superficial info`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_1e0adec2d6",
+      "actorId": "actor_1e0adec2d6",
+      "type": "NodeTransform",
+      "label": "Check data consistency: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.message.content.title) ?? '').trim() !== '') && ((Array.isArray(($json.message.content.chapters)) ? ($json.message.content.chapters) : []).length >= Number((1))) && (String(($json.message.content.subtitle) ?? '').trim() !== '') && (String(($json.message.content.introduction) ?? '').trim() !== '') && (String(($json.message.content.conclusions) ?? '').trim() !== '') && (String(($json.message.content.imagePrompt) ?? '').trim() !== ''));"
+      }
+    },
+    {
+      "nodeId": "node_cbf8504195",
+      "actorId": "actor_cbf8504195",
+      "type": "NodeBranch",
+      "label": "Check data consistency: condition?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_d79a5c5d80",
+      "actorId": "actor_d79a5c5d80",
+      "type": "NodeTransform",
+      "label": "Split out chapters",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"message.content.chapters\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"message.content.chapters\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"message.content.chapters\": x }));"
+      }
+    },
+    {
+      "nodeId": "node_686358882b",
+      "actorId": "actor_686358882b",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_46434d0ffc",
+      "actorId": "actor_46434d0ffc",
+      "type": "NodeLlmChain",
+      "label": "Create chapters text",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_433cc50286",
+      "actorId": "actor_433cc50286",
+      "type": "NodeTransform",
+      "label": "Prompt: Create chapters text",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Form\": {{ctx}}, \"Settings\": {\"wordpress_url\":\"https://you-wordpress-url-here.com/\"}, \"Create post title and structure\": ((output) => ({ ...output, output }))(__namedCtx.steps?.[\"Create post title and structure\"]?.[\"object\"]), \"Split out chapters\": __namedCtx.steps?.[\"Split out chapters\"]?.[\"transformed\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst $workflow = { id: '', name: '', active: true }; const $execution = { id: '', mode: 'manual', resumeUrl: '' }; const $executionId = $execution.id;\nconst $runIndex = 0; const $itemIndex = 0; const $binary = {}; const $prevNode = { name: '', outputIndex: 0, runIndex: 0 }; const $parameter = {}; const $position = 0;\n// Prompt: Create chapters text.\nconst __promptValue = `Write a chapter for the article: ${$('Create post title and structure').item.json.message.content.title}, ${$('Create post title and structure').item.json.message.content.subtitle}, that talks about ${$('Settings').item.json[\"keywords\"]}\n\nThis is the prompt for the chapter titled ${$json.title}: ${$json.prompt}.\n\nGuidelines:\n- Just return the plain text for each chapter (no JSON structure).\n- Don't use markdown for formatting.\n- Use HTML for formatting, but limited to bold, italic and lists.\n- Don't add internal titles or headings.\n- The length of each chapther should be around ${Math.round(($('Settings').item.json.words - 120)/ $('Settings').item.json.chapters)} words long\n- Go deep in the topic you treat, don't just throw some superficial info\n${$itemIndex > 0 ? \"- The previous chapter talks about \" + $input.all()[$itemIndex-1].json.title : \"\"}\n${$itemIndex > 0 ? \"- The promt for the previous chapter is \" + $input.all()[$itemIndex-1].json.prompt : \"\"}\n${$itemIndex < $input.all().length ? \"- The following chapter will talk about \" + $input.all()[$itemIndex+1].json.title: \"\"}\n${$itemIndex < $input.all().length ? \"- The prompt for the following chapter is \" + $input.all()[$itemIndex+1].json.prompt : \"\"}\n- Consider the previous and following chapters what writing the text for this chapter. The text must be coherent with the previous and following chapters.\n- This chapter should not repeat the concepts already exposed in the previous chapter.\n- This chapter is a part of a larger article so don't include an introduction or conclusions. This chapter should merge with the rest of the article.\n`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_cd4a02d4c8",
+      "actorId": "actor_cd4a02d4c8",
+      "type": "NodeSync",
+      "label": "Merge chapters title and text",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      }
+    },
+    {
+      "nodeId": "node_0cd06b10b1",
+      "actorId": "actor_0cd06b10b1",
+      "type": "NodeTransform",
+      "label": "Final article text",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Form\": {{ctx}}, \"Settings\": {\"wordpress_url\":\"https://you-wordpress-url-here.com/\"}, \"Split out chapters\": {{steps.xf_d79a5c5d80.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Final article text\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  let article = \"\";\n  \n  // Introduction\n  article += $('Create post title and structure').first().json.message.content.introduction;\n  article += \"<br><br>\";\n  \n  for (const item of $input.all()) {\n   article += \"<strong>\" + item.json.title + \"</strong>\";\n   article += \"<br><br>\";\n   article += item.json.message.content;\n   article += \"<br><br>\";\n  }\n  \n  // Conclusions\n  article += \"<strong>Conclusions</strong>\";\n  article += \"<br><br>\";\n  article += $('Create post title and structure').first().json.message.content.conclusions;\n  \n  \n  return [\n   {\n   \"article\": article\n   }\n  ];\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_1909ab44a2",
+      "actorId": "actor_1909ab44a2",
+      "type": "NodeTransform",
+      "label": "Params: Post on Wordpress",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Form\": {{ctx}}, \"Settings\": {\"wordpress_url\":\"https://you-wordpress-url-here.com/\"}, \"Split out chapters\": {{steps.xf_d79a5c5d80.result}}, \"Final article text\": {{steps.xf_0cd06b10b1.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for wordpress/WORDPRESS_CREATE_POST (n8n node \"Post on Wordpress\").\nreturn {\n  \"title\": ($('Create post title and structure').all()[0].json.message.content.title),\n  \"content\": ($json.article),\n  \"status\": \"draft\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_de97064338",
+      "actorId": "actor_de97064338",
+      "type": "NodeCdeConnector",
+      "label": "wordpress/WORDPRESS_CREATE_POST",
+      "color": "#6366F1",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "wordpress",
+        "connectorLabel": "WordPress",
+        "action": "WORDPRESS_CREATE_POST"
+      }
+    },
+    {
+      "nodeId": "node_20fad10d28",
+      "actorId": "actor_20fad10d28",
+      "type": "NodeTransform",
+      "label": "Params: Generate featured image",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Form\": {{ctx}}, \"Settings\": {\"wordpress_url\":\"https://you-wordpress-url-here.com/\"}, \"Split out chapters\": {{steps.xf_d79a5c5d80.result}}, \"Final article text\": {{steps.xf_0cd06b10b1.result}}, \"Post on Wordpress\": {{steps.WORDPRESS_CREATE_POST.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for yantra-image-generation/YANTRA_GEMINI_IMAGE_GENERATE (n8n node \"Generate featured image\").\nreturn {\n  \"prompt\": `Generate a photographic image to be used as the cover image for the article titled: ${$('Create post title and structure').all()[0].json.message.content.title}. This is the prompt for the image: ${$('Create post title and structure').all()[0].json.message.content.imagePrompt}, photography, realistic, sigma 85mm f/1.4`,\n};"
+      }
+    },
+    {
+      "nodeId": "node_6f48b2ee08",
+      "actorId": "actor_6f48b2ee08",
+      "type": "NodeCdeConnector",
+      "label": "yantra-image-generation/YANTRA_GEMINI_IMAGE_GENERATE",
+      "color": "#6366F1",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-image-generation",
+        "connectorLabel": "Image generation",
+        "action": "YANTRA_GEMINI_IMAGE_GENERATE"
+      }
+    },
+    {
+      "nodeId": "node_63741bb1b7",
+      "actorId": "actor_63741bb1b7",
+      "type": "NodeTransform",
+      "label": "Params: Upload media",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The upstream file as { contentBase64 | fileUrl, filename, mimeType }: n8n binary data travels as base64 bytes or a file URL on Yantra.\nconst __b64 = (t) => { const b = new TextEncoder().encode(String(t)); let s = ''; for (let i = 0; i < b.length; i += 1) s += String.fromCharCode(b[i]); return btoa(s); };\nconst __fileRef = (v, prop) => {\n  const s = (x) => (typeof x === 'string' && x !== '' ? x : undefined);\n  let r = Array.isArray(v) ? v[0] : v;\n  const bin = r && typeof r === 'object' && r.binary && typeof r.binary === 'object' ? r.binary[prop] ?? Object.values(r.binary)[0] : undefined;\n  if (bin && s(bin.data)) return { contentBase64: bin.data, filename: s(r.filename) ?? s(bin.fileName) ?? 'file', mimeType: s(bin.mimeType) };\n  if (r && typeof r === 'object' && r.data && typeof r.data === 'object' && !Array.isArray(r.data)) r = { ...r, ...r.data };\n  const dl = r?.downloaded_file_content ?? r?.file;\n  const filename = s(r?.filename) ?? s(r?.fileName) ?? s(dl?.name) ?? s(r?.name) ?? 'file';\n  const mimeType = s(r?.mimeType) ?? s(r?.contentType) ?? s(dl?.mimetype) ?? s(r?.mimetype);\n  if (s(r?.bodyBase64)) return { contentBase64: r.bodyBase64, filename, mimeType };\n  const url = s(dl?.s3url) ?? s(r?.s3url) ?? s(r?.fileUrl) ?? s(r?.imageUrl) ?? s(r?.imageUrls?.[0]) ?? s(r?.audioUrl) ?? s(r?.videoUrl) ?? s(r?.secure_url);\n  if (url) return { fileUrl: url, filename, mimeType };\n  if (s(r?.data)) return { contentBase64: r.encoding !== 'base64' && /^(?:text\\/|application\\/(?:json|xml|javascript|x-tex))|\\+(?:xml|json)$/.test(mimeType ?? '') ? __b64(r.data) : r.data, filename, mimeType };\n  throw new Error('No file on the upstream step: expected file bytes (base64) or a file URL.');\n};\n// Params for yantra-storage/YANTRA_STORAGE_HTTP_SEND (n8n node \"Upload media\").\nreturn { \"url\": \"https://wp-demo.mondo.surf/wp-json/wp/v2/media\", \"method\": \"POST\", \"headers\": { \"Content-Disposition\": \"attachment; filename=\\\"example.jpg\\\"\", \"Authorization\": \"Basic {{wpDemoBasicAuth}}\" }, \"bodyType\": \"binary\", \"file\": __fileRef(source, \"data\"), \"responseType\": \"auto\" };"
+      }
+    },
+    {
+      "nodeId": "node_45b3183b17",
+      "actorId": "actor_45b3183b17",
+      "type": "NodeCdeConnector",
+      "label": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+      "color": "#6366F1",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "yantra-storage",
+        "connectorLabel": "Yantra storage",
+        "action": "YANTRA_STORAGE_HTTP_SEND"
+      }
+    },
+    {
+      "nodeId": "node_6ffa6f739a",
+      "actorId": "actor_6ffa6f739a",
+      "type": "NodeTransform",
+      "label": "Upload media: response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// The response the way the n8n HTTP node handed it on: the parsed body; a file body is { bodyBase64, filename, mimeType }.\nconst __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' && 'status' in source.data ? source.data : source;\nconst __body = __r?.bodyBase64 !== undefined ? { bodyBase64: __r.bodyBase64, filename: __r.filename, mimeType: __r.contentType, bytes: __r.bytes } : __r?.bodyJson !== undefined ? __r.bodyJson : __r?.bodyText;\nreturn __body;"
+      }
+    },
+    {
+      "nodeId": "node_01cc64b643",
+      "actorId": "actor_01cc64b643",
+      "type": "NodeHttpRequest",
+      "label": "Set image ID for the post",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://wp-demo.mondo.surf/wp-json/wp/v2/posts/{{steps.WORDPRESS_CREATE_POST.result.id}}?featured_media={{last.transformed.id}}",
+        "headers": {
+          "Authorization": "Basic {{wpDemoBasicAuth}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_a3983d6445",
+      "actorId": "actor_a3983d6445",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_50f4684403",
+      "actorId": "actor_50f4684403",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "Keywords (comma-separated)": "",
+          "Number of chapters": "",
+          "Max words count": "",
+          "wpDemoBasicAuth": {
+            "$workflowSecret": "WP_DEMO_BASIC_AUTH"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_3db3a7daad",
+      "actorId": "actor_3db3a7daad",
+      "type": "NodeChatModel",
+      "label": "Create post title and structure: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1220,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4-1106-preview"
+      }
+    },
+    {
+      "nodeId": "node_64074c1c01",
+      "actorId": "actor_64074c1c01",
+      "type": "NodeChatModel",
+      "label": "Create chapters text: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 3120,
+        "y": 420
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4-0125-preview"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_2cb81699a1",
+      "target": "node_11e8215f34",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_1e0adec2d6",
+      "target": "node_cbf8504195",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_1e0adec2d6",
+      "target": "node_cbf8504195",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_433cc50286",
+      "target": "node_46434d0ffc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_1909ab44a2",
+      "target": "node_de97064338",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_1909ab44a2",
+      "target": "node_de97064338",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_20fad10d28",
+      "target": "node_6f48b2ee08",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_20fad10d28",
+      "target": "node_6f48b2ee08",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_63741bb1b7",
+      "target": "node_45b3183b17",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_63741bb1b7",
+      "target": "node_45b3183b17",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_45b3183b17",
+      "target": "node_6ffa6f739a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_45b3183b17",
+      "target": "node_6ffa6f739a",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_816ff5a768",
+      "target": "node_f6c8e0a601",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f6c8e0a601",
+      "target": "node_2cb81699a1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f6c8e0a601",
+      "target": "node_2cb81699a1",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cbf8504195",
+      "target": "node_d79a5c5d80",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_11e8215f34",
+      "target": "node_d79a5c5d80",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_11e8215f34",
+      "target": "node_686358882b",
+      "sourceOutput": "object",
+      "targetInput": "result",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_d79a5c5d80",
+      "target": "node_cd4a02d4c8",
+      "sourceOutput": "transformed",
+      "targetInput": "data2",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_d79a5c5d80",
+      "target": "node_433cc50286",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d79a5c5d80",
+      "target": "node_433cc50286",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cd4a02d4c8",
+      "target": "node_0cd06b10b1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_cd4a02d4c8",
+      "target": "node_0cd06b10b1",
+      "sourceOutput": "data1",
+      "targetInput": "source",
+      "sourceNodeType": "NodeSync",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0cd06b10b1",
+      "target": "node_1909ab44a2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_0cd06b10b1",
+      "target": "node_1909ab44a2",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_de97064338",
+      "target": "node_20fad10d28",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_de97064338",
+      "target": "node_20fad10d28",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6ffa6f739a",
+      "target": "node_01cc64b643",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_01cc64b643",
+      "target": "node_a3983d6445",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_6f48b2ee08",
+      "target": "node_63741bb1b7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_6f48b2ee08",
+      "target": "node_63741bb1b7",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_11e8215f34",
+      "target": "node_1e0adec2d6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_11e8215f34",
+      "target": "node_1e0adec2d6",
+      "sourceOutput": "object",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_46434d0ffc",
+      "target": "node_cd4a02d4c8",
+      "sourceOutput": "text",
+      "targetInput": "data1",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeSync"
+    },
+    {
+      "source": "node_3db3a7daad",
+      "target": "node_11e8215f34",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_64074c1c01",
+      "target": "node_46434d0ffc",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "wordpress",
+    "categoryLabel": "WordPress",
+    "department": "Marketing/Content",
+    "connectors": [
+      "openai",
+      "wordpress",
+      "yantra-image-generation",
+      "yantra-storage"
+    ],
+    "setupSecrets": [
+      {
+        "key": "WP_DEMO_BASIC_AUTH",
+        "label": "wp-demo.mondo.surf WordPress application password as Basic auth (base64 of \"user:app-password\")",
+        "host": "wp-demo.mondo.surf",
+        "headerFormat": "Authorization: Basic <secret>",
+        "contextKey": "wpDemoBasicAuth",
+        "usedBy": [
+          "Set image ID for the post",
+          "Upload media"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeStart",
+      "NodeSync",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 15,
+      "yantraSteps": 21,
+      "foldedHelpers": [
+        "Wikipedia"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "WordPress/Write a WordPress post with AI (starting from a few keywords).json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
+      "n8nName": "Write a WordPress post with AI (starting from a few keywords)"
+    },
+    "tier": "experimental",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Form",
+        "detail": "n8n-nodes-base.formTrigger became the Start node"
+      },
+      {
+        "code": "action-pending-publish",
+        "node": "Upload media",
+        "detail": "yantra-storage/YANTRA_STORAGE_HTTP_SEND waits for the yantra-storage HTTP send and signatures patch (1.4.1) to be published"
+      }
+    ],
+    "setup": [
+      "\"Form\" (formTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Upload media\": yantra-storage/YANTRA_STORAGE_HTTP_SEND comes from the yantra-storage HTTP send and signatures patch (1.4.1), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
+      "Workflow secret WP_DEMO_BASIC_AUTH: wp-demo.mondo.surf WordPress application password as Basic auth (base64 of \"user:app-password\") for wp-demo.mondo.surf (Authorization: Basic <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the openai connector (credential).",
+      "Connect the wordpress connector (credential).",
+      "Provide run inputs: Keywords (comma-separated), Number of chapters, Max words count."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "needs-setup",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Upload media",
+          "n8n": "httpRequest.binaryData",
+          "action": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "Wikipedia",
+          "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+          "into": "Create post title and structure",
+          "as": "ai_tool"
+        }
+      ],
+      "removedEdges": [],
+      "triggers": [
+        {
+          "node": "Form",
+          "type": "n8n-nodes-base.formTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from a form submission; pass the form fields as run inputs.",
+        "\"Create post title and structure\" used agent tools in the original: Wikipedia (toolWikipedia). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
+        "\"Merge chapters title and text\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was combine).",
+        "\"Upload media\" authenticated with wordpressApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Upload media\" sends its binaryData body with yantra-storage HTTP_SEND (public https hosts only, 25 MB, 120 s); the file comes from \"Generate featured image\".",
+        "\"Set image ID for the post\" authenticated with wordpressApi in the original; add the matching Authorization header (or use the service's connector).",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect wordpress: `cdecli credential create -n \"wordpress\" -p wordpress --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "## Data check",
+      "Checks that the data returned by OpenAI is correct",
+      "## Draft on WordPress",
+      "The article is posted as a draft on WordPress",
+      "## Featured image",
+      "The image is generated with Dall-E, uploaded to WordPress, and then connected to the post as its featured image",
+      "Starting from the given keywords, generates the article title, subtitle, chapters, and image prompt",
+      "## Article structure",
+      "## User form",
+      "The user triggers the post creation",
+      "## User feedback",
+      "Final confirmation to the user",
+      "User is notified to try again since some data is missing",
+      "Wikipedia is used to write the article",
+      "## Settings",
+      "Set the URL of your WordPress here",
+      "## Chapters split",
+      "Splits out chapter contents from the previous node",
+      "Writes the text for each chapter",
+      "## Chapters text",
+      "## Content preparation",
+      "Merges the content and prepare it before sending it to WordPress"
+    ],
+    "nodes": {
+      "node_816ff5a768": {
+        "n8n": "Form",
+        "n8nType": "n8n-nodes-base.formTrigger"
+      },
+      "node_f6c8e0a601": {
+        "n8n": "Settings",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_11e8215f34": {
+        "n8n": "Create post title and structure",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_2cb81699a1": {
+        "n8n": "Create post title and structure",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_1e0adec2d6": {
+        "n8n": "Check data consistency",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_cbf8504195": {
+        "n8n": "Check data consistency",
+        "n8nType": "n8n-nodes-base.if"
+      },
+      "node_d79a5c5d80": {
+        "n8n": "Split out chapters",
+        "n8nType": "n8n-nodes-base.splitOut"
+      },
+      "node_686358882b": {
+        "n8n": "Respond: Error",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_46434d0ffc": {
+        "n8n": "Create chapters text",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_433cc50286": {
+        "n8n": "Create chapters text",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_cd4a02d4c8": {
+        "n8n": "Merge chapters title and text",
+        "n8nType": "n8n-nodes-base.merge"
+      },
+      "node_0cd06b10b1": {
+        "n8n": "Final article text",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_1909ab44a2": {
+        "n8n": "Post on Wordpress",
+        "n8nType": "n8n-nodes-base.wordpress"
+      },
+      "node_de97064338": {
+        "n8n": "Post on Wordpress",
+        "n8nType": "n8n-nodes-base.wordpress"
+      },
+      "node_20fad10d28": {
+        "n8n": "Generate featured image",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_6f48b2ee08": {
+        "n8n": "Generate featured image",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_63741bb1b7": {
+        "n8n": "Upload media",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_45b3183b17": {
+        "n8n": "Upload media",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_6ffa6f739a": {
+        "n8n": "Upload media",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_01cc64b643": {
+        "n8n": "Set image ID for the post",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "wordpressApi"
+      },
+      "node_a3983d6445": {
+        "n8n": "Respond: Success",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_50f4684403": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_3db3a7daad": {
+        "n8n": "Create post title and structure",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_64074c1c01": {
+        "n8n": "Create chapters text",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

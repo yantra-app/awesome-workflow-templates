@@ -1,0 +1,2319 @@
+{
+  "name": "AI Data Extraction with Dynamic Prompts and Airtable",
+  "workflowSlug": "ai-data-extraction-with-dynamic-prompts-and-airtable",
+  "description": "AI-driven data extraction with Airtable integration.",
+  "isPublic": true,
+  "nodes": [
+    {
+      "nodeId": "node_33699d9408",
+      "actorId": "actor_33699d9408",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_3b747b6c14",
+      "actorId": "actor_3b747b6c14",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_GET_BASE_SCHEMA",
+      "color": "#6366F1",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_GET_BASE_SCHEMA",
+        "params": {
+          "baseId": "{{body.base.id}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_9886f5855d",
+      "actorId": "actor_9886f5855d",
+      "type": "NodeTransform",
+      "label": "Set Airtable Vars",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"appId\"] = \"<MY_BASE_ID>\";\n  out[\"tableId\"] = \"<MY_TABLE_ID>\";\n  out[\"notificationUrl\"] = \"<MY_WEBHOOK_URL>\";\n  out[\"inputField\"] = \"File\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_8d3ae60d73",
+      "actorId": "actor_8d3ae60d73",
+      "type": "NodeTransform",
+      "label": "Get Prompt Fields",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Get Prompt Fields\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const fields = $input.first().json.fields\n   .filter(item => item.description)\n   .map((item, idx) => ({\n   id: item.id,\n   order: idx,\n   name: item.name,\n   type: item.type,\n   description: item.description,\n   }));\n  \n  return { json: { fields } };\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_36cabfd9bb",
+      "actorId": "actor_36cabfd9bb",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_GET_BASE_SCHEMA",
+      "color": "#6366F1",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_GET_BASE_SCHEMA",
+        "params": {
+          "baseId": "{{last.transformed.appId}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_c90d28dbf5",
+      "actorId": "actor_c90d28dbf5",
+      "type": "NodeHttpRequest",
+      "label": "FieldsChanged Webhook",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://api.airtable.com/v0/bases/{{steps.xf_9886f5855d.result.appId}}/webhooks",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{airtableToken}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_792783dde6",
+      "actorId": "actor_792783dde6",
+      "type": "NodeTransform",
+      "label": "Body: FieldsChanged Webhook",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Set Airtable Vars\": {\"appId\":\"<MY_BASE_ID>\",\"tableId\":\"<MY_TABLE_ID>\",\"notificationUrl\":\"<MY_WEBHOOK_URL>\",\"inputField\":\"File\"} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"FieldsChanged Webhook\".\nconst __body = ({\n \"notificationUrl\": $('Set Airtable Vars').first().json.notificationUrl,\n \"specification\": {\n \"options\": {\n \"filters\": {\n \"fromSources\": [ \"client\" ],\n \"dataTypes\": [ \"tableFields\" ],\n \"changeTypes\": [ \"add\", \"update\" ],\n \"recordChangeScope\": $('Set Airtable Vars').first().json.tableId\n }\n }\n }\n});\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_07e6561046",
+      "actorId": "actor_07e6561046",
+      "type": "NodeHttpRequest",
+      "label": "Get Webhook Payload",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "https://api.airtable.com/v0/bases/{{body.base.id}}/webhooks/{{body.webhook.id}}/payloads",
+        "headers": {
+          "Authorization": "Bearer {{airtableToken}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_d9fc9842b3",
+      "actorId": "actor_d9fc9842b3",
+      "type": "NodeTransform",
+      "label": "Get \"Input\" Field",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Set Airtable Vars\": {\"appId\":\"<MY_BASE_ID>\",\"tableId\":\"<MY_TABLE_ID>\",\"notificationUrl\":\"<MY_WEBHOOK_URL>\",\"inputField\":\"File\"} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Set fields from JSON (n8n Set node, JSON mode): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const __raw = ($input.all()\n .map(item => item.json)\n .find(item => item.id === $('Set Airtable Vars').first().json.tableId)\n .fields\n .find(field => field.name === $('Set Airtable Vars').first().json.inputField));\n  let __obj;\n  try { __obj = typeof __raw === 'string' ? JSON.parse(__raw) : __raw; } catch (e) { throw new Error('Set node JSON is not valid JSON: ' + e.message); }\n  return __obj;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_305bbcb7f4",
+      "actorId": "actor_305bbcb7f4",
+      "type": "NodeTransform",
+      "label": "Parse Event",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Airtable Webhook\": {{ctx}}, \"Get Prompt Fields\": {{steps.xf_8d3ae60d73.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Parse Event\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const webhook = $('Airtable Webhook').first().json;\n  const schema = $('Get Prompt Fields').first().json;\n  const { payloads } = $input.first().json;\n  if (!payloads.length) return [];\n  \n  const event = payloads[payloads.length - 1];\n  const baseId = webhook.body.base.id;\n  const tableId = Object.keys(event.changedTablesById)[0];\n  const table = event.changedTablesById[tableId];\n  \n  return {\n   baseId,\n   tableId,\n   event_type: getEventType(table),\n   fieldId: getFieldId(table),\n   field: getField(getFieldId(table)),\n   rowId: getRecordId(table),\n  }\n  \n  function getEventType(changedTableByIdObject) {\n   if (changedTableByIdObject['createdFieldsById']) return 'field.created';\n   if (changedTableByIdObject['changedFieldsById']) return 'field.updated'\n   if (changedTableByIdObject['changedRecordsById']) return 'row.updated';\n   return 'unknown';\n  }\n  \n  function getFieldId(changedTableByIdObject) {\n   const field = changedTableByIdObject.createdFieldsById\n   || changedTableByIdObject.changedFieldsById\n   || null;\n  \n   return field ? Object.keys(field)[0] : null;\n  }\n  \n  function getField(id) {\n   return schema.fields.find(field => field.id === id);\n  }\n  \n  function getRecordId(changedTableByIdObject) {\n   const record = changedTableByIdObject.changedRecordsById\n   || null;\n  \n   return record ? Object.keys(record)[0] : null;\n  }\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_640e654d70",
+      "actorId": "actor_640e654d70",
+      "type": "NodeHttpRequest",
+      "label": "RecordsChanged Webhook",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "POST",
+        "url": "https://api.airtable.com/v0/bases/{{steps.xf_9886f5855d.result.appId}}/webhooks",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{airtableToken}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_6c4412fa92",
+      "actorId": "actor_6c4412fa92",
+      "type": "NodeTransform",
+      "label": "Body: RecordsChanged Webhook",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Set Airtable Vars\": {\"appId\":\"<MY_BASE_ID>\",\"tableId\":\"<MY_TABLE_ID>\",\"notificationUrl\":\"<MY_WEBHOOK_URL>\",\"inputField\":\"File\"} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"RecordsChanged Webhook\".\nconst __body = ({\n \"notificationUrl\": $('Set Airtable Vars').first().json.notificationUrl,\n \"specification\": {\n \"options\": {\n \"filters\": {\n \"fromSources\": [ \"client\" ],\n \"dataTypes\": [ \"tableData\" ],\n \"changeTypes\": [ \"update\" ],\n \"recordChangeScope\": $('Set Airtable Vars').first().json.tableId,\n \"watchDataInFieldIds\": [$json.id]\n }\n }\n }\n});\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+      }
+    },
+    {
+      "nodeId": "node_8afd29600d",
+      "actorId": "actor_8afd29600d",
+      "type": "NodeTransform",
+      "label": "Event Type: row.updated",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.event_type) ?? '') === String(\"row.updated\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_5ac58c4acf",
+      "actorId": "actor_5ac58c4acf",
+      "type": "NodeBranch",
+      "label": "Event Type: row.updated?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_c7745db855",
+      "actorId": "actor_c7745db855",
+      "type": "NodeTransform",
+      "label": "Event Type: field.created",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.event_type) ?? '') === String(\"field.created\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_8b8b60e72a",
+      "actorId": "actor_8b8b60e72a",
+      "type": "NodeBranch",
+      "label": "Event Type: field.created?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_7474aed2d0",
+      "actorId": "actor_7474aed2d0",
+      "type": "NodeTransform",
+      "label": "Event Type: field.updated",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.event_type) ?? '') === String(\"field.updated\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_3124669a70",
+      "actorId": "actor_3124669a70",
+      "type": "NodeBranch",
+      "label": "Event Type: field.updated?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_9a7e1ff3dd",
+      "actorId": "actor_9a7e1ff3dd",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_GET_RECORD",
+      "color": "#6366F1",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_GET_RECORD",
+        "params": {
+          "baseId": "{{last.transformed.baseId}}",
+          "tableIdOrName": "{{last.transformed.tableId}}",
+          "recordId": "{{last.transformed.rowId}}"
+        }
+      }
+    },
+    {
+      "nodeId": "node_31c0235e12",
+      "actorId": "actor_31c0235e12",
+      "type": "NodeTransform",
+      "label": "Filter Valid Fields",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn __items.filter(($json) => Boolean((String(($json.field.description) ?? '').trim() !== '')));"
+      }
+    },
+    {
+      "nodeId": "node_e4f8c3d0f6",
+      "actorId": "actor_e4f8c3d0f6",
+      "type": "NodeTransform",
+      "label": "Filter Valid Rows",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn __items.filter(($json) => Boolean((String(($json.File[0].url) ?? '').trim() !== '')));"
+      }
+    },
+    {
+      "nodeId": "node_eef9860845",
+      "actorId": "actor_eef9860845",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_LIST_RECORDS",
+      "color": "#6366F1",
+      "position": {
+        "x": 4640,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_LIST_RECORDS",
+        "params": {
+          "baseId": "{{last.transformed.baseId}}",
+          "tableIdOrName": "{{last.transformed.tableId}}",
+          "filterByFormula": "NOT({File} = \"\")"
+        }
+      }
+    },
+    {
+      "nodeId": "node_4de3d96559",
+      "actorId": "actor_4de3d96559",
+      "type": "NodeTransform",
+      "label": "Items: Loop Over Items1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_58d44b15b4",
+      "actorId": "actor_58d44b15b4",
+      "type": "NodeLoop",
+      "label": "Loop Over Items1",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 3880,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_dfd3946263",
+      "actorId": "actor_dfd3946263",
+      "type": "NodeTransform",
+      "label": "Item: Loop Over Items1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_b5add94eac",
+      "actorId": "actor_b5add94eac",
+      "type": "NodeTransform",
+      "label": "Results: Loop Over Items1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_b4729bacdb",
+      "actorId": "actor_b4729bacdb",
+      "type": "NodeTransform",
+      "label": "Items: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+      }
+    },
+    {
+      "nodeId": "node_01b355bf86",
+      "actorId": "actor_01b355bf86",
+      "type": "NodeLoop",
+      "label": "Loop Over Items",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      }
+    },
+    {
+      "nodeId": "node_bba2e99c46",
+      "actorId": "actor_bba2e99c46",
+      "type": "NodeTransform",
+      "label": "Item: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_ca0067b49e",
+      "actorId": "actor_ca0067b49e",
+      "type": "NodeTransform",
+      "label": "Results: Loop Over Items",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5780,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+      }
+    },
+    {
+      "nodeId": "node_4963beb558",
+      "actorId": "actor_4963beb558",
+      "type": "NodeHttpRequest",
+      "label": "Get File Data1",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5020,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET"
+      }
+    },
+    {
+      "nodeId": "node_03de4834e1",
+      "actorId": "actor_03de4834e1",
+      "type": "NodeTransform",
+      "label": "URL: Get File Data1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4640,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"Get File Data1\".\nreturn ($('Row Ref').item.json.File[0].url);"
+      }
+    },
+    {
+      "nodeId": "node_ed5d5b9899",
+      "actorId": "actor_ed5d5b9899",
+      "type": "NodeHttpRequest",
+      "label": "Get File Data",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "method": "GET",
+        "url": "{{last.transformed.File.0.url}}"
+      }
+    },
+    {
+      "nodeId": "node_975a7bcf7f",
+      "actorId": "actor_975a7bcf7f",
+      "type": "NodeTransform",
+      "label": "Params: Extract from File1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for googlesuper/GOOGLESUPER_PARSE_FILE (n8n node \"Extract from File1\").\nreturn {\n  \"file_id\": ($json.id ?? $json.file_id ?? $json.fileId),\n  \"mime_type\": \"application/pdf\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_2ee91d40e0",
+      "actorId": "actor_2ee91d40e0",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_PARSE_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 5780,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive parse",
+        "action": "GOOGLESUPER_PARSE_FILE"
+      }
+    },
+    {
+      "nodeId": "node_ee558a7772",
+      "actorId": "actor_ee558a7772",
+      "type": "NodeTransform",
+      "label": "Params: Extract from File",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for googlesuper/GOOGLESUPER_PARSE_FILE (n8n node \"Extract from File\").\nreturn {\n  \"file_id\": ($json.id ?? $json.file_id ?? $json.fileId),\n  \"mime_type\": \"application/pdf\",\n};"
+      }
+    },
+    {
+      "nodeId": "node_f03dc2569b",
+      "actorId": "actor_f03dc2569b",
+      "type": "NodeCdeConnector",
+      "label": "googlesuper/GOOGLESUPER_PARSE_FILE",
+      "color": "#6366F1",
+      "position": {
+        "x": 6920,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "googlesuper",
+        "connectorLabel": "Google Drive parse",
+        "action": "GOOGLESUPER_PARSE_FILE"
+      }
+    },
+    {
+      "nodeId": "node_1f2a215ea9",
+      "actorId": "actor_1f2a215ea9",
+      "type": "NodeTransform",
+      "label": "Fields to Update",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Get Prompt Fields\": {{steps.xf_8d3ae60d73.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Fields to Update\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const row = $('Row Ref').first().json;\n  const fields = $('Get Prompt Fields').first().json.fields;\n  const missingFields = fields\n   .filter(field => field.description && !row[field.name]);\n  \n  return missingFields;\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_1195fd8593",
+      "actorId": "actor_1195fd8593",
+      "type": "NodeLlmChain",
+      "label": "Generate Field Value",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 7680,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "You assist the user in extracting the required data from the given file.\n* Keep you answer short.\n* If you cannot extract the requested data, give you response as \"n/a\".",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_72bb072d6e",
+      "actorId": "actor_72bb072d6e",
+      "type": "NodeTransform",
+      "label": "Prompt: Generate Field Value",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Generate Field Value.\nconst __promptValue = `<file>\n${$json.text}\n</file>\n\nData to extract: ${$('Event Ref').first().json.field.description}\noutput format is: ${$('Event Ref').first().json.field.type}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_839fe7ee9c",
+      "actorId": "actor_839fe7ee9c",
+      "type": "NodeLlmChain",
+      "label": "Generate Field Value1",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 6920,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "system": "You assist the user in extracting the required data from the given file.\n* Keep you answer short.\n* If you cannot extract the requested data, give you response as \"n/a\" followed by \"(reason)\" where reason is replaced with reason why data could not be extracted.",
+        "prompt": "{{last.transformed}}",
+        "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_3144bd1f97",
+      "actorId": "actor_3144bd1f97",
+      "type": "NodeTransform",
+      "label": "Prompt: Generate Field Value1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6540,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Extract from File1\": __namedCtx.steps?.[\"GOOGLESUPER_PARSE_FILE\"]?.[\"result\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Generate Field Value1.\nconst __promptValue = `<file>\n${$('Extract from File1').first().json.text}\n</file>\n\nData to extract: ${$json.description}\noutput format is: ${$json.type}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_b7770e7beb",
+      "actorId": "actor_b7770e7beb",
+      "type": "NodeTransform",
+      "label": "Get Result",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8060,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __set = (o, p, v) => { const ks = String(p).split('.'); let c = o; for (const k of ks.slice(0, -1)) { if (c[k] == null || typeof c[k] !== 'object') c[k] = {}; c = c[k]; } c[ks[ks.length - 1]] = v; return o; };\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"id\"] = ($('Row Reference').item.json.id);\n  __set(out, \"={{ $('Event Ref').first().json.field.name }}\", ($json.trim()));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_a44d9b4a98",
+      "actorId": "actor_a44d9b4a98",
+      "type": "NodeTransform",
+      "label": "Get Result1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7300,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Fields to Update\": {{steps.xf_1f2a215ea9.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __set = (o, p, v) => { const ks = String(p).split('.'); let c = o; for (const k of ks.slice(0, -1)) { if (c[k] == null || typeof c[k] !== 'object') c[k] = {}; c = c[k]; } c[ks[ks.length - 1]] = v; return o; };\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  __set(out, \"={{ $('Fields to Update').item.json.name }}\", ($json.trim()));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_f15fc74331",
+      "actorId": "actor_f15fc74331",
+      "type": "NodeTransform",
+      "label": "Params: Update Row",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8440,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for airtable/AIRTABLE_UPDATE_RECORD (n8n node \"Update Row\").\nreturn {\n  \"baseId\": ($('Event Ref').first().json.baseId),\n  \"tableIdOrName\": ($('Event Ref').first().json.tableId),\n  \"recordId\": ($json.id),\n  \"fields\": ($json),\n};"
+      }
+    },
+    {
+      "nodeId": "node_245700d344",
+      "actorId": "actor_245700d344",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_UPDATE_RECORD",
+      "color": "#6366F1",
+      "position": {
+        "x": 8820,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_UPDATE_RECORD"
+      }
+    },
+    {
+      "nodeId": "node_e8a33a8cf1",
+      "actorId": "actor_e8a33a8cf1",
+      "type": "NodeTransform",
+      "label": "Add Row ID to Payload",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7680,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Set fields from JSON (n8n Set node, JSON mode): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const __raw = ({\n id: $('Row Ref').item.json.id,\n ...$input.all()\n .map(item => item.json)\n .reduce((acc, item) => ({\n ...acc,\n ...item,\n }), {})\n});\n  let __obj;\n  try { __obj = typeof __raw === 'string' ? JSON.parse(__raw) : __raw; } catch (e) { throw new Error('Set node JSON is not valid JSON: ' + e.message); }\n  return __obj;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_7709110dfb",
+      "actorId": "actor_7709110dfb",
+      "type": "NodeTransform",
+      "label": "Params: Update Record",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8060,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for airtable/AIRTABLE_UPDATE_RECORD (n8n node \"Update Record\").\nreturn {\n  \"baseId\": ($('Event Ref1').first().json.baseId),\n  \"tableIdOrName\": ($('Event Ref1').first().json.tableId),\n  \"recordId\": ($json.id),\n  \"fields\": ($json),\n};"
+      }
+    },
+    {
+      "nodeId": "node_f92753f5dd",
+      "actorId": "actor_f92753f5dd",
+      "type": "NodeCdeConnector",
+      "label": "airtable/AIRTABLE_UPDATE_RECORD",
+      "color": "#6366F1",
+      "position": {
+        "x": 8440,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "connectorName": "airtable",
+        "connectorLabel": "Airtable",
+        "action": "AIRTABLE_UPDATE_RECORD"
+      }
+    },
+    {
+      "nodeId": "node_86bf3b43b0",
+      "actorId": "actor_86bf3b43b0",
+      "type": "NodeTransform",
+      "label": "Return: Update Row",
+      "color": "#F59E0B",
+      "position": {
+        "x": 9200,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_4e89f6cfdb",
+      "actorId": "actor_4e89f6cfdb",
+      "type": "NodeTransform",
+      "label": "Return: Update Record",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8820,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "return source;"
+      }
+    },
+    {
+      "nodeId": "node_be71db63a7",
+      "actorId": "actor_be71db63a7",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 1600,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_651e734930",
+      "actorId": "actor_651e734930",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_dbc2122403",
+      "actorId": "actor_dbc2122403",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 4640,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_df1dadd7cd",
+      "actorId": "actor_df1dadd7cd",
+      "type": "NodeEnd",
+      "label": "End 4",
+      "color": "#EF4444",
+      "position": {
+        "x": 6160,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_ba9938530a",
+      "actorId": "actor_ba9938530a",
+      "type": "NodeWorkflowConfigs",
+      "label": "Workflow Configs",
+      "color": "default",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "inputs": {
+        "projectId": "",
+        "environmentTagId": "",
+        "initialContext": {
+          "body": {},
+          "query": {},
+          "headers": {},
+          "airtableToken": {
+            "$workflowSecret": "AIRTABLE_TOKEN"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_69770c1234",
+      "actorId": "actor_69770c1234",
+      "type": "NodeChatModel",
+      "label": "Generate Field Value: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 7680,
+        "y": 720
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    },
+    {
+      "nodeId": "node_5e82621c4b",
+      "actorId": "actor_5e82621c4b",
+      "type": "NodeChatModel",
+      "label": "Generate Field Value1: model",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 6920,
+        "y": 680
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_792783dde6",
+      "target": "node_c90d28dbf5",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_792783dde6",
+      "target": "node_c90d28dbf5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_6c4412fa92",
+      "target": "node_640e654d70",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_6c4412fa92",
+      "target": "node_640e654d70",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_8afd29600d",
+      "target": "node_5ac58c4acf",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_8afd29600d",
+      "target": "node_5ac58c4acf",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_5ac58c4acf",
+      "target": "node_c7745db855",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_c7745db855",
+      "target": "node_8b8b60e72a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_c7745db855",
+      "target": "node_8b8b60e72a",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_8b8b60e72a",
+      "target": "node_7474aed2d0",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_7474aed2d0",
+      "target": "node_3124669a70",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_7474aed2d0",
+      "target": "node_3124669a70",
+      "sourceOutput": "transformed",
+      "targetInput": "condition",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_4de3d96559",
+      "target": "node_58d44b15b4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_4de3d96559",
+      "target": "node_58d44b15b4",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_58d44b15b4",
+      "target": "node_dfd3946263",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_58d44b15b4",
+      "target": "node_dfd3946263",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_58d44b15b4",
+      "target": "node_b5add94eac",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_58d44b15b4",
+      "target": "node_b5add94eac",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b4729bacdb",
+      "target": "node_01b355bf86",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_b4729bacdb",
+      "target": "node_01b355bf86",
+      "sourceOutput": "transformed",
+      "targetInput": "items",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_01b355bf86",
+      "target": "node_bba2e99c46",
+      "sourceOutput": "onItem",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_01b355bf86",
+      "target": "node_bba2e99c46",
+      "sourceOutput": "item",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_01b355bf86",
+      "target": "node_ca0067b49e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_01b355bf86",
+      "target": "node_ca0067b49e",
+      "sourceOutput": "results",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLoop",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_03de4834e1",
+      "target": "node_4963beb558",
+      "sourceOutput": "transformed",
+      "targetInput": "url",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_03de4834e1",
+      "target": "node_4963beb558",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_975a7bcf7f",
+      "target": "node_2ee91d40e0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_975a7bcf7f",
+      "target": "node_2ee91d40e0",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ee558a7772",
+      "target": "node_f03dc2569b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_ee558a7772",
+      "target": "node_f03dc2569b",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_72bb072d6e",
+      "target": "node_1195fd8593",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_3144bd1f97",
+      "target": "node_839fe7ee9c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_f15fc74331",
+      "target": "node_245700d344",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_f15fc74331",
+      "target": "node_245700d344",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_7709110dfb",
+      "target": "node_f92753f5dd",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_7709110dfb",
+      "target": "node_f92753f5dd",
+      "sourceOutput": "transformed",
+      "targetInput": "params",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_5ac58c4acf",
+      "target": "node_9a7e1ff3dd",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_8b8b60e72a",
+      "target": "node_31c0235e12",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_305bbcb7f4",
+      "target": "node_31c0235e12",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3124669a70",
+      "target": "node_31c0235e12",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_8d3ae60d73",
+      "target": "node_07e6561046",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_ed5d5b9899",
+      "target": "node_ee558a7772",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_ed5d5b9899",
+      "target": "node_ee558a7772",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f03dc2569b",
+      "target": "node_72bb072d6e",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f03dc2569b",
+      "target": "node_72bb072d6e",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b7770e7beb",
+      "target": "node_f15fc74331",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_b7770e7beb",
+      "target": "node_f15fc74331",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_bba2e99c46",
+      "target": "node_ed5d5b9899",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeHttpRequest"
+    },
+    {
+      "source": "node_1195fd8593",
+      "target": "node_b7770e7beb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1195fd8593",
+      "target": "node_b7770e7beb",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1f2a215ea9",
+      "target": "node_3144bd1f97",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_1f2a215ea9",
+      "target": "node_3144bd1f97",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dfd3946263",
+      "target": "node_03de4834e1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_dfd3946263",
+      "target": "node_03de4834e1",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4963beb558",
+      "target": "node_975a7bcf7f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4963beb558",
+      "target": "node_975a7bcf7f",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2ee91d40e0",
+      "target": "node_1f2a215ea9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_2ee91d40e0",
+      "target": "node_1f2a215ea9",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a44d9b4a98",
+      "target": "node_e8a33a8cf1",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_a44d9b4a98",
+      "target": "node_e8a33a8cf1",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_839fe7ee9c",
+      "target": "node_a44d9b4a98",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_839fe7ee9c",
+      "target": "node_a44d9b4a98",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e4f8c3d0f6",
+      "target": "node_4de3d96559",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e4f8c3d0f6",
+      "target": "node_4de3d96559",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_31c0235e12",
+      "target": "node_eef9860845",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_07e6561046",
+      "target": "node_305bbcb7f4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_07e6561046",
+      "target": "node_305bbcb7f4",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_305bbcb7f4",
+      "target": "node_8afd29600d",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_305bbcb7f4",
+      "target": "node_8afd29600d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_305bbcb7f4",
+      "target": "node_c7745db855",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_305bbcb7f4",
+      "target": "node_7474aed2d0",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3b747b6c14",
+      "target": "node_8d3ae60d73",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_3b747b6c14",
+      "target": "node_8d3ae60d73",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_eef9860845",
+      "target": "node_b4729bacdb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_eef9860845",
+      "target": "node_b4729bacdb",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9a7e1ff3dd",
+      "target": "node_e4f8c3d0f6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9a7e1ff3dd",
+      "target": "node_e4f8c3d0f6",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e8a33a8cf1",
+      "target": "node_7709110dfb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_e8a33a8cf1",
+      "target": "node_7709110dfb",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_33699d9408",
+      "target": "node_3b747b6c14",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_33699d9408",
+      "target": "node_9886f5855d",
+      "sourceOutput": "trigger",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeStart",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9886f5855d",
+      "target": "node_36cabfd9bb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeCdeConnector"
+    },
+    {
+      "source": "node_9886f5855d",
+      "target": "node_792783dde6",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_9886f5855d",
+      "target": "node_792783dde6",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_36cabfd9bb",
+      "target": "node_d9fc9842b3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_36cabfd9bb",
+      "target": "node_d9fc9842b3",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d9fc9842b3",
+      "target": "node_6c4412fa92",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_d9fc9842b3",
+      "target": "node_6c4412fa92",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_245700d344",
+      "target": "node_86bf3b43b0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_245700d344",
+      "target": "node_86bf3b43b0",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_86bf3b43b0",
+      "target": "node_01b355bf86",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_86bf3b43b0",
+      "target": "node_01b355bf86",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_f92753f5dd",
+      "target": "node_4e89f6cfdb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_f92753f5dd",
+      "target": "node_4e89f6cfdb",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_4e89f6cfdb",
+      "target": "node_58d44b15b4",
+      "sourceOutput": "onDone",
+      "targetInput": "NEXT",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_4e89f6cfdb",
+      "target": "node_58d44b15b4",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeLoop"
+    },
+    {
+      "source": "node_c90d28dbf5",
+      "target": "node_be71db63a7",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_640e654d70",
+      "target": "node_651e734930",
+      "sourceOutput": "body",
+      "targetInput": "result",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_b5add94eac",
+      "target": "node_dbc2122403",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_ca0067b49e",
+      "target": "node_df1dadd7cd",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_69770c1234",
+      "target": "node_1195fd8593",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_5e82621c4b",
+      "target": "node_839fe7ee9c",
+      "sourceOutput": "config",
+      "targetInput": "llm",
+      "sourceNodeType": "NodeChatModel",
+      "targetNodeType": "NodeLlmChain"
+    }
+  ],
+  "template": {
+    "schemaVersion": 2,
+    "category": "openai-and-llms",
+    "categoryLabel": "OpenAI and LLMs",
+    "department": "AI/Data Extraction/Database",
+    "connectors": [
+      "airtable",
+      "googlesuper",
+      "openai"
+    ],
+    "setupSecrets": [
+      {
+        "key": "AIRTABLE_TOKEN",
+        "label": "Airtable personal access token",
+        "host": "api.airtable.com",
+        "headerFormat": "Authorization: Bearer <secret>",
+        "contextKey": "airtableToken",
+        "usedBy": [
+          "FieldsChanged Webhook",
+          "Get Webhook Payload",
+          "RecordsChanged Webhook"
+        ]
+      }
+    ],
+    "nodeTypes": [
+      "NodeBranch",
+      "NodeCdeConnector",
+      "NodeChatModel",
+      "NodeEnd",
+      "NodeHttpRequest",
+      "NodeLlmChain",
+      "NodeLoop",
+      "NodeStart",
+      "NodeTransform",
+      "NodeWorkflowConfigs"
+    ],
+    "comparison": {
+      "n8nSteps": 36,
+      "yantraSteps": 53,
+      "foldedHelpers": [
+        "OpenAI Chat Model1",
+        "OpenAI Chat Model"
+      ]
+    },
+    "source": {
+      "repo": "https://github.com/enescingoz/awesome-n8n-templates",
+      "path": "OpenAI_and_LLMs/AI Data Extraction with Dynamic Prompts and Airtable.json",
+      "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
+    },
+    "tier": "ready",
+    "blockers": [
+      {
+        "code": "trigger-replaced",
+        "node": "Airtable Webhook",
+        "detail": "n8n-nodes-base.webhook became the Start node"
+      }
+    ],
+    "setup": [
+      "\"Airtable Webhook\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "Workflow secret AIRTABLE_TOKEN: Airtable personal access token for api.airtable.com (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
+      "Connect the airtable connector (credential).",
+      "Connect the googlesuper connector (credential).",
+      "Connect the openai connector (credential).",
+      "Provide run inputs: body, query, headers, $."
+    ],
+    "conversion": {
+      "tool": "scripts/convert-n8n.mjs",
+      "status": "ready",
+      "coverage": 1,
+      "unmapped": [],
+      "approximate": [
+        {
+          "node": "Extract from File1",
+          "n8n": "extractFromFile.pdf",
+          "action": "NodeTransform",
+          "soft": true
+        },
+        {
+          "node": "Extract from File",
+          "n8n": "extractFromFile.pdf",
+          "action": "NodeTransform",
+          "soft": true
+        }
+      ],
+      "folded": [
+        {
+          "node": "OpenAI Chat Model1",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Generate Field Value"
+        },
+        {
+          "node": "OpenAI Chat Model",
+          "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+          "into": "Generate Field Value1"
+        }
+      ],
+      "removedEdges": [],
+      "loopPolicy": "native",
+      "triggers": [
+        {
+          "node": "Airtable Webhook",
+          "type": "n8n-nodes-base.webhook",
+          "as": "NodeStart"
+        },
+        {
+          "node": "When clicking ‘Test workflow’",
+          "type": "n8n-nodes-base.manualTrigger",
+          "as": "NodeStart"
+        }
+      ],
+      "hints": [
+        "The original started from an inbound webhook (POST /a82f0ae7-678e-49d9-8219-7281e8a2a1b2). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "\"FieldsChanged Webhook\" authenticated with airtableTokenApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Get Webhook Payload\" authenticated with airtableTokenApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"RecordsChanged Webhook\" authenticated with airtableTokenApi in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Loop Over Items1\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "\"Loop Over Items\" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.",
+        "\"Get File Data1\": a request field used $('OtherNode'); on Yantra $() resolves via the named upstream map when that node ran earlier, else the immediate upstream - check that expression.",
+        "\"Extract from File1\" (extractFromFile.pdf): Parsed via googlesuper/GOOGLESUPER_PARSE_FILE; the file must live on Google Drive (upload first if the previous step only has bytes/base64).",
+        "\"Extract from File1\": GOOGLESUPER_PARSE_FILE needs a Drive file_id (and googlesuper credential). If the upstream step only has file bytes, upload with GOOGLESUPER_CREATE_FILE_FROM_TEXT / Drive upload first, then parse.",
+        "\"Extract from File\" (extractFromFile.pdf): Parsed via googlesuper/GOOGLESUPER_PARSE_FILE; the file must live on Google Drive (upload first if the previous step only has bytes/base64).",
+        "\"Extract from File\": GOOGLESUPER_PARSE_FILE needs a Drive file_id (and googlesuper credential). If the upstream step only has file bytes, upload with GOOGLESUPER_CREATE_FILE_FROM_TEXT / Drive upload first, then parse.",
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Connect airtable: `cdecli credential create -n \"airtable\" -p airtable --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
+        "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
+      ]
+    },
+    "notes": [
+      "### 1. Get Table Schema\n[Learn more about the Airtable node](https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.airtable/)\n\nFor this operation, we'll use the handy Airtable node. I recommend getting familiar with this node for all your Airtable needs!",
+      "### 2a. Updates Minimal Number of Rows\nThis branch updates only the rows impacted.",
+      "### 2b. Update Every Row under the Field\nThis branch updates all applicable rows under field when the field/column is created or changed. Watch out - if you have 1000s of rows, this could take a while!",
+      "## Try It Out!\n### This n8n template powers a \"dynamic\" or \"user-defined\" prompts with PDF workflow pattern for a [Airtable](https://airtable.com/invite/r/cKzxFYVc) table. Simply put, it allows users to populate a spreadsheet using prompts without touching the underlying template.\n\n**Check out the video demo I did for n8n Studio**: https://www.youtube.com/watch?v=_fNAD1u8BZw\n\n**Check out the example Airtable here:** https://airtable.com/[id removed]/shrXzR1Tj99kuQbyL\n\nThis template is intended to be used as a webhook source for Airtable. **Looking for a Baserow version? [Click here](https://n8n.io/workflows/2780-ai-data-extraction-with-dynamic-prompts-and-baserow)**\n\n## How it works\n* Each Airtable.io tables offers integration feature whereby changes to the table can be sent as events to any accessible webhook. This allows for a reactive trigger pattern which makes this type of workflow possible. For our usecase, we capture the vents of `row_updated`, `field_created` and `field_updated`.\n* Next, we'll need an \"input\" column in our Airtable.io table. This column will be where our context lives for evaluating the prompts against. In this example, our \"input\" column name is \"file\" and it's where we'll upload our PDFs. Note, this \"input\" field is human-controlled and never updated from this template.\n* Now for the columns (aka \"fields\" in Airtable). Each field allows us to define a name, type and description and together form the schema. The first 2 are self-explaintory but the \"description\" will be for users to provide their prompts ie. what data should the field to contain.\n* In this template, a webhook trigger waits for when a row or column is updated. The incoming event comes with lots of details such as the table, row and/or column Ids that were impacted.\n* We use this information to fetch the table's schema in order to get the column's descriptions (aka dynamic prompts).\n* For each triggered event, we download our input ie. the PDF and ready it for our AI/LLM. By iterating through the available columns and feeding the dynamic prompts, our LLM can run those prompts against the PDF and thus generating a value response for each cell.\n* These values are then collected and used to update the Airtable Record.\n\n## How to use\n* You'll need to publish this workflow and make it accessible to our Airtable instance.\n* you must run the \"Create Airtable Webhooks\" mini-flow to link it to your Airtable.\n* This template is reusable for other Airtables but the webhooks need to be created each time for each table.\n\n### Need Help?\nJoin the [Discord](https://discord.com/invite/XPKeKXeB7d) or ask in the [Forum](https://community.n8n.io/)!\n\nHappy Flowgramming!",
+      "### 2. Event Router Pattern\n[Learn more about the Switch node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.switch/)\n\nA simple switch node can be used to determine which event to handle. The difference between our row and field events is that row event affect a single row whereas field events affect all rows.",
+      "### 3. Filter Only Rows with Valid Input\n[Learn more about the Split Out node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.splitout/)\n\nThis step handles one or more updated rows where \"updated\" means the \"input\" column (ie. \"file\" in our example) for these rows were changed. For each affected row, we'll get the full row to figure out only the columns we need to update - this is an optimisation to avoid redundant work ie. generating values for columns which already have a value.",
+      "### 6. Update the Airtable Record\n[Learn more about the Edit Fields node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.set/)\n\nFinally, we can collect the LLM responses and combine them to build an API request to update our Airtable record - the Id of which we got from initial webhook. After this is done, we can move onto the next row and repeat the process.",
+      "### 5. PDFs, LLMs and Dynamic Prompts? Oh My!\n[Learn more about the Basic LLM node](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.chainllm/)\n\nThis step is where it all comes together! In short, we give our LLM the PDF contents as the context and loop through our dynamic prompts (from the schema we pulled earlier) for our row. At the end, our LLM should have produced a value for each column requested.\n\n**Note**: There's definitely a optimisation which could be done for caching PDFs but it beyond the scope of this demonstration.",
+      "### 4. Using an Items Loop\n[Learn more about the Split in Batches node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.splitinbatches/)\n\nA split in batches node is used here to update a row at a time however, this is a preference for user experience - changes are seen in the Airtable quicker.",
+      "### 7. Listing All Applicable Rows Under The Column\n[Learn more about the Filter node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.filter)\n\nTo keep things performant, we can decide to get only rows with inputfield populated as this is required to perform the extraction. This can easily be achieved with Airtable filters.",
+      "### 9. Generating Value using LLM\n[Learn more about the Extract From File node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.extractfromfile/)\n\nPretty much identical to Step 5 but instead of updating every field/column, we only need to generate a value for one.",
+      "### 8. Using an Items Loop\n[Learn more about the Split in Batches node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.splitinbatches/)\n\nSimilar to Step 4, the Split in Batches node is a preference for user experience - changes are seen in the Airtable quicker.",
+      "### 10. Update the Airtable Record\n[Learn more about the Edit Fields node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.set/)\n\nAs with Step 6, the LLM response is used to update the row however only under the field that was created/changed. Once complete, the loop continues and the next row is processed.",
+      "[![airtable.io](https://res.cloudinary.com/daglih2g8/image/upload/f_auto,q_auto/v1/n8n-workflows/airtable_logo)](https://airtable.com/invite/r/cKzxFYVc)",
+      "## ⭐️ Creating Airtable Webhooks\nTo link this workflow with Airtable, you'll have to create webhooks for the Base.\nYou'll only really need to do this this once but if these webhooks are inactive after 7 days, you'll need to create them again.\n\nCheck out the Airtable Developer documentation for more info: [https://airtable.com/developers/web/api/webhooks-overview](https://airtable.com/developers/web/api/webhooks-overview)"
+    ],
+    "nodes": {
+      "node_33699d9408": {
+        "n8n": "Airtable Webhook",
+        "n8nType": "n8n-nodes-base.webhook",
+        "also": [
+          "When clicking ‘Test workflow’"
+        ]
+      },
+      "node_3b747b6c14": {
+        "n8n": "Get Table Schema",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_9886f5855d": {
+        "n8n": "Set Airtable Vars",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_8d3ae60d73": {
+        "n8n": "Get Prompt Fields",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_36cabfd9bb": {
+        "n8n": "Get Table Schema1",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_c90d28dbf5": {
+        "n8n": "FieldsChanged Webhook",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "airtableTokenApi"
+      },
+      "node_792783dde6": {
+        "n8n": "FieldsChanged Webhook",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_07e6561046": {
+        "n8n": "Get Webhook Payload",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "airtableTokenApi"
+      },
+      "node_d9fc9842b3": {
+        "n8n": "Get \"Input\" Field",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_305bbcb7f4": {
+        "n8n": "Parse Event",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_640e654d70": {
+        "n8n": "RecordsChanged Webhook",
+        "n8nType": "n8n-nodes-base.httpRequest",
+        "auth": "airtableTokenApi"
+      },
+      "node_6c4412fa92": {
+        "n8n": "RecordsChanged Webhook",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_8afd29600d": {
+        "n8n": "Event Type",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_5ac58c4acf": {
+        "n8n": "Event Type",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_c7745db855": {
+        "n8n": "Event Type",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_8b8b60e72a": {
+        "n8n": "Event Type",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_7474aed2d0": {
+        "n8n": "Event Type",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_3124669a70": {
+        "n8n": "Event Type",
+        "n8nType": "n8n-nodes-base.switch"
+      },
+      "node_9a7e1ff3dd": {
+        "n8n": "Get Row",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_31c0235e12": {
+        "n8n": "Filter Valid Fields",
+        "n8nType": "n8n-nodes-base.filter"
+      },
+      "node_e4f8c3d0f6": {
+        "n8n": "Filter Valid Rows",
+        "n8nType": "n8n-nodes-base.filter"
+      },
+      "node_eef9860845": {
+        "n8n": "Fetch Records",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_4de3d96559": {
+        "n8n": "Loop Over Items1",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_58d44b15b4": {
+        "n8n": "Loop Over Items1",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_dfd3946263": {
+        "n8n": "Loop Over Items1",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_b5add94eac": {
+        "n8n": "Loop Over Items1",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_b4729bacdb": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_01b355bf86": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_bba2e99c46": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_ca0067b49e": {
+        "n8n": "Loop Over Items",
+        "n8nType": "n8n-nodes-base.splitInBatches"
+      },
+      "node_4963beb558": {
+        "n8n": "Get File Data1",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_03de4834e1": {
+        "n8n": "Get File Data1",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_ed5d5b9899": {
+        "n8n": "Get File Data",
+        "n8nType": "n8n-nodes-base.httpRequest"
+      },
+      "node_975a7bcf7f": {
+        "n8n": "Extract from File1",
+        "n8nType": "n8n-nodes-base.extractFromFile"
+      },
+      "node_2ee91d40e0": {
+        "n8n": "Extract from File1",
+        "n8nType": "n8n-nodes-base.extractFromFile"
+      },
+      "node_ee558a7772": {
+        "n8n": "Extract from File",
+        "n8nType": "n8n-nodes-base.extractFromFile"
+      },
+      "node_f03dc2569b": {
+        "n8n": "Extract from File",
+        "n8nType": "n8n-nodes-base.extractFromFile"
+      },
+      "node_1f2a215ea9": {
+        "n8n": "Fields to Update",
+        "n8nType": "n8n-nodes-base.code"
+      },
+      "node_1195fd8593": {
+        "n8n": "Generate Field Value",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_72bb072d6e": {
+        "n8n": "Generate Field Value",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_839fe7ee9c": {
+        "n8n": "Generate Field Value1",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_3144bd1f97": {
+        "n8n": "Generate Field Value1",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_b7770e7beb": {
+        "n8n": "Get Result",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_a44d9b4a98": {
+        "n8n": "Get Result1",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_f15fc74331": {
+        "n8n": "Update Row",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_245700d344": {
+        "n8n": "Update Row",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_e8a33a8cf1": {
+        "n8n": "Add Row ID to Payload",
+        "n8nType": "n8n-nodes-base.set"
+      },
+      "node_7709110dfb": {
+        "n8n": "Update Record",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_f92753f5dd": {
+        "n8n": "Update Record",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_86bf3b43b0": {
+        "n8n": "Update Row",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_4e89f6cfdb": {
+        "n8n": "Update Record",
+        "n8nType": "n8n-nodes-base.airtable"
+      },
+      "node_be71db63a7": {
+        "n8n": "__end:FieldsChanged Webhook",
+        "n8nType": "synthetic"
+      },
+      "node_651e734930": {
+        "n8n": "__end:RecordsChanged Webhook",
+        "n8nType": "synthetic"
+      },
+      "node_dbc2122403": {
+        "n8n": "__end:Loop Over Items1",
+        "n8nType": "synthetic"
+      },
+      "node_df1dadd7cd": {
+        "n8n": "__end:Loop Over Items",
+        "n8nType": "synthetic"
+      },
+      "node_ba9938530a": {
+        "n8n": "__configs",
+        "n8nType": "synthetic"
+      },
+      "node_69770c1234": {
+        "n8n": "Generate Field Value",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      },
+      "node_5e82621c4b": {
+        "n8n": "Generate Field Value1",
+        "n8nType": "synthetic",
+        "role": "chat-model"
+      }
+    }
+  }
+}

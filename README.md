@@ -805,9 +805,10 @@ affiliated with or endorsed by n8n.
 
 ## License
 
-[CC BY 4.0](LICENSE) for our own work and what we adapted from
+[MIT](LICENSE) for our own work: the converter and scripts, the schema, the
+documentation and the catalog. What we adapted from
 [Awesome n8n Templates](https://github.com/enescingoz/awesome-n8n-templates)
-by Enes Cingoz. Each workflow was designed by the community author who first
-shared it, and the rights in it stay with that author; see [LICENSE](LICENSE).
-Review, configure and test each template before running it against real
-accounts.
+by Enes Cingoz stays under CC BY 4.0, and each workflow was designed by the
+community author who first shared it, so the rights in it stay with that
+author; [NOTICE.md](NOTICE.md) has the details. Review, configure and test each
+template before running it against real accounts.

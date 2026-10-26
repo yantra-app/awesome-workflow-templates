@@ -35,14 +35,20 @@ And before you run anything, every template tells you how ready it is (its
 
 ## The same automation, with fewer moving parts
 
-Here are three of the <!-- n:hand -->5<!-- /n --> hand-built templates. Each one replaces its n8n
-original one for one:
+Here are the <!-- n:hand -->5<!-- /n --> hand-built templates, including two animated previews of the
+workflows:
 
-| Automation | n8n original | Yantra template |
-|---|---|---|
-| [Talk to your SQLite database with an AI agent](database-and-storage/talk-to-your-sqlite-database-with-a-langchain-ai-agent.json) | 10 nodes: manual trigger, HTTP download, unzip, write file, chat trigger, read file, Set, LangChain SQL agent, OpenAI model, memory | 2 steps: Start -> agent (sandbox) -> End |
-| [Reconcile rent payments against a tenants spreadsheet](ai-research-and-data/reconcile-rent-payments-with-local-excel-spreadsheet-and-openai.json) | 11 nodes and a self-hosted instance: file trigger, file read, CSV extract, Set, agent, OpenAI model, output parser, two code tools reading the xlsx, Split Out, Code appending to the xlsx | 2 steps: Start -> agent (sandbox reads the sheets and writes alerts.xlsx) -> End |
-| [Telegram chat with PDF](telegram/telegram-chat-with-pdf.json) | 18 nodes and a Pinecone index: If, Telegram file download, MIME fix, data loader, text splitter, two embeddings, two vector stores, retriever, QA chain, Groq model, Limit, two replies, two error ends | 4 steps: Start -> agent (sandbox reads the PDF) -> reply params -> Telegram send -> End |
+| Automation | n8n original | Yantra template | Preview |
+|---|---|---|---|
+| [Talk to your SQLite database with an AI agent](database-and-storage/talk-to-your-sqlite-database-with-a-langchain-ai-agent.json) | 10 nodes: manual trigger, HTTP download, unzip, write file, chat trigger, read file, Set, LangChain SQL agent, OpenAI model, memory | 2 steps: Start -> agent (sandbox) -> End | — |
+| [Reconcile rent payments against a tenants spreadsheet](ai-research-and-data/reconcile-rent-payments-with-local-excel-spreadsheet-and-openai.json) | 11 nodes and a self-hosted instance: file trigger, file read, CSV extract, Set, agent, OpenAI model, output parser, two code tools reading the xlsx, Split Out, Code appending to the xlsx | 2 steps: Start -> agent (sandbox reads the sheets and writes alerts.xlsx) -> End | — |
+| [Telegram chat with PDF](telegram/telegram-chat-with-pdf.json) | 18 nodes and a Pinecone index: If, Telegram file download, MIME fix, data loader, text splitter, two embeddings, two vector stores, retriever, QA chain, Groq model, Limit, two replies, two error ends | 4 steps: Start -> agent (sandbox reads the PDF) -> reply params -> Telegram send -> End | — |
+| [Force AI to use a specific output format](openai-and-llms/ai-langchain-output-parser-4.json) | 7 nodes, with separate model and output-parser helpers | 3 steps: Start -> LLM Chain (inline JSON schema, connected Chat Model) -> End | <img src="openai-and-llms/ai-langchain-output-parser-4.gif" alt="Structured-output workflow demo" width="360" /> |
+| [Convert URL HTML to Markdown and get page links](pdf-and-documents/convert-url-html-to-markdown-format-and-get-page-links.json) | 10 nodes: input preparation, batching, HTTP request to Firecrawl, output mapping and Wait | 14 steps: configurable inputs -> prepare batches -> loops -> Firecrawl -> Markdown and links -> End | <img src="pdf-and-documents/convert-url-html-to-markdown-format-and-get-page-links.gif" alt="URL-to-Markdown and page-link extraction workflow demo" width="360" /> |
+
+The URL-to-Markdown example consolidates input setup, while explicit loop and
+connector-parameter steps increase its total count. Its original Wait step is a
+passthrough on Yantra.
 
 The SQLite one, in full, is the whole graph:
 

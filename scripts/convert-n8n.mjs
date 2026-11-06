@@ -19,7 +19,6 @@ import { fileURLToPath } from 'node:url';
 import { NODE_TYPES, DATA_OUTPUT, DONE_OUTPUT, RUN_INPUT } from './lib/yantra-nodes.mjs';
 import { migrateLlmChains } from './lib/llm-chain.mjs';
 import { simplifyLlmHelpers } from './lib/llm-helpers.mjs';
-import { preserveHttpOutputs } from './lib/http-outputs.mjs';
 import { planItemLoops, isLoopReturn } from './lib/item-loops.mjs';
 import { planRepeatLoops } from './lib/repeat-loops.mjs';
 import { beginRepeat, wireRepeats, buildRepeatWait } from './lib/repeat-converter.mjs';
@@ -726,9 +725,7 @@ class Converter {
         map[name] = { kind: 'literal', value: obj };
         continue;
       }
-      // Read HTTP bodies through ctx. The final graph seeds distinct runtime
-      // names so imported actors cannot overwrite these response snapshots.
-      if ((runtimeOutputs || unit?.lastNode?.type === 'NodeHttpRequest') && unit) {
+      if (runtimeOutputs && unit) {
         const data = this.repeatLoops?.size ? this.resolveData(unit, 0) : null;
         const node = data ? this.nodes.find((n) => n.nodeId === data.nodeId) : unit.lastNode;
         const socket = data?.socket || (node && DATA_OUTPUT[node.type]);
@@ -3813,7 +3810,6 @@ class Converter {
     // its final graph through the same code used for the saved templates.
     migrateLlmChains(wf);
     simplifyLlmHelpers(wf);
-    preserveHttpOutputs(wf);
     return applyQuality(wf, this.info.path);
   }
 }

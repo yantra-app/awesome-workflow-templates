@@ -749,5 +749,52 @@ for (const file of fs.readdirSync(fixturesDir).filter((f) => f.endsWith('.json')
     console.error(`FAIL ${file}: ${e.message}`);
   }
 }
+// The engagement monitor is maintained by hand. Exercise its saved JSON so
+// this check covers the code people import, including its HTTP runtime names.
+try {
+  const wf = JSON.parse(fs.readFileSync(path.join(here, '..', 'devops', 'github-stars-and-dev-to-engagement-monitor.json'), 'utf8'));
+  if (wf.template.conversion.tool !== 'hand') throw new Error('the customized summary must survive upstream regeneration');
+  const http = wf.nodes.filter((node) => node.type === 'NodeHttpRequest');
+  const names = http.map((node) => node.data?.name);
+  if (http.length !== 3 || names.some((name) => !name) || new Set(names).size !== 3) throw new Error('the three HTTP responses need distinct runtime names');
+  const stepFor = (label) => {
+    const step = http.find((node) => node.label === label)?.data.name;
+    if (!step) throw new Error(`missing HTTP node: ${label}`);
+    return step;
+  };
+  const repo1 = stepFor('GitHub Repo 1');
+  const repo2 = stepFor('GitHub Repo 2');
+  const article = stepFor('dev.to Article 1');
+  const ctx = { steps: {
+    [repo1]: { body: JSON.stringify({ stargazers_count: 0, forks_count: 1, open_issues_count: 2 }) },
+    [repo2]: { body: { stargazers_count: 4, forks_count: 5, open_issues_count: 6 } },
+    [article]: { body: JSON.stringify({ positive_reactions_count: 0, comments_count: 3, body_markdown: 'Quotes " and newlines\ninside a response' }) },
+  } };
+  const summary = byLabel(wf, 'Compile Summary');
+  const { checked_at, ...output } = runTransform(summary, ctx.steps[article].body, ctx);
+  const expected = {
+    repo1: { stars: 0, forks: 1, open_issues: 2 },
+    repo2: { stars: 4, forks: 5, open_issues: 6 },
+    article1: { reactions: 0, comments: 3 },
+  };
+  if (JSON.stringify(output) !== JSON.stringify(expected)) throw new Error(`summary from saved HTTP response bodies: ${JSON.stringify(output)}`);
+  if (!Number.isFinite(Date.parse(checked_at))) throw new Error('the summary needs a valid check timestamp');
+  const expectError = (context, message) => {
+    try { runTransform(summary, null, context); }
+    catch (error) {
+      if (error.message.includes(message)) return;
+      throw error;
+    }
+    throw new Error(`expected summary error: ${message}`);
+  };
+  expectError({ steps: { ...ctx.steps, [repo1]: undefined } }, 'GitHub Repo 1 response is missing');
+  expectError({ steps: { ...ctx.steps, [repo1]: { body: '{invalid JSON' } } }, 'GitHub Repo 1 returned invalid JSON');
+  expectError({ steps: { ...ctx.steps, [repo2]: { body: { stargazers_count: '4', forks_count: 5, open_issues_count: 6 } } } }, 'GitHub Repo 2 response does not contain repository metrics');
+  expectError({ steps: { ...ctx.steps, [article]: { body: {} } } }, 'dev.to response does not contain engagement metrics');
+  console.log('ok saved engagement monitor: distinct HTTP names, parsed bodies, zero counts and response errors');
+} catch (error) {
+  failed += 1;
+  console.error(`FAIL saved engagement monitor: ${error.message}`);
+}
 if (failed) process.exit(1);
 console.log(`fixtures ok (${Object.keys(EXPECT).length})`);

@@ -1,7 +1,7 @@
 {
   "name": "GitHub Stars and Dev.to Engagement Monitor",
   "workflowSlug": "github-stars-and-dev-to-engagement-monitor",
-  "description": "Checks GitHub repo stars/forks/open issues and dev.to article reactions/comments on a schedule, compiling them into one record per run - for tracking whether anyone noticed what you shipped without opening five tabs. Easy to extend: duplicate an HTTP node per repo/article you want to track.",
+  "description": "Checks GitHub repository stars, forks and open issues plus dev.to article reactions and comments on a schedule, combining all three responses into one record per run.",
   "isPublic": true,
   "nodes": [
     {
@@ -42,6 +42,9 @@
         "headers": {
           "Authorization": "Bearer {{githubToken}}"
         }
+      },
+      "data": {
+        "name": "http_344b1c3a84"
       }
     },
     {
@@ -64,6 +67,9 @@
         "headers": {
           "Authorization": "Bearer {{githubToken}}"
         }
+      },
+      "data": {
+        "name": "http_3d1e9b2318"
       }
     },
     {
@@ -83,6 +89,9 @@
       "inputs": {
         "method": "GET",
         "url": "https://dev.to/api/articles/{{yourDevtoUsername}}/{{yourArticleSlug}}"
+      },
+      "data": {
+        "name": "http_6482480ac8"
       }
     },
     {
@@ -101,7 +110,7 @@
       },
       "inputs": {
         "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"GitHub Repo 1\": {{steps.http_344b1c3a84.result}}, \"GitHub Repo 2\": {{steps.http_3d1e9b2318.result}}, \"dev.to Article 1\": {{steps.http_6482480ac8.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Compile Summary\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Add or remove blocks below to match the HTTP Request nodes you have.\n  // Every $('Node Name') reference must match a node name in this workflow exactly.\n  const repo1 = $('GitHub Repo 1').item.json;\n  const repo2 = $('GitHub Repo 2').item.json;\n  const article1 = $('dev.to Article 1').item.json;\n  \n  return [{\n    json: {\n      checked_at: new Date().toISOString(),\n      repo1: { stars: repo1.stargazers_count, forks: repo1.forks_count, open_issues: repo1.open_issues_count },\n      repo2: { stars: repo2.stargazers_count, forks: repo2.forks_count, open_issues: repo2.open_issues_count },\n      article1: { reactions: article1.positive_reactions_count, comments: article1.comments_count }\n    }\n  }];\n})();\nreturn __single(__unwrap(__out));"
+        "jsCode": "const ctx = {{ctx}};\nfunction responseBody(step, label) {\n  let body = ctx.steps?.[step]?.body;\n  if (typeof body === 'string') {\n    try { body = JSON.parse(body); } catch { throw new Error(label + ' returned invalid JSON'); }\n  }\n  if (!body || typeof body !== 'object' || Array.isArray(body)) {\n    throw new Error(label + ' response is missing. Run the whole workflow. Available steps: ' + Object.keys(ctx.steps || {}).join(', '));\n  }\n  return body;\n}\nfunction repoStats(step, label) {\n  const body = responseBody(step, label);\n  const fields = ['stargazers_count', 'forks_count', 'open_issues_count'];\n  if (!fields.every(key => typeof body[key] === 'number')) throw new Error(label + ' response does not contain repository metrics');\n  return { stars: body.stargazers_count, forks: body.forks_count, open_issues: body.open_issues_count };\n}\nconst article = responseBody('http_6482480ac8', 'dev.to Article 1');\nif (typeof article.positive_reactions_count !== 'number' || typeof article.comments_count !== 'number') throw new Error('dev.to response does not contain engagement metrics');\nreturn {\n  checked_at: new Date().toISOString(),\n  repo1: repoStats('http_344b1c3a84', 'GitHub Repo 1'),\n  repo2: repoStats('http_3d1e9b2318', 'GitHub Repo 2'),\n  article1: { reactions: article.positive_reactions_count, comments: article.comments_count }\n};"
       }
     },
     {
@@ -292,7 +301,7 @@
       "After import, start the schedule: cdecli cron activate github-stars-and-dev-to-engagement-monitor."
     ],
     "conversion": {
-      "tool": "scripts/convert-n8n.mjs",
+      "tool": "hand",
       "status": "ready",
       "coverage": 1,
       "unmapped": [],
@@ -307,7 +316,8 @@
         }
       ],
       "hints": [
-        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
+        "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
+        "Maintained directly in this template: distinct HTTP runtime names keep all three responses available to Compile Summary."
       ]
     },
     "notes": [],

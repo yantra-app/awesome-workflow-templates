@@ -8,6 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { convertWorkflow } from './convert-n8n.mjs';
+import { preserveHttpOutputs } from './lib/http-outputs.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const fixturesDir = path.join(here, 'fixtures');
@@ -38,6 +39,50 @@ const builderOf = (wf, node, socket = 'params') => {
   return wf.nodes.find((n) => n.nodeId === `node_${id}`);
 };
 const context = (wf) => wf.nodes.find((n) => n.type === 'NodeWorkflowConfigs').inputs.initialContext || {};
+
+/** Run the HTTP fixture's wired chain with the actor names used after import. */
+const runHttpSummaryGraph = (wf, responses) => {
+  const ctx = { ...context(wf), steps: {}, last: null };
+  const outputs = new Map();
+  const resolve = (value) => {
+    if (typeof value === 'string') {
+      const get = (token) => token.split('.').reduce((object, key) => object?.[key], token === 'ctx' ? { ctx } : ctx);
+      const single = /^\{\{([\w.]+)\}\}$/.exec(value);
+      return single ? get(single[1]) : value.replace(/\{\{([\w.]+)\}\}/g, (_, token) => String(get(token) ?? ''));
+    }
+    if (Array.isArray(value)) return value.map(resolve);
+    if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, resolve(item)]));
+    return value;
+  };
+  let node = wf.nodes.find((candidate) => candidate.type === 'NodeStart');
+  let summary;
+  for (let count = 0; node && count < wf.nodes.length; count++) {
+    let result, runtimeName;
+    if (node.type === 'NodeStart') result = {};
+    else if (node.type === 'NodeHttpRequest') {
+      const url = resolve(node.inputs.url);
+      if (!Object.hasOwn(responses, url)) throw new Error(`unexpected request URL: ${url}`);
+      result = { body: responses[url], statusCode: 200, headers: {}, error: null };
+      // Both importers merge data, data.inputs, then inputs into the actor
+      // context. Its name remains HTTP Request unless explicitly supplied.
+      const imported = { ...node.data, ...node.data?.inputs, ...node.inputs };
+      runtimeName = imported.name || 'HTTP Request';
+    } else if (node.type === 'NodeTransform') {
+      const input = wf.edges.find((edge) => edge.target === node.nodeId && edge.targetInput === 'source');
+      const value = runTransform(node, input && outputs.get(input.source)?.[input.sourceOutput], ctx);
+      if (node.label === 'Compile Summary') summary = value;
+      result = { transformed: value, error: null };
+      runtimeName = 'Transform';
+    } else throw new Error(`unexpected HTTP fixture node: ${node.type}`);
+    outputs.set(node.nodeId, result);
+    if (runtimeName) { ctx.steps[runtimeName] = result; ctx.last = result; }
+    const trigger = node.type === 'NodeStart' ? 'trigger' : 'onDone';
+    const next = wf.edges.filter((edge) => edge.source === node.nodeId && edge.sourceOutput === trigger);
+    if (next.length > 1) throw new Error(`HTTP fixture should be sequential: ${node.label}`);
+    node = wf.nodes.find((candidate) => candidate.nodeId === next[0]?.target);
+  }
+  return { summary, ctx };
+};
 /** No literal from the original in any node input (setup values replace them). */
 const absent = (wf, ...literals) => {
   const blob = JSON.stringify(wf.nodes);
@@ -382,6 +427,28 @@ const EXPECT = {
       (typeof url === 'string' && (url.includes('example.com') || url.includes('steps.') || url.includes('host'))) ||
       builders.some((b) => /__named|Vars|example\.com/.test(b.inputs?.jsCode || ''));
     if (!ok) throw new Error(`$('Vars') should resolve (url=${JSON.stringify(url)})`);
+  },
+  'http-named-summary.json': (wf) => {
+    const repo1 = { stargazers_count: 12, forks_count: 3, open_issues_count: 4, next_repo: 'two' };
+    const repo2 = { stargazers_count: 25, forks_count: 6, open_issues_count: 7 };
+    const article = { positive_reactions_count: 0, comments_count: 2, body_markdown: 'Quotes " and newlines\ninside a response' };
+    const responses = {
+      'https://example.com/repos/one': repo1,
+      'https://example.com/repos/two': repo2,
+      'https://example.com/articles/one': article,
+    };
+    const { summary: output, ctx } = runHttpSummaryGraph(wf, responses);
+    const expected = {
+      repo1: { stars: 12, forks: 3, open_issues: 4 },
+      repo2: { stars: 25, forks: 6, open_issues: 7 },
+      article1: { reactions: 0, comments: 2 },
+    };
+    if (JSON.stringify(output) !== JSON.stringify(expected)) throw new Error(`summary from HTTP response bodies: ${JSON.stringify(output)}`);
+    const http = wf.nodes.filter((node) => node.type === 'NodeHttpRequest');
+    if (new Set(http.map((node) => node.data?.name)).size !== 3 || http.some((node) => !node.data?.name)) throw new Error('imported HTTP actors need distinct runtime names');
+    if (ctx.steps[http.at(-1).data.name].body !== article) throw new Error('article response is stored under its configured runtime name');
+    if (wf.nodes.some((node) => node.type === 'NodeUpdateContext')) throw new Error('named HTTP outputs do not need context-save helpers');
+    if (preserveHttpOutputs(wf) !== 0) throw new Error('HTTP output preservation must be idempotent');
   },
   'spreadsheet-file.json': (wf) => {
     const soft = (wf.template.conversion.approximate || []).some((a) => a.soft && String(a.n8n).startsWith('spreadsheetFile'));

@@ -35,8 +35,8 @@ And before you run anything, every template tells you how ready it is (its
 
 ## The same automation, with fewer moving parts
 
-Here are the <!-- n:hand -->5<!-- /n --> hand-built templates, including two animated previews of the
-workflows:
+Here are the <!-- n:hand -->5<!-- /n --> hand-built templates and a Slack chatbot example,
+with animated previews of three workflows:
 
 | Automation | n8n original | Yantra template | Preview |
 |---|---|---|---|
@@ -45,10 +45,15 @@ workflows:
 | [Telegram chat with PDF](telegram/telegram-chat-with-pdf.json) | 18 nodes and a Pinecone index: If, Telegram file download, MIME fix, data loader, text splitter, two embeddings, two vector stores, retriever, QA chain, Groq model, Limit, two replies, two error ends | 4 steps: Start -> agent (sandbox reads the PDF) -> reply params -> Telegram send -> End | — |
 | [Force AI to use a specific output format](openai-and-llms/ai-langchain-output-parser-4.json) | 7 nodes, with separate model and output-parser helpers | 3 steps: Start -> LLM Chain (inline JSON schema, connected Chat Model) -> End | <img src="openai-and-llms/ai-langchain-output-parser-4.gif" alt="Structured-output workflow demo" width="360" /> |
 | [Convert URL HTML to Markdown and get page links](pdf-and-documents/convert-url-html-to-markdown-format-and-get-page-links.json) | 10 nodes: input preparation, batching, HTTP request to Firecrawl, output mapping and Wait | 14 steps: configurable inputs -> prepare batches -> loops -> Firecrawl -> Markdown and links -> End | <img src="pdf-and-documents/convert-url-html-to-markdown-format-and-get-page-links.gif" alt="URL-to-Markdown and page-link extraction workflow demo" width="360" /> |
+| [Slack slash commands AI Chat Bot](slack/slack-slash-commands-ai-chat-bot.json) | 5 nodes: webhook, Switch, LLM Chain, OpenAI Chat Model and Slack message | 8 steps: Start -> command checks and branches -> LLM Chain (connected Chat Model) -> Slack message | <img src="slack/slack-slash-commands-ai-chat-bot.gif" alt="Slack chatbot demo showing two ask requests and the alternative command branch" width="360" /> |
 
 The URL-to-Markdown example consolidates input setup, while explicit loop and
 connector-parameter steps increase its total count. Its original Wait step is a
 passthrough on Yantra.
+
+The Slack demo shows two `/ask` runs posting AI replies, followed by an
+`/another` run through the false branch of the `/ask` check. The `/another`
+branch has no action connected.
 
 The SQLite one, in full, is the whole graph:
 

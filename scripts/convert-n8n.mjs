@@ -63,6 +63,19 @@ function readmeMetadata() {
   return byPath;
 }
 
+function connectorRunPolicy(node) {
+  const policy = {};
+  if (typeof node.retryOnFail === 'boolean') policy.retryOnFail = node.retryOnFail;
+  if (Number.isFinite(node.maxTries)) policy.maxTries = node.maxTries;
+  if (Number.isFinite(node.waitBetweenTries)) policy.waitBetweenTries = node.waitBetweenTries;
+  if (['stopWorkflow', 'continueRegularOutput', 'continueErrorOutput'].includes(node.onError)) {
+    policy.onError = node.onError;
+  } else if (node.continueOnFail === true) {
+    policy.onError = 'continueRegularOutput';
+  }
+  return policy;
+}
+
 function clean(s) {
   return String(s ?? '')
     .replace(/\u2014/g, '-')
@@ -185,7 +198,7 @@ class Converter {
       position: { x: 0, y: 0 },
       size: { ...spec.size },
     };
-    const cleanInputs = {};
+    const cleanInputs = type === 'NodeCdeConnector' ? connectorRunPolicy(n8nNode) : {};
     for (const [k, v] of Object.entries(inputs || {})) if (v !== undefined) cleanInputs[k] = v;
     if (Object.keys(cleanInputs).length) node.inputs = cleanInputs;
     this.nodes.push(node);
@@ -875,6 +888,13 @@ class Converter {
     return { name: n.name, kind: 'webhook', entry: null, dataIn: null, exits: [{ trigger: this.sock(node, 'onEvent'), data: this.dataExit(node) }], flags: { webhook: true }, lastNode: node };
   }
 
+  connectorErrorExit(node) {
+    return {
+      trigger: this.sock(node, 'onError'),
+      data: { ...this.sock(node, 'error'), key: 'error', nodeType: node.type },
+    };
+  }
+
   /** A connector action, with a params-builder Transform when the params need JavaScript. */
   emitConnector(n, connector, connectorLabel, action, params, pred, flags = {}, alias = '') {
     this.connectors.add(connector);
@@ -886,6 +906,7 @@ class Converter {
     if (inlined !== null) {
       const node = this.addNode(role, n, 'NodeCdeConnector', label, { connectorName: connector, connectorLabel, action, params: inlined }, { approximate: flags.approximate || undefined });
       const unit = this.simpleUnit(n.name, 'service', node, flags);
+      if (node.inputs?.onError === 'continueErrorOutput') unit.exits.push(this.connectorErrorExit(node));
       unit.stepKey = action;
       return unit;
     }
@@ -894,12 +915,14 @@ class Converter {
     const node = this.addNode(role, n, 'NodeCdeConnector', label, { connectorName: connector, connectorLabel, action }, { approximate: flags.approximate || undefined });
     this.addEdge(this.sock(builder, 'onDone'), this.sock(node, 'RUN'));
     this.addEdge(this.sock(builder, 'transformed'), this.sock(node, 'params'));
+    const exits = [{ trigger: this.sock(node, 'onDone'), data: this.dataExit(node) }];
+    if (node.inputs?.onError === 'continueErrorOutput') exits.push(this.connectorErrorExit(node));
     return {
       name: n.name,
       kind: 'service',
       entry: this.sock(builder, 'RUN'),
       dataIn: () => this.sock(builder, 'source'),
-      exits: [{ trigger: this.sock(node, 'onDone'), data: this.dataExit(node) }],
+      exits,
       flags,
       stepKey: action,
       lastNode: node,

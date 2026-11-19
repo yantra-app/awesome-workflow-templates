@@ -796,5 +796,31 @@ try {
   failed += 1;
   console.error(`FAIL saved engagement monitor: ${error.message}`);
 }
+try {
+  const original = JSON.parse(fs.readFileSync(path.join(fixturesDir, 'slack-search.json'), 'utf8'));
+  const search = original.nodes.find((node) => node.name === 'Search');
+  Object.assign(search, { retryOnFail: true, maxTries: 4, waitBetweenTries: 250, onError: 'continueErrorOutput' });
+  original.nodes.push({ name: 'Recovery', type: 'n8n-nodes-base.code', parameters: { jsCode: 'return [{ json: $json }];' } });
+  original.connections.Search = { main: [[], [{ node: 'Recovery', type: 'main', index: 0 }]] };
+  const wf = convertWorkflow(original, {
+    slug: 'connector-run-policy', name: 'Connector run policy', description: 'Fixture for connector policies',
+    category: 'other-integrations', categoryLabel: 'Other', department: 'Engineering', sourcePath: 'fixtures/slack-search.json',
+  });
+  const action = connector(wf, 'SLACK_SEARCH_MESSAGES');
+  const { retryOnFail, maxTries, waitBetweenTries, onError } = action.inputs;
+  if (retryOnFail !== true || maxTries !== 4 || waitBetweenTries !== 250 || onError !== 'continueErrorOutput') {
+    throw new Error('connector retry or error settings were lost');
+  }
+  if (!wf.edges.some((edge) => edge.source === action.nodeId && edge.sourceOutput === 'onError')) {
+    throw new Error('connector error outlet was not wired');
+  }
+  if (!wf.edges.some((edge) => edge.source === action.nodeId && edge.sourceOutput === 'error')) {
+    throw new Error('connector error output was not wired');
+  }
+  console.log('ok connector run policy and error output');
+} catch (error) {
+  failed += 1;
+  console.error(`FAIL connector run policy: ${error.message}`);
+}
 if (failed) process.exit(1);
 console.log(`fixtures ok (${Object.keys(EXPECT).length})`);

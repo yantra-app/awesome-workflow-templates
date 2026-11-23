@@ -713,6 +713,23 @@ const EXPECT = {
     if (out.query !== "SELECT * FROM users WHERE email = 'x'' OR ''1''=''1'") throw new Error(`unsafe query ${out.query}`);
     if (codes(wf).includes('hard-approximation')) throw new Error('MySQL SQL on Supabase is a soft approximation');
   },
+  'loop-early-exit.json': (wf) => {
+    const loop = byLabel(wf, 'Loop');
+    const branch = wf.nodes.find((n) => n.type === 'NodeBranch');
+    const finish = byLabel(wf, 'Accept');
+    const brk = byLabel(wf, 'Break: Loop');
+    const ret = byLabel(wf, 'Return: Found');
+    const hasEdge = (from, out, to, input) => wf.edges.some((e) =>
+      e.source === from?.nodeId && e.sourceOutput === out && e.target === to?.nodeId && e.targetInput === input);
+    if (wf.template.conversion.loopPolicy !== 'native' || wf.template.tier !== 'ready' || loop?.type !== 'NodeLoop') {
+      throw new Error('convert a single exclusive exit as a native loop');
+    }
+    if (!hasEdge(branch, 'TRUE', brk, 'RUN') || !hasEdge(brk, 'onDone', loop, 'BREAK') ||
+        !hasEdge(loop, 'onBreak', finish, 'RUN') || !hasEdge(loop, 'breakResult', finish, 'source') ||
+        !hasEdge(branch, 'FALSE', ret, 'RUN') || !hasEdge(ret, 'onDone', loop, 'NEXT')) {
+      throw new Error('wire each branch through the appropriate loop port and keep the successful exit payload');
+    }
+  },
   'loop-safe.json': (wf) => {
     if (wf.template.conversion.loopPolicy !== 'native') throw new Error(`loopPolicy ${wf.template.conversion.loopPolicy}`);
     const loop = byLabel(wf, 'Loop');
@@ -724,9 +741,31 @@ const EXPECT = {
   },
 };
 
+const inlineFixtures = new Map([
+  ['loop-early-exit.json', {
+  "name": "fixture-loop-early-exit",
+  "nodes": [
+    { "name": "Start", "type": "n8n-nodes-base.manualTrigger", "typeVersion": 1, "position": [0, 0], "parameters": {} },
+    { "name": "Loop", "type": "n8n-nodes-base.splitInBatches", "typeVersion": 3, "position": [200, 0], "parameters": { "batchSize": 1 } },
+    { "name": "Found", "type": "n8n-nodes-base.if", "typeVersion": 2.2, "position": [400, 0], "parameters": {
+      "conditions": { "conditions": [{ "leftValue": "={{ $json.match }}", "operator": { "type": "boolean", "operation": "true", "singleValue": true } }] }
+    } },
+    { "name": "Accept", "type": "n8n-nodes-base.set", "typeVersion": 3.4, "position": [600, 0], "parameters": { "includeOtherFields": true, "assignments": { "assignments": [] } } }
+  ],
+  "connections": {
+    "Start": { "main": [[{ "node": "Loop", "type": "main", "index": 0 }]] },
+    "Loop": { "main": [[], [{ "node": "Found", "type": "main", "index": 0 }]] },
+    "Found": { "main": [[{ "node": "Accept", "type": "main", "index": 0 }], [{ "node": "Loop", "type": "main", "index": 0 }]] }
+  }
+}],
+]);
+const fixtureFiles = new Set([
+  ...fs.readdirSync(fixturesDir).filter((file) => file.endsWith('.json')),
+  ...inlineFixtures.keys(),
+]);
 let failed = 0;
-for (const file of fs.readdirSync(fixturesDir).filter((f) => f.endsWith('.json')).sort()) {
-  const n8n = JSON.parse(fs.readFileSync(path.join(fixturesDir, file), 'utf8'));
+for (const file of [...fixtureFiles].sort()) {
+  const n8n = inlineFixtures.get(file) ?? JSON.parse(fs.readFileSync(path.join(fixturesDir, file), 'utf8'));
   const info = {
     slug: `fixture-${file.replace(/\.json$/, '')}`,
     name: n8n.name || file,

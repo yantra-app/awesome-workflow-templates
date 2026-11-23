@@ -517,9 +517,14 @@ export function evaluate(wf, { catalog, verified = new Map(), path: relPath } = 
   const text = JSON.stringify((wf.nodes || []).filter((n) => !nodesMeta[n.nodeId]?.stub));
   if (text.includes('TODO(yantra)')) add('hard-approximation', undefined, 'TODO(yantra) left in a step', 'A step still contains TODO(yantra); finish it before running.');
   if (text.includes('<<n8n:')) add('hard-approximation', undefined, '<<n8n: ...>> marker left in a step', 'Replace the values marked <<n8n: ...>> by hand.');
-  if (conv.loopPolicy === 'flattened' || ((conv.removedEdges || []).length && conv.loopPolicy !== 'flattened-safe')) {
+  if (['flattened', 'flattened-safe'].includes(conv.loopPolicy) || (conv.removedEdges || []).length) {
     const loops = (conv.removedEdges || []).map((e) => `${e.from} -> ${e.to}`).join(', ');
-    add('loop-flattened', undefined, `loop edges removed: ${loops}`, `The original looped (${short(loops, 120)}); here the whole list flows through once. Check the steps inside the loop handle arrays.`);
+    // The validator recomputes setup for catalog entries generated before the loop update.
+    const legacy = Array.isArray(conv.hints) && conv.hints.some((hint) => typeof hint === 'string' && hint.startsWith('Unsupported loop edges from the original were removed'));
+    const setup = legacy
+      ? `The original looped (${short(loops, 120)}); here the whole list flows through once. Check the steps inside the loop handle arrays.`
+      : `Experimental: restore the original feedback paths (${short(loops, 120)}) before running this workflow.`;
+    add('loop-flattened', undefined, `loop edges removed: ${loops}`, setup);
   }
   for (const u of conv.unmapped || []) add('unmapped-node', u.node, `${u.type}: ${u.reason}`, `"${u.node}" is a TODO stub (${u.reason}).`);
   for (const t of conv.triggers || []) {

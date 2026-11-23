@@ -114,27 +114,6 @@ function scrubNote(text) {
   return out + text.slice(at);
 }
 
-/** n8n node types that only reshape data: a loop over them is the same work done once over the whole list. */
-const SAFE_LOOP_TYPES = new Set([
-  'n8n-nodes-base.splitInBatches',
-  'n8n-nodes-base.noOp',
-  'n8n-nodes-base.wait',
-  'n8n-nodes-base.set',
-  'n8n-nodes-base.code',
-  'n8n-nodes-base.function',
-  'n8n-nodes-base.functionItem',
-  'n8n-nodes-base.splitOut',
-  'n8n-nodes-base.aggregate',
-  'n8n-nodes-base.limit',
-  'n8n-nodes-base.filter',
-  'n8n-nodes-base.sort',
-  'n8n-nodes-base.removeDuplicates',
-  'n8n-nodes-base.summarize',
-  'n8n-nodes-base.itemLists',
-  'n8n-nodes-base.renameKeys',
-  'n8n-nodes-base.dateTime',
-]);
-
 class Converter {
   constructor(n8n, info) {
     this.n8n = n8n;
@@ -352,33 +331,8 @@ class Converter {
     this.edgesKept = forwardEdges.filter((e) => !back.has(e));
     for (const e of back) this.report.removedEdges.push({ from: e.src, to: e.dst });
     if (back.size) {
-      // A loop whose body only reshapes data (Set, Code, split, filter, batching, waits)
-      // does the same work in one pass over the whole list; anything that calls a
-      // service or branches per item does not.
-      const reach = (from) => {
-        const seen = new Set([from]);
-        const q = [from];
-        while (q.length) {
-          const x = q.shift();
-          for (const e of this.rawEdges) {
-            if (e.src === x && !seen.has(e.dst)) {
-              seen.add(e.dst);
-              q.push(e.dst);
-            }
-          }
-        }
-        return seen;
-      };
-      const body = new Set();
-      for (const e of back) for (const x of reach(e.dst)) if (reach(x).has(e.src)) body.add(x);
-      const safe = [...body].every((x) => SAFE_LOOP_TYPES.has(this.byName.get(x)?.type)) &&
-        ![...this.itemLoops.values()].some((p) => p.returns.length && !p.native);
-      this.loopPolicy = safe ? 'flattened-safe' : 'flattened';
-      this.setup.add(
-        safe
-          ? 'The original looped over items in batches; every step inside the loop only reshapes data, so here the whole list flows through once (loopPolicy=flattened-safe).'
-          : 'Unsupported loop edges from the original were removed (loopPolicy=flattened); these paths still run once. Supported item and conditional loops use NodeLoop and NodeRepeatUntil.',
-      );
+      this.loopPolicy = 'flattened';
+      this.setup.add('Experimental: the converter could not preserve every loop path. Restore the removed feedback before running this workflow.');
     } else if (this.loopReturns.size || this.repeatReturns.size) this.loopPolicy = 'native';
 
     // Topological order.
@@ -2944,11 +2898,11 @@ class Converter {
           n,
           `splitInBatches.${p.batchSize || 1}`,
           plan?.earlyExit
-            ? 'This loop can end the workflow from inside its body. Preserve its successful early exit with a conditional-loop conversion; NodeLoop has no break port.'
+            ? 'This loop can end the workflow from inside its body. The converter cannot preserve this combination of early exits and loop returns.'
             : 'This batch loop resets its input while iterating and requires a conditional-loop conversion.',
-          { soft: !!plan?.earlyExit },
+          { blocker: 'loop-flattened' },
         );
-        return this.simpleUnit(n.name, 'data', this.transformNode(n, 'batches', n.name, '// Conditional batch loop pending conversion (reset or successful early exit).\nreturn source;', pred), { approximate: true, soft: !!plan?.earlyExit });
+        return this.simpleUnit(n.name, 'data', this.transformNode(n, 'batches', n.name, '// Conditional batch loop pending conversion (reset or successful early exit).\nreturn source;', pred), { approximate: true });
       }
       case 'n8n-nodes-base.aggregate':
         return this.simpleUnit(n.name, 'data', this.transformNode(n, 'aggregate', n.name, aggregateBody(p), pred));
@@ -3486,6 +3440,7 @@ class Converter {
     exits[plan.bodyIndex] = { trigger: this.sock(item, 'onDone'), data: this.dataExit(item), many: String(plan.batchSize).replace(/^=/, '') !== '1' };
     exits[plan.doneIndex] = { trigger: this.sock(done, 'onDone'), data: this.dataExit(done), many: true };
     this.setup.add(`"${n.name}" uses NodeLoop: process each item/batch, return through NEXT, and continue only after all results are collected.`);
+    if (plan.breakEdge) this.setup.add(`"${n.name}" exits through On Break when the selected branch succeeds.`);
     return { name: n.name, kind: 'loop', entry: this.sock(prepare, 'RUN'), dataIn: () => this.sock(prepare, 'source'), exits,
       lastNode: item, loopNode: loop, doneNode: done, plan, flags: {} };
   }
@@ -3604,8 +3559,22 @@ class Converter {
       if (du.mergeDriver && du.mergeDriver !== e) continue;
       const exit = su.exits[Math.min(e.outIdx, su.exits.length - 1)];
       if (!exit) continue;
-      if (exit.trigger && du.entry) this.addEdge(exit.trigger, du.entry);
-      const dsrc = this.resolveData(su, e.outIdx);
+      let output = exit.trigger;
+      let dsrc = this.resolveData(su, e.outIdx);
+      const breakOwner = [...this.itemLoops.entries()].find(([, plan]) => plan.native && plan.breakEdge === e);
+      if (breakOwner) {
+        const loop = this.units.get(breakOwner[0]).loopNode;
+        const capture = this.addNode('loop-break', this.byName.get(breakOwner[0]), 'NodeTransform', `Break: ${breakOwner[0]}`, {
+          mode: 'jsCode', jsCode: 'return source;',
+        });
+        this.addEdge(output, this.sock(capture, 'RUN'));
+        if (dsrc && !dsrc.start) this.addEdge(dsrc, this.sock(capture, 'source'));
+        this.addEdge(this.sock(capture, 'onDone'), this.sock(loop, 'BREAK'));
+        this.addEdge(this.sock(capture, 'transformed'), this.sock(loop, 'breakResult'));
+        output = this.sock(loop, 'onBreak');
+        dsrc = this.sock(loop, 'breakResult');
+      }
+      if (output && du.entry) this.addEdge(output, du.entry);
       if (dsrc && !dsrc.start) {
         const targets = du.dataInAll?.length ? du.dataInAll.map((f) => f(e.inIdx)) : du.dataIn ? [du.dataIn(e.inIdx)] : [];
         for (const din of targets) if (din) this.addEdge({ nodeId: dsrc.nodeId, socket: dsrc.socket }, din);
@@ -3621,7 +3590,12 @@ class Converter {
       if (this.repeatIntercepts.has(e)) continue;
       const source = this.units.get(e.src);
       const target = this.units.get(e.dst);
-      const exit = source?.exits[Math.min(e.outIdx, source.exits.length - 1)];
+      const exit = source?.exits[e.outIdx];
+      if (!exit?.trigger && e.outIdx > 0) {
+        const reason = `Output ${e.outIdx} cannot advance "${e.dst}" because the converted node has no corresponding output`;
+        this.approximateStep(this.byName.get(e.src), 'loop.error-return', `${reason}.`, { reason });
+        continue;
+      }
       if (!exit?.trigger || !target?.loopNode) throw new Error(`Cannot return ${e.src} to item loop ${e.dst}`);
       const data = this.resolveData(source, e.outIdx);
       const ret = this.addNode(`loop-return-${e.outIdx}-${e.dst}`, this.byName.get(e.src), 'NodeTransform', `Return: ${e.src}`, {

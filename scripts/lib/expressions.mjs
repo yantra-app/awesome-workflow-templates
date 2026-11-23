@@ -239,7 +239,7 @@ function helperPrelude(names) {
 /**
  * Build the shim prelude for a jsCode body. Only the shims the body actually
  * references are emitted so simple transforms stay readable.
- * `named` is optional: { [nodeName]: { kind: 'literal'|'step'|'ctx'|'output', value?, key?, socket?, llm? } }.
+ * `named` is optional: { [nodeName]: { kind: 'literal'|'step'|'ctx'|'output'|'node', value?, key?, socket?, llm? } }.
  */
 export function shimPrelude(jsBody, named = {}) {
   const used = SHIMS.filter((s) => s.test.test(jsBody) && !(s.declares && s.declares.test(jsBody)));
@@ -251,12 +251,13 @@ export function shimPrelude(jsBody, named = {}) {
   if (used.length === 0 && !needsItems && !needsNamed && !helpers.size) return '';
   const lines = ['// n8n compatibility shims (generated). `source` is the upstream node output.'];
   if (needsNamed) {
-    if (Object.values(named).some((s) => s.kind === 'output')) lines.push('const __namedCtx = {{ctx}};');
+    if (Object.values(named).some((s) => s.kind === 'output' || s.kind === 'node')) lines.push('const __namedCtx = {{ctx}};');
     const entries = Object.entries(named).map(([name, spec]) => {
       let val;
       if (spec.kind === 'literal') val = JSON.stringify(spec.value);
       else if (spec.kind === 'ctx') val = '{{ctx}}';
       else if (spec.kind === 'step') val = `{{steps.${spec.key}.result}}`;
+      else if (spec.kind === 'node') val = `__namedCtx.nodes?.[${JSON.stringify(spec.key)}]?.latest?.[${JSON.stringify(spec.socket)}]`;
       else if (spec.kind === 'output') {
         val = `__namedCtx.steps?.[${JSON.stringify(spec.key)}]?.[${JSON.stringify(spec.socket)}]`;
         // Recreate the n8n answer wrappers used by named-node expressions.

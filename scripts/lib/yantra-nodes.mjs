@@ -8,6 +8,35 @@
 // this table to wire edges and the validator uses it to reject edges that name a
 // socket the editor does not have. Keep it in sync when a node gains a socket.
 
+const genericTrigger = {
+  inputs: {
+    httpMethod: { type: 'string' },
+    responseMode: { type: 'string' },
+    responseTimeoutMs: { type: 'number' },
+    requiredAuthMode: { type: 'string' },
+    acknowledgement: { type: 'object' },
+    lastNodeResponse: { type: 'object' },
+    inputSchema: { type: 'object' },
+    START: { type: 'trigger', trigger: true },
+    STOP: { type: 'trigger', trigger: true },
+  },
+  outputs: {
+    onEvent: { type: 'trigger', trigger: true },
+    payload: { type: 'any' },
+    headers: { type: 'object' },
+    query: { type: 'object' },
+    method: { type: 'string' },
+    rawBody: { type: 'string' },
+    rawBodyEncoding: { type: 'string' },
+    chatInput: { type: 'string' },
+    sessionId: { type: 'string' },
+  },
+  size: { width: 320, height: 220 },
+  color: '#6366F1',
+};
+
+export const GENERIC_ENTRY_TYPES = new Set(['NodeWebhookTrigger', 'NodeFormTrigger', 'NodeChatTrigger']);
+
 /** @typedef {{ type: string, trigger?: boolean }} Socket */
 
 /** @type {Record<string, { inputs: Record<string, Socket>, outputs: Record<string, Socket>, size: {width:number,height:number}, color: string }>} */
@@ -44,6 +73,21 @@ export const NODE_TYPES = {
     },
     size: { width: 280, height: 200 },
     color: '#14B8A6',
+  },
+  NodeWebhookTrigger: genericTrigger,
+  NodeFormTrigger: genericTrigger,
+  NodeChatTrigger: genericTrigger,
+  NodeRespondToWebhook: {
+    inputs: {
+      RUN: { type: 'trigger', trigger: true },
+      body: { type: 'any' },
+      bodyMode: { type: 'string' },
+      statusCode: { type: 'number' },
+      headers: { type: 'object' },
+    },
+    outputs: { onComplete: { type: 'trigger', trigger: true }, result: { type: 'any' } },
+    size: { width: 280, height: 180 },
+    color: '#6366F1',
   },
   NodeCdeWebhookTrigger: {
     inputs: {
@@ -116,6 +160,23 @@ export const NODE_TYPES = {
     },
     size: { width: 280, height: 220 },
     color: '#F59E0B',
+  },
+  NodeJavascript: {
+    // Migrated Transform mode uses the same source and transformed ports.
+    inputs: {
+      RUN: { type: 'trigger', trigger: true },
+      source: { type: 'any' },
+      logic: { type: 'string' },
+      migratedTransform: { type: 'boolean' },
+    },
+    outputs: {
+      onDone: { type: 'trigger', trigger: true },
+      transformed: { type: 'any' },
+      result: { type: 'any' },
+      error: { type: 'any' },
+    },
+    size: { width: 300, height: 220 },
+    color: '#6366F1',
   },
   NodeHttpRequest: {
     inputs: {
@@ -367,8 +428,13 @@ export const DATA_OUTPUT = {
   NodeLoop: 'results',
   NodeCron: 'payload',
   NodeCdeWebhookTrigger: 'payload',
+  NodeWebhookTrigger: 'payload',
+  NodeFormTrigger: 'payload',
+  NodeChatTrigger: 'payload',
+  NodeRespondToWebhook: 'result',
   NodeCdeConnector: 'result',
   NodeTransform: 'transformed',
+  NodeJavascript: 'transformed',
   NodeHttpRequest: 'body',
   NodeCdecliChatCompletion: 'text',
   NodeCdeGenerateObject: 'object',
@@ -385,8 +451,13 @@ export const DONE_OUTPUT = {
   NodeStart: 'trigger',
   NodeCron: 'onTick',
   NodeCdeWebhookTrigger: 'onEvent',
+  NodeWebhookTrigger: 'onEvent',
+  NodeFormTrigger: 'onEvent',
+  NodeChatTrigger: 'onEvent',
+  NodeRespondToWebhook: 'onComplete',
   NodeCdeConnector: 'onDone',
   NodeTransform: 'onDone',
+  NodeJavascript: 'onDone',
   NodeHttpRequest: 'onDone',
   NodeSync: 'onDone',
   NodeUpdateContext: 'onDone',
@@ -402,8 +473,10 @@ export const RUN_INPUT = {
   NodeLlmChain: 'RUN',
   NodeCdeConnector: 'RUN',
   NodeTransform: 'RUN',
+  NodeJavascript: 'RUN',
   NodeHttpRequest: 'RUN',
   NodeBranch: 'RUN',
+  NodeRespondToWebhook: 'RUN',
   NodeUpdateContext: 'RUN',
   NodeCdecliChatCompletion: 'RUN',
   NodeCdeGenerateObject: 'RUN',
@@ -414,10 +487,13 @@ export const RUN_INPUT = {
 export const DATA_INPUT = {
   NodeLoop: 'items',
   NodeTransform: 'source',
+  NodeJavascript: 'source',
   NodeEnd: 'result',
 };
 
-export const ENTRY_TYPES = new Set(['NodeStart', 'NodeCron', 'NodeCdeWebhookTrigger']);
+export const transformCode = (node) => node?.type === 'NodeJavascript' ? node.inputs?.logic : node?.inputs?.jsCode;
+
+export const ENTRY_TYPES = new Set(['NodeStart', 'NodeCron', 'NodeCdeWebhookTrigger', ...GENERIC_ENTRY_TYPES]);
 
 /** Socket types that may be connected. `any` is compatible with everything. */
 export function socketsCompatible(outType, inType) {

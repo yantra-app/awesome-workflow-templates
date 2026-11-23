@@ -1,3 +1,5 @@
+import { GENERIC_TRIGGER_TYPES } from './generic-entry-points.mjs';
+
 // How n8n node types map onto Yantra workflow nodes.
 //
 // Three families:
@@ -1095,13 +1097,8 @@ export const START_TRIGGERS = new Set([
   'n8n-nodes-base.manualTrigger',
   'n8n-nodes-base.start',
   'n8n-nodes-base.executeWorkflowTrigger',
-  'n8n-nodes-base.webhook',
-  'n8n-nodes-base.formTrigger',
-  'n8n-nodes-base.form',
   'n8n-nodes-base.errorTrigger',
   'n8n-nodes-base.localFileTrigger',
-  '@n8n/n8n-nodes-langchain.chatTrigger',
-  '@n8n/n8n-nodes-langchain.manualChatTrigger',
   // Polling triggers without a Yantra webhook slug: run on demand or add a Cron.
   'n8n-nodes-base.telegramTrigger',
   'n8n-nodes-base.microsoftOutlookTrigger',
@@ -1217,6 +1214,8 @@ export const DROP_NODES = new Set(['n8n-nodes-base.stickyNote', 'n8n-nodes-base.
 /** Where an n8n node lands. */
 export function classify(type) {
   if (DROP_NODES.has(type)) return 'drop';
+  if (Object.hasOwn(GENERIC_TRIGGER_TYPES, type)) return 'generic-trigger';
+  if (type === 'n8n-nodes-base.form') return 'form-page';
   if (START_TRIGGERS.has(type)) return 'start';
   if (SCHEDULE_TRIGGERS.has(type)) return 'cron';
   if (WEBHOOK_TRIGGERS[type]) return 'webhook';

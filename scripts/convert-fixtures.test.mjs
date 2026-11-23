@@ -8,6 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { convertWorkflow } from './convert-n8n.mjs';
+import { transformCode } from './lib/yantra-nodes.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const fixturesDir = path.join(here, 'fixtures');
@@ -20,7 +21,7 @@ const onlyBlockers = (wf, allowed) => {
 };
 /** Run a Transform body the way validate.mjs does, with a real payload. */
 const runTransform = (node, source, ctx = {}) => {
-  const code = node.inputs.jsCode.replace(/\{\{\{?\s*([\w$][\w$.[\]-]*)\s*\}?\}\}/g, (_m, p) => (p === 'ctx' ? JSON.stringify(ctx) : p in ctx ? String(ctx[p]) : 'null'));
+  const code = transformCode(node).replace(/\{\{\{?\s*([\w$][\w$.[\]-]*)\s*\}?\}\}/g, (_m, p) => (p === 'ctx' ? JSON.stringify(ctx) : p in ctx ? String(ctx[p]) : 'null'));
   const fn = vm.runInNewContext(`(function (source) {\n"use strict";\n${code}\n})`, { crypto: globalThis.crypto, globalThis: { crypto: globalThis.crypto }, TextEncoder, TextDecoder, btoa, atob });
   const output = fn(source);
   return code.includes('const __promptValue =') && typeof output === 'object' ? Object.values(output)[0] : output;
@@ -61,6 +62,33 @@ const DRIVE_DOWNLOAD = { data: { downloaded_file_content: { s3url: 'https://s3.e
 const HTTP_FILE = { data: { status: 200, ok: true, headers: {}, contentType: 'image/png', filename: 'shot.png', bodyBase64: 'aGVsbG8=' }, successful: true };
 
 const EXPECT = {
+  'generic-entry-points.json': (wf) => {
+    const receive = byLabel(wf, 'Receive');
+    const reply = byLabel(wf, 'Reply');
+    if (wf.nodes.some((n) => ['NodeStart', 'NodeTransform'].includes(n.type))) throw new Error('native entry points require hosted-compatible scripts and need no Start');
+    if (receive.type !== 'NodeWebhookTrigger' || receive.inputs.httpMethod !== 'PATCH' || receive.inputs.requiredAuthMode !== 'header' || receive.inputs.responseMode !== 'responseNode') throw new Error('webhook method, auth or response mode lost');
+    if (reply.type !== 'NodeRespondToWebhook' || reply.inputs.statusCode !== 201 || reply.inputs.headers['x-result'] !== 'created') throw new Error('explicit response config lost');
+    const rawBody = 'eyAidmFsdWUiOiA3IH0=';
+    const source = runTransform(byLabel(wf, 'Receive: request'), { value: 7 }, { nodes: { [receive.nodeId]: { latest: { headers: { 'x-example': 'kept' }, query: { source: 'fixture' }, rawBody } } } });
+    const request = byLabel(wf, 'Receive: request');
+    const result = runTransform(builderOf(wf, reply, 'body'), source, { nodes: { [request.nodeId]: { latest: { transformed: source } } } });
+    if (JSON.stringify(result) !== JSON.stringify({ value: 7, header: 'kept', query: 'fixture', rawBody })) throw new Error('request data or named references lost');
+    if (byLabel(wf, 'Read').inputs.httpMethod !== 'GET' || byLabel(wf, 'Read').inputs.lastNodeResponse.resultMode !== 'allItems') throw new Error('default webhook method or last-node response shape lost');
+    if (byLabel(wf, 'Acknowledge').inputs.acknowledgement.body !== 'accepted') throw new Error('immediate response lost');
+    const form = byLabel(wf, 'Form');
+    const schema = form.inputs.inputSchema;
+    if (form.type !== 'NodeFormTrigger' || schema.required.join() !== 'Contact name' || schema.properties.count.type !== 'number' || schema.properties.Team.enum.join() !== 'Ops,Sales') throw new Error('form field contract lost');
+    const chat = byLabel(wf, 'Chat');
+    if (chat.type !== 'NodeChatTrigger' || chat.inputs.responseMode !== 'lastNode' || chat.inputs.requiredAuthMode !== 'bearer') throw new Error('chat contract lost');
+    blockersOnly(wf, []);
+    const unsupported = JSON.parse(fs.readFileSync(path.join(fixturesDir, 'generic-entry-points.json'), 'utf8'));
+    unsupported.nodes[0].parameters.authentication = 'jwtAuth';
+    const rejected = convertWorkflow(unsupported, { slug: 'unsupported-entry-point' });
+    if (rejected.nodes.some((node) => node.type === 'NodeWebhookTrigger' && node.label === 'Receive') ||
+        !rejected.template.blockers.some((blocker) => blocker.code === 'entry-point-unsupported' && blocker.node === 'Receive')) {
+      throw new Error('unsupported inbound authentication must block registration');
+    }
+  },
   'llm-chain-providers.json': (wf) => {
     for (const [label, provider, model] of [
       ['Gemini Chain', 'gemini', 'models/gemini-2.0-flash'],
@@ -192,7 +220,7 @@ const EXPECT = {
     const params = paramsOf(wf, 'YANTRA_STORAGE_HTTP_SEND', { data: 'PGgxPmhpPC9oMT4=', fileName: 'index.html', mimeType: 'text/html', encoding: 'base64' });
     if (params.files[0].contentBase64 !== 'PGgxPmhpPC9oMT4=' || params.files[0].filename !== 'index.html') throw new Error(`toBinary file content stays base64: ${JSON.stringify(params.files)}`);
   },
-  // --- digests: yantra-storage HASH / HMAC; raw webhook bodies stay blocked ---
+  // --- digests: yantra-storage HASH / HMAC, including exact webhook bytes ---
   'crypto-hash.json': (wf) => {
     const params = paramsOf(wf, 'YANTRA_STORAGE_HASH', { name: '  Acme ' });
     if (params.algorithm !== 'md5' || params.encoding !== 'hex' || params.payload !== 'acme') throw new Error(`hash params ${JSON.stringify(params)}`);
@@ -209,9 +237,9 @@ const EXPECT = {
     blockersOnly(wf, ['action-pending-publish']);
   },
   'crypto-webhook-raw.json': (wf) => {
-    const b = wf.template.blockers.find((x) => x.code === 'signature-verification');
-    if (!b || !/raw request body of the webhook "Receive".*parsed JSON/.test(b.detail)) throw new Error(`raw-body HMAC keeps a precise blocker: ${JSON.stringify(wf.template.blockers)}`);
-    if (!connector(wf, 'YANTRA_STORAGE_HMAC')) throw new Error('the digest step is on the HMAC action');
+    const params = paramsOf(wf, 'YANTRA_STORAGE_HMAC');
+    if (params.payloadEncoding !== 'base64' || !/^\{\{nodes\.node_\w+\.latest\.transformed\.rawBody\}\}$/.test(params.payload)) throw new Error('the digest must receive the original request bytes, encoded as base64');
+    blockersOnly(wf, ['action-pending-publish']);
   },
   'code-crypto-webhook.json': (wf) => {
     const b = wf.template.blockers.find((x) => x.code === 'signature-verification');
@@ -318,7 +346,7 @@ const EXPECT = {
   },
   'vector-inmemory-load.json': (wf) => {
     const c = wf.nodes.find((n) => n.inputs?.action === 'PINECONE_SEARCH_RECORDS_NAMESPACE');
-    if (!c || c.inputs.params.namespace !== 'kb' || c.inputs.params.query.top_k !== 3 || c.inputs.params.query.inputs.text !== '{{chatInput}}') throw new Error(`params ${JSON.stringify(c?.inputs?.params)}`);
+    if (!c || c.inputs.params.namespace !== 'kb' || c.inputs.params.query.top_k !== 3 || c.inputs.params.query.inputs.text !== '{{last.transformed.chatInput}}') throw new Error(`params ${JSON.stringify(c?.inputs?.params)}`);
     if (codes(wf).includes('hard-approximation')) throw new Error('in-memory store is no longer a hard approximation');
   },
   'outlook-rewrite.json': (wf) => {
@@ -613,11 +641,11 @@ const EXPECT = {
     const llm = wf.nodes.find((n) => n.type === 'NodeLlmChain');
     const model = llm && builderOf(wf, llm, 'llm');
     if (!model || model.type !== 'NodeChatModel' || model.inputs.provider !== 'openai' || model.inputs.model !== 'gpt-4o-mini' || model.inputs.temperature !== 0.2) throw new Error(`expected a connected OpenAI Chat Model, got ${JSON.stringify(model?.inputs)}`);
-    const sys = runTransform(builderOf(wf, llm, 'system'), {}, { body: {} });
+    const sys = runTransform(builderOf(wf, llm, 'system'), { body: { question: 'Why?' } });
     const msg = runTransform(builderOf(wf, llm, 'prompt'), { body: { question: 'Why?' } });
     if (sys !== 'You are terse.' || msg !== 'Why?') throw new Error(`system ${JSON.stringify(sys)} message ${JSON.stringify(msg)}`);
     const answer = byLabel(wf, 'Answer');
-    if (!/\$json\)|\(\$json\)|= \(\$json\)/.test(answer.inputs.jsCode) || /choices/.test(answer.inputs.jsCode.split('\n').filter((l) => !/^\s*\/\//.test(l)).join('\n'))) throw new Error('downstream reads the answer text');
+    if (!/\$json\)|\(\$json\)|= \(\$json\)/.test(transformCode(answer)) || /choices/.test(transformCode(answer).split('\n').filter((l) => !/^\s*\/\//.test(l)).join('\n'))) throw new Error('downstream reads the answer text');
     if (wf.template.setupSecrets?.length || !wf.template.connectors.includes('openai')) throw new Error('Chat Model uses a provider connector credential, not a workflow secret');
     if (wf.template.tier !== 'ready') throw new Error(`expected ready, got ${wf.template.tier}`);
   },

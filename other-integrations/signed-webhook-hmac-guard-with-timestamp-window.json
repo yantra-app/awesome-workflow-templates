@@ -5,25 +5,30 @@
   "isPublic": true,
   "nodes": [
     {
-      "nodeId": "node_9579c77b95",
-      "actorId": "actor_9579c77b95",
-      "type": "NodeStart",
-      "label": "Start",
-      "color": "#22C55E",
+      "nodeId": "node_0f7f36e8bd",
+      "actorId": "actor_0f7f36e8bd",
+      "type": "NodeWebhookTrigger",
+      "label": "Receive Signed Webhook",
+      "color": "#6366F1",
       "position": {
         "x": 80,
         "y": 100
       },
       "size": {
-        "width": 240,
-        "height": 100
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "none",
+        "responseMode": "responseNode",
+        "httpMethod": "POST"
       }
     },
     {
-      "nodeId": "node_beefe1dda3",
-      "actorId": "actor_beefe1dda3",
-      "type": "NodeTransform",
-      "label": "Params: Compute Body HMAC",
+      "nodeId": "node_f1d82a304e",
+      "actorId": "actor_f1d82a304e",
+      "type": "NodeJavascript",
+      "label": "Receive Signed Webhook: request",
       "color": "#F59E0B",
       "position": {
         "x": 460,
@@ -34,8 +39,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for yantra-storage/YANTRA_STORAGE_HMAC (n8n node \"Compute Body HMAC\").\nreturn {\n  \"algorithm\": \"sha256\",\n  \"encoding\": \"hex\",\n  \"secret\": \"{{hmacSecret}}\",\n  \"payload\": (JSON.stringify($json.body ?? $json)),\n};"
+        "migratedTransform": true,
+        "logic": "const ctx = {{ctx}};\nconst request = ctx.nodes?.[\"node_0f7f36e8bd\"]?.latest ?? {};\nreturn { body: source, headers: request.headers, query: request.query, params: {}, method: request.method, rawBody: request.rawBody, rawBodyEncoding: request.rawBodyEncoding };"
       }
     },
     {
@@ -55,13 +60,20 @@
       "inputs": {
         "connectorName": "yantra-storage",
         "connectorLabel": "Yantra storage",
-        "action": "YANTRA_STORAGE_HMAC"
+        "action": "YANTRA_STORAGE_HMAC",
+        "params": {
+          "algorithm": "sha256",
+          "encoding": "hex",
+          "secret": "{{hmacSecret}}",
+          "payload": "{{nodes.node_f1d82a304e.latest.transformed.rawBody}}",
+          "payloadEncoding": "base64"
+        }
       }
     },
     {
       "nodeId": "node_512d14ac4f",
       "actorId": "actor_512d14ac4f",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Compute Body HMAC: digest",
       "color": "#F59E0B",
       "position": {
@@ -73,14 +85,14 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n Crypto keeps the input fields and sets the digest on \"expected_signature\".\nconst __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' ? source.data : source;\nconst __in = {{ctx}};\nreturn { ...(__in && typeof __in === 'object' && !Array.isArray(__in) ? __in : {}), \"expected_signature\": __r?.digest };"
+        "migratedTransform": true,
+        "logic": "// n8n Crypto keeps the input fields and sets the digest on \"expected_signature\".\nconst __r = source && typeof source === 'object' && source.data && typeof source.data === 'object' ? source.data : source;\nconst __in = {{nodes.node_f1d82a304e.latest.transformed}};\nreturn { ...(__in && typeof __in === 'object' && !Array.isArray(__in) ? __in : {}), \"expected_signature\": __r?.digest };"
       }
     },
     {
       "nodeId": "node_f320b4657f",
       "actorId": "actor_f320b4657f",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Validate Signature and Timestamp",
       "color": "#F59E0B",
       "position": {
@@ -92,14 +104,14 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Validate Signature and Timestamp\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const input = $input.first().json;\n  const headers = input.headers ?? {};\n  const received = typeof headers['x-automation-signature'] === 'string'\n    ? headers['x-automation-signature'].trim().toLowerCase()\n    : '';\n  const digest = typeof input.expected_signature === 'string'\n    ? input.expected_signature.toLowerCase()\n    : '';\n  const expected = `sha256=${digest}`;\n  const signatureFormatValid = /^sha256=[a-f0-9]{64}$/.test(received) && /^sha256=[a-f0-9]{64}$/.test(expected);\n  let signatureMismatch = 1;\n  if (signatureFormatValid) {\n    signatureMismatch = 0;\n    for (let index = 0; index < expected.length; index += 1) {\n      signatureMismatch |= expected.charCodeAt(index) ^ received.charCodeAt(index);\n    }\n  }\n  const body = input.body ?? {};\n  const sentAt = body.sent_at;\n  const now = Math.floor(Date.now() / 1000);\n  const timestampValid = Number.isInteger(sentAt) && sentAt >= now - 300 && sentAt <= now + 60;\n  const eventId = typeof body.event_id === 'string' ? body.event_id : '';\n  const eventIdValid = /^evt_[A-Za-z0-9-]{8,64}$/.test(eventId);\n  const contentType = typeof headers['content-type'] === 'string' ? headers['content-type'].toLowerCase() : '';\n  const contentTypeValid = contentType.startsWith('application/json');\n  const signatureValid = signatureFormatValid && signatureMismatch === 0;\n  return [{ json: {\n    accepted: signatureValid && timestampValid && eventIdValid && contentTypeValid,\n    event_id: eventIdValid ? eventId : null,\n    authenticated: signatureValid,\n    fresh: timestampValid,\n    age_seconds: Number.isInteger(sentAt) ? now - sentAt : null,\n    replay_window_seconds: 300\n  } }];\n})();\nreturn __single(__unwrap(__out));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Validate Signature and Timestamp\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const input = $input.first().json;\n  const headers = input.headers ?? {};\n  const received = typeof headers['x-automation-signature'] === 'string'\n    ? headers['x-automation-signature'].trim().toLowerCase()\n    : '';\n  const digest = typeof input.expected_signature === 'string'\n    ? input.expected_signature.toLowerCase()\n    : '';\n  const expected = `sha256=${digest}`;\n  const signatureFormatValid = /^sha256=[a-f0-9]{64}$/.test(received) && /^sha256=[a-f0-9]{64}$/.test(expected);\n  let signatureMismatch = 1;\n  if (signatureFormatValid) {\n    signatureMismatch = 0;\n    for (let index = 0; index < expected.length; index += 1) {\n      signatureMismatch |= expected.charCodeAt(index) ^ received.charCodeAt(index);\n    }\n  }\n  const body = input.body ?? {};\n  const sentAt = body.sent_at;\n  const now = Math.floor(Date.now() / 1000);\n  const timestampValid = Number.isInteger(sentAt) && sentAt >= now - 300 && sentAt <= now + 60;\n  const eventId = typeof body.event_id === 'string' ? body.event_id : '';\n  const eventIdValid = /^evt_[A-Za-z0-9-]{8,64}$/.test(eventId);\n  const contentType = typeof headers['content-type'] === 'string' ? headers['content-type'].toLowerCase() : '';\n  const contentTypeValid = contentType.startsWith('application/json');\n  const signatureValid = signatureFormatValid && signatureMismatch === 0;\n  return [{ json: {\n    accepted: signatureValid && timestampValid && eventIdValid && contentTypeValid,\n    event_id: eventIdValid ? eventId : null,\n    authenticated: signatureValid,\n    fresh: timestampValid,\n    age_seconds: Number.isInteger(sentAt) ? now - sentAt : null,\n    replay_window_seconds: 300\n  } }];\n})();\nreturn __single(__unwrap(__out));"
       }
     },
     {
       "nodeId": "node_8b71a4bd56",
       "actorId": "actor_8b71a4bd56",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Is Request Authentic and Fresh: condition",
       "color": "#F59E0B",
       "position": {
@@ -111,8 +123,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((Boolean(($json.accepted)) === Boolean(true)));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((Boolean(($json.accepted)) === Boolean(true)));"
       }
     },
     {
@@ -131,14 +143,117 @@
       }
     },
     {
-      "nodeId": "node_23db1f5446",
-      "actorId": "actor_23db1f5446",
+      "nodeId": "node_5dfa59a74a",
+      "actorId": "actor_5dfa59a74a",
+      "type": "NodeRespondToWebhook",
+      "label": "Accept Authenticated Request",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 180
+      },
+      "inputs": {
+        "bodyMode": "json",
+        "statusCode": 200,
+        "headers": {
+          "cache-control": "no-store",
+          "x-content-type-options": "nosniff"
+        }
+      }
+    },
+    {
+      "nodeId": "node_eb009219a7",
+      "actorId": "actor_eb009219a7",
+      "type": "NodeJavascript",
+      "label": "Accept Authenticated Request: body",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst body = ({ ok: true, status: 'accepted', authenticated: true, event_id: $json.event_id, replay_window_seconds: $json.replay_window_seconds });\nreturn typeof body === 'string' ? JSON.parse(body) : body;"
+      }
+    },
+    {
+      "nodeId": "node_2a2a83a335",
+      "actorId": "actor_2a2a83a335",
+      "type": "NodeRespondToWebhook",
+      "label": "Reject Invalid or Stale Request",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 180
+      },
+      "inputs": {
+        "bodyMode": "json",
+        "statusCode": 401,
+        "headers": {
+          "cache-control": "no-store",
+          "x-content-type-options": "nosniff"
+        }
+      }
+    },
+    {
+      "nodeId": "node_85f85e275b",
+      "actorId": "actor_85f85e275b",
+      "type": "NodeJavascript",
+      "label": "Reject Invalid or Stale Request: body",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "const body = ({ ok: false, status: 'rejected', reason: 'invalid_or_stale_signature' });\nreturn typeof body === 'string' ? JSON.parse(body) : body;"
+      }
+    },
+    {
+      "nodeId": "node_c82ff5533f",
+      "actorId": "actor_c82ff5533f",
+      "type": "NodeJavascript",
+      "label": "Finish after response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "return source ?? {};"
+      }
+    },
+    {
+      "nodeId": "node_3212f4e1da",
+      "actorId": "actor_3212f4e1da",
       "type": "NodeEnd",
       "label": "End",
       "color": "#EF4444",
       "position": {
-        "x": 1980,
-        "y": 360
+        "x": 3880,
+        "y": 100
       },
       "size": {
         "width": 240,
@@ -146,14 +261,33 @@
       }
     },
     {
-      "nodeId": "node_8d0f438a99",
-      "actorId": "actor_8d0f438a99",
+      "nodeId": "node_6a2305bd7c",
+      "actorId": "actor_6a2305bd7c",
+      "type": "NodeJavascript",
+      "label": "Finish after response 2",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "return source ?? {};"
+      }
+    },
+    {
+      "nodeId": "node_c4a90a9fd4",
+      "actorId": "actor_c4a90a9fd4",
       "type": "NodeEnd",
       "label": "End 2",
       "color": "#EF4444",
       "position": {
-        "x": 1980,
-        "y": 620
+        "x": 3880,
+        "y": 360
       },
       "size": {
         "width": 240,
@@ -168,7 +302,7 @@
       "color": "default",
       "position": {
         "x": 80,
-        "y": 880
+        "y": 620
       },
       "size": {
         "width": 280,
@@ -178,9 +312,6 @@
         "projectId": "",
         "environmentTagId": "",
         "initialContext": {
-          "body": {},
-          "query": {},
-          "headers": {},
           "hmacSecret": {
             "$workflowSecret": "HMAC_SECRET"
           }
@@ -190,20 +321,20 @@
   ],
   "edges": [
     {
-      "source": "node_beefe1dda3",
-      "target": "node_f2fa6fe6ec",
-      "sourceOutput": "onDone",
+      "source": "node_0f7f36e8bd",
+      "target": "node_f1d82a304e",
+      "sourceOutput": "onEvent",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeCdeConnector"
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
     },
     {
-      "source": "node_beefe1dda3",
-      "target": "node_f2fa6fe6ec",
-      "sourceOutput": "transformed",
-      "targetInput": "params",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeCdeConnector"
+      "source": "node_0f7f36e8bd",
+      "target": "node_f1d82a304e",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_f2fa6fe6ec",
@@ -211,7 +342,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_f2fa6fe6ec",
@@ -219,14 +350,14 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_8b71a4bd56",
       "target": "node_c5eac3d64f",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -234,63 +365,159 @@
       "target": "node_c5eac3d64f",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
-      "source": "node_9579c77b95",
-      "target": "node_beefe1dda3",
-      "sourceOutput": "trigger",
+      "source": "node_eb009219a7",
+      "target": "node_5dfa59a74a",
+      "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeRespondToWebhook"
+    },
+    {
+      "source": "node_eb009219a7",
+      "target": "node_5dfa59a74a",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeRespondToWebhook"
+    },
+    {
+      "source": "node_85f85e275b",
+      "target": "node_2a2a83a335",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeRespondToWebhook"
+    },
+    {
+      "source": "node_85f85e275b",
+      "target": "node_2a2a83a335",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeRespondToWebhook"
+    },
+    {
+      "source": "node_f1d82a304e",
+      "target": "node_f2fa6fe6ec",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeCdeConnector"
     },
     {
       "source": "node_512d14ac4f",
       "target": "node_f320b4657f",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_512d14ac4f",
       "target": "node_f320b4657f",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_f320b4657f",
       "target": "node_8b71a4bd56",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_f320b4657f",
       "target": "node_8b71a4bd56",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_c5eac3d64f",
+      "target": "node_eb009219a7",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_f320b4657f",
-      "target": "node_23db1f5446",
+      "target": "node_eb009219a7",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_c5eac3d64f",
+      "target": "node_85f85e275b",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_f320b4657f",
+      "target": "node_85f85e275b",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_5dfa59a74a",
+      "target": "node_c82ff5533f",
+      "sourceOutput": "onComplete",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_5dfa59a74a",
+      "target": "node_c82ff5533f",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_c82ff5533f",
+      "target": "node_3212f4e1da",
       "sourceOutput": "transformed",
       "targetInput": "result",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeEnd"
     },
     {
-      "source": "node_f320b4657f",
-      "target": "node_8d0f438a99",
+      "source": "node_2a2a83a335",
+      "target": "node_6a2305bd7c",
+      "sourceOutput": "onComplete",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_2a2a83a335",
+      "target": "node_6a2305bd7c",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_6a2305bd7c",
+      "target": "node_c4a90a9fd4",
       "sourceOutput": "transformed",
       "targetInput": "result",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeEnd"
     }
   ],
@@ -317,13 +544,14 @@
       "NodeBranch",
       "NodeCdeConnector",
       "NodeEnd",
-      "NodeStart",
-      "NodeTransform",
+      "NodeJavascript",
+      "NodeRespondToWebhook",
+      "NodeWebhookTrigger",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 6,
-      "yantraSteps": 7,
+      "yantraSteps": 13,
       "foldedHelpers": []
     },
     "source": {
@@ -335,14 +563,9 @@
     "tier": "experimental",
     "blockers": [
       {
-        "code": "signature-verification",
-        "node": "Compute Body HMAC",
-        "detail": "crypto.hmac: computes an HMAC over the raw request body of the webhook \"Receive Signed Webhook\"; the Yantra start node passes the webhook body as parsed JSON with no raw bytes, and re-serialised JSON does not match the sender's bytes, so the digest cannot be computed faithfully until the webhook trigger exposes the raw body (yantra-storage YANTRA_STORAGE_HMAC / YANTRA_STORAGE_VERIFY_SIGNATURE then take it as payload)"
-      },
-      {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "Receive Signed Webhook",
-        "detail": "n8n-nodes-base.webhook became the Start node"
+        "detail": "generic trigger URL requires registration"
       },
       {
         "code": "action-pending-publish",
@@ -351,11 +574,10 @@
       }
     ],
     "setup": [
-      "\"Compute Body HMAC\" (crypto.hmac): computes an HMAC over the raw request body of the webhook \"Receive Signed Webhook\"; the Yantra start node passes the webhook body as parsed JSON with no raw bytes, and re-serialised JSON does not match the sender's bytes, so the digest cannot be computed faithfully until the webhook trigger exposes the raw body (yantra-storage YANTRA_STORAGE_HMAC / YANTRA_STORAGE_VERIFY_SIGNATURE then take it as payload).",
-      "\"Receive Signed Webhook\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Receive Signed Webhook\": save the workflow, then register node node_0f7f36e8bd via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL.",
       "\"Compute Body HMAC\": yantra-storage/YANTRA_STORAGE_HMAC comes from the yantra-storage HTTP send and signatures patch (1.4.1), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
       "Workflow secret HMAC_SECRET: HMAC key for the Crypto step \"Compute Body HMAC\" (read by the HMAC step as its key). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
-      "Provide run inputs: body, query, headers."
+      "Provide run inputs: nodes."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -367,8 +589,7 @@
           "node": "Compute Body HMAC",
           "n8n": "crypto.hmac",
           "action": "yantra-storage/YANTRA_STORAGE_HMAC",
-          "blocker": "signature-verification",
-          "reason": "computes an HMAC over the raw request body of the webhook \"Receive Signed Webhook\"; the Yantra start node passes the webhook body as parsed JSON with no raw bytes, and re-serialised JSON does not match the sender's bytes, so the digest cannot be computed faithfully until the webhook trigger exposes the raw body (yantra-storage YANTRA_STORAGE_HMAC / YANTRA_STORAGE_VERIFY_SIGNATURE then take it as payload)"
+          "soft": true
         }
       ],
       "folded": [],
@@ -377,12 +598,11 @@
         {
           "node": "Receive Signed Webhook",
           "type": "n8n-nodes-base.webhook",
-          "as": "NodeStart"
+          "as": "NodeWebhookTrigger"
         }
       ],
       "hints": [
-        "The original started from an inbound webhook (POST /signed-webhook-hmac-guard). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
-        "\"Compute Body HMAC\" (crypto.hmac): computes an HMAC over the raw request body of the webhook \"Receive Signed Webhook\"; the Yantra start node passes the webhook body as parsed JSON with no raw bytes, and re-serialised JSON does not match the sender's bytes, so the digest cannot be computed faithfully until the webhook trigger exposes the raw body (yantra-storage YANTRA_STORAGE_HMAC / YANTRA_STORAGE_VERIFY_SIGNATURE then take it as payload).",
+        "\"Compute Body HMAC\" computes the SHA256 HMAC with yantra-storage YANTRA_STORAGE_HMAC (key from the HMAC_SECRET workflow secret unless the original built it from data).",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
       ]
     },
@@ -390,13 +610,13 @@
       "## Verify a signed webhook before business logic\n\n### Who this is for\nAutomation teams receiving server-to-server webhooks from a provider that signs the exact request body with HMAC-SHA256.\n\n### Contract used by this template\n- Header: `X-Automation-Signature: sha256=<hex digest; comparison is case-insensitive>`\n- Signature input: the exact raw request body bytes\n- Body fields: `event_id`, signed Unix timestamp `sent_at`, and `payload`\n- Freshness: no more than 300 seconds old or 60 seconds in the future\n\n### Set up\n1. Keep the workflow inactive after import.\n2. Create an n8n Crypto credential with the shared HMAC secret.\n3. Assign it to **Compute Body HMAC**.\n4. Match the provider's exact header, canonical string, digest encoding, and timestamp rules.\n5. Add business nodes only after the true output of **Is Request Authentic and Fresh**.\n\n### Boundaries\nThe timestamp limits replay time but does not stop duplicate delivery inside the five-minute window. Add persistent event-ID deduplication for strict once-only handling. Apply rate and body-size limits before n8n. Generic `401` responses avoid exposing which check failed. The public workflow contains no credential or real data."
     ],
     "nodes": {
-      "node_9579c77b95": {
+      "node_0f7f36e8bd": {
         "n8n": "Receive Signed Webhook",
         "n8nType": "n8n-nodes-base.webhook"
       },
-      "node_beefe1dda3": {
-        "n8n": "Compute Body HMAC",
-        "n8nType": "n8n-nodes-base.crypto"
+      "node_f1d82a304e": {
+        "n8n": "Receive Signed Webhook",
+        "n8nType": "n8n-nodes-base.webhook"
       },
       "node_f2fa6fe6ec": {
         "n8n": "Compute Body HMAC",
@@ -418,11 +638,35 @@
         "n8n": "Is Request Authentic and Fresh",
         "n8nType": "n8n-nodes-base.if"
       },
-      "node_23db1f5446": {
+      "node_5dfa59a74a": {
         "n8n": "Accept Authenticated Request",
         "n8nType": "n8n-nodes-base.respondToWebhook"
       },
-      "node_8d0f438a99": {
+      "node_eb009219a7": {
+        "n8n": "Accept Authenticated Request",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_2a2a83a335": {
+        "n8n": "Reject Invalid or Stale Request",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_85f85e275b": {
+        "n8n": "Reject Invalid or Stale Request",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_c82ff5533f": {
+        "n8n": "Accept Authenticated Request",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_3212f4e1da": {
+        "n8n": "Accept Authenticated Request",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_6a2305bd7c": {
+        "n8n": "Reject Invalid or Stale Request",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_c4a90a9fd4": {
         "n8n": "Reject Invalid or Stale Request",
         "n8nType": "n8n-nodes-base.respondToWebhook"
       },

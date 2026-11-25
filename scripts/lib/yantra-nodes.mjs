@@ -172,6 +172,24 @@ export const NODE_TYPES = {
     size: { width: 280, height: 220 },
     color: '#0EA5E9',
   },
+  NodeWorkflowWait: {
+    inputs: {
+      RUN: { type: 'trigger', trigger: true },
+      mode: { type: 'string' },
+      seconds: { type: 'number' },
+      until: { type: 'string' },
+      data: { type: 'any' },
+    },
+    outputs: {
+      onDone: { type: 'trigger', trigger: true },
+      onExpired: { type: 'trigger', trigger: true },
+      data: { type: 'any' },
+      result: { type: 'any' },
+      outcome: { type: 'string' },
+    },
+    size: { width: 280, height: 220 },
+    color: '#0EA5E9',
+  },
   NodeRepeatUntil: {
     inputs: {
       RUN: { type: 'trigger', trigger: true },
@@ -363,6 +381,7 @@ export const NODE_TYPES = {
  * or inherit the data of the node before them.
  */
 export const DATA_OUTPUT = {
+  NodeWorkflowWait: 'data',
   NodeRepeatUntil: 'result',
   NodeLoop: 'results',
   NodeCron: 'payload',
@@ -379,6 +398,7 @@ export const DATA_OUTPUT = {
 
 /** The trigger output that fires when a node completes normally. */
 export const DONE_OUTPUT = {
+  NodeWorkflowWait: 'onDone',
   NodeRepeatUntil: 'onDone',
   NodeLoop: 'onDone',
   NodeLlmChain: 'onDone',
@@ -397,6 +417,7 @@ export const DONE_OUTPUT = {
 
 /** The trigger input that starts a node, when it has one. */
 export const RUN_INPUT = {
+  NodeWorkflowWait: 'RUN',
   NodeRepeatUntil: 'RUN',
   NodeLoop: 'RUN',
   NodeLlmChain: 'RUN',
@@ -412,6 +433,7 @@ export const RUN_INPUT = {
 
 /** The data input that receives the previous node's payload, when it has one. */
 export const DATA_INPUT = {
+  NodeWorkflowWait: 'data',
   NodeLoop: 'items',
   NodeTransform: 'source',
   NodeEnd: 'result',

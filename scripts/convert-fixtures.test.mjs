@@ -861,5 +861,58 @@ try {
   failed += 1;
   console.error(`FAIL connector run policy: ${error.message}`);
 }
+try {
+  const convertWait = (parameters) => convertWorkflow({
+    nodes: [
+      { name: 'Start', type: 'n8n-nodes-base.manualTrigger', parameters: {} },
+      { name: 'Payload', type: 'n8n-nodes-base.code', parameters: { jsCode: 'return [{ json: { seconds: 2 } }];' } },
+      { name: 'Pause', type: 'n8n-nodes-base.wait', typeVersion: 1.1, parameters },
+      { name: 'Next', type: 'n8n-nodes-base.code', parameters: { jsCode: 'return [{ json: $json }];' } },
+    ],
+    connections: {
+      Start: { main: [[{ node: 'Payload', type: 'main', index: 0 }]] },
+      Payload: { main: [[{ node: 'Pause', type: 'main', index: 0 }]] },
+      Pause: { main: [[{ node: 'Next', type: 'main', index: 0 }]] },
+    },
+  }, { slug: 'native-wait', name: 'Native Wait', category: 'data', sourcePath: 'fixtures/native-wait.json' });
+
+  const interval = convertWait({ amount: 3, unit: 'minutes' });
+  const wait = byLabel(interval, 'Pause');
+  if (wait?.type !== 'NodeWorkflowWait' || wait.inputs.seconds !== 180) throw new Error('the interval lost its duration');
+  const links = interval.edges;
+  if (!links.some((e) => e.target === wait.nodeId && e.targetInput === 'data') ||
+      !links.some((e) => e.source === wait.nodeId && e.sourceOutput === 'onDone') ||
+      !links.some((e) => e.source === wait.nodeId && e.sourceOutput === 'data')) {
+    throw new Error('the Wait lost payload or resume wiring');
+  }
+
+  const date = '2026-12-01T15:00:00-06:00';
+  const dated = byLabel(convertWait({ resume: 'specificTime', dateTime: date }), 'Pause');
+  if (dated?.type !== 'NodeWorkflowWait' || dated.inputs.mode !== 'date' || dated.inputs.until !== date) {
+    throw new Error('the scheduled time changed');
+  }
+
+  const dynamic = convertWait({ amount: '={{ $json.seconds }}', unit: 'minutes' });
+  const expression = byLabel(dynamic, 'Timing: Pause');
+  if (runTransform(expression, { seconds: 2 }) !== 120 ||
+      !dynamic.edges.some((e) => e.source === expression.nodeId && e.targetInput === 'seconds')) {
+    throw new Error('the duration expression was lost');
+  }
+
+  const event = convertWait({ resume: 'webhook' });
+  if (event.template.tier !== 'experimental' || !codes(event).includes('wait-resume')) {
+    throw new Error('unsupported webhook resumption was classified as faithful');
+  }
+  try {
+    runTransform(byLabel(event, 'Pause'), {});
+    throw new Error('unsupported event wait passed through');
+  } catch (error) {
+    if (!error.message.includes('Configure an authenticated')) throw error;
+  }
+  console.log('ok native delay, date and dynamic waits; unsupported event resumption blocks execution');
+} catch (error) {
+  failed += 1;
+  console.error(`FAIL Wait conversion: ${error.message}`);
+}
 if (failed) process.exit(1);
 console.log(`fixtures ok (${Object.keys(EXPECT).length})`);

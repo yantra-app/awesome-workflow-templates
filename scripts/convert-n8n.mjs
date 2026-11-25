@@ -21,7 +21,8 @@ import { migrateLlmChains } from './lib/llm-chain.mjs';
 import { simplifyLlmHelpers } from './lib/llm-helpers.mjs';
 import { planItemLoops, isLoopReturn } from './lib/item-loops.mjs';
 import { planRepeatLoops } from './lib/repeat-loops.mjs';
-import { beginRepeat, wireRepeats, buildRepeatWait } from './lib/repeat-converter.mjs';
+import { beginRepeat, wireRepeats } from './lib/repeat-converter.mjs';
+import { buildWorkflowWait } from './lib/wait-converter.mjs';
 import * as M from './lib/n8n-mapping.mjs';
 import * as X from './lib/expressions.mjs';
 import { evaluate, scanLiterals, SECRET_NAME, AUTH_HEADER, EXTRA_REQUIRED } from './lib/quality.mjs';
@@ -3062,10 +3063,7 @@ class Converter {
         return this.simpleUnit(n.name, 'data', this.transformNode(n, 'crypto', n.name, body, pred), exact ? { approximate: true, soft: true } : { approximate: true });
       }
       case 'n8n-nodes-base.wait':
-        if (this.repeatBody?.has(n.name)) return buildRepeatWait(this, n, pred);
-        this.setup.add(`"${n.name}" paused the original (${p.resume === 'webhook' ? 'until a webhook call' : `${p.amount ?? p.time ?? 1} ${p.unit || 'seconds'}`}); Yantra has no delay node, so this step passes data straight through.`);
-        this.approximateStep(n, 'wait', 'Wait/delay is a soft passthrough; add a schedule or external delay if timing matters.', { soft: true });
-        return this.simpleUnit(n.name, 'data', this.transformNode(n, 'wait', n.name, `// The original waited here (${p.resume === 'webhook' ? 'for a webhook' : `${p.amount ?? p.time ?? 1} ${p.unit || 'seconds'}`}).\nreturn source;`, pred), { approximate: true, soft: true });
+        return buildWorkflowWait(this, n, pred);
       case 'n8n-nodes-base.executeCommand': {
         const cmd = p.command || p.executeCommand || '';
         this.approximateStep(n, 'executeCommand', 'Host shell commands are not run in Transform; use an agent sandbox shell if you need the original command.', { soft: true });

@@ -1,5 +1,4 @@
 import * as X from './expressions.mjs';
-import { waitInterval } from './repeat-loops.mjs';
 
 const ref = (node, socket = 'transformed') => `ctx.steps?.[${JSON.stringify(node.label)}]?.[${JSON.stringify(socket)}]`;
 const transform = (c, n, role, label, jsCode) => c.addNode(role, n, 'NodeTransform', label, { mode: 'jsCode', jsCode });
@@ -41,28 +40,6 @@ export function beginRepeat(c, n, plan) {
   Object.assign(plan, { capture, repeat, state, check });
   c.predOverride = { name: n.name, pred: { key: 'transformed', nodeType: 'NodeTransform' } };
   c.setup.add(`"${repeat.label}" uses NodeRepeatUntil: carry each retry's state, return readiness through NEXT, and resume the selected exit only after onDone. Original interval waits are preserved. ${maxAttempts ? `The original ${maxAttempts}-attempt bound is retained.` : /\$json\.maxPolls\b/.test(bodyText) ? 'maxPolls controls the attempt limit.' : 'The attempt limit defaults to 30; adjust maxAttempts for the service or retry budget.'} Exhaustion stops with an error.`);
-}
-
-/** Preserve an interval at its original position, including before check one. */
-export function buildRepeatWait(c, n, pred) {
-  const { amount, factor } = waitInterval(n);
-  if (!factor) throw new Error(`Unknown wait unit at ${n.name}`);
-  const capture = c.transformNode(n, 'wait-input', `Before wait: ${n.name}`, 'return source;', pred);
-  const seconds = c.transformNode(n, 'wait-seconds', `Seconds: ${n.name}`, `return Number(${X.toJs(amount)}) * ${factor};`, { nodeType: 'NodeTransform', key: 'transformed' });
-  const repeat = c.addNode('wait-repeat', n, 'NodeRepeatUntil', n.name, { delaySeconds: 0, maxAttempts: 2 });
-  const ready = transform(c, n, 'wait-ready', `Wait elapsed: ${n.name}`, 'return source === 2;');
-  trigger(c, capture, 'onDone', seconds);
-  data(c, capture, 'transformed', seconds, 'source');
-  trigger(c, seconds, 'onDone', repeat);
-  data(c, seconds, 'transformed', repeat, 'delaySeconds');
-  trigger(c, repeat, 'onCheck', ready);
-  data(c, repeat, 'attempt', ready, 'source');
-  c.addEdge(c.sock(ready, 'onDone'), c.sock(repeat, 'NEXT'));
-  data(c, ready, 'transformed', repeat, 'condition');
-  data(c, capture, 'transformed', repeat, 'result');
-  errorHandler(c, n, repeat);
-  return { name: n.name, kind: 'repeat-wait', entry: c.sock(capture, 'RUN'), dataIn: () => c.sock(capture, 'source'),
-    exits: [{ trigger: c.sock(repeat, 'onDone'), data: c.dataExit(repeat) }], lastNode: repeat, flags: {} };
 }
 
 function connect(c, e, output, value) {

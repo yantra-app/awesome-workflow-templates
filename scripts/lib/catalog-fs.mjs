@@ -50,6 +50,7 @@ export const BLOCKERS = {
   'upstream-literal-id': { tier: 'experimental', blocking: true, label: 'An ID copied from the original author is still in a step' },
   'personal-email': { tier: 'experimental', blocking: true, label: 'A personal email address from the original is still in a step' },
   'secret-as-input': { tier: 'experimental', blocking: true, label: 'A secret travels as a plain value instead of a workflow secret' },
+  'wait-resume': { tier: 'experimental', blocking: true, label: 'A Wait needs a supported resume mode or timing value' },
   'signature-verification': { tier: 'experimental', blocking: true, label: 'A digest or signature check cannot run faithfully (no digest action, or a raw webhook body Yantra does not expose)' },
   'webhook-registration': { tier: 'ready', blocking: false, label: 'A provider webhook trigger must be registered after import' },
   'trigger-replaced': { tier: 'ready', blocking: false, label: 'The original trigger runs on demand or via the API on Yantra' },

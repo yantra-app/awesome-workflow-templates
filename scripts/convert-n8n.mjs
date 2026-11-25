@@ -588,6 +588,35 @@ class Converter {
     return { key: d.key, nodeType: d.nodeType, unit: this.units.get(inc.src) };
   }
 
+  stringifyItemParameter(value, name, pred, { jsonBody = false } = {}) {
+    if (!X.isExpression(value) || pred.start || this.predOverride || this.repeatLoops?.size || this.loopReturns?.size) {
+      return null;
+    }
+    const incoming = this.incoming.get(name) || [];
+    if (incoming.length !== 1 || pred.unit?.name !== incoming[0].src) return null;
+    const { src, outIdx } = incoming[0];
+    if (this.edgesKept.filter((edge) => edge.src === src && edge.outIdx === outIdx).length !== 1) return null;
+    const exit = pred.unit.exits[outIdx];
+    if (!exit?.data?.nodeId || exit.data.nodeId !== exit.trigger?.nodeId || exit.many) return null;
+    if (['loop', 'mapped', 'initialized'].includes(pred.unit.kind)) return null;
+
+    const segments = X.parseExpression(value);
+    if (!segments.some((segment) => segment.expr !== undefined)) return null;
+    if (jsonBody && segments.length !== 1) return null;
+    if (segments.some((segment) =>
+      segment.expr !== undefined
+        ? !/^JSON\.stringify\(\s*\$json\s*\)$/.test(segment.expr)
+        : segment.text.includes('{{')
+    )) return null;
+
+    // Match the existing Transform's $json selection, including empty arrays
+    // and null first entries. Use the actual data producer behind this trigger.
+    const payload = `nodes[${JSON.stringify(exit.data.nodeId)}].latest[${JSON.stringify(exit.data.key)}]`;
+    const item = `json.isArray(${payload}) ? (${payload}[0] ?? ${payload}) : ${payload}`;
+    if (jsonBody) return `{{= json.parse(json.stringify(${item})) }}`;
+    return segments.map((segment) => segment.text ?? `{{= json.stringify(${item}) }}`).join('');
+  }
+
   // -- expression rendering --------------------------------------------------
 
   /**
@@ -1784,6 +1813,7 @@ class Converter {
     ({ url, headers } = this.applyHttpAuth(n, url, headers, auth));
     const inputs = { method };
     const builders = [];
+    let inlinedBodyBuilder = false;
     const noteCross = (raw) => {
       const s = typeof raw === 'string' ? raw : JSON.stringify(raw);
       if (/\$\(\s*['"]/.test(s)) {
@@ -1821,7 +1851,11 @@ class Converter {
     }
 
     if (body !== undefined) {
-      const inlineBody = this.inline(body, pred);
+      let inlineBody = this.inline(body, pred);
+      if (inlineBody === null && !builders.length) {
+        inlineBody = this.stringifyItemParameter(body, n.name, pred, { jsonBody: true });
+        inlinedBodyBuilder = inlineBody !== null;
+      }
       if (inlineBody !== null) inputs.body = inlineBody;
       else {
         const bodyJs = typeof body === 'string' && body.startsWith('=') && /^=\s*\{\{[\s\S]*\}\}\s*$/.test(body) ? X.toJs(body) : X.toJs(body);
@@ -1835,7 +1869,12 @@ class Converter {
     }
 
     const node = this.addNode('http', n, 'NodeHttpRequest', n.name, inputs, auth ? { auth } : {});
-    if (!builders.length) return this.simpleUnit(n.name, 'http', node);
+    if (!builders.length) {
+      const unit = this.simpleUnit(n.name, 'http', node);
+      // Keep downstream named-source resolution from the original builder unit.
+      if (inlinedBodyBuilder) delete unit.stepKey;
+      return unit;
+    }
 
     let entry = null;
     let prevDone = null;
@@ -2300,6 +2339,14 @@ class Converter {
     delete inputs.system;
     take(systemRaw, 'system', 'system', `System: ${n.name}`);
     take(textValue, 'prompt', textKey, `Prompt: ${n.name}`);
+    if (builders.length === 1) {
+      const [builder] = builders;
+      const expression = this.stringifyItemParameter(builder.value, n.name, pred);
+      if (expression !== null) {
+        inputs[builder.socket] = expression;
+        builders.pop();
+      }
+    }
 
     if (!builders.length) {
       const node = this.addNode('llm', n, type, label, inputs);

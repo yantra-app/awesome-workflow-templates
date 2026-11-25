@@ -796,5 +796,50 @@ try {
   failed += 1;
   console.error(`FAIL saved engagement monitor: ${error.message}`);
 }
+try {
+  const request = {
+    name: 'Send',
+    type: 'n8n-nodes-base.httpRequest',
+    typeVersion: 4.2,
+    parameters: {
+      method: 'POST', url: 'https://example.test/collect',
+      sendBody: true, specifyBody: 'json', jsonBody: '={{ JSON.stringify($json) }}',
+    },
+  };
+  const fixture = {
+    name: 'Inline request body',
+    nodes: [
+      { name: 'Start', type: 'n8n-nodes-base.manualTrigger', parameters: {} },
+      { name: 'Prepare', type: 'n8n-nodes-base.code', parameters: { jsCode: 'return [{ json: { count: 2 } }];' } },
+      request,
+    ],
+    connections: {
+      Start: { main: [[{ node: 'Prepare', type: 'main', index: 0 }]] },
+      Prepare: { main: [[{ node: 'Send', type: 'main', index: 0 }]] },
+    },
+  };
+  const info = {
+    slug: 'inline-request-body', name: fixture.name, description: fixture.name,
+    category: 'other-integrations', categoryLabel: 'Other', department: 'Engineering', sourcePath: 'fixtures/inline-request-body.json',
+  };
+  const direct = convertWorkflow(fixture, info);
+  const prepare = byLabel(direct, 'Prepare');
+  const send = byLabel(direct, 'Send');
+  if (byLabel(direct, 'Body: Send') || !send.inputs.body.includes(`json.isArray(nodes["${prepare.nodeId}"].latest["transformed"])`)) {
+    throw new Error('a whole-item JSON body should use the trigger producer output directly');
+  }
+  if (!direct.edges.some((edge) => edge.source === prepare.nodeId && edge.sourceOutput === 'onDone' &&
+      edge.target === send.nodeId && edge.targetInput === 'RUN')) {
+    throw new Error('the direct body must preserve the trigger port');
+  }
+  request.parameters.jsonBody = '={{ JSON.stringify($json.count) }}';
+  if (!byLabel(convertWorkflow(fixture, info), 'Body: Send')) {
+    throw new Error('keep the builder for an unsupported item expression');
+  }
+  console.log('ok inline request body and unsupported fallback');
+} catch (error) {
+  failed += 1;
+  console.error(`FAIL inline request body: ${error.message}`);
+}
 if (failed) process.exit(1);
 console.log(`fixtures ok (${Object.keys(EXPECT).length})`);

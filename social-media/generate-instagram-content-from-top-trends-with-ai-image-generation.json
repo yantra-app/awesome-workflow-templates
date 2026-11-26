@@ -231,6 +231,7 @@
         "height": 200
       },
       "inputs": {
+        "onError": "continueErrorOutput",
         "connectorName": "supabase",
         "connectorLabel": "Postgres (via Supabase)",
         "action": "SUPABASE_SELECT_ROWS",
@@ -1116,7 +1117,7 @@
     {
       "source": "node_7751f810ea",
       "target": "node_a3d60d3dce",
-      "sourceOutput": "onDone",
+      "sourceOutput": "onError",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
       "targetNodeType": "NodeCdeConnector"
@@ -1382,10 +1383,16 @@
       {
         "code": "loop-flattened",
         "detail": "loop edges removed: If Data is Exist -> Loop Over Items"
+      },
+      {
+        "code": "loop-flattened",
+        "node": "Loop Over Items",
+        "detail": "splitInBatches.1"
       }
     ],
     "setup": [
-      "The original looped (If Data is Exist -> Loop Over Items); here the whole list flows through once. Check the steps inside the loop handle arrays.",
+      "Experimental: restore the original feedback paths (If Data is Exist -> Loop Over Items) before running this workflow.",
+      "\"Loop Over Items\" (splitInBatches.1) needs attention before it runs.",
       "Setup value supabaseProjectRef: Supabase project ref (Settings > General) (for example abcdefghijklmnopqrst). Write it into the Workflow Configs initialContext before import.",
       "Workflow secret FACEBOOK_ACCESS_TOKEN: Facebook Page or Instagram access token for graph.facebook.com (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
       "Workflow secret REPLICATE_TOKEN: replicate token (left empty in the original Set step) (read inside the step code). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
@@ -1405,7 +1412,7 @@
           "node": "Loop Over Items",
           "n8n": "splitInBatches.1",
           "action": "NodeTransform",
-          "soft": true
+          "blocker": "loop-flattened"
         },
         {
           "node": "Check Data on Database Is Exist",
@@ -1467,9 +1474,9 @@
       ],
       "hints": [
         "\"Loop Over Items\" remains a conditional-loop conversion candidate: requires an item cursor with successful early exit and separate service-error returns.",
-        "Unsupported loop edges from the original were removed (loopPolicy=flattened); these paths still run once. Supported item and conditional loops use NodeLoop and NodeRepeatUntil.",
+        "Experimental: the converter could not preserve every loop path. Restore the removed feedback before running this workflow.",
         "\"merge the array content\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was append).",
-        "\"Loop Over Items\" (splitInBatches.1): This loop can end the workflow from inside its body. Preserve its successful early exit with a conditional-loop conversion; NodeLoop has no break port.",
+        "\"Loop Over Items\" (splitInBatches.1): This loop can end the workflow from inside its body. The converter cannot preserve this combination of early exits and loop returns.",
         "\"Check Data on Database Is Exist\": the original ran on a Postgres credential; on Yantra it runs through the Supabase connector. Set the project ref on SUPABASE_SELECT_ROWS.",
         "\"insert data on db\": the original ran on a Postgres credential; on Yantra it runs through the Supabase connector. Set the project ref on SUPABASE_INSERT_ROW.",
         "\"Analyze Image and give the content\" (image.analyze): Vision call through OpenAI Responses with the image URL as an input_image item.",

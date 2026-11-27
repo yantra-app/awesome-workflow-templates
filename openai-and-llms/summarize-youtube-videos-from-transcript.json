@@ -5,18 +5,33 @@
   "isPublic": true,
   "nodes": [
     {
-      "nodeId": "node_8df6b6eaa5",
-      "actorId": "actor_8df6b6eaa5",
-      "type": "NodeStart",
-      "label": "Start",
-      "color": "#22C55E",
+      "nodeId": "node_05517de388",
+      "actorId": "actor_05517de388",
+      "type": "NodeFormTrigger",
+      "label": "YouTube video URL",
+      "color": "#6366F1",
       "position": {
         "x": 80,
         "y": 100
       },
       "size": {
-        "width": 240,
-        "height": 100
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "none",
+        "responseMode": "onReceived",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "Full URL": {
+              "type": "string",
+              "title": "Full URL"
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
       }
     },
     {
@@ -44,7 +59,7 @@
     {
       "nodeId": "node_e90b771205",
       "actorId": "actor_e90b771205",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Body: Request YouTube Transcript",
       "color": "#F59E0B",
       "position": {
@@ -56,8 +71,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Request YouTube Transcript\".\nconst __body = `{\n \"startUrls\": [\n \"${$json['Full URL']}\"\n ]\n}`;\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Request YouTube Transcript\".\nconst __body = `{\n \"startUrls\": [\n \"${$json['Full URL']}\"\n ]\n}`;\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
       }
     },
     {
@@ -83,7 +98,7 @@
     {
       "nodeId": "node_bd6579bb6d",
       "actorId": "actor_bd6579bb6d",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Prompt: Summarization of a YouTube script",
       "color": "#F59E0B",
       "position": {
@@ -95,8 +110,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Summarization of a YouTube script.\nconst __promptValue = ($json);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Summarization of a YouTube script.\nconst __promptValue = ($json);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
       }
     },
     {
@@ -130,10 +145,7 @@
       },
       "inputs": {
         "projectId": "",
-        "environmentTagId": "",
-        "initialContext": {
-          "Full URL": ""
-        }
+        "environmentTagId": ""
       }
     },
     {
@@ -162,7 +174,7 @@
       "target": "node_15918ba933",
       "sourceOutput": "transformed",
       "targetInput": "body",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -170,7 +182,7 @@
       "target": "node_15918ba933",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -178,7 +190,7 @@
       "target": "node_692a796d45",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeLlmChain"
     },
     {
@@ -187,7 +199,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_15918ba933",
@@ -195,15 +207,23 @@
       "sourceOutput": "body",
       "targetInput": "source",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
-      "source": "node_8df6b6eaa5",
+      "source": "node_05517de388",
       "target": "node_e90b771205",
-      "sourceOutput": "trigger",
+      "sourceOutput": "onEvent",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeFormTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_05517de388",
+      "target": "node_e90b771205",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeFormTrigger",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_692a796d45",
@@ -233,10 +253,10 @@
     "nodeTypes": [
       "NodeChatModel",
       "NodeEnd",
+      "NodeFormTrigger",
       "NodeHttpRequest",
+      "NodeJavascript",
       "NodeLlmChain",
-      "NodeStart",
-      "NodeTransform",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
@@ -254,15 +274,14 @@
     "tier": "ready",
     "blockers": [
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "YouTube video URL",
-        "detail": "n8n-nodes-base.formTrigger became the Start node"
+        "detail": "generic trigger URL requires registration"
       }
     ],
     "setup": [
-      "\"YouTube video URL\" (formTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
-      "Connect the openai connector (credential).",
-      "Provide run inputs: Full URL."
+      "\"YouTube video URL\": save the workflow, then register node node_05517de388 via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL.",
+      "Connect the openai connector (credential)."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -282,11 +301,10 @@
         {
           "node": "YouTube video URL",
           "type": "n8n-nodes-base.formTrigger",
-          "as": "NodeStart"
+          "as": "NodeFormTrigger"
         }
       ],
       "hints": [
-        "The original started from a form submission; pass the form fields as run inputs.",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
       ]
     },
@@ -298,7 +316,7 @@
       "The summarization node works automatically and professionally, recognizing the input text and processing it directly without requiring any enhancements from your side👇"
     ],
     "nodes": {
-      "node_8df6b6eaa5": {
+      "node_05517de388": {
         "n8n": "YouTube video URL",
         "n8nType": "n8n-nodes-base.formTrigger"
       },

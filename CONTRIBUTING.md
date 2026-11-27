@@ -213,11 +213,11 @@ response/state branches use a nested item loop to join the current attempt.
 Every repeat has an attempt limit and an `onError` path that throws. The default
 limit is 30; the Pennylane retry retains its five-attempt bound and Seedance uses
 its `maxPolls` input (default 120). These inputs remain editable in the graph.
-An interval Wait inside a converted cycle uses two checks: false, wait, true.
-This preserves its position, including a wait before the first HTTP call, and
-supports different waits on different return paths. n8n Wait v1 defaults to one
-hour; v1.1 defaults to five seconds. The converter uses the versioned parameters,
-not the node's label, to calculate seconds.
+A durable `NodeWorkflowWait` stays at the original position in a cycle,
+including before the first HTTP call or on a specific return path. n8n Wait v1
+defaults to one hour and v1.1 defaults to five seconds. The converter uses the
+versioned parameters to calculate seconds. Webhook and form waits require
+manual resume configuration and carry a `wait-resume` blocker.
 
 HTTP checks preserve full response envelopes when requested. Their adapters
 read runtime outputs without connecting a nullable response body, so a 204 can

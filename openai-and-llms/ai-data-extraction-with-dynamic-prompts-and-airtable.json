@@ -5,14 +5,61 @@
   "isPublic": true,
   "nodes": [
     {
-      "nodeId": "node_33699d9408",
-      "actorId": "actor_33699d9408",
+      "nodeId": "node_01c340b529",
+      "actorId": "actor_01c340b529",
+      "type": "NodeWebhookTrigger",
+      "label": "Airtable Webhook",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "none",
+        "responseMode": "onReceived",
+        "httpMethod": "POST",
+        "acknowledgement": {
+          "statusCode": 200,
+          "headers": {},
+          "bodyMode": "json",
+          "body": {
+            "message": "Workflow was started"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_c1f6f8d536",
+      "actorId": "actor_c1f6f8d536",
+      "type": "NodeJavascript",
+      "label": "Airtable Webhook: request",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "const ctx = {{ctx}};\nconst request = ctx.nodes?.[\"node_01c340b529\"]?.latest ?? {};\nreturn { body: source, headers: request.headers, query: request.query, params: {}, method: request.method, rawBody: request.rawBody, rawBodyEncoding: request.rawBodyEncoding };"
+      }
+    },
+    {
+      "nodeId": "node_e7711687da",
+      "actorId": "actor_e7711687da",
       "type": "NodeStart",
       "label": "Start",
       "color": "#22C55E",
       "position": {
         "x": 80,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 240,
@@ -26,7 +73,7 @@
       "label": "airtable/AIRTABLE_GET_BASE_SCHEMA",
       "color": "#6366F1",
       "position": {
-        "x": 460,
+        "x": 840,
         "y": 100
       },
       "size": {
@@ -38,14 +85,14 @@
         "connectorLabel": "Airtable",
         "action": "AIRTABLE_GET_BASE_SCHEMA",
         "params": {
-          "baseId": "{{body.base.id}}"
+          "baseId": "{{nodes.node_c1f6f8d536.latest.transformed.body.base.id}}"
         }
       }
     },
     {
       "nodeId": "node_9886f5855d",
       "actorId": "actor_9886f5855d",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Set Airtable Vars",
       "color": "#F59E0B",
       "position": {
@@ -57,18 +104,18 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"appId\"] = \"<MY_BASE_ID>\";\n  out[\"tableId\"] = \"<MY_TABLE_ID>\";\n  out[\"notificationUrl\"] = \"<MY_WEBHOOK_URL>\";\n  out[\"inputField\"] = \"File\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+        "migratedTransform": true,
+        "logic": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"appId\"] = \"<MY_BASE_ID>\";\n  out[\"tableId\"] = \"<MY_TABLE_ID>\";\n  out[\"notificationUrl\"] = \"<MY_WEBHOOK_URL>\";\n  out[\"inputField\"] = \"File\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
       }
     },
     {
       "nodeId": "node_8d3ae60d73",
       "actorId": "actor_8d3ae60d73",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Get Prompt Fields",
       "color": "#F59E0B",
       "position": {
-        "x": 840,
+        "x": 1220,
         "y": 100
       },
       "size": {
@@ -76,8 +123,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Get Prompt Fields\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const fields = $input.first().json.fields\n   .filter(item => item.description)\n   .map((item, idx) => ({\n   id: item.id,\n   order: idx,\n   name: item.name,\n   type: item.type,\n   description: item.description,\n   }));\n  \n  return { json: { fields } };\n})();\nreturn __single(__unwrap(__out));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Get Prompt Fields\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const fields = $input.first().json.fields\n   .filter(item => item.description)\n   .map((item, idx) => ({\n   id: item.id,\n   order: idx,\n   name: item.name,\n   type: item.type,\n   description: item.description,\n   }));\n  \n  return { json: { fields } };\n})();\nreturn __single(__unwrap(__out));"
       }
     },
     {
@@ -111,7 +158,7 @@
       "color": "#0EA5E9",
       "position": {
         "x": 1220,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 280,
@@ -129,7 +176,7 @@
     {
       "nodeId": "node_792783dde6",
       "actorId": "actor_792783dde6",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Body: FieldsChanged Webhook",
       "color": "#F59E0B",
       "position": {
@@ -141,8 +188,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Set Airtable Vars\": {\"appId\":\"<MY_BASE_ID>\",\"tableId\":\"<MY_TABLE_ID>\",\"notificationUrl\":\"<MY_WEBHOOK_URL>\",\"inputField\":\"File\"} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"FieldsChanged Webhook\".\nconst __body = ({\n \"notificationUrl\": $('Set Airtable Vars').first().json.notificationUrl,\n \"specification\": {\n \"options\": {\n \"filters\": {\n \"fromSources\": [ \"client\" ],\n \"dataTypes\": [ \"tableFields\" ],\n \"changeTypes\": [ \"add\", \"update\" ],\n \"recordChangeScope\": $('Set Airtable Vars').first().json.tableId\n }\n }\n }\n});\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Set Airtable Vars\": {\"appId\":\"<MY_BASE_ID>\",\"tableId\":\"<MY_TABLE_ID>\",\"notificationUrl\":\"<MY_WEBHOOK_URL>\",\"inputField\":\"File\"} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"FieldsChanged Webhook\".\nconst __body = ({\n \"notificationUrl\": $('Set Airtable Vars').first().json.notificationUrl,\n \"specification\": {\n \"options\": {\n \"filters\": {\n \"fromSources\": [ \"client\" ],\n \"dataTypes\": [ \"tableFields\" ],\n \"changeTypes\": [ \"add\", \"update\" ],\n \"recordChangeScope\": $('Set Airtable Vars').first().json.tableId\n }\n }\n }\n});\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
       }
     },
     {
@@ -152,8 +199,8 @@
       "label": "Get Webhook Payload",
       "color": "#0EA5E9",
       "position": {
-        "x": 1220,
-        "y": 360
+        "x": 1600,
+        "y": 100
       },
       "size": {
         "width": 280,
@@ -161,7 +208,7 @@
       },
       "inputs": {
         "method": "GET",
-        "url": "https://api.airtable.com/v0/bases/{{body.base.id}}/webhooks/{{body.webhook.id}}/payloads",
+        "url": "https://api.airtable.com/v0/bases/{{nodes.node_c1f6f8d536.latest.transformed.body.base.id}}/webhooks/{{nodes.node_c1f6f8d536.latest.transformed.body.webhook.id}}/payloads",
         "headers": {
           "Authorization": "Bearer {{airtableToken}}"
         }
@@ -170,7 +217,7 @@
     {
       "nodeId": "node_d9fc9842b3",
       "actorId": "actor_d9fc9842b3",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Get \"Input\" Field",
       "color": "#F59E0B",
       "position": {
@@ -182,18 +229,18 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Set Airtable Vars\": {\"appId\":\"<MY_BASE_ID>\",\"tableId\":\"<MY_TABLE_ID>\",\"notificationUrl\":\"<MY_WEBHOOK_URL>\",\"inputField\":\"File\"} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Set fields from JSON (n8n Set node, JSON mode): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const __raw = ($input.all()\n .map(item => item.json)\n .find(item => item.id === $('Set Airtable Vars').first().json.tableId)\n .fields\n .find(field => field.name === $('Set Airtable Vars').first().json.inputField));\n  let __obj;\n  try { __obj = typeof __raw === 'string' ? JSON.parse(__raw) : __raw; } catch (e) { throw new Error('Set node JSON is not valid JSON: ' + e.message); }\n  return __obj;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Set Airtable Vars\": {\"appId\":\"<MY_BASE_ID>\",\"tableId\":\"<MY_TABLE_ID>\",\"notificationUrl\":\"<MY_WEBHOOK_URL>\",\"inputField\":\"File\"} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Set fields from JSON (n8n Set node, JSON mode): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const __raw = ($input.all()\n .map(item => item.json)\n .find(item => item.id === $('Set Airtable Vars').first().json.tableId)\n .fields\n .find(field => field.name === $('Set Airtable Vars').first().json.inputField));\n  let __obj;\n  try { __obj = typeof __raw === 'string' ? JSON.parse(__raw) : __raw; } catch (e) { throw new Error('Set node JSON is not valid JSON: ' + e.message); }\n  return __obj;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
       }
     },
     {
       "nodeId": "node_305bbcb7f4",
       "actorId": "actor_305bbcb7f4",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Parse Event",
       "color": "#F59E0B",
       "position": {
-        "x": 1600,
+        "x": 1980,
         "y": 100
       },
       "size": {
@@ -201,8 +248,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Airtable Webhook\": {{ctx}}, \"Get Prompt Fields\": {{steps.xf_8d3ae60d73.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Parse Event\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const webhook = $('Airtable Webhook').first().json;\n  const schema = $('Get Prompt Fields').first().json;\n  const { payloads } = $input.first().json;\n  if (!payloads.length) return [];\n  \n  const event = payloads[payloads.length - 1];\n  const baseId = webhook.body.base.id;\n  const tableId = Object.keys(event.changedTablesById)[0];\n  const table = event.changedTablesById[tableId];\n  \n  return {\n   baseId,\n   tableId,\n   event_type: getEventType(table),\n   fieldId: getFieldId(table),\n   field: getField(getFieldId(table)),\n   rowId: getRecordId(table),\n  }\n  \n  function getEventType(changedTableByIdObject) {\n   if (changedTableByIdObject['createdFieldsById']) return 'field.created';\n   if (changedTableByIdObject['changedFieldsById']) return 'field.updated'\n   if (changedTableByIdObject['changedRecordsById']) return 'row.updated';\n   return 'unknown';\n  }\n  \n  function getFieldId(changedTableByIdObject) {\n   const field = changedTableByIdObject.createdFieldsById\n   || changedTableByIdObject.changedFieldsById\n   || null;\n  \n   return field ? Object.keys(field)[0] : null;\n  }\n  \n  function getField(id) {\n   return schema.fields.find(field => field.id === id);\n  }\n  \n  function getRecordId(changedTableByIdObject) {\n   const record = changedTableByIdObject.changedRecordsById\n   || null;\n  \n   return record ? Object.keys(record)[0] : null;\n  }\n})();\nreturn __single(__unwrap(__out));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Airtable Webhook\": __namedCtx.nodes?.[\"node_c1f6f8d536\"]?.latest?.[\"transformed\"], \"Get Prompt Fields\": {{steps.xf_8d3ae60d73.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Parse Event\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const webhook = $('Airtable Webhook').first().json;\n  const schema = $('Get Prompt Fields').first().json;\n  const { payloads } = $input.first().json;\n  if (!payloads.length) return [];\n  \n  const event = payloads[payloads.length - 1];\n  const baseId = webhook.body.base.id;\n  const tableId = Object.keys(event.changedTablesById)[0];\n  const table = event.changedTablesById[tableId];\n  \n  return {\n   baseId,\n   tableId,\n   event_type: getEventType(table),\n   fieldId: getFieldId(table),\n   field: getField(getFieldId(table)),\n   rowId: getRecordId(table),\n  }\n  \n  function getEventType(changedTableByIdObject) {\n   if (changedTableByIdObject['createdFieldsById']) return 'field.created';\n   if (changedTableByIdObject['changedFieldsById']) return 'field.updated'\n   if (changedTableByIdObject['changedRecordsById']) return 'row.updated';\n   return 'unknown';\n  }\n  \n  function getFieldId(changedTableByIdObject) {\n   const field = changedTableByIdObject.createdFieldsById\n   || changedTableByIdObject.changedFieldsById\n   || null;\n  \n   return field ? Object.keys(field)[0] : null;\n  }\n  \n  function getField(id) {\n   return schema.fields.find(field => field.id === id);\n  }\n  \n  function getRecordId(changedTableByIdObject) {\n   const record = changedTableByIdObject.changedRecordsById\n   || null;\n  \n   return record ? Object.keys(record)[0] : null;\n  }\n})();\nreturn __single(__unwrap(__out));"
       }
     },
     {
@@ -213,7 +260,7 @@
       "color": "#0EA5E9",
       "position": {
         "x": 1980,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 280,
@@ -231,7 +278,7 @@
     {
       "nodeId": "node_6c4412fa92",
       "actorId": "actor_6c4412fa92",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Body: RecordsChanged Webhook",
       "color": "#F59E0B",
       "position": {
@@ -243,27 +290,27 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Set Airtable Vars\": {\"appId\":\"<MY_BASE_ID>\",\"tableId\":\"<MY_TABLE_ID>\",\"notificationUrl\":\"<MY_WEBHOOK_URL>\",\"inputField\":\"File\"} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"RecordsChanged Webhook\".\nconst __body = ({\n \"notificationUrl\": $('Set Airtable Vars').first().json.notificationUrl,\n \"specification\": {\n \"options\": {\n \"filters\": {\n \"fromSources\": [ \"client\" ],\n \"dataTypes\": [ \"tableData\" ],\n \"changeTypes\": [ \"update\" ],\n \"recordChangeScope\": $('Set Airtable Vars').first().json.tableId,\n \"watchDataInFieldIds\": [$json.id]\n }\n }\n }\n});\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Set Airtable Vars\": {\"appId\":\"<MY_BASE_ID>\",\"tableId\":\"<MY_TABLE_ID>\",\"notificationUrl\":\"<MY_WEBHOOK_URL>\",\"inputField\":\"File\"} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request body for \"RecordsChanged Webhook\".\nconst __body = ({\n \"notificationUrl\": $('Set Airtable Vars').first().json.notificationUrl,\n \"specification\": {\n \"options\": {\n \"filters\": {\n \"fromSources\": [ \"client\" ],\n \"dataTypes\": [ \"tableData\" ],\n \"changeTypes\": [ \"update\" ],\n \"recordChangeScope\": $('Set Airtable Vars').first().json.tableId,\n \"watchDataInFieldIds\": [$json.id]\n }\n }\n }\n});\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
       }
     },
     {
       "nodeId": "node_8afd29600d",
       "actorId": "actor_8afd29600d",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Event Type: row.updated",
       "color": "#F59E0B",
       "position": {
-        "x": 1980,
-        "y": 360
+        "x": 2360,
+        "y": 100
       },
       "size": {
         "width": 280,
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.event_type) ?? '') === String(\"row.updated\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.event_type) ?? '') === String(\"row.updated\" ?? '')));"
       }
     },
     {
@@ -273,7 +320,7 @@
       "label": "Event Type: row.updated?",
       "color": "#0EA5E9",
       "position": {
-        "x": 2360,
+        "x": 2740,
         "y": 100
       },
       "size": {
@@ -284,11 +331,11 @@
     {
       "nodeId": "node_c7745db855",
       "actorId": "actor_c7745db855",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Event Type: field.created",
       "color": "#F59E0B",
       "position": {
-        "x": 2740,
+        "x": 3120,
         "y": 100
       },
       "size": {
@@ -296,8 +343,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.event_type) ?? '') === String(\"field.created\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.event_type) ?? '') === String(\"field.created\" ?? '')));"
       }
     },
     {
@@ -307,7 +354,7 @@
       "label": "Event Type: field.created?",
       "color": "#0EA5E9",
       "position": {
-        "x": 3120,
+        "x": 3500,
         "y": 100
       },
       "size": {
@@ -318,11 +365,11 @@
     {
       "nodeId": "node_7474aed2d0",
       "actorId": "actor_7474aed2d0",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Event Type: field.updated",
       "color": "#F59E0B",
       "position": {
-        "x": 3500,
+        "x": 3880,
         "y": 100
       },
       "size": {
@@ -330,8 +377,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.event_type) ?? '') === String(\"field.updated\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.event_type) ?? '') === String(\"field.updated\" ?? '')));"
       }
     },
     {
@@ -341,7 +388,7 @@
       "label": "Event Type: field.updated?",
       "color": "#0EA5E9",
       "position": {
-        "x": 3880,
+        "x": 4260,
         "y": 100
       },
       "size": {
@@ -356,7 +403,7 @@
       "label": "airtable/AIRTABLE_GET_RECORD",
       "color": "#6366F1",
       "position": {
-        "x": 2740,
+        "x": 3120,
         "y": 360
       },
       "size": {
@@ -377,11 +424,11 @@
     {
       "nodeId": "node_31c0235e12",
       "actorId": "actor_31c0235e12",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Filter Valid Fields",
       "color": "#F59E0B",
       "position": {
-        "x": 4260,
+        "x": 4640,
         "y": 100
       },
       "size": {
@@ -389,18 +436,18 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn __items.filter(($json) => Boolean((String(($json.field.description) ?? '').trim() !== '')));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn __items.filter(($json) => Boolean((String(($json.field.description) ?? '').trim() !== '')));"
       }
     },
     {
       "nodeId": "node_e4f8c3d0f6",
       "actorId": "actor_e4f8c3d0f6",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Filter Valid Rows",
       "color": "#F59E0B",
       "position": {
-        "x": 3120,
+        "x": 3500,
         "y": 360
       },
       "size": {
@@ -408,8 +455,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn __items.filter(($json) => Boolean((String(($json.File[0].url) ?? '').trim() !== '')));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn __items.filter(($json) => Boolean((String(($json.File[0].url) ?? '').trim() !== '')));"
       }
     },
     {
@@ -419,7 +466,7 @@
       "label": "airtable/AIRTABLE_LIST_RECORDS",
       "color": "#6366F1",
       "position": {
-        "x": 4640,
+        "x": 5020,
         "y": 100
       },
       "size": {
@@ -440,11 +487,11 @@
     {
       "nodeId": "node_4de3d96559",
       "actorId": "actor_4de3d96559",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Items: Loop Over Items1",
       "color": "#F59E0B",
       "position": {
-        "x": 3500,
+        "x": 3880,
         "y": 360
       },
       "size": {
@@ -452,8 +499,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
       }
     },
     {
@@ -463,7 +510,7 @@
       "label": "Loop Over Items1",
       "color": "#0EA5E9",
       "position": {
-        "x": 3880,
+        "x": 4260,
         "y": 360
       },
       "size": {
@@ -474,11 +521,11 @@
     {
       "nodeId": "node_dfd3946263",
       "actorId": "actor_dfd3946263",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Item: Loop Over Items1",
       "color": "#F59E0B",
       "position": {
-        "x": 4260,
+        "x": 4640,
         "y": 360
       },
       "size": {
@@ -486,18 +533,18 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return source;"
+        "migratedTransform": true,
+        "logic": "return source;"
       }
     },
     {
       "nodeId": "node_b5add94eac",
       "actorId": "actor_b5add94eac",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Results: Loop Over Items1",
       "color": "#F59E0B",
       "position": {
-        "x": 4260,
+        "x": 4640,
         "y": 620
       },
       "size": {
@@ -505,18 +552,18 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+        "migratedTransform": true,
+        "logic": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
       }
     },
     {
       "nodeId": "node_b4729bacdb",
       "actorId": "actor_b4729bacdb",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Items: Loop Over Items",
       "color": "#F59E0B",
       "position": {
-        "x": 5020,
+        "x": 5400,
         "y": 100
       },
       "size": {
@@ -524,8 +571,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Preserve the original batch boundaries; NodeLoop runs each batch sequentially.\nconst size = Number(1);\nif (!Number.isInteger(size) || size < 1) throw new Error('Batch size must be a positive integer');\nif (size === 1) return __items;\nconst batches = [];\nfor (let i = 0; i < __items.length; i += size) batches.push(__items.slice(i, i + size));\nreturn batches;"
       }
     },
     {
@@ -535,7 +582,7 @@
       "label": "Loop Over Items",
       "color": "#0EA5E9",
       "position": {
-        "x": 5400,
+        "x": 5780,
         "y": 100
       },
       "size": {
@@ -546,11 +593,11 @@
     {
       "nodeId": "node_bba2e99c46",
       "actorId": "actor_bba2e99c46",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Item: Loop Over Items",
       "color": "#F59E0B",
       "position": {
-        "x": 5780,
+        "x": 6160,
         "y": 100
       },
       "size": {
@@ -558,18 +605,18 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return source;"
+        "migratedTransform": true,
+        "logic": "return source;"
       }
     },
     {
       "nodeId": "node_ca0067b49e",
       "actorId": "actor_ca0067b49e",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Results: Loop Over Items",
       "color": "#F59E0B",
       "position": {
-        "x": 5780,
+        "x": 6160,
         "y": 360
       },
       "size": {
@@ -577,8 +624,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
+        "migratedTransform": true,
+        "logic": "// n8n done emits the returned items, without the batch envelope.\nreturn source.flatMap((value) => Array.isArray(value) ? value : [value]);"
       }
     },
     {
@@ -588,7 +635,7 @@
       "label": "Get File Data1",
       "color": "#0EA5E9",
       "position": {
-        "x": 5020,
+        "x": 5400,
         "y": 360
       },
       "size": {
@@ -602,11 +649,11 @@
     {
       "nodeId": "node_03de4834e1",
       "actorId": "actor_03de4834e1",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "URL: Get File Data1",
       "color": "#F59E0B",
       "position": {
-        "x": 4640,
+        "x": 5020,
         "y": 360
       },
       "size": {
@@ -614,8 +661,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"Get File Data1\".\nreturn ($('Row Ref').item.json.File[0].url);"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"Get File Data1\".\nreturn ($('Row Ref').item.json.File[0].url);"
       }
     },
     {
@@ -625,7 +672,7 @@
       "label": "Get File Data",
       "color": "#0EA5E9",
       "position": {
-        "x": 6160,
+        "x": 6540,
         "y": 100
       },
       "size": {
@@ -640,11 +687,11 @@
     {
       "nodeId": "node_975a7bcf7f",
       "actorId": "actor_975a7bcf7f",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Params: Extract from File1",
       "color": "#F59E0B",
       "position": {
-        "x": 5400,
+        "x": 5780,
         "y": 360
       },
       "size": {
@@ -652,8 +699,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for googlesuper/GOOGLESUPER_PARSE_FILE (n8n node \"Extract from File1\").\nreturn {\n  \"file_id\": ($json.id ?? $json.file_id ?? $json.fileId),\n  \"mime_type\": \"application/pdf\",\n};"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for googlesuper/GOOGLESUPER_PARSE_FILE (n8n node \"Extract from File1\").\nreturn {\n  \"file_id\": ($json.id ?? $json.file_id ?? $json.fileId),\n  \"mime_type\": \"application/pdf\",\n};"
       }
     },
     {
@@ -663,7 +710,7 @@
       "label": "googlesuper/GOOGLESUPER_PARSE_FILE",
       "color": "#6366F1",
       "position": {
-        "x": 5780,
+        "x": 6160,
         "y": 620
       },
       "size": {
@@ -679,11 +726,11 @@
     {
       "nodeId": "node_ee558a7772",
       "actorId": "actor_ee558a7772",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Params: Extract from File",
       "color": "#F59E0B",
       "position": {
-        "x": 6540,
+        "x": 6920,
         "y": 100
       },
       "size": {
@@ -691,8 +738,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for googlesuper/GOOGLESUPER_PARSE_FILE (n8n node \"Extract from File\").\nreturn {\n  \"file_id\": ($json.id ?? $json.file_id ?? $json.fileId),\n  \"mime_type\": \"application/pdf\",\n};"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for googlesuper/GOOGLESUPER_PARSE_FILE (n8n node \"Extract from File\").\nreturn {\n  \"file_id\": ($json.id ?? $json.file_id ?? $json.fileId),\n  \"mime_type\": \"application/pdf\",\n};"
       }
     },
     {
@@ -702,7 +749,7 @@
       "label": "googlesuper/GOOGLESUPER_PARSE_FILE",
       "color": "#6366F1",
       "position": {
-        "x": 6920,
+        "x": 7300,
         "y": 100
       },
       "size": {
@@ -718,11 +765,11 @@
     {
       "nodeId": "node_1f2a215ea9",
       "actorId": "actor_1f2a215ea9",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Fields to Update",
       "color": "#F59E0B",
       "position": {
-        "x": 6160,
+        "x": 6540,
         "y": 360
       },
       "size": {
@@ -730,8 +777,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Get Prompt Fields\": {{steps.xf_8d3ae60d73.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Fields to Update\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const row = $('Row Ref').first().json;\n  const fields = $('Get Prompt Fields').first().json.fields;\n  const missingFields = fields\n   .filter(field => field.description && !row[field.name]);\n  \n  return missingFields;\n})();\nreturn __single(__unwrap(__out));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Get Prompt Fields\": {{steps.xf_8d3ae60d73.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Ported from n8n Code node \"Fields to Update\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  const row = $('Row Ref').first().json;\n  const fields = $('Get Prompt Fields').first().json.fields;\n  const missingFields = fields\n   .filter(field => field.description && !row[field.name]);\n  \n  return missingFields;\n})();\nreturn __single(__unwrap(__out));"
       }
     },
     {
@@ -741,7 +788,7 @@
       "label": "Generate Field Value",
       "color": "#8B5CF6",
       "position": {
-        "x": 7680,
+        "x": 8060,
         "y": 100
       },
       "size": {
@@ -757,11 +804,11 @@
     {
       "nodeId": "node_72bb072d6e",
       "actorId": "actor_72bb072d6e",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Prompt: Generate Field Value",
       "color": "#F59E0B",
       "position": {
-        "x": 7300,
+        "x": 7680,
         "y": 100
       },
       "size": {
@@ -769,8 +816,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Generate Field Value.\nconst __promptValue = `<file>\n${$json.text}\n</file>\n\nData to extract: ${$('Event Ref').first().json.field.description}\noutput format is: ${$('Event Ref').first().json.field.type}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Generate Field Value.\nconst __promptValue = `<file>\n${$json.text}\n</file>\n\nData to extract: ${$('Event Ref').first().json.field.description}\noutput format is: ${$('Event Ref').first().json.field.type}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
       }
     },
     {
@@ -780,7 +827,7 @@
       "label": "Generate Field Value1",
       "color": "#8B5CF6",
       "position": {
-        "x": 6920,
+        "x": 7300,
         "y": 360
       },
       "size": {
@@ -796,11 +843,11 @@
     {
       "nodeId": "node_3144bd1f97",
       "actorId": "actor_3144bd1f97",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Prompt: Generate Field Value1",
       "color": "#F59E0B",
       "position": {
-        "x": 6540,
+        "x": 6920,
         "y": 360
       },
       "size": {
@@ -808,53 +855,15 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Extract from File1\": __namedCtx.steps?.[\"GOOGLESUPER_PARSE_FILE\"]?.[\"result\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Generate Field Value1.\nconst __promptValue = `<file>\n${$('Extract from File1').first().json.text}\n</file>\n\nData to extract: ${$json.description}\noutput format is: ${$json.type}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Extract from File1\": __namedCtx.steps?.[\"GOOGLESUPER_PARSE_FILE\"]?.[\"result\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: Generate Field Value1.\nconst __promptValue = `<file>\n${$('Extract from File1').first().json.text}\n</file>\n\nData to extract: ${$json.description}\noutput format is: ${$json.type}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
       }
     },
     {
       "nodeId": "node_b7770e7beb",
       "actorId": "actor_b7770e7beb",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Get Result",
-      "color": "#F59E0B",
-      "position": {
-        "x": 8060,
-        "y": 100
-      },
-      "size": {
-        "width": 280,
-        "height": 220
-      },
-      "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __set = (o, p, v) => { const ks = String(p).split('.'); let c = o; for (const k of ks.slice(0, -1)) { if (c[k] == null || typeof c[k] !== 'object') c[k] = {}; c = c[k]; } c[ks[ks.length - 1]] = v; return o; };\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"id\"] = ($('Row Reference').item.json.id);\n  __set(out, \"={{ $('Event Ref').first().json.field.name }}\", ($json.trim()));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
-      }
-    },
-    {
-      "nodeId": "node_a44d9b4a98",
-      "actorId": "actor_a44d9b4a98",
-      "type": "NodeTransform",
-      "label": "Get Result1",
-      "color": "#F59E0B",
-      "position": {
-        "x": 7300,
-        "y": 360
-      },
-      "size": {
-        "width": 280,
-        "height": 220
-      },
-      "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Fields to Update\": {{steps.xf_1f2a215ea9.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __set = (o, p, v) => { const ks = String(p).split('.'); let c = o; for (const k of ks.slice(0, -1)) { if (c[k] == null || typeof c[k] !== 'object') c[k] = {}; c = c[k]; } c[ks[ks.length - 1]] = v; return o; };\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  __set(out, \"={{ $('Fields to Update').item.json.name }}\", ($json.trim()));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
-      }
-    },
-    {
-      "nodeId": "node_f15fc74331",
-      "actorId": "actor_f15fc74331",
-      "type": "NodeTransform",
-      "label": "Params: Update Row",
       "color": "#F59E0B",
       "position": {
         "x": 8440,
@@ -865,8 +874,46 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for airtable/AIRTABLE_UPDATE_RECORD (n8n node \"Update Row\").\nreturn {\n  \"baseId\": ($('Event Ref').first().json.baseId),\n  \"tableIdOrName\": ($('Event Ref').first().json.tableId),\n  \"recordId\": ($json.id),\n  \"fields\": ($json),\n};"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __set = (o, p, v) => { const ks = String(p).split('.'); let c = o; for (const k of ks.slice(0, -1)) { if (c[k] == null || typeof c[k] !== 'object') c[k] = {}; c = c[k]; } c[ks[ks.length - 1]] = v; return o; };\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"id\"] = ($('Row Reference').item.json.id);\n  __set(out, \"={{ $('Event Ref').first().json.field.name }}\", ($json.trim()));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_a44d9b4a98",
+      "actorId": "actor_a44d9b4a98",
+      "type": "NodeJavascript",
+      "label": "Get Result1",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7680,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Fields to Update\": {{steps.xf_1f2a215ea9.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __set = (o, p, v) => { const ks = String(p).split('.'); let c = o; for (const k of ks.slice(0, -1)) { if (c[k] == null || typeof c[k] !== 'object') c[k] = {}; c = c[k]; } c[ks[ks.length - 1]] = v; return o; };\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  __set(out, \"={{ $('Fields to Update').item.json.name }}\", ($json.trim()));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_f15fc74331",
+      "actorId": "actor_f15fc74331",
+      "type": "NodeJavascript",
+      "label": "Params: Update Row",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8820,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for airtable/AIRTABLE_UPDATE_RECORD (n8n node \"Update Row\").\nreturn {\n  \"baseId\": ($('Event Ref').first().json.baseId),\n  \"tableIdOrName\": ($('Event Ref').first().json.tableId),\n  \"recordId\": ($json.id),\n  \"fields\": ($json),\n};"
       }
     },
     {
@@ -876,7 +923,7 @@
       "label": "airtable/AIRTABLE_UPDATE_RECORD",
       "color": "#6366F1",
       "position": {
-        "x": 8820,
+        "x": 9200,
         "y": 100
       },
       "size": {
@@ -892,27 +939,8 @@
     {
       "nodeId": "node_e8a33a8cf1",
       "actorId": "actor_e8a33a8cf1",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Add Row ID to Payload",
-      "color": "#F59E0B",
-      "position": {
-        "x": 7680,
-        "y": 360
-      },
-      "size": {
-        "width": 280,
-        "height": 220
-      },
-      "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Set fields from JSON (n8n Set node, JSON mode): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const __raw = ({\n id: $('Row Ref').item.json.id,\n ...$input.all()\n .map(item => item.json)\n .reduce((acc, item) => ({\n ...acc,\n ...item,\n }), {})\n});\n  let __obj;\n  try { __obj = typeof __raw === 'string' ? JSON.parse(__raw) : __raw; } catch (e) { throw new Error('Set node JSON is not valid JSON: ' + e.message); }\n  return __obj;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
-      }
-    },
-    {
-      "nodeId": "node_7709110dfb",
-      "actorId": "actor_7709110dfb",
-      "type": "NodeTransform",
-      "label": "Params: Update Record",
       "color": "#F59E0B",
       "position": {
         "x": 8060,
@@ -923,8 +951,27 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for airtable/AIRTABLE_UPDATE_RECORD (n8n node \"Update Record\").\nreturn {\n  \"baseId\": ($('Event Ref1').first().json.baseId),\n  \"tableIdOrName\": ($('Event Ref1').first().json.tableId),\n  \"recordId\": ($json.id),\n  \"fields\": ($json),\n};"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Set fields from JSON (n8n Set node, JSON mode): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const __raw = ({\n id: $('Row Ref').item.json.id,\n ...$input.all()\n .map(item => item.json)\n .reduce((acc, item) => ({\n ...acc,\n ...item,\n }), {})\n});\n  let __obj;\n  try { __obj = typeof __raw === 'string' ? JSON.parse(__raw) : __raw; } catch (e) { throw new Error('Set node JSON is not valid JSON: ' + e.message); }\n  return __obj;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_7709110dfb",
+      "actorId": "actor_7709110dfb",
+      "type": "NodeJavascript",
+      "label": "Params: Update Record",
+      "color": "#F59E0B",
+      "position": {
+        "x": 8440,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for airtable/AIRTABLE_UPDATE_RECORD (n8n node \"Update Record\").\nreturn {\n  \"baseId\": ($('Event Ref1').first().json.baseId),\n  \"tableIdOrName\": ($('Event Ref1').first().json.tableId),\n  \"recordId\": ($json.id),\n  \"fields\": ($json),\n};"
       }
     },
     {
@@ -934,7 +981,7 @@
       "label": "airtable/AIRTABLE_UPDATE_RECORD",
       "color": "#6366F1",
       "position": {
-        "x": 8440,
+        "x": 8820,
         "y": 360
       },
       "size": {
@@ -950,11 +997,11 @@
     {
       "nodeId": "node_86bf3b43b0",
       "actorId": "actor_86bf3b43b0",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Return: Update Row",
       "color": "#F59E0B",
       "position": {
-        "x": 9200,
+        "x": 9580,
         "y": 100
       },
       "size": {
@@ -962,18 +1009,18 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return source;"
+        "migratedTransform": true,
+        "logic": "return source;"
       }
     },
     {
       "nodeId": "node_4e89f6cfdb",
       "actorId": "actor_4e89f6cfdb",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Return: Update Record",
       "color": "#F59E0B",
       "position": {
-        "x": 8820,
+        "x": 9200,
         "y": 360
       },
       "size": {
@@ -981,8 +1028,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return source;"
+        "migratedTransform": true,
+        "logic": "return source;"
       }
     },
     {
@@ -1022,7 +1069,7 @@
       "label": "End 3",
       "color": "#EF4444",
       "position": {
-        "x": 4640,
+        "x": 5020,
         "y": 620
       },
       "size": {
@@ -1037,7 +1084,7 @@
       "label": "End 4",
       "color": "#EF4444",
       "position": {
-        "x": 6160,
+        "x": 6540,
         "y": 620
       },
       "size": {
@@ -1063,9 +1110,6 @@
         "projectId": "",
         "environmentTagId": "",
         "initialContext": {
-          "body": {},
-          "query": {},
-          "headers": {},
           "airtableToken": {
             "$workflowSecret": "AIRTABLE_TOKEN"
           }
@@ -1079,7 +1123,7 @@
       "label": "Generate Field Value: model",
       "color": "#8B5CF6",
       "position": {
-        "x": 7680,
+        "x": 8060,
         "y": 720
       },
       "size": {
@@ -1098,7 +1142,7 @@
       "label": "Generate Field Value1: model",
       "color": "#8B5CF6",
       "position": {
-        "x": 6920,
+        "x": 7300,
         "y": 680
       },
       "size": {
@@ -1113,11 +1157,27 @@
   ],
   "edges": [
     {
+      "source": "node_01c340b529",
+      "target": "node_c1f6f8d536",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_01c340b529",
+      "target": "node_c1f6f8d536",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
       "source": "node_792783dde6",
       "target": "node_c90d28dbf5",
       "sourceOutput": "transformed",
       "targetInput": "body",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -1125,7 +1185,7 @@
       "target": "node_c90d28dbf5",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -1133,7 +1193,7 @@
       "target": "node_640e654d70",
       "sourceOutput": "transformed",
       "targetInput": "body",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -1141,7 +1201,7 @@
       "target": "node_640e654d70",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -1149,7 +1209,7 @@
       "target": "node_5ac58c4acf",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1157,7 +1217,7 @@
       "target": "node_5ac58c4acf",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1166,14 +1226,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_c7745db855",
       "target": "node_8b8b60e72a",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1181,7 +1241,7 @@
       "target": "node_8b8b60e72a",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1190,14 +1250,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_7474aed2d0",
       "target": "node_3124669a70",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1205,7 +1265,7 @@
       "target": "node_3124669a70",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1213,7 +1273,7 @@
       "target": "node_58d44b15b4",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeLoop"
     },
     {
@@ -1221,7 +1281,7 @@
       "target": "node_58d44b15b4",
       "sourceOutput": "transformed",
       "targetInput": "items",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeLoop"
     },
     {
@@ -1230,7 +1290,7 @@
       "sourceOutput": "onItem",
       "targetInput": "RUN",
       "sourceNodeType": "NodeLoop",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_58d44b15b4",
@@ -1238,7 +1298,7 @@
       "sourceOutput": "item",
       "targetInput": "source",
       "sourceNodeType": "NodeLoop",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_58d44b15b4",
@@ -1246,7 +1306,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeLoop",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_58d44b15b4",
@@ -1254,14 +1314,14 @@
       "sourceOutput": "results",
       "targetInput": "source",
       "sourceNodeType": "NodeLoop",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_b4729bacdb",
       "target": "node_01b355bf86",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeLoop"
     },
     {
@@ -1269,7 +1329,7 @@
       "target": "node_01b355bf86",
       "sourceOutput": "transformed",
       "targetInput": "items",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeLoop"
     },
     {
@@ -1278,7 +1338,7 @@
       "sourceOutput": "onItem",
       "targetInput": "RUN",
       "sourceNodeType": "NodeLoop",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_01b355bf86",
@@ -1286,7 +1346,7 @@
       "sourceOutput": "item",
       "targetInput": "source",
       "sourceNodeType": "NodeLoop",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_01b355bf86",
@@ -1294,7 +1354,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeLoop",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_01b355bf86",
@@ -1302,14 +1362,14 @@
       "sourceOutput": "results",
       "targetInput": "source",
       "sourceNodeType": "NodeLoop",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_03de4834e1",
       "target": "node_4963beb558",
       "sourceOutput": "transformed",
       "targetInput": "url",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -1317,7 +1377,7 @@
       "target": "node_4963beb558",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -1325,7 +1385,7 @@
       "target": "node_2ee91d40e0",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -1333,7 +1393,7 @@
       "target": "node_2ee91d40e0",
       "sourceOutput": "transformed",
       "targetInput": "params",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -1341,7 +1401,7 @@
       "target": "node_f03dc2569b",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -1349,7 +1409,7 @@
       "target": "node_f03dc2569b",
       "sourceOutput": "transformed",
       "targetInput": "params",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -1357,7 +1417,7 @@
       "target": "node_1195fd8593",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeLlmChain"
     },
     {
@@ -1365,7 +1425,7 @@
       "target": "node_839fe7ee9c",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeLlmChain"
     },
     {
@@ -1373,7 +1433,7 @@
       "target": "node_245700d344",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -1381,7 +1441,7 @@
       "target": "node_245700d344",
       "sourceOutput": "transformed",
       "targetInput": "params",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -1389,7 +1449,7 @@
       "target": "node_f92753f5dd",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -1397,7 +1457,7 @@
       "target": "node_f92753f5dd",
       "sourceOutput": "transformed",
       "targetInput": "params",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -1414,15 +1474,15 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_305bbcb7f4",
       "target": "node_31c0235e12",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_3124669a70",
@@ -1430,14 +1490,14 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_8d3ae60d73",
       "target": "node_07e6561046",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -1446,7 +1506,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_ed5d5b9899",
@@ -1454,7 +1514,7 @@
       "sourceOutput": "body",
       "targetInput": "source",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_f03dc2569b",
@@ -1462,7 +1522,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_f03dc2569b",
@@ -1470,30 +1530,30 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_b7770e7beb",
       "target": "node_f15fc74331",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_b7770e7beb",
       "target": "node_f15fc74331",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_bba2e99c46",
       "target": "node_ed5d5b9899",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -1502,7 +1562,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeLlmChain",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_1195fd8593",
@@ -1510,39 +1570,39 @@
       "sourceOutput": "text",
       "targetInput": "source",
       "sourceNodeType": "NodeLlmChain",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_1f2a215ea9",
       "target": "node_3144bd1f97",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_1f2a215ea9",
       "target": "node_3144bd1f97",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_dfd3946263",
       "target": "node_03de4834e1",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_dfd3946263",
       "target": "node_03de4834e1",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_4963beb558",
@@ -1550,7 +1610,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_4963beb558",
@@ -1558,7 +1618,7 @@
       "sourceOutput": "body",
       "targetInput": "source",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_2ee91d40e0",
@@ -1566,7 +1626,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_2ee91d40e0",
@@ -1574,23 +1634,23 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_a44d9b4a98",
       "target": "node_e8a33a8cf1",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_a44d9b4a98",
       "target": "node_e8a33a8cf1",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_839fe7ee9c",
@@ -1598,7 +1658,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeLlmChain",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_839fe7ee9c",
@@ -1606,30 +1666,30 @@
       "sourceOutput": "text",
       "targetInput": "source",
       "sourceNodeType": "NodeLlmChain",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_e4f8c3d0f6",
       "target": "node_4de3d96559",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_e4f8c3d0f6",
       "target": "node_4de3d96559",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_31c0235e12",
       "target": "node_eef9860845",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -1638,7 +1698,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_07e6561046",
@@ -1646,39 +1706,39 @@
       "sourceOutput": "body",
       "targetInput": "source",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_305bbcb7f4",
       "target": "node_8afd29600d",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_305bbcb7f4",
       "target": "node_8afd29600d",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_305bbcb7f4",
       "target": "node_c7745db855",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_305bbcb7f4",
       "target": "node_7474aed2d0",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_3b747b6c14",
@@ -1686,7 +1746,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_3b747b6c14",
@@ -1694,7 +1754,7 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_eef9860845",
@@ -1702,7 +1762,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_eef9860845",
@@ -1710,7 +1770,7 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_9a7e1ff3dd",
@@ -1718,7 +1778,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_9a7e1ff3dd",
@@ -1726,46 +1786,46 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_e8a33a8cf1",
       "target": "node_7709110dfb",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_e8a33a8cf1",
       "target": "node_7709110dfb",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
-      "source": "node_33699d9408",
+      "source": "node_c1f6f8d536",
       "target": "node_3b747b6c14",
-      "sourceOutput": "trigger",
+      "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
-      "source": "node_33699d9408",
+      "source": "node_e7711687da",
       "target": "node_9886f5855d",
       "sourceOutput": "trigger",
       "targetInput": "RUN",
       "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_9886f5855d",
       "target": "node_36cabfd9bb",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -1773,16 +1833,16 @@
       "target": "node_792783dde6",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_9886f5855d",
       "target": "node_792783dde6",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_36cabfd9bb",
@@ -1790,7 +1850,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_36cabfd9bb",
@@ -1798,23 +1858,23 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_d9fc9842b3",
       "target": "node_6c4412fa92",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_d9fc9842b3",
       "target": "node_6c4412fa92",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_245700d344",
@@ -1822,7 +1882,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_245700d344",
@@ -1830,14 +1890,14 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_86bf3b43b0",
       "target": "node_01b355bf86",
       "sourceOutput": "onDone",
       "targetInput": "NEXT",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeLoop"
     },
     {
@@ -1845,7 +1905,7 @@
       "target": "node_01b355bf86",
       "sourceOutput": "transformed",
       "targetInput": "result",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeLoop"
     },
     {
@@ -1854,7 +1914,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_f92753f5dd",
@@ -1862,14 +1922,14 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_4e89f6cfdb",
       "target": "node_58d44b15b4",
       "sourceOutput": "onDone",
       "targetInput": "NEXT",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeLoop"
     },
     {
@@ -1877,7 +1937,7 @@
       "target": "node_58d44b15b4",
       "sourceOutput": "transformed",
       "targetInput": "result",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeLoop"
     },
     {
@@ -1901,7 +1961,7 @@
       "target": "node_dbc2122403",
       "sourceOutput": "transformed",
       "targetInput": "result",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeEnd"
     },
     {
@@ -1909,7 +1969,7 @@
       "target": "node_df1dadd7cd",
       "sourceOutput": "transformed",
       "targetInput": "result",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeEnd"
     },
     {
@@ -1959,15 +2019,16 @@
       "NodeChatModel",
       "NodeEnd",
       "NodeHttpRequest",
+      "NodeJavascript",
       "NodeLlmChain",
       "NodeLoop",
       "NodeStart",
-      "NodeTransform",
+      "NodeWebhookTrigger",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 36,
-      "yantraSteps": 53,
+      "yantraSteps": 55,
       "foldedHelpers": [
         "OpenAI Chat Model1",
         "OpenAI Chat Model"
@@ -1981,18 +2042,18 @@
     "tier": "ready",
     "blockers": [
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "Airtable Webhook",
-        "detail": "n8n-nodes-base.webhook became the Start node"
+        "detail": "generic trigger URL requires registration"
       }
     ],
     "setup": [
-      "\"Airtable Webhook\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Airtable Webhook\": save the workflow, then register node node_01c340b529 via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL.",
       "Workflow secret AIRTABLE_TOKEN: Airtable personal access token for api.airtable.com (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
       "Connect the airtable connector (credential).",
       "Connect the googlesuper connector (credential).",
       "Connect the openai connector (credential).",
-      "Provide run inputs: body, query, headers, $."
+      "Provide run inputs: $, nodes."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -2031,7 +2092,7 @@
         {
           "node": "Airtable Webhook",
           "type": "n8n-nodes-base.webhook",
-          "as": "NodeStart"
+          "as": "NodeWebhookTrigger"
         },
         {
           "node": "When clicking ‘Test workflow’",
@@ -2040,7 +2101,6 @@
         }
       ],
       "hints": [
-        "The original started from an inbound webhook (POST /a82f0ae7-678e-49d9-8219-7281e8a2a1b2). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
         "\"FieldsChanged Webhook\" authenticated with airtableTokenApi in the original; add the matching Authorization header (or use the service's connector).",
         "\"Get Webhook Payload\" authenticated with airtableTokenApi in the original; add the matching Authorization header (or use the service's connector).",
         "\"RecordsChanged Webhook\" authenticated with airtableTokenApi in the original; add the matching Authorization header (or use the service's connector).",
@@ -2074,12 +2134,17 @@
       "## ⭐️ Creating Airtable Webhooks\nTo link this workflow with Airtable, you'll have to create webhooks for the Base.\nYou'll only really need to do this this once but if these webhooks are inactive after 7 days, you'll need to create them again.\n\nCheck out the Airtable Developer documentation for more info: [https://airtable.com/developers/web/api/webhooks-overview](https://airtable.com/developers/web/api/webhooks-overview)"
     ],
     "nodes": {
-      "node_33699d9408": {
+      "node_01c340b529": {
         "n8n": "Airtable Webhook",
-        "n8nType": "n8n-nodes-base.webhook",
-        "also": [
-          "When clicking ‘Test workflow’"
-        ]
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_c1f6f8d536": {
+        "n8n": "Airtable Webhook",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_e7711687da": {
+        "n8n": "When clicking ‘Test workflow’",
+        "n8nType": "n8n-nodes-base.manualTrigger"
       },
       "node_3b747b6c14": {
         "n8n": "Get Table Schema",

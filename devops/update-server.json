@@ -5,18 +5,42 @@
   "isPublic": true,
   "nodes": [
     {
-      "nodeId": "node_201b0c80bc",
-      "actorId": "actor_201b0c80bc",
-      "type": "NodeStart",
-      "label": "Start",
-      "color": "#22C55E",
+      "nodeId": "node_909a6f85d5",
+      "actorId": "actor_909a6f85d5",
+      "type": "NodeWebhookTrigger",
+      "label": "Webhook",
+      "color": "#6366F1",
       "position": {
         "x": 80,
         "y": 100
       },
       "size": {
-        "width": 240,
-        "height": 100
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "basic",
+        "responseMode": "responseNode",
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "nodeId": "node_e37576cb9c",
+      "actorId": "actor_e37576cb9c",
+      "type": "NodeJavascript",
+      "label": "Webhook: request",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "const ctx = {{ctx}};\nconst request = ctx.nodes?.[\"node_909a6f85d5\"]?.latest ?? {};\nreturn { body: source, headers: request.headers, query: request.query, params: {}, method: request.method, rawBody: request.rawBody, rawBodyEncoding: request.rawBodyEncoding };"
       }
     },
     {
@@ -26,7 +50,7 @@
       "label": "ssh/SSH_RUN_COMMAND",
       "color": "#6366F1",
       "position": {
-        "x": 460,
+        "x": 840,
         "y": 100
       },
       "size": {
@@ -43,13 +67,71 @@
       }
     },
     {
-      "nodeId": "node_ce028616b0",
-      "actorId": "actor_ce028616b0",
+      "nodeId": "node_c1f91a7e5f",
+      "actorId": "actor_c1f91a7e5f",
+      "type": "NodeRespondToWebhook",
+      "label": "Respond to Webhook",
+      "color": "#6366F1",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 180
+      },
+      "inputs": {
+        "bodyMode": "text",
+        "statusCode": 200,
+        "headers": {}
+      }
+    },
+    {
+      "nodeId": "node_822e937c56",
+      "actorId": "actor_822e937c56",
+      "type": "NodeJavascript",
+      "label": "Respond to Webhook: body",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst body = ($json.stdout);\nreturn String(body ?? \"\");"
+      }
+    },
+    {
+      "nodeId": "node_5406db7862",
+      "actorId": "actor_5406db7862",
+      "type": "NodeJavascript",
+      "label": "Finish after response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "return source ?? {};"
+      }
+    },
+    {
+      "nodeId": "node_476557c716",
+      "actorId": "actor_476557c716",
       "type": "NodeEnd",
       "label": "End",
       "color": "#EF4444",
       "position": {
-        "x": 840,
+        "x": 2360,
         "y": 100
       },
       "size": {
@@ -73,30 +155,89 @@
       },
       "inputs": {
         "projectId": "",
-        "environmentTagId": "",
-        "initialContext": {
-          "body": {},
-          "query": {},
-          "headers": {}
-        }
+        "environmentTagId": ""
       }
     }
   ],
   "edges": [
     {
-      "source": "node_201b0c80bc",
-      "target": "node_c5b11e9db5",
-      "sourceOutput": "trigger",
+      "source": "node_909a6f85d5",
+      "target": "node_e37576cb9c",
+      "sourceOutput": "onEvent",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_909a6f85d5",
+      "target": "node_e37576cb9c",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_822e937c56",
+      "target": "node_c1f91a7e5f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeRespondToWebhook"
+    },
+    {
+      "source": "node_822e937c56",
+      "target": "node_c1f91a7e5f",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeRespondToWebhook"
+    },
+    {
+      "source": "node_e37576cb9c",
+      "target": "node_c5b11e9db5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
       "source": "node_c5b11e9db5",
-      "target": "node_ce028616b0",
-      "sourceOutput": "result",
-      "targetInput": "result",
+      "target": "node_822e937c56",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_c5b11e9db5",
+      "target": "node_822e937c56",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_c1f91a7e5f",
+      "target": "node_5406db7862",
+      "sourceOutput": "onComplete",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_c1f91a7e5f",
+      "target": "node_5406db7862",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_5406db7862",
+      "target": "node_476557c716",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeEnd"
     }
   ],
@@ -111,12 +252,14 @@
     "nodeTypes": [
       "NodeCdeConnector",
       "NodeEnd",
-      "NodeStart",
+      "NodeJavascript",
+      "NodeRespondToWebhook",
+      "NodeWebhookTrigger",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 3,
-      "yantraSteps": 2,
+      "yantraSteps": 6,
       "foldedHelpers": []
     },
     "source": {
@@ -128,15 +271,14 @@
     "tier": "ready",
     "blockers": [
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "Webhook",
-        "detail": "n8n-nodes-base.webhook became the Start node"
+        "detail": "generic trigger URL requires registration"
       }
     ],
     "setup": [
-      "\"Webhook\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
-      "Connect the ssh connector (credential).",
-      "Provide run inputs: body, query, headers."
+      "\"Webhook\": save the workflow, then register node node_909a6f85d5 via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL. Use basic authentication with credentials supplied at registration.",
+      "Connect the ssh connector (credential)."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -157,11 +299,10 @@
         {
           "node": "Webhook",
           "type": "n8n-nodes-base.webhook",
-          "as": "NodeStart"
+          "as": "NodeWebhookTrigger"
         }
       ],
       "hints": [
-        "The original started from an inbound webhook (POST /update). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
         "\"Execute a command\": the original used SSH; check the mapped ssh/SSH_RUN_COMMAND params before running.",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
         "Connect ssh: `cdecli credential create -n \"ssh\" -p ssh --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
@@ -171,7 +312,11 @@
       "## What it does:\nThis workflow is built for updating your linux system with a single API Request which can be automated in web interfaces or shortcut app...\n## Setup:\nAdd your credentials for basic auth and ssh\nCopy the custom webhook url and get started!\nExample:\n``` curl\ncurl -X POST -u \"username:password\" https://<your-domain>/update\n```\n## Info:\nThis workflow is built only for debian based systems but i think it is not too hard to change for your needs ;-)"
     ],
     "nodes": {
-      "node_201b0c80bc": {
+      "node_909a6f85d5": {
+        "n8n": "Webhook",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_e37576cb9c": {
         "n8n": "Webhook",
         "n8nType": "n8n-nodes-base.webhook"
       },
@@ -180,7 +325,19 @@
         "n8nType": "n8n-nodes-base.ssh",
         "approximate": true
       },
-      "node_ce028616b0": {
+      "node_c1f91a7e5f": {
+        "n8n": "Respond to Webhook",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_822e937c56": {
+        "n8n": "Respond to Webhook",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_5406db7862": {
+        "n8n": "Respond to Webhook",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_476557c716": {
         "n8n": "Respond to Webhook",
         "n8nType": "n8n-nodes-base.respondToWebhook"
       },

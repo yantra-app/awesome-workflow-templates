@@ -28,18 +28,41 @@
       }
     },
     {
-      "nodeId": "node_f21005fdc3",
-      "actorId": "actor_f21005fdc3",
-      "type": "NodeStart",
-      "label": "Start",
-      "color": "#22C55E",
+      "nodeId": "node_cd5e661c96",
+      "actorId": "actor_cd5e661c96",
+      "type": "NodeChatTrigger",
+      "label": "Chat Trigger",
+      "color": "#6366F1",
       "position": {
         "x": 80,
         "y": 100
       },
       "size": {
-        "width": 240,
-        "height": 100
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "bearer",
+        "responseMode": "lastNode"
+      }
+    },
+    {
+      "nodeId": "node_daef841358",
+      "actorId": "actor_daef841358",
+      "type": "NodeJavascript",
+      "label": "Chat Trigger: request",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "return { action: 'sendMessage', ...source };"
       }
     },
     {
@@ -50,7 +73,7 @@
       "color": "#8B5CF6",
       "position": {
         "x": 460,
-        "y": 360
+        "y": 620
       },
       "size": {
         "width": 320,
@@ -92,8 +115,8 @@
       "label": "OpenAI Assistant",
       "color": "#8B5CF6",
       "position": {
-        "x": 460,
-        "y": 620
+        "x": 1220,
+        "y": 100
       },
       "size": {
         "width": 320,
@@ -101,7 +124,41 @@
       },
       "inputs": {
         "sessionId": "",
-        "message": "{{chatInput}}"
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_1972bd0805",
+      "actorId": "actor_1972bd0805",
+      "type": "NodeJavascript",
+      "label": "Prompt: OpenAI Assistant",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: OpenAI Assistant.\nconst __promptValue = ($json.chatInput);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_410a360a26",
+      "actorId": "actor_410a360a26",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
       }
     },
     {
@@ -112,7 +169,7 @@
       "color": "#EF4444",
       "position": {
         "x": 840,
-        "y": 360
+        "y": 620
       },
       "size": {
         "width": 240,
@@ -127,7 +184,7 @@
       "color": "#EF4444",
       "position": {
         "x": 1220,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 240,
@@ -141,8 +198,8 @@
       "label": "End 3",
       "color": "#EF4444",
       "position": {
-        "x": 840,
-        "y": 620
+        "x": 1600,
+        "y": 100
       },
       "size": {
         "width": 240,
@@ -167,14 +224,36 @@
         "projectId": "",
         "environmentTagId": "",
         "initialContext": {
-          "chatInput": "",
-          "sessionId": "",
           "driveFileId": ""
         }
       }
     }
   ],
   "edges": [
+    {
+      "source": "node_cd5e661c96",
+      "target": "node_daef841358",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeChatTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_cd5e661c96",
+      "target": "node_daef841358",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeChatTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_1972bd0805",
+      "target": "node_7b1e5caadb",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeCdecliAgent"
+    },
     {
       "source": "node_ff1a18691d",
       "target": "node_723f431fdb",
@@ -184,15 +263,23 @@
       "targetNodeType": "NodeCdeConnector"
     },
     {
-      "source": "node_f21005fdc3",
-      "target": "node_7b1e5caadb",
-      "sourceOutput": "trigger",
+      "source": "node_daef841358",
+      "target": "node_1972bd0805",
+      "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeCdecliAgent"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
-      "source": "node_f21005fdc3",
+      "source": "node_daef841358",
+      "target": "node_1972bd0805",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_410a360a26",
       "target": "node_ff1a18691d",
       "sourceOutput": "trigger",
       "targetInput": "RUN",
@@ -200,7 +287,7 @@
       "targetNodeType": "NodeCdeConnector"
     },
     {
-      "source": "node_f21005fdc3",
+      "source": "node_410a360a26",
       "target": "node_13a7db5c42",
       "sourceOutput": "trigger",
       "targetInput": "RUN",
@@ -255,13 +342,15 @@
     "nodeTypes": [
       "NodeCdeConnector",
       "NodeCdecliAgent",
+      "NodeChatTrigger",
       "NodeEnd",
+      "NodeJavascript",
       "NodeStart",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 5,
-      "yantraSteps": 5,
+      "yantraSteps": 8,
       "foldedHelpers": []
     },
     "source": {
@@ -273,17 +362,17 @@
     "tier": "ready",
     "blockers": [
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "Chat Trigger",
-        "detail": "@n8n/n8n-nodes-langchain.chatTrigger became the Start node"
+        "detail": "generic trigger URL requires registration"
       }
     ],
     "setup": [
-      "\"Chat Trigger\" (chatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Chat Trigger\": save the workflow, then register node node_cd5e661c96 via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL. Use bearer authentication with credentials supplied at registration.",
       "Setup value driveFileId: Drive File id (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
       "Connect the googlesuper connector (credential).",
       "Connect the openai connector (credential).",
-      "Provide run inputs: chatInput, sessionId."
+      "Provide run inputs: chatInput."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -310,11 +399,10 @@
         {
           "node": "Chat Trigger",
           "type": "@n8n/n8n-nodes-langchain.chatTrigger",
-          "as": "NodeStart"
+          "as": "NodeChatTrigger"
         }
       ],
       "hints": [
-        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
         "\"Upload File to OpenAI\" used OpenAI file (upload); mapped to openai/OPENAI_UPLOAD_FILE - wire file bytes/base64 into the file param.",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
         "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
@@ -332,7 +420,11 @@
         "n8n": "Get File",
         "n8nType": "n8n-nodes-base.googleDrive"
       },
-      "node_f21005fdc3": {
+      "node_cd5e661c96": {
+        "n8n": "Chat Trigger",
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
+      },
+      "node_daef841358": {
         "n8n": "Chat Trigger",
         "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
       },
@@ -348,6 +440,14 @@
       "node_7b1e5caadb": {
         "n8n": "OpenAI Assistant",
         "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_1972bd0805": {
+        "n8n": "OpenAI Assistant",
+        "n8nType": "@n8n/n8n-nodes-langchain.openAi"
+      },
+      "node_410a360a26": {
+        "n8n": "__start",
+        "n8nType": "synthetic"
       },
       "node_3c1feda5ee": {
         "n8n": "__end:Create new Assistant",

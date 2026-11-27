@@ -20,10 +20,38 @@
       }
     },
     {
-      "nodeId": "node_eb85b72e93",
-      "actorId": "actor_eb85b72e93",
-      "type": "NodeTransform",
-      "label": "Split Out",
+      "nodeId": "node_cb6b94c567",
+      "actorId": "actor_cb6b94c567",
+      "type": "NodeWebhookTrigger",
+      "label": "Webhook",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "none",
+        "responseMode": "onReceived",
+        "httpMethod": "POST",
+        "acknowledgement": {
+          "statusCode": 200,
+          "headers": {},
+          "bodyMode": "json",
+          "body": {
+            "message": "Workflow was started"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_041a94483f",
+      "actorId": "actor_041a94483f",
+      "type": "NodeJavascript",
+      "label": "Webhook: request",
       "color": "#F59E0B",
       "position": {
         "x": 460,
@@ -34,8 +62,27 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"query.items\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"query.items\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"query.items\": x }));"
+        "migratedTransform": true,
+        "logic": "const ctx = {{ctx}};\nconst request = ctx.nodes?.[\"node_cb6b94c567\"]?.latest ?? {};\nreturn { body: source, headers: request.headers, query: request.query, params: {}, method: request.method, rawBody: request.rawBody, rawBodyEncoding: request.rawBodyEncoding };"
+      }
+    },
+    {
+      "nodeId": "node_eb85b72e93",
+      "actorId": "actor_eb85b72e93",
+      "type": "NodeJavascript",
+      "label": "Split Out",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst item = { json: __items[0] ?? source, binary: {} };\nconst __get = (o, p) => String(p).split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);\n// Split out \"query.items\" into one item per element.\nconst __base = __items[0] ?? {};\nconst __v = __get(__base, \"query.items\");\nconst __arr = Array.isArray(__v) ? __v : __v == null ? [] : [__v];\nreturn __arr.map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : { \"query.items\": x }));"
       }
     },
     {
@@ -45,8 +92,8 @@
       "label": "Get Meeting Content",
       "color": "#0EA5E9",
       "position": {
-        "x": 460,
-        "y": 360
+        "x": 840,
+        "y": 100
       },
       "size": {
         "width": 280,
@@ -59,26 +106,26 @@
           "Authorization": "Bearer {{firefliesAuthorization}}",
           "Content-Type": "application/json"
         },
-        "body": "{\n \"query\": \"query Transcript($transcriptId: String!) { transcript(id: $transcriptId) { title participants speakers { id name } sentences { speaker_name text } summary { bullet_gist } } }\",\n \"variables\": {\n \"transcriptId\": \"{{meetingId}}\"\n }\n}"
+        "body": "{\n \"query\": \"query Transcript($transcriptId: String!) { transcript(id: $transcriptId) { title participants speakers { id name } sentences { speaker_name text } summary { bullet_gist } } }\",\n \"variables\": {\n \"transcriptId\": \"{{last.transformed.meetingId}}\"\n }\n}"
       }
     },
     {
       "nodeId": "node_7876fbc10a",
       "actorId": "actor_7876fbc10a",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Params: Create Task",
       "color": "#F59E0B",
       "position": {
         "x": 840,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 280,
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for airtable/AIRTABLE_CREATE_RECORD (n8n node \"Create Task\").\nreturn {\n  \"baseId\": \"{{airtableBaseId}}\",\n  \"tableIdOrName\": \"{{airtableTableId}}\",\n  \"fields\": { \"Name\": ($json.name), \"Project\": ([$json.project_name]), \"Due Date\": ($json.due_date), \"Priority\": ($json.priority), \"Description\": ($json.description) },\n};"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for airtable/AIRTABLE_CREATE_RECORD (n8n node \"Create Task\").\nreturn {\n  \"baseId\": \"{{airtableBaseId}}\",\n  \"tableIdOrName\": \"{{airtableTableId}}\",\n  \"fields\": { \"Name\": ($json.name), \"Project\": ([$json.project_name]), \"Due Date\": ($json.due_date), \"Priority\": ($json.priority), \"Description\": ($json.description) },\n};"
       }
     },
     {
@@ -108,7 +155,7 @@
       "label": "AI Agent",
       "color": "#8B5CF6",
       "position": {
-        "x": 1980,
+        "x": 2360,
         "y": 100
       },
       "size": {
@@ -125,11 +172,11 @@
     {
       "nodeId": "node_2403a45b07",
       "actorId": "actor_2403a45b07",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "System: AI Agent",
       "color": "#F59E0B",
       "position": {
-        "x": 840,
+        "x": 1220,
         "y": 360
       },
       "size": {
@@ -137,8 +184,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// System: AI Agent.\nconst __promptValue = `You get my calls' transcripts from Firefiles.\nThere can be meetings about projects. You can understand if it's about a project if meeting's title contains \"project\". If so - you need to:\n1. Analyze transcript, use tool \"Create Tasks\" to create tasks for me in my AirTable base.\n2. You need to use tool \"Notify Client About Tasks\" to nofity client about his tasks.\n3. If transcript contains info there's a call needed - you'll use \"Create Event\" tool to create call on Google Meet\nCurrent date: ${$now}`;\nreturn { \"llm_system_2403a45b07\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// System: AI Agent.\nconst __promptValue = `You get my calls' transcripts from Firefiles.\nThere can be meetings about projects. You can understand if it's about a project if meeting's title contains \"project\". If so - you need to:\n1. Analyze transcript, use tool \"Create Tasks\" to create tasks for me in my AirTable base.\n2. You need to use tool \"Notify Client About Tasks\" to nofity client about his tasks.\n3. If transcript contains info there's a call needed - you'll use \"Create Event\" tool to create call on Google Meet\nCurrent date: ${$now}`;\nreturn { \"llm_system_2403a45b07\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
       }
     },
     {
@@ -148,8 +195,8 @@
       "label": "Save System: AI Agent",
       "color": "#0EA5E9",
       "position": {
-        "x": 1220,
-        "y": 360
+        "x": 1600,
+        "y": 100
       },
       "size": {
         "width": 240,
@@ -159,11 +206,11 @@
     {
       "nodeId": "node_56870c42c9",
       "actorId": "actor_56870c42c9",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Prompt: AI Agent",
       "color": "#F59E0B",
       "position": {
-        "x": 1600,
+        "x": 1980,
         "y": 100
       },
       "size": {
@@ -171,8 +218,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: AI Agent.\nconst __promptValue = `Title: ${$json.data.transcript.title}\n\nParticipants: ${$json.data.transcript.participants}\n\nTranscript: ${JSON.stringify($json.data.transcript.sentences)}\n\nBullet gist:${$json.data.transcript.summary.bullet_gist}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: AI Agent.\nconst __promptValue = `Title: ${$json.data.transcript.title}\n\nParticipants: ${$json.data.transcript.participants}\n\nTranscript: ${JSON.stringify($json.data.transcript.sentences)}\n\nBullet gist:${$json.data.transcript.summary.bullet_gist}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
       }
     },
     {
@@ -197,7 +244,7 @@
       "label": "End 2",
       "color": "#EF4444",
       "position": {
-        "x": 2360,
+        "x": 2740,
         "y": 100
       },
       "size": {
@@ -223,9 +270,6 @@
         "projectId": "",
         "environmentTagId": "",
         "initialContext": {
-          "body": {},
-          "query": {},
-          "headers": {},
           "airtableBaseId": "",
           "airtableTableId": "",
           "firefliesAuthorization": {
@@ -237,11 +281,27 @@
   ],
   "edges": [
     {
+      "source": "node_cb6b94c567",
+      "target": "node_041a94483f",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_cb6b94c567",
+      "target": "node_041a94483f",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
       "source": "node_7876fbc10a",
       "target": "node_4ec1e39278",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -249,7 +309,7 @@
       "target": "node_4ec1e39278",
       "sourceOutput": "transformed",
       "targetInput": "params",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -257,7 +317,7 @@
       "target": "node_2849dadaa3",
       "sourceOutput": "transformed",
       "targetInput": "patch",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeUpdateContext"
     },
     {
@@ -265,7 +325,7 @@
       "target": "node_2849dadaa3",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeUpdateContext"
     },
     {
@@ -274,14 +334,14 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeUpdateContext",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_56870c42c9",
       "target": "node_33a1f3d6c9",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdecliAgent"
     },
     {
@@ -290,30 +350,30 @@
       "sourceOutput": "trigger",
       "targetInput": "RUN",
       "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_eb85b72e93",
       "target": "node_7876fbc10a",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_eb85b72e93",
       "target": "node_7876fbc10a",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
-      "source": "node_aef77ecd8a",
+      "source": "node_041a94483f",
       "target": "node_6bd85886f8",
-      "sourceOutput": "trigger",
+      "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -322,7 +382,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_6bd85886f8",
@@ -330,7 +390,7 @@
       "sourceOutput": "body",
       "targetInput": "source",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_6bd85886f8",
@@ -338,7 +398,7 @@
       "sourceOutput": "body",
       "targetInput": "source",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_4ec1e39278",
@@ -403,14 +463,15 @@
       "NodeCdecliAgent",
       "NodeEnd",
       "NodeHttpRequest",
+      "NodeJavascript",
       "NodeStart",
-      "NodeTransform",
       "NodeUpdateContext",
+      "NodeWebhookTrigger",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 10,
-      "yantraSteps": 9,
+      "yantraSteps": 11,
       "foldedHelpers": [
         "OpenAI Chat Model",
         "Create Event",
@@ -426,25 +487,25 @@
     "tier": "ready",
     "blockers": [
       {
-        "code": "trigger-replaced",
-        "node": "Execute Workflow Trigger",
-        "detail": "n8n-nodes-base.executeWorkflowTrigger became the Start node"
+        "code": "webhook-registration",
+        "node": "Webhook",
+        "detail": "generic trigger URL requires registration"
       },
       {
         "code": "trigger-replaced",
-        "node": "Webhook",
-        "detail": "n8n-nodes-base.webhook became the Start node"
+        "node": "Execute Workflow Trigger",
+        "detail": "n8n-nodes-base.executeWorkflowTrigger became the Start node"
       }
     ],
     "setup": [
+      "\"Webhook\": save the workflow, then register node node_cb6b94c567 via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL.",
       "\"Execute Workflow Trigger\" (executeWorkflowTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
-      "\"Webhook\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
       "Setup value airtableBaseId: Airtable base id (for example appXXXX (from the base URL)). Write it into the Workflow Configs initialContext before import.",
       "Setup value airtableTableId: Airtable table id (for example tblXXXX (from the table URL)). Write it into the Workflow Configs initialContext before import.",
       "Workflow secret FIREFLIES_AUTHORIZATION: api.fireflies.ai Authorization credential for api.fireflies.ai (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
       "Connect the airtable connector (credential).",
       "Connect the googlesuper connector (credential).",
-      "Provide run inputs: body, query, headers, llm_system_2403a45b07, meetingId."
+      "Provide run inputs: llm_system_2403a45b07."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -488,12 +549,11 @@
         {
           "node": "Webhook",
           "type": "n8n-nodes-base.webhook",
-          "as": "NodeStart"
+          "as": "NodeWebhookTrigger"
         }
       ],
       "hints": [
         "The original was a sub-workflow called by another workflow; pass its inputs as run inputs.",
-        "The original started from an inbound webhook (POST /df852a9f-5ea3-43f2-bd49-d045aba5e9c9). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
         "\"AI Agent\" used agent tools in the original: Create Event (googleCalendarTool), Create Tasks (toolWorkflow), Notify Client About Tasks (gmailTool). The cdecli agent calls connectors directly; connect credentials for the services those tools reached. Prefer connectors: googlesuper.",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
         "Connect airtable: `cdecli credential create -n \"airtable\" -p airtable --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
@@ -513,10 +573,15 @@
     "nodes": {
       "node_aef77ecd8a": {
         "n8n": "Execute Workflow Trigger",
-        "n8nType": "n8n-nodes-base.executeWorkflowTrigger",
-        "also": [
-          "Webhook"
-        ]
+        "n8nType": "n8n-nodes-base.executeWorkflowTrigger"
+      },
+      "node_cb6b94c567": {
+        "n8n": "Webhook",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_041a94483f": {
+        "n8n": "Webhook",
+        "n8nType": "n8n-nodes-base.webhook"
       },
       "node_eb85b72e93": {
         "n8n": "Split Out",

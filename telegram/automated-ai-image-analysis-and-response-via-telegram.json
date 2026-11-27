@@ -146,11 +146,11 @@
       }
     },
     {
-      "nodeId": "node_e2734a316d",
-      "actorId": "actor_e2734a316d",
-      "type": "NodeTransform",
+      "nodeId": "node_6d435bd537",
+      "actorId": "actor_6d435bd537",
+      "type": "NodeWorkflowWait",
       "label": "Wait",
-      "color": "#F59E0B",
+      "color": "#0EA5E9",
       "position": {
         "x": 1980,
         "y": 360
@@ -160,8 +160,9 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// The original waited here (3 seconds).\nreturn source;"
+        "mode": "delay",
+        "seconds": 3,
+        "data": "{{ctx}}"
       }
     },
     {
@@ -207,7 +208,7 @@
         "connectorLabel": "Telegram",
         "action": "TELEGRAM_SEND_MESSAGE",
         "params": {
-          "chat_id": "{{last.transformed.message.chat.id}}",
+          "chat_id": "{{last.data.message.chat.id}}",
           "text": "Please Upload an Image ...."
         }
       }
@@ -347,11 +348,11 @@
       "targetNodeType": "NodeTransform"
     },
     {
-      "source": "node_e2734a316d",
+      "source": "node_6d435bd537",
       "target": "node_c17a195005",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeWorkflowWait",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -372,11 +373,11 @@
     },
     {
       "source": "node_7ebea8140b",
-      "target": "node_e2734a316d",
+      "target": "node_6d435bd537",
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeWorkflowWait"
     },
     {
       "source": "node_cc1e0a88b9",
@@ -410,7 +411,8 @@
       "NodeEnd",
       "NodeStart",
       "NodeTransform",
-      "NodeWorkflowConfigs"
+      "NodeWorkflowConfigs",
+      "NodeWorkflowWait"
     ],
     "comparison": {
       "n8nSteps": 6,
@@ -447,12 +449,6 @@
           "n8n": "image.analyze",
           "action": "NodeTransform",
           "soft": true
-        },
-        {
-          "node": "Wait",
-          "n8n": "wait",
-          "action": "NodeTransform",
-          "soft": true
         }
       ],
       "folded": [],
@@ -467,8 +463,6 @@
       "hints": [
         "The original started from telegramTrigger; Yantra has no webhook slug for it, so run on demand, on a schedule (add a NodeCron), or via the workflow API with the event under the run input `event`.",
         "\"Analyze image\" (image.analyze): Vision call through OpenAI Responses (input_image as a data: URL); the previous step must hand over the image as base64 in `data`.",
-        "\"Wait\" paused the original (3 seconds); Yantra has no delay node, so this step passes data straight through.",
-        "\"Wait\" (wait): Wait/delay is a soft passthrough; add a schedule or external delay if timing matters.",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
         "Connect openai: `cdecli credential create -n \"openai\" -p openai --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
         "Connect telegram: `cdecli credential create -n \"telegram\" -p telegram --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
@@ -510,7 +504,7 @@
         "n8n": "Analyze image",
         "n8nType": "@n8n/n8n-nodes-langchain.openAi"
       },
-      "node_e2734a316d": {
+      "node_6d435bd537": {
         "n8n": "Wait",
         "n8nType": "n8n-nodes-base.wait"
       },

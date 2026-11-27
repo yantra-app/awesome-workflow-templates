@@ -5,25 +5,30 @@
   "isPublic": true,
   "nodes": [
     {
-      "nodeId": "node_98be24d3c4",
-      "actorId": "actor_98be24d3c4",
-      "type": "NodeStart",
-      "label": "Start",
-      "color": "#22C55E",
+      "nodeId": "node_93602b8aac",
+      "actorId": "actor_93602b8aac",
+      "type": "NodeWebhookTrigger",
+      "label": "Bitrix24 Handler",
+      "color": "#6366F1",
       "position": {
         "x": 80,
         "y": 100
       },
       "size": {
-        "width": 240,
-        "height": 100
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "none",
+        "responseMode": "responseNode",
+        "httpMethod": "POST"
       }
     },
     {
-      "nodeId": "node_cd8fbb0841",
-      "actorId": "actor_cd8fbb0841",
-      "type": "NodeTransform",
-      "label": "Credentials",
+      "nodeId": "node_6d8d1783e9",
+      "actorId": "actor_6d8d1783e9",
+      "type": "NodeJavascript",
+      "label": "Bitrix24 Handler: request",
       "color": "#F59E0B",
       "position": {
         "x": 460,
@@ -34,15 +39,15 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"CLIENT_ID\"] = \"{{yourClientId}}\";\n  out[\"CLIENT_SECRET\"] = \"{{clientSecret}}\";\n  out[\"application_token\"] = ($json.body['auth[application_token]']);\n  out[\"domain\"] = `${$json.body['auth[domain]']}\n`;\n  out[\"access_token\"] = ($json.body['auth[access_token]']);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+        "migratedTransform": true,
+        "logic": "const ctx = {{ctx}};\nconst request = ctx.nodes?.[\"node_93602b8aac\"]?.latest ?? {};\nreturn { body: source, headers: request.headers, query: request.query, params: {}, method: request.method, rawBody: request.rawBody, rawBodyEncoding: request.rawBodyEncoding };"
       }
     },
     {
-      "nodeId": "node_9d6f6e0f43",
-      "actorId": "actor_9d6f6e0f43",
-      "type": "NodeTransform",
-      "label": "Validate Token: condition",
+      "nodeId": "node_cd8fbb0841",
+      "actorId": "actor_cd8fbb0841",
+      "type": "NodeJavascript",
+      "label": "Credentials",
       "color": "#F59E0B",
       "position": {
         "x": 840,
@@ -53,8 +58,27 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.CLIENT_ID) ?? '') === String(($json.application_token) ?? '')) || (String(\"1\" ?? '') === String(\"1\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"CLIENT_ID\"] = \"{{yourClientId}}\";\n  out[\"CLIENT_SECRET\"] = \"{{clientSecret}}\";\n  out[\"application_token\"] = ($json.body['auth[application_token]']);\n  out[\"domain\"] = `${$json.body['auth[domain]']}\n`;\n  out[\"access_token\"] = ($json.body['auth[access_token]']);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_9d6f6e0f43",
+      "actorId": "actor_9d6f6e0f43",
+      "type": "NodeJavascript",
+      "label": "Validate Token: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.CLIENT_ID) ?? '') === String(($json.application_token) ?? '')) || (String(\"1\" ?? '') === String(\"1\" ?? '')));"
       }
     },
     {
@@ -64,7 +88,7 @@
       "label": "Validate Token: condition?",
       "color": "#0EA5E9",
       "position": {
-        "x": 1220,
+        "x": 1600,
         "y": 100
       },
       "size": {
@@ -75,11 +99,11 @@
     {
       "nodeId": "node_f506631d86",
       "actorId": "actor_f506631d86",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Route Event: ONIMBOTMESSAGEADD",
       "color": "#F59E0B",
       "position": {
-        "x": 1600,
+        "x": 1980,
         "y": 100
       },
       "size": {
@@ -87,8 +111,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.body.event) ?? '') === String(\"ONIMBOTMESSAGEADD\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.body.event) ?? '') === String(\"ONIMBOTMESSAGEADD\" ?? '')));"
       }
     },
     {
@@ -98,7 +122,7 @@
       "label": "Route Event: ONIMBOTMESSAGEADD?",
       "color": "#0EA5E9",
       "position": {
-        "x": 1980,
+        "x": 2360,
         "y": 100
       },
       "size": {
@@ -109,11 +133,11 @@
     {
       "nodeId": "node_a1ed34d3ba",
       "actorId": "actor_a1ed34d3ba",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Route Event: ONIMBOTJOINCHAT",
       "color": "#F59E0B",
       "position": {
-        "x": 2360,
+        "x": 2740,
         "y": 100
       },
       "size": {
@@ -121,8 +145,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.body.event) ?? '') === String(\"ONIMBOTJOINCHAT\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.body.event) ?? '') === String(\"ONIMBOTJOINCHAT\" ?? '')));"
       }
     },
     {
@@ -132,7 +156,7 @@
       "label": "Route Event: ONIMBOTJOINCHAT?",
       "color": "#0EA5E9",
       "position": {
-        "x": 2740,
+        "x": 3120,
         "y": 100
       },
       "size": {
@@ -143,11 +167,11 @@
     {
       "nodeId": "node_5a1397a2f2",
       "actorId": "actor_5a1397a2f2",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Route Event: ONAPPINSTALL",
       "color": "#F59E0B",
       "position": {
-        "x": 3120,
+        "x": 3500,
         "y": 100
       },
       "size": {
@@ -155,8 +179,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.body.event) ?? '') === String(\"ONAPPINSTALL\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.body.event) ?? '') === String(\"ONAPPINSTALL\" ?? '')));"
       }
     },
     {
@@ -166,7 +190,7 @@
       "label": "Route Event: ONAPPINSTALL?",
       "color": "#0EA5E9",
       "position": {
-        "x": 3500,
+        "x": 3880,
         "y": 100
       },
       "size": {
@@ -177,11 +201,11 @@
     {
       "nodeId": "node_2179c1ade3",
       "actorId": "actor_2179c1ade3",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Route Event: ONIMBOTDELETE",
       "color": "#F59E0B",
       "position": {
-        "x": 3880,
+        "x": 4260,
         "y": 100
       },
       "size": {
@@ -189,8 +213,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.body.event) ?? '') === String(\"ONIMBOTDELETE\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.body.event) ?? '') === String(\"ONIMBOTDELETE\" ?? '')));"
       }
     },
     {
@@ -200,7 +224,7 @@
       "label": "Route Event: ONIMBOTDELETE?",
       "color": "#0EA5E9",
       "position": {
-        "x": 4260,
+        "x": 4640,
         "y": 100
       },
       "size": {
@@ -209,47 +233,71 @@
       }
     },
     {
-      "nodeId": "node_4edb5ef335",
-      "actorId": "actor_4edb5ef335",
-      "type": "NodeEnd",
-      "label": "End",
-      "color": "#EF4444",
-      "position": {
-        "x": 840,
-        "y": 360
-      },
-      "size": {
-        "width": 240,
-        "height": 100
-      }
-    },
-    {
-      "nodeId": "node_26c3cb03e3",
-      "actorId": "actor_26c3cb03e3",
-      "type": "NodeTransform",
-      "label": "Process Message",
-      "color": "#F59E0B",
+      "nodeId": "node_aaca4ed61c",
+      "actorId": "actor_aaca4ed61c",
+      "type": "NodeRespondToWebhook",
+      "label": "Error Response",
+      "color": "#6366F1",
       "position": {
         "x": 2360,
         "y": 360
       },
       "size": {
         "width": 280,
+        "height": 180
+      },
+      "inputs": {
+        "bodyMode": "json",
+        "statusCode": 401,
+        "headers": {}
+      }
+    },
+    {
+      "nodeId": "node_a439094284",
+      "actorId": "actor_a439094284",
+      "type": "NodeJavascript",
+      "label": "Error Response: body",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Function node \"Process Message\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst items = $input.all();\nconst __out = (() => {\n  // Process Message Node\n  const items = $input.all();\n  const item = items[0];\n  \n  // Get message data from the correct path\n  const message = item.json.body['data[PARAMS][MESSAGE]'];\n  const dialogId = item.json.body['data[PARAMS][DIALOG_ID]'];\n  \n  // Get auth data\n  const auth = {\n   access_token: item.json.access_token,\n   domain: item.json.domain\n  };\n  \n  if (message.toLowerCase() === \"what's hot\") {\n   return {\n   json: {\n   DIALOG_ID: dialogId,\n   MESSAGE: \"Hi! I am an example-bot.\\nI repeat what you say\",\n   AUTH: auth.access_token,\n   DOMAIN: auth.domain\n   }\n   };\n  } else {\n   return {\n   json: {\n   DIALOG_ID: dialogId,\n   MESSAGE: `You said:\\n${message}`,\n   AUTH: auth.access_token,\n   DOMAIN: auth.domain\n   }\n   };\n  }\n})();\nreturn __single(__unwrap(__out));"
+        "migratedTransform": true,
+        "logic": "const body = (\"«\\\"result\\\": false,\\n \\\"error\\\": \\\"Invalid application token\\\"»\");\nreturn typeof body === 'string' ? JSON.parse(body) : body;"
+      }
+    },
+    {
+      "nodeId": "node_26c3cb03e3",
+      "actorId": "actor_26c3cb03e3",
+      "type": "NodeJavascript",
+      "label": "Process Message",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Function node \"Process Message\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst items = $input.all();\nconst __out = (() => {\n  // Process Message Node\n  const items = $input.all();\n  const item = items[0];\n  \n  // Get message data from the correct path\n  const message = item.json.body['data[PARAMS][MESSAGE]'];\n  const dialogId = item.json.body['data[PARAMS][DIALOG_ID]'];\n  \n  // Get auth data\n  const auth = {\n   access_token: item.json.access_token,\n   domain: item.json.domain\n  };\n  \n  if (message.toLowerCase() === \"what's hot\") {\n   return {\n   json: {\n   DIALOG_ID: dialogId,\n   MESSAGE: \"Hi! I am an example-bot.\\nI repeat what you say\",\n   AUTH: auth.access_token,\n   DOMAIN: auth.domain\n   }\n   };\n  } else {\n   return {\n   json: {\n   DIALOG_ID: dialogId,\n   MESSAGE: `You said:\\n${message}`,\n   AUTH: auth.access_token,\n   DOMAIN: auth.domain\n   }\n   };\n  }\n})();\nreturn __single(__unwrap(__out));"
       }
     },
     {
       "nodeId": "node_745d0e5cd0",
       "actorId": "actor_745d0e5cd0",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Process Join",
       "color": "#F59E0B",
       "position": {
-        "x": 3120,
+        "x": 3500,
         "y": 360
       },
       "size": {
@@ -257,18 +305,18 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Function node \"Process Join\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst items = $input.all();\nconst __out = (() => {\n  // Process Join Node\n  const items = $input.all();\n  const item = items[0];\n  \n  // Get dialog ID from the correct path\n  const dialogId = item.json.body['data[PARAMS][DIALOG_ID]'];\n  \n  // Get auth data\n  const auth = {\n   access_token: item.json.access_token,\n   domain: item.json.domain\n  };\n  \n  return {\n   json: {\n   DIALOG_ID: dialogId,\n   MESSAGE: 'Hi! I am an example-bot. I repeat what you say',\n   AUTH: auth.access_token,\n   DOMAIN: auth.domain\n   }\n  };\n})();\nreturn __single(__unwrap(__out));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Function node \"Process Join\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst items = $input.all();\nconst __out = (() => {\n  // Process Join Node\n  const items = $input.all();\n  const item = items[0];\n  \n  // Get dialog ID from the correct path\n  const dialogId = item.json.body['data[PARAMS][DIALOG_ID]'];\n  \n  // Get auth data\n  const auth = {\n   access_token: item.json.access_token,\n   domain: item.json.domain\n  };\n  \n  return {\n   json: {\n   DIALOG_ID: dialogId,\n   MESSAGE: 'Hi! I am an example-bot. I repeat what you say',\n   AUTH: auth.access_token,\n   DOMAIN: auth.domain\n   }\n  };\n})();\nreturn __single(__unwrap(__out));"
       }
     },
     {
       "nodeId": "node_6a2337dd8e",
       "actorId": "actor_6a2337dd8e",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Process Install",
       "color": "#F59E0B",
       "position": {
-        "x": 3880,
+        "x": 4260,
         "y": 360
       },
       "size": {
@@ -276,8 +324,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Function node \"Process Install\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst items = $input.all();\nconst __out = (() => {\n  // Process Install Node\n  const items = $input.all();\n  const item = items[0];\n  \n  // Get the webhook URL from input\n  const handlerBackUrl = item.json.webhookUrl;\n  \n  // Get auth data directly from item.json\n  const auth = {\n   access_token: item.json.access_token,\n   application_token: item.json.application_token,\n   domain: item.json.domain\n  };\n  \n  return {\n   json: {\n   handler_back_url: handlerBackUrl,\n   CODE: 'LocalExampleBot',\n   TYPE: 'B',\n   EVENT_MESSAGE_ADD: handlerBackUrl,\n   EVENT_WELCOME_MESSAGE: handlerBackUrl,\n   EVENT_BOT_DELETE: handlerBackUrl,\n   PROPERTIES: {\n   NAME: 'Bot',\n   LAST_NAME: 'Example',\n   COLOR: 'AQUA',\n   EMAIL: 'no@example.com',\n   PERSONAL_BIRTHDAY: '2020-07-18',\n   WORK_POSITION: 'Report on affairs',\n   PERSONAL_GENDER: 'M'\n   },\n   // Use the auth data from item.json\n   AUTH: auth.access_token,\n   CLIENT_ID: auth.application_token,\n   DOMAIN: auth.domain\n   }\n  };\n})();\nreturn __single(__unwrap(__out));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Function node \"Process Install\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst items = $input.all();\nconst __out = (() => {\n  // Process Install Node\n  const items = $input.all();\n  const item = items[0];\n  \n  // Get the webhook URL from input\n  const handlerBackUrl = item.json.webhookUrl;\n  \n  // Get auth data directly from item.json\n  const auth = {\n   access_token: item.json.access_token,\n   application_token: item.json.application_token,\n   domain: item.json.domain\n  };\n  \n  return {\n   json: {\n   handler_back_url: handlerBackUrl,\n   CODE: 'LocalExampleBot',\n   TYPE: 'B',\n   EVENT_MESSAGE_ADD: handlerBackUrl,\n   EVENT_WELCOME_MESSAGE: handlerBackUrl,\n   EVENT_BOT_DELETE: handlerBackUrl,\n   PROPERTIES: {\n   NAME: 'Bot',\n   LAST_NAME: 'Example',\n   COLOR: 'AQUA',\n   EMAIL: 'no@example.com',\n   PERSONAL_BIRTHDAY: '2020-07-18',\n   WORK_POSITION: 'Report on affairs',\n   PERSONAL_GENDER: 'M'\n   },\n   // Use the auth data from item.json\n   AUTH: auth.access_token,\n   CLIENT_ID: auth.application_token,\n   DOMAIN: auth.domain\n   }\n  };\n})();\nreturn __single(__unwrap(__out));"
       }
     },
     {
@@ -287,7 +335,7 @@
       "label": "Send Message",
       "color": "#0EA5E9",
       "position": {
-        "x": 2740,
+        "x": 3120,
         "y": 360
       },
       "size": {
@@ -311,7 +359,7 @@
       "label": "Send Join Message",
       "color": "#0EA5E9",
       "position": {
-        "x": 3500,
+        "x": 3880,
         "y": 360
       },
       "size": {
@@ -335,7 +383,7 @@
       "label": "Register Bot",
       "color": "#0EA5E9",
       "position": {
-        "x": 4640,
+        "x": 5020,
         "y": 100
       },
       "size": {
@@ -350,11 +398,11 @@
     {
       "nodeId": "node_f27bd7c00a",
       "actorId": "actor_f27bd7c00a",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Body: Register Bot",
       "color": "#F59E0B",
       "position": {
-        "x": 4260,
+        "x": 4640,
         "y": 360
       },
       "size": {
@@ -362,18 +410,110 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Register Bot\".\nconst __body = { \"CODE\": \"LocalExampleBot\", \"TYPE\": \"B\", \"EVENT_MESSAGE_ADD\": ($json.handler_back_url), \"EVENT_WELCOME_MESSAGE\": ($json.handler_back_url), \"EVENT_BOT_DELETE\": ($json.handler_back_url), \"PROPERTIES\": ({\n NAME: 'Bot',\n LAST_NAME: 'Example',\n COLOR: 'AQUA',\n EMAIL: 'no@example.com',\n PERSONAL_BIRTHDAY: '2020-07-18',\n WORK_POSITION: 'Report on affairs',\n PERSONAL_GENDER: 'M'\n}), \"CLIENT_ID\": ($json.CLIENT_ID), \"CLIENT_SECRET\": ($json.AUTH) };\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request body for \"Register Bot\".\nconst __body = { \"CODE\": \"LocalExampleBot\", \"TYPE\": \"B\", \"EVENT_MESSAGE_ADD\": ($json.handler_back_url), \"EVENT_WELCOME_MESSAGE\": ($json.handler_back_url), \"EVENT_BOT_DELETE\": ($json.handler_back_url), \"PROPERTIES\": ({\n NAME: 'Bot',\n LAST_NAME: 'Example',\n COLOR: 'AQUA',\n EMAIL: 'no@example.com',\n PERSONAL_BIRTHDAY: '2020-07-18',\n WORK_POSITION: 'Report on affairs',\n PERSONAL_GENDER: 'M'\n}), \"CLIENT_ID\": ($json.CLIENT_ID), \"CLIENT_SECRET\": ($json.AUTH) };\nreturn typeof __body === 'string' ? (() => { try { return JSON.parse(__body); } catch { return __body; } })() : __body;"
       }
     },
     {
-      "nodeId": "node_0418a2d683",
-      "actorId": "actor_0418a2d683",
+      "nodeId": "node_8bdc69bee4",
+      "actorId": "actor_8bdc69bee4",
+      "type": "NodeRespondToWebhook",
+      "label": "Success Response",
+      "color": "#6366F1",
+      "position": {
+        "x": 5780,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 180
+      },
+      "inputs": {
+        "bodyMode": "json",
+        "statusCode": 200,
+        "headers": {}
+      }
+    },
+    {
+      "nodeId": "node_f6c416f1b2",
+      "actorId": "actor_f6c416f1b2",
+      "type": "NodeJavascript",
+      "label": "Success Response: body",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "const body = `{\n \"result\": true\n}`;\nreturn typeof body === 'string' ? JSON.parse(body) : body;"
+      }
+    },
+    {
+      "nodeId": "node_0efcbdfbe1",
+      "actorId": "actor_0efcbdfbe1",
+      "type": "NodeJavascript",
+      "label": "Finish after response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "return source ?? {};"
+      }
+    },
+    {
+      "nodeId": "node_b0c9615310",
+      "actorId": "actor_b0c9615310",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3120,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_e94f4958bf",
+      "actorId": "actor_e94f4958bf",
+      "type": "NodeJavascript",
+      "label": "Finish after response 2",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "return source ?? {};"
+      }
+    },
+    {
+      "nodeId": "node_b7abd6b163",
+      "actorId": "actor_b7abd6b163",
       "type": "NodeEnd",
       "label": "End 2",
       "color": "#EF4444",
       "position": {
-        "x": 5020,
+        "x": 6540,
         "y": 100
       },
       "size": {
@@ -389,7 +529,7 @@
       "color": "default",
       "position": {
         "x": 80,
-        "y": 620
+        "y": 880
       },
       "size": {
         "width": 280,
@@ -399,9 +539,6 @@
         "projectId": "",
         "environmentTagId": "",
         "initialContext": {
-          "body": {},
-          "query": {},
-          "headers": {},
           "yourClientId": "",
           "clientSecret": {
             "$workflowSecret": "CLIENT_SECRET"
@@ -412,11 +549,27 @@
   ],
   "edges": [
     {
+      "source": "node_93602b8aac",
+      "target": "node_6d8d1783e9",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_93602b8aac",
+      "target": "node_6d8d1783e9",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
       "source": "node_9d6f6e0f43",
       "target": "node_3d12e36881",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -424,7 +577,7 @@
       "target": "node_3d12e36881",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -432,7 +585,7 @@
       "target": "node_87089e73d6",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -440,7 +593,7 @@
       "target": "node_87089e73d6",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -449,14 +602,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_a1ed34d3ba",
       "target": "node_1de9569651",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -464,7 +617,7 @@
       "target": "node_1de9569651",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -473,14 +626,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_5a1397a2f2",
       "target": "node_0b162cc0d1",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -488,7 +641,7 @@
       "target": "node_0b162cc0d1",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -497,14 +650,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_2179c1ade3",
       "target": "node_acb80cefa0",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -512,15 +665,31 @@
       "target": "node_acb80cefa0",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
+    },
+    {
+      "source": "node_a439094284",
+      "target": "node_aaca4ed61c",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeRespondToWebhook"
+    },
+    {
+      "source": "node_a439094284",
+      "target": "node_aaca4ed61c",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeRespondToWebhook"
     },
     {
       "source": "node_f27bd7c00a",
       "target": "node_07d7d24e3f",
       "sourceOutput": "transformed",
       "targetInput": "body",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -528,32 +697,56 @@
       "target": "node_07d7d24e3f",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
-      "source": "node_98be24d3c4",
-      "target": "node_cd8fbb0841",
-      "sourceOutput": "trigger",
+      "source": "node_f6c416f1b2",
+      "target": "node_8bdc69bee4",
+      "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeRespondToWebhook"
+    },
+    {
+      "source": "node_f6c416f1b2",
+      "target": "node_8bdc69bee4",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeRespondToWebhook"
+    },
+    {
+      "source": "node_6d8d1783e9",
+      "target": "node_cd8fbb0841",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_6d8d1783e9",
+      "target": "node_cd8fbb0841",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_cd8fbb0841",
       "target": "node_9d6f6e0f43",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_cd8fbb0841",
       "target": "node_9d6f6e0f43",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_3d12e36881",
@@ -561,47 +754,55 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_cd8fbb0841",
       "target": "node_f506631d86",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_cd8fbb0841",
       "target": "node_a1ed34d3ba",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_cd8fbb0841",
       "target": "node_5a1397a2f2",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_cd8fbb0841",
       "target": "node_2179c1ade3",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_3d12e36881",
+      "target": "node_a439094284",
+      "sourceOutput": "FALSE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_cd8fbb0841",
-      "target": "node_4edb5ef335",
+      "target": "node_a439094284",
       "sourceOutput": "transformed",
-      "targetInput": "result",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeEnd"
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_87089e73d6",
@@ -609,15 +810,15 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_cd8fbb0841",
       "target": "node_26c3cb03e3",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_1de9569651",
@@ -625,15 +826,15 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_cd8fbb0841",
       "target": "node_745d0e5cd0",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_0b162cc0d1",
@@ -641,30 +842,38 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_cd8fbb0841",
       "target": "node_6a2337dd8e",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_acb80cefa0",
+      "target": "node_f6c416f1b2",
+      "sourceOutput": "TRUE",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_cd8fbb0841",
-      "target": "node_0418a2d683",
+      "target": "node_f6c416f1b2",
       "sourceOutput": "transformed",
-      "targetInput": "result",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeEnd"
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_26c3cb03e3",
       "target": "node_0d638860eb",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -672,7 +881,7 @@
       "target": "node_cb47589a9c",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -680,39 +889,111 @@
       "target": "node_f27bd7c00a",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_6a2337dd8e",
       "target": "node_f27bd7c00a",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_07d7d24e3f",
-      "target": "node_0418a2d683",
-      "sourceOutput": "body",
-      "targetInput": "result",
+      "target": "node_f6c416f1b2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeEnd"
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_07d7d24e3f",
+      "target": "node_f6c416f1b2",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_0d638860eb",
-      "target": "node_0418a2d683",
-      "sourceOutput": "body",
-      "targetInput": "result",
+      "target": "node_f6c416f1b2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeEnd"
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_0d638860eb",
+      "target": "node_f6c416f1b2",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_cb47589a9c",
-      "target": "node_0418a2d683",
-      "sourceOutput": "body",
-      "targetInput": "result",
+      "target": "node_f6c416f1b2",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
       "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_cb47589a9c",
+      "target": "node_f6c416f1b2",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_aaca4ed61c",
+      "target": "node_0efcbdfbe1",
+      "sourceOutput": "onComplete",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_aaca4ed61c",
+      "target": "node_0efcbdfbe1",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_0efcbdfbe1",
+      "target": "node_b0c9615310",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_8bdc69bee4",
+      "target": "node_e94f4958bf",
+      "sourceOutput": "onComplete",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_8bdc69bee4",
+      "target": "node_e94f4958bf",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_e94f4958bf",
+      "target": "node_b7abd6b163",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeEnd"
     }
   ],
@@ -747,13 +1028,14 @@
       "NodeBranch",
       "NodeEnd",
       "NodeHttpRequest",
-      "NodeStart",
-      "NodeTransform",
+      "NodeJavascript",
+      "NodeRespondToWebhook",
+      "NodeWebhookTrigger",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 13,
-      "yantraSteps": 19,
+      "yantraSteps": 26,
       "foldedHelpers": []
     },
     "source": {
@@ -765,16 +1047,15 @@
     "tier": "ready",
     "blockers": [
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "Bitrix24 Handler",
-        "detail": "n8n-nodes-base.webhook became the Start node"
+        "detail": "generic trigger URL requires registration"
       }
     ],
     "setup": [
-      "\"Bitrix24 Handler\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Bitrix24 Handler\": save the workflow, then register node node_93602b8aac via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL.",
       "Setup value yourClientId: Your Client Id. Write it into the Workflow Configs initialContext before import.",
-      "Workflow secret CLIENT_SECRET: client secret (read inside the step code). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
-      "Provide run inputs: body, query, headers."
+      "Workflow secret CLIENT_SECRET: client secret (read inside the step code). Add it in the workflow editor's Secrets panel after import; never paste it in chat."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -788,17 +1069,20 @@
         {
           "node": "Bitrix24 Handler",
           "type": "n8n-nodes-base.webhook",
-          "as": "NodeStart"
+          "as": "NodeWebhookTrigger"
         }
       ],
       "hints": [
-        "The original started from an inbound webhook (POST /bitrix24/handler.php). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
       ]
     },
     "notes": [],
     "nodes": {
-      "node_98be24d3c4": {
+      "node_93602b8aac": {
+        "n8n": "Bitrix24 Handler",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_6d8d1783e9": {
         "n8n": "Bitrix24 Handler",
         "n8nType": "n8n-nodes-base.webhook"
       },
@@ -846,7 +1130,11 @@
         "n8n": "Route Event",
         "n8nType": "n8n-nodes-base.switch"
       },
-      "node_4edb5ef335": {
+      "node_aaca4ed61c": {
+        "n8n": "Error Response",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_a439094284": {
         "n8n": "Error Response",
         "n8nType": "n8n-nodes-base.respondToWebhook"
       },
@@ -878,7 +1166,27 @@
         "n8n": "Register Bot",
         "n8nType": "n8n-nodes-base.httpRequest"
       },
-      "node_0418a2d683": {
+      "node_8bdc69bee4": {
+        "n8n": "Success Response",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_f6c416f1b2": {
+        "n8n": "Success Response",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_0efcbdfbe1": {
+        "n8n": "Error Response",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_b0c9615310": {
+        "n8n": "Error Response",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_e94f4958bf": {
+        "n8n": "Success Response",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_b7abd6b163": {
         "n8n": "Success Response",
         "n8nType": "n8n-nodes-base.respondToWebhook"
       },

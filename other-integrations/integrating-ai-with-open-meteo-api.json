@@ -5,18 +5,41 @@
   "isPublic": true,
   "nodes": [
     {
-      "nodeId": "node_7e9fabc3f0",
-      "actorId": "actor_7e9fabc3f0",
-      "type": "NodeStart",
-      "label": "Start",
-      "color": "#22C55E",
+      "nodeId": "node_30e9ae75a6",
+      "actorId": "actor_30e9ae75a6",
+      "type": "NodeChatTrigger",
+      "label": "When chat message received",
+      "color": "#6366F1",
       "position": {
         "x": 80,
         "y": 100
       },
       "size": {
-        "width": 240,
-        "height": 100
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "none",
+        "responseMode": "lastNode"
+      }
+    },
+    {
+      "nodeId": "node_4a5eab4971",
+      "actorId": "actor_4a5eab4971",
+      "type": "NodeJavascript",
+      "label": "When chat message received: request",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "return { action: 'sendMessage', ...source };"
       }
     },
     {
@@ -26,7 +49,7 @@
       "label": "Generic AI Tool Agent",
       "color": "#8B5CF6",
       "position": {
-        "x": 460,
+        "x": 1220,
         "y": 100
       },
       "size": {
@@ -35,7 +58,26 @@
       },
       "inputs": {
         "sessionId": "{{sessionId}}",
-        "message": "{{chatInput}}"
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_0c45329a16",
+      "actorId": "actor_0c45329a16",
+      "type": "NodeJavascript",
+      "label": "Prompt: Generic AI Tool Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Generic AI Tool Agent.\nconst __promptValue = ($json.chatInput);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
       }
     },
     {
@@ -45,7 +87,7 @@
       "label": "End",
       "color": "#EF4444",
       "position": {
-        "x": 840,
+        "x": 1600,
         "y": 100
       },
       "size": {
@@ -71,7 +113,6 @@
         "projectId": "",
         "environmentTagId": "",
         "initialContext": {
-          "chatInput": "",
           "sessionId": ""
         }
       }
@@ -79,12 +120,44 @@
   ],
   "edges": [
     {
-      "source": "node_7e9fabc3f0",
-      "target": "node_70794f1fd4",
-      "sourceOutput": "trigger",
+      "source": "node_30e9ae75a6",
+      "target": "node_4a5eab4971",
+      "sourceOutput": "onEvent",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
+      "sourceNodeType": "NodeChatTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_30e9ae75a6",
+      "target": "node_4a5eab4971",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeChatTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_0c45329a16",
+      "target": "node_70794f1fd4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_4a5eab4971",
+      "target": "node_0c45329a16",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_4a5eab4971",
+      "target": "node_0c45329a16",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_70794f1fd4",
@@ -103,13 +176,14 @@
     "connectors": [],
     "nodeTypes": [
       "NodeCdecliAgent",
+      "NodeChatTrigger",
       "NodeEnd",
-      "NodeStart",
+      "NodeJavascript",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 6,
-      "yantraSteps": 2,
+      "yantraSteps": 4,
       "foldedHelpers": [
         "OpenAI Chat Model",
         "Chat Memory Buffer",
@@ -123,24 +197,38 @@
       "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db",
       "n8nName": "Integrating AI with Open-Meteo API for Enhanced Weather Forecasting"
     },
-    "tier": "ready",
+    "tier": "experimental",
     "blockers": [
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "When chat message received",
-        "detail": "@n8n/n8n-nodes-langchain.chatTrigger became the Start node"
+        "detail": "generic trigger URL requires registration"
+      },
+      {
+        "code": "entry-point-unsupported",
+        "node": "When chat message received",
+        "detail": "@n8n/n8n-nodes-langchain.chatTrigger: requires chat uploads, session history or cross-origin behavior beyond the hosted Yantra form"
       }
     ],
     "setup": [
-      "\"When chat message received\" (chatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
-      "Provide run inputs: chatInput, sessionId."
+      "\"When chat message received\": save the workflow, then register node node_30e9ae75a6 via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL.",
+      "\"When chat message received\" (@n8n/n8n-nodes-langchain.chatTrigger) needs attention before it runs: requires chat uploads, session history or cross-origin behavior beyond the hosted Yantra form.",
+      "Provide run inputs: sessionId."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
-      "status": "ready",
+      "status": "needs-setup",
       "coverage": 1,
       "unmapped": [],
-      "approximate": [],
+      "approximate": [
+        {
+          "node": "When chat message received",
+          "n8n": "@n8n/n8n-nodes-langchain.chatTrigger",
+          "action": "NodeTransform",
+          "blocker": "entry-point-unsupported",
+          "reason": "requires chat uploads, session history or cross-origin behavior beyond the hosted Yantra form"
+        }
+      ],
       "folded": [
         {
           "node": "OpenAI Chat Model",
@@ -171,11 +259,11 @@
         {
           "node": "When chat message received",
           "type": "@n8n/n8n-nodes-langchain.chatTrigger",
-          "as": "NodeStart"
+          "as": "NodeChatTrigger"
         }
       ],
       "hints": [
-        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
+        "\"When chat message received\" (@n8n/n8n-nodes-langchain.chatTrigger): requires chat uploads, session history or cross-origin behavior beyond the hosted Yantra form",
         "\"Generic AI Tool Agent\" kept conversation memory (memoryBufferWindow); sessionId is set to the run-input sessionId.",
         "\"Generic AI Tool Agent\" used agent tools in the original: A tool for inputting the city and obtaining geolocation (toolHttpRequest), A tool to get the weather forecast based on geolocation (toolHttpRequest). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
@@ -190,11 +278,19 @@
       "## Within N8N, there will be a chat button to test, or you can use the external chat link from the trigger."
     ],
     "nodes": {
-      "node_7e9fabc3f0": {
+      "node_30e9ae75a6": {
+        "n8n": "When chat message received",
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
+      },
+      "node_4a5eab4971": {
         "n8n": "When chat message received",
         "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
       },
       "node_70794f1fd4": {
+        "n8n": "Generic AI Tool Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_0c45329a16": {
         "n8n": "Generic AI Tool Agent",
         "n8nType": "@n8n/n8n-nodes-langchain.agent"
       },

@@ -5,14 +5,52 @@
   "isPublic": true,
   "nodes": [
     {
-      "nodeId": "node_8a69f7821b",
-      "actorId": "actor_8a69f7821b",
+      "nodeId": "node_7f84840b49",
+      "actorId": "actor_7f84840b49",
+      "type": "NodeChatTrigger",
+      "label": "On new manual Chat Message",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "bearer",
+        "responseMode": "lastNode"
+      }
+    },
+    {
+      "nodeId": "node_32ca87ff18",
+      "actorId": "actor_32ca87ff18",
+      "type": "NodeJavascript",
+      "label": "On new manual Chat Message: request",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "return { action: 'sendMessage', ...source };"
+      }
+    },
+    {
+      "nodeId": "node_278bdf7569",
+      "actorId": "actor_278bdf7569",
       "type": "NodeStart",
       "label": "Start",
       "color": "#22C55E",
       "position": {
         "x": 80,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 240,
@@ -26,7 +64,7 @@
       "label": "AI Agent",
       "color": "#8B5CF6",
       "position": {
-        "x": 460,
+        "x": 1220,
         "y": 100
       },
       "size": {
@@ -35,7 +73,26 @@
       },
       "inputs": {
         "sessionId": "",
-        "message": "{{chatInput}}"
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_b16160f386",
+      "actorId": "actor_b16160f386",
+      "type": "NodeJavascript",
+      "label": "Prompt: AI Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: AI Agent.\nconst __promptValue = ($json.chatInput);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
       }
     },
     {
@@ -64,39 +121,39 @@
     {
       "nodeId": "node_6149ec5eac",
       "actorId": "actor_6149ec5eac",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Clean up data",
       "color": "#F59E0B",
       "position": {
         "x": 840,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 280,
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"title\"] = ($json._highlightResult.title.value);\n  out[\"points\"] = ($json.points);\n  out[\"url\"] = ($json.url);\n  out[\"created_at\"] = ($json.created_at);\n  out[\"author\"] = ($json.author);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"title\"] = ($json._highlightResult.title.value);\n  out[\"points\"] = ($json.points);\n  out[\"url\"] = ($json.url);\n  out[\"created_at\"] = ($json.created_at);\n  out[\"author\"] = ($json.author);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
       }
     },
     {
       "nodeId": "node_1e127c0148",
       "actorId": "actor_1e127c0148",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Stringify",
       "color": "#F59E0B",
       "position": {
         "x": 1220,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 280,
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Stringify\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  return {\n   'response': JSON.stringify($input.all().map(x => x.json))\n  }\n})();\nreturn __single(__unwrap(__out));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Stringify\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  return {\n   'response': JSON.stringify($input.all().map(x => x.json))\n  }\n})();\nreturn __single(__unwrap(__out));"
       }
     },
     {
@@ -106,8 +163,8 @@
       "label": "End",
       "color": "#EF4444",
       "position": {
-        "x": 840,
-        "y": 360
+        "x": 1600,
+        "y": 100
       },
       "size": {
         "width": 240,
@@ -122,7 +179,7 @@
       "color": "#EF4444",
       "position": {
         "x": 1600,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 240,
@@ -145,25 +202,53 @@
       },
       "inputs": {
         "projectId": "",
-        "environmentTagId": "",
-        "initialContext": {
-          "chatInput": "",
-          "sessionId": ""
-        }
+        "environmentTagId": ""
       }
     }
   ],
   "edges": [
     {
-      "source": "node_8a69f7821b",
-      "target": "node_65276a91c0",
-      "sourceOutput": "trigger",
+      "source": "node_7f84840b49",
+      "target": "node_32ca87ff18",
+      "sourceOutput": "onEvent",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
+      "sourceNodeType": "NodeChatTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_7f84840b49",
+      "target": "node_32ca87ff18",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeChatTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_b16160f386",
+      "target": "node_65276a91c0",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdecliAgent"
     },
     {
-      "source": "node_8a69f7821b",
+      "source": "node_32ca87ff18",
+      "target": "node_b16160f386",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_32ca87ff18",
+      "target": "node_b16160f386",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_278bdf7569",
       "target": "node_fccb3be494",
       "sourceOutput": "trigger",
       "targetInput": "RUN",
@@ -176,7 +261,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_fccb3be494",
@@ -184,23 +269,23 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_6149ec5eac",
       "target": "node_1e127c0148",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_6149ec5eac",
       "target": "node_1e127c0148",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_65276a91c0",
@@ -215,7 +300,7 @@
       "target": "node_5652c7165c",
       "sourceOutput": "transformed",
       "targetInput": "result",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeEnd"
     }
   ],
@@ -230,14 +315,15 @@
     "nodeTypes": [
       "NodeCdeConnector",
       "NodeCdecliAgent",
+      "NodeChatTrigger",
       "NodeEnd",
+      "NodeJavascript",
       "NodeStart",
-      "NodeTransform",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 8,
-      "yantraSteps": 5,
+      "yantraSteps": 8,
       "foldedHelpers": [
         "OpenAI Chat Model",
         "Custom tool to call the wf below"
@@ -251,21 +337,20 @@
     "tier": "ready",
     "blockers": [
       {
-        "code": "trigger-replaced",
-        "node": "Execute Workflow Trigger",
-        "detail": "n8n-nodes-base.executeWorkflowTrigger became the Start node"
+        "code": "webhook-registration",
+        "node": "On new manual Chat Message",
+        "detail": "generic trigger URL requires registration"
       },
       {
         "code": "trigger-replaced",
-        "node": "On new manual Chat Message",
-        "detail": "@n8n/n8n-nodes-langchain.manualChatTrigger became the Start node"
+        "node": "Execute Workflow Trigger",
+        "detail": "n8n-nodes-base.executeWorkflowTrigger became the Start node"
       }
     ],
     "setup": [
+      "\"On new manual Chat Message\": save the workflow, then register node node_7f84840b49 via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL. Use bearer authentication with credentials supplied at registration.",
       "\"Execute Workflow Trigger\" (executeWorkflowTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
-      "\"On new manual Chat Message\" (manualChatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
-      "Connect the hackernews connector (credential).",
-      "Provide run inputs: chatInput, sessionId."
+      "Connect the hackernews connector (credential)."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -291,7 +376,7 @@
         {
           "node": "On new manual Chat Message",
           "type": "@n8n/n8n-nodes-langchain.manualChatTrigger",
-          "as": "NodeStart"
+          "as": "NodeChatTrigger"
         },
         {
           "node": "Execute Workflow Trigger",
@@ -300,7 +385,6 @@
         }
       ],
       "hints": [
-        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
         "The original was a sub-workflow called by another workflow; pass its inputs as run inputs.",
         "\"AI Agent\" used agent tools in the original: Custom tool to call the wf below (toolWorkflow). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
@@ -314,14 +398,23 @@
       "## Try me out\n\nClick the 'Chat' button and enter:\n\n_What is the 5th most popular post ever on Hacker News?_"
     ],
     "nodes": {
-      "node_8a69f7821b": {
+      "node_7f84840b49": {
         "n8n": "On new manual Chat Message",
-        "n8nType": "@n8n/n8n-nodes-langchain.manualChatTrigger",
-        "also": [
-          "Execute Workflow Trigger"
-        ]
+        "n8nType": "@n8n/n8n-nodes-langchain.manualChatTrigger"
+      },
+      "node_32ca87ff18": {
+        "n8n": "On new manual Chat Message",
+        "n8nType": "@n8n/n8n-nodes-langchain.manualChatTrigger"
+      },
+      "node_278bdf7569": {
+        "n8n": "Execute Workflow Trigger",
+        "n8nType": "n8n-nodes-base.executeWorkflowTrigger"
       },
       "node_65276a91c0": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_b16160f386": {
         "n8n": "AI Agent",
         "n8nType": "@n8n/n8n-nodes-langchain.agent"
       },

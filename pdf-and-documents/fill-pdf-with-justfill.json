@@ -265,6 +265,40 @@
       }
     },
     {
+      "nodeId": "node_11c72cec3f",
+      "actorId": "actor_11c72cec3f",
+      "type": "NodeTransform",
+      "label": "Redirect to filled PDF",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "mode": "jsCode",
+        "jsCode": "throw new Error(\"requires another form page or a custom completion screen\");"
+      }
+    },
+    {
+      "nodeId": "node_988d353b5b",
+      "actorId": "actor_988d353b5b",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
       "nodeId": "node_0677e64cb1",
       "actorId": "actor_0677e64cb1",
       "type": "NodeWorkflowConfigs",
@@ -467,6 +501,30 @@
       "targetInput": "source",
       "sourceNodeType": "NodeHttpRequest",
       "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_11cf7a517d",
+      "target": "node_11c72cec3f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_11cf7a517d",
+      "target": "node_11c72cec3f",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeTransform"
+    },
+    {
+      "source": "node_11c72cec3f",
+      "target": "node_988d353b5b",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeTransform",
+      "targetNodeType": "NodeEnd"
     }
   ],
   "template": {
@@ -493,6 +551,7 @@
     ],
     "nodeTypes": [
       "NodeCdeConnector",
+      "NodeEnd",
       "NodeHttpRequest",
       "NodeStart",
       "NodeTransform",
@@ -500,7 +559,7 @@
     ],
     "comparison": {
       "n8nSteps": 10,
-      "yantraSteps": 13,
+      "yantraSteps": 14,
       "foldedHelpers": []
     },
     "source": {
@@ -512,14 +571,19 @@
     "tier": "experimental",
     "blockers": [
       {
-        "code": "trigger-replaced",
+        "code": "entry-point-unsupported",
         "node": "On form submission",
-        "detail": "n8n-nodes-base.formTrigger became the Start node"
+        "detail": "n8n-nodes-base.formTrigger: uses an unsupported file form field"
+      },
+      {
+        "code": "entry-point-unsupported",
+        "node": "Redirect to filled PDF",
+        "detail": "n8n-nodes-base.form: requires another form page or a custom completion screen"
       },
       {
         "code": "trigger-replaced",
-        "node": "Redirect to filled PDF",
-        "detail": "n8n-nodes-base.form became the Start node"
+        "node": "On form submission",
+        "detail": "n8n-nodes-base.formTrigger became the Start node"
       },
       {
         "code": "hard-approximation",
@@ -533,8 +597,9 @@
       }
     ],
     "setup": [
+      "\"On form submission\" (n8n-nodes-base.formTrigger) needs attention before it runs: uses an unsupported file form field.",
+      "\"Redirect to filled PDF\" (n8n-nodes-base.form) needs attention before it runs: requires another form page or a custom completion screen.",
       "\"On form submission\" (formTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
-      "\"Redirect to filled PDF\" (form) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
       "\"Upload PDF\" (httpRequest.multipart-form-data): the file comes from \"On form submission\" (formTrigger), which starts the run; the Yantra start payload carries no uploaded file bytes; review it before relying on the result.",
       "\"Upload PDF\": yantra-storage/YANTRA_STORAGE_HTTP_SEND comes from the yantra-storage HTTP send and signatures patch (1.4.1), which is not published yet; this step fails until it ships, then the template promotes on the next catalog refresh.",
       "Workflow secret API_KEY: api key (read inside the step code). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
@@ -547,10 +612,24 @@
       "unmapped": [],
       "approximate": [
         {
+          "node": "On form submission",
+          "n8n": "n8n-nodes-base.formTrigger",
+          "action": "NodeTransform",
+          "blocker": "entry-point-unsupported",
+          "reason": "uses an unsupported file form field"
+        },
+        {
           "node": "Upload PDF",
           "n8n": "httpRequest.multipart-form-data",
           "action": "yantra-storage/YANTRA_STORAGE_HTTP_SEND",
           "reason": "the file comes from \"On form submission\" (formTrigger), which starts the run; the Yantra start payload carries no uploaded file bytes"
+        },
+        {
+          "node": "Redirect to filled PDF",
+          "n8n": "n8n-nodes-base.form",
+          "action": "NodeTransform",
+          "blocker": "entry-point-unsupported",
+          "reason": "requires another form page or a custom completion screen"
         }
       ],
       "folded": [],
@@ -560,16 +639,13 @@
           "node": "On form submission",
           "type": "n8n-nodes-base.formTrigger",
           "as": "NodeStart"
-        },
-        {
-          "node": "Redirect to filled PDF",
-          "type": "n8n-nodes-base.form",
-          "as": "NodeStart"
         }
       ],
       "hints": [
+        "\"On form submission\" (n8n-nodes-base.formTrigger): uses an unsupported file form field",
         "The original started from a form submission; pass the form fields as run inputs.",
         "\"Upload PDF\" (httpRequest.multipart-form-data): the file comes from \"On form submission\" (formTrigger), which starts the run; the Yantra start payload carries no uploaded file bytes.",
+        "\"Redirect to filled PDF\" (n8n-nodes-base.form): requires another form page or a custom completion screen",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
       ]
     },
@@ -583,10 +659,7 @@
     "nodes": {
       "node_06c4267dcf": {
         "n8n": "On form submission",
-        "n8nType": "n8n-nodes-base.formTrigger",
-        "also": [
-          "Redirect to filled PDF"
-        ]
+        "n8nType": "n8n-nodes-base.formTrigger"
       },
       "node_1c32beaf3a": {
         "n8n": "Config",
@@ -635,6 +708,14 @@
       "node_11cf7a517d": {
         "n8n": "Result",
         "n8nType": "n8n-nodes-base.code"
+      },
+      "node_11c72cec3f": {
+        "n8n": "Redirect to filled PDF",
+        "n8nType": "n8n-nodes-base.form"
+      },
+      "node_988d353b5b": {
+        "n8n": "__end:Redirect to filled PDF",
+        "n8nType": "synthetic"
       },
       "node_0677e64cb1": {
         "n8n": "__configs",

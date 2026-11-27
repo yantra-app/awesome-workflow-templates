@@ -5,25 +5,38 @@
   "isPublic": true,
   "nodes": [
     {
-      "nodeId": "node_1ea06aa9ee",
-      "actorId": "actor_1ea06aa9ee",
-      "type": "NodeStart",
-      "label": "Start",
-      "color": "#22C55E",
+      "nodeId": "node_879d3cdac8",
+      "actorId": "actor_879d3cdac8",
+      "type": "NodeWebhookTrigger",
+      "label": "Nuovo lead dal sito",
+      "color": "#6366F1",
       "position": {
         "x": 80,
         "y": 100
       },
       "size": {
-        "width": 240,
-        "height": 100
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "none",
+        "responseMode": "onReceived",
+        "httpMethod": "POST",
+        "acknowledgement": {
+          "statusCode": 200,
+          "headers": {},
+          "bodyMode": "json",
+          "body": {
+            "message": "Workflow was started"
+          }
+        }
       }
     },
     {
-      "nodeId": "node_0fdcc6da61",
-      "actorId": "actor_0fdcc6da61",
-      "type": "NodeTransform",
-      "label": "Estrai campi del lead",
+      "nodeId": "node_eb2a88e972",
+      "actorId": "actor_eb2a88e972",
+      "type": "NodeJavascript",
+      "label": "Nuovo lead dal sito: request",
       "color": "#F59E0B",
       "position": {
         "x": 460,
@@ -34,8 +47,27 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"nome\"] = ($json.body.nome || $json.body.name || 'Non indicato');\n  out[\"email\"] = ($json.body.email || '');\n  out[\"telefono\"] = ($json.body.telefono || $json.body.phone || 'Non indicato');\n  out[\"messaggio\"] = ($json.body.messaggio || $json.body.message || '');\n  out[\"data\"] = ($now.format('dd/MM/yyyy HH:mm'));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+        "migratedTransform": true,
+        "logic": "const ctx = {{ctx}};\nconst request = ctx.nodes?.[\"node_879d3cdac8\"]?.latest ?? {};\nreturn { body: source, headers: request.headers, query: request.query, params: {}, method: request.method, rawBody: request.rawBody, rawBodyEncoding: request.rawBodyEncoding };"
+      }
+    },
+    {
+      "nodeId": "node_0fdcc6da61",
+      "actorId": "actor_0fdcc6da61",
+      "type": "NodeJavascript",
+      "label": "Estrai campi del lead",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"nome\"] = ($json.body.nome || $json.body.name || 'Non indicato');\n  out[\"email\"] = ($json.body.email || '');\n  out[\"telefono\"] = ($json.body.telefono || $json.body.phone || 'Non indicato');\n  out[\"messaggio\"] = ($json.body.messaggio || $json.body.message || '');\n  out[\"data\"] = ($now.format('dd/MM/yyyy HH:mm'));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
       }
     },
     {
@@ -45,7 +77,7 @@
       "label": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
       "color": "#6366F1",
       "position": {
-        "x": 840,
+        "x": 1220,
         "y": 100
       },
       "size": {
@@ -80,7 +112,7 @@
       "label": "telegram/TELEGRAM_SEND_MESSAGE",
       "color": "#6366F1",
       "position": {
-        "x": 1220,
+        "x": 1600,
         "y": 100
       },
       "size": {
@@ -105,7 +137,7 @@
       "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
       "color": "#6366F1",
       "position": {
-        "x": 1220,
+        "x": 1600,
         "y": 360
       },
       "size": {
@@ -130,7 +162,7 @@
       "label": "End",
       "color": "#EF4444",
       "position": {
-        "x": 1600,
+        "x": 1980,
         "y": 100
       },
       "size": {
@@ -145,7 +177,7 @@
       "label": "End 2",
       "color": "#EF4444",
       "position": {
-        "x": 1600,
+        "x": 1980,
         "y": 360
       },
       "size": {
@@ -171,9 +203,6 @@
         "projectId": "",
         "environmentTagId": "",
         "initialContext": {
-          "body": {},
-          "query": {},
-          "headers": {},
           "sheetName": "",
           "spreadsheetId": "",
           "chatId": ""
@@ -183,19 +212,43 @@
   ],
   "edges": [
     {
-      "source": "node_1ea06aa9ee",
-      "target": "node_0fdcc6da61",
-      "sourceOutput": "trigger",
+      "source": "node_879d3cdac8",
+      "target": "node_eb2a88e972",
+      "sourceOutput": "onEvent",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_879d3cdac8",
+      "target": "node_eb2a88e972",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_eb2a88e972",
+      "target": "node_0fdcc6da61",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_eb2a88e972",
+      "target": "node_0fdcc6da61",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_0fdcc6da61",
       "target": "node_fce4160fbd",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -271,13 +324,13 @@
     "nodeTypes": [
       "NodeCdeConnector",
       "NodeEnd",
-      "NodeStart",
-      "NodeTransform",
+      "NodeJavascript",
+      "NodeWebhookTrigger",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 5,
-      "yantraSteps": 5,
+      "yantraSteps": 6,
       "foldedHelpers": []
     },
     "source": {
@@ -289,19 +342,18 @@
     "tier": "ready",
     "blockers": [
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "Nuovo lead dal sito",
-        "detail": "n8n-nodes-base.webhook became the Start node"
+        "detail": "generic trigger URL requires registration"
       }
     ],
     "setup": [
-      "\"Nuovo lead dal sito\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Nuovo lead dal sito\": save the workflow, then register node node_879d3cdac8 via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL.",
       "Setup value sheetName: Sheet tab name (for example Sheet1). Write it into the Workflow Configs initialContext before import.",
       "Setup value spreadsheetId: Google Sheets spreadsheet id (from the sheet URL) (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
       "Setup value chatId: Chat Id. Write it into the Workflow Configs initialContext before import.",
       "Connect the googlesuper connector (credential).",
-      "Connect the telegram connector (credential).",
-      "Provide run inputs: body, query, headers."
+      "Connect the telegram connector (credential)."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -315,11 +367,10 @@
         {
           "node": "Nuovo lead dal sito",
           "type": "n8n-nodes-base.webhook",
-          "as": "NodeStart"
+          "as": "NodeWebhookTrigger"
         }
       ],
       "hints": [
-        "The original started from an inbound webhook (POST /nuovo-lead). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
         "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
         "Connect telegram: `cdecli credential create -n \"telegram\" -p telegram --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
@@ -329,7 +380,11 @@
       "## ⚙️ CONFIGURAZIONE (5 min)\n\n1. **Webhook**: copia l'URL di produzione del nodo 'Nuovo lead dal sito' e usalo come destinazione del form del tuo sito (WordPress: plugin WPForms/Elementor → webhook; oppure azione POST custom).\n   Il form deve inviare i campi: `nome`, `email`, `telefono`, `messaggio`.\n2. **Google Sheets**: collega le credenziali Google e indica il tuo foglio 'Registro Lead' con le colonne: Data | Nome | Email | Telefono | Messaggio | Stato.\n3. **Telegram**: crea un bot con @BotFather, incolla il token nelle credenziali e inserisci il tuo Chat ID.\n4. **Gmail**: collega l'account che invierà l'email di cortesia al cliente.\n\nPoi ATTIVA il workflow (interruttore in alto a destra)."
     ],
     "nodes": {
-      "node_1ea06aa9ee": {
+      "node_879d3cdac8": {
+        "n8n": "Nuovo lead dal sito",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_eb2a88e972": {
         "n8n": "Nuovo lead dal sito",
         "n8nType": "n8n-nodes-base.webhook"
       },

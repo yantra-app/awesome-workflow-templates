@@ -20,6 +20,45 @@
       }
     },
     {
+      "nodeId": "node_0317d91853",
+      "actorId": "actor_0317d91853",
+      "type": "NodeWebhookTrigger",
+      "label": "Listen",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "none",
+        "responseMode": "responseNode",
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "nodeId": "node_57a179f57b",
+      "actorId": "actor_57a179f57b",
+      "type": "NodeJavascript",
+      "label": "Listen: request",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "const ctx = {{ctx}};\nconst request = ctx.nodes?.[\"node_0317d91853\"]?.latest ?? {};\nreturn { body: source, headers: request.headers, query: request.query, params: {}, method: request.method, rawBody: request.rawBody, rawBodyEncoding: request.rawBodyEncoding };"
+      }
+    },
+    {
       "nodeId": "node_c9e5e17f02",
       "actorId": "actor_c9e5e17f02",
       "type": "NodeHttpRequest",
@@ -27,7 +66,7 @@
       "color": "#0EA5E9",
       "position": {
         "x": 460,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 280,
@@ -51,7 +90,7 @@
       "color": "#0EA5E9",
       "position": {
         "x": 460,
-        "y": 360
+        "y": 620
       },
       "size": {
         "width": 280,
@@ -74,8 +113,8 @@
       "label": "AI Agent",
       "color": "#8B5CF6",
       "position": {
-        "x": 460,
-        "y": 620
+        "x": 1220,
+        "y": 100
       },
       "size": {
         "width": 320,
@@ -83,7 +122,26 @@
       },
       "inputs": {
         "sessionId": "{{sessionId}}",
-        "message": "{{body.question}}"
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_89b73f8d25",
+      "actorId": "actor_89b73f8d25",
+      "type": "NodeJavascript",
+      "label": "Prompt: AI Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: AI Agent.\nconst __promptValue = ($json.body.question);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
       }
     },
     {
@@ -94,7 +152,7 @@
       "color": "#6366F1",
       "position": {
         "x": 840,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 280,
@@ -110,18 +168,42 @@
       }
     },
     {
-      "nodeId": "node_a66174877c",
-      "actorId": "actor_a66174877c",
-      "type": "NodeEnd",
-      "label": "End",
-      "color": "#EF4444",
+      "nodeId": "node_9d14a38d0f",
+      "actorId": "actor_9d14a38d0f",
+      "type": "NodeRespondToWebhook",
+      "label": "Respond to ElevenLabs",
+      "color": "#6366F1",
       "position": {
-        "x": 840,
-        "y": 360
+        "x": 1980,
+        "y": 100
       },
       "size": {
-        "width": 240,
-        "height": 100
+        "width": 280,
+        "height": 180
+      },
+      "inputs": {
+        "bodyMode": "json",
+        "statusCode": 200,
+        "headers": {}
+      }
+    },
+    {
+      "nodeId": "node_e79ac42406",
+      "actorId": "actor_e79ac42406",
+      "type": "NodeJavascript",
+      "label": "Respond to ElevenLabs: body",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "const body = (Array.isArray(source) ? source[0] : source);\nreturn body;"
       }
     },
     {
@@ -132,7 +214,7 @@
       "color": "#6366F1",
       "position": {
         "x": 1220,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 280,
@@ -150,20 +232,20 @@
     {
       "nodeId": "node_9453b82503",
       "actorId": "actor_9453b82503",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Params: Qdrant Vector Store1",
       "color": "#F59E0B",
       "position": {
         "x": 1600,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 280,
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Params for pinecone/PINECONE_UPSERT_RECORDS_NAMESPACE (n8n node \"Qdrant Vector Store1\").\nreturn {\n  \"index_host\": \"{{pineconeIndexHost}}\",\n  \"namespace\": \"{{pineconeNamespace}}\",\n  \"records\": (() => {\n  const __docs = __items.flatMap((d) => (Array.isArray(d) ? d : [d]));\n  return __docs.map((d) => {\n    const text = typeof d === 'string' ? d : d?.pageContent ?? d?.text ?? d?.content ?? d?.chunk ?? JSON.stringify(d);\n    const meta = d && typeof d === 'object' ? (d.metadata && typeof d.metadata === 'object' ? d.metadata : d) : {};\n    const flat = {};\n    for (const [k, v] of Object.entries(meta)) if (!['pageContent', 'text', '_id'].includes(k) && ['string', 'number', 'boolean'].includes(typeof v)) flat[k] = v;\n    return { ...flat, _id: String(d?.id ?? meta.id ?? crypto.randomUUID()), text: String(text) };\n  });\n})(),\n};"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Params for pinecone/PINECONE_UPSERT_RECORDS_NAMESPACE (n8n node \"Qdrant Vector Store1\").\nreturn {\n  \"index_host\": \"{{pineconeIndexHost}}\",\n  \"namespace\": \"{{pineconeNamespace}}\",\n  \"records\": (() => {\n  const __docs = __items.flatMap((d) => (Array.isArray(d) ? d : [d]));\n  return __docs.map((d) => {\n    const text = typeof d === 'string' ? d : d?.pageContent ?? d?.text ?? d?.content ?? d?.chunk ?? JSON.stringify(d);\n    const meta = d && typeof d === 'object' ? (d.metadata && typeof d.metadata === 'object' ? d.metadata : d) : {};\n    const flat = {};\n    for (const [k, v] of Object.entries(meta)) if (!['pageContent', 'text', '_id'].includes(k) && ['string', 'number', 'boolean'].includes(typeof v)) flat[k] = v;\n    return { ...flat, _id: String(d?.id ?? meta.id ?? crypto.randomUUID()), text: String(text) };\n  });\n})(),\n};"
       }
     },
     {
@@ -174,7 +256,7 @@
       "color": "#6366F1",
       "position": {
         "x": 1980,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 280,
@@ -190,7 +272,7 @@
       "nodeId": "node_f3b9ae8643",
       "actorId": "actor_f3b9ae8643",
       "type": "NodeEnd",
-      "label": "End 2",
+      "label": "End",
       "color": "#EF4444",
       "position": {
         "x": 840,
@@ -202,14 +284,48 @@
       }
     },
     {
-      "nodeId": "node_bd9a226e01",
-      "actorId": "actor_bd9a226e01",
-      "type": "NodeEnd",
-      "label": "End 2 2",
-      "color": "#EF4444",
+      "nodeId": "node_5e20b0d59f",
+      "actorId": "actor_5e20b0d59f",
+      "type": "NodeJavascript",
+      "label": "Finish after response",
+      "color": "#F59E0B",
       "position": {
         "x": 2360,
         "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "return source ?? {};"
+      }
+    },
+    {
+      "nodeId": "node_9425965822",
+      "actorId": "actor_9425965822",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_6d77f8389b",
+      "actorId": "actor_6d77f8389b",
+      "type": "NodeEnd",
+      "label": "End 3",
+      "color": "#EF4444",
+      "position": {
+        "x": 2360,
+        "y": 360
       },
       "size": {
         "width": 240,
@@ -234,9 +350,6 @@
         "projectId": "",
         "environmentTagId": "",
         "initialContext": {
-          "body": {},
-          "query": {},
-          "headers": {},
           "sessionId": "",
           "pineconeNamespace": "",
           "pineconeIndexHost": "",
@@ -250,11 +363,51 @@
   ],
   "edges": [
     {
+      "source": "node_0317d91853",
+      "target": "node_57a179f57b",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_0317d91853",
+      "target": "node_57a179f57b",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_89b73f8d25",
+      "target": "node_5f880a63b5",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_e79ac42406",
+      "target": "node_9d14a38d0f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeRespondToWebhook"
+    },
+    {
+      "source": "node_e79ac42406",
+      "target": "node_9d14a38d0f",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeRespondToWebhook"
+    },
+    {
       "source": "node_9453b82503",
       "target": "node_2c8cb2dbc7",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -262,16 +415,24 @@
       "target": "node_2c8cb2dbc7",
       "sourceOutput": "transformed",
       "targetInput": "params",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
       "source": "node_5f880a63b5",
-      "target": "node_a66174877c",
-      "sourceOutput": "text",
-      "targetInput": "result",
+      "target": "node_e79ac42406",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
       "sourceNodeType": "NodeCdecliAgent",
-      "targetNodeType": "NodeEnd"
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_5f880a63b5",
+      "target": "node_e79ac42406",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_de9a17a363",
@@ -311,7 +472,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_7be2721cc3",
@@ -319,15 +480,23 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
-      "source": "node_de9a17a363",
-      "target": "node_5f880a63b5",
-      "sourceOutput": "trigger",
+      "source": "node_57a179f57b",
+      "target": "node_89b73f8d25",
+      "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeCdecliAgent"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_57a179f57b",
+      "target": "node_89b73f8d25",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_c9e5e17f02",
@@ -338,8 +507,32 @@
       "targetNodeType": "NodeEnd"
     },
     {
+      "source": "node_9d14a38d0f",
+      "target": "node_5e20b0d59f",
+      "sourceOutput": "onComplete",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_9d14a38d0f",
+      "target": "node_5e20b0d59f",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_5e20b0d59f",
+      "target": "node_9425965822",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeEnd"
+    },
+    {
       "source": "node_2c8cb2dbc7",
-      "target": "node_bd9a226e01",
+      "target": "node_6d77f8389b",
       "sourceOutput": "result",
       "targetInput": "result",
       "sourceNodeType": "NodeCdeConnector",
@@ -402,13 +595,15 @@
       "NodeCdecliAgent",
       "NodeEnd",
       "NodeHttpRequest",
+      "NodeJavascript",
+      "NodeRespondToWebhook",
       "NodeStart",
-      "NodeTransform",
+      "NodeWebhookTrigger",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 18,
-      "yantraSteps": 8,
+      "yantraSteps": 14,
       "foldedHelpers": [
         "OpenAI",
         "Vector Store Tool",
@@ -426,20 +621,20 @@
     "tier": "ready",
     "blockers": [
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "Listen",
-        "detail": "n8n-nodes-base.webhook became the Start node"
+        "detail": "generic trigger URL requires registration"
       }
     ],
     "setup": [
-      "\"Listen\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Listen\": save the workflow, then register node node_0317d91853 via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL.",
       "Setup value pineconeNamespace: Pinecone namespace for this collection (for example documents). Write it into the Workflow Configs initialContext before import.",
       "Setup value pineconeIndexHost: Pinecone index host (create the index with integrated embedding and field map text=text) (for example my-index-abc123.svc.aped-4627-b74a.pinecone.io). Write it into the Workflow Configs initialContext before import.",
       "Setup value collection: Collection. Write it into the Workflow Configs initialContext before import.",
       "Workflow secret QDRANT_API_KEY: Qdrant API key for qdranturl (api-key: <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
       "Connect the googlesuper connector (credential).",
       "Connect the pinecone connector (credential).",
-      "Provide run inputs: body, query, headers, sessionId."
+      "Provide run inputs: sessionId."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -495,11 +690,10 @@
         {
           "node": "Listen",
           "type": "n8n-nodes-base.webhook",
-          "as": "NodeStart"
+          "as": "NodeWebhookTrigger"
         }
       ],
       "hints": [
-        "The original started from an inbound webhook (POST /test_voice_message_elevenlabs). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
         "\"Create collection\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
         "\"Refresh collection\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
         "\"AI Agent\" kept conversation memory (memoryBufferWindow); sessionId is set to the run-input sessionId.",
@@ -522,10 +716,15 @@
     "nodes": {
       "node_de9a17a363": {
         "n8n": "When clicking ‘Test workflow’",
-        "n8nType": "n8n-nodes-base.manualTrigger",
-        "also": [
-          "Listen"
-        ]
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_0317d91853": {
+        "n8n": "Listen",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_57a179f57b": {
+        "n8n": "Listen",
+        "n8nType": "n8n-nodes-base.webhook"
       },
       "node_c9e5e17f02": {
         "n8n": "Create collection",
@@ -541,11 +740,19 @@
         "n8n": "AI Agent",
         "n8nType": "@n8n/n8n-nodes-langchain.agent"
       },
+      "node_89b73f8d25": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
       "node_ecbf9c7415": {
         "n8n": "Get folder",
         "n8nType": "n8n-nodes-base.googleDrive"
       },
-      "node_a66174877c": {
+      "node_9d14a38d0f": {
+        "n8n": "Respond to ElevenLabs",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_e79ac42406": {
         "n8n": "Respond to ElevenLabs",
         "n8nType": "n8n-nodes-base.respondToWebhook"
       },
@@ -565,7 +772,15 @@
         "n8n": "__end:Create collection",
         "n8nType": "synthetic"
       },
-      "node_bd9a226e01": {
+      "node_5e20b0d59f": {
+        "n8n": "Respond to ElevenLabs",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_9425965822": {
+        "n8n": "Respond to ElevenLabs",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_6d77f8389b": {
         "n8n": "__end:Qdrant Vector Store1",
         "n8nType": "synthetic"
       },

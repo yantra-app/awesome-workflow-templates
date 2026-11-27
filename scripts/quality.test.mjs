@@ -307,9 +307,10 @@ check('signature verification alone is experimental (the step stops the run)', (
   assert.equal(r.tier, 'experimental');
 });
 
-check('a data-only loop flattened safely is not a blocker', () => {
+check('a legacy flattened-safe loop is experimental', () => {
   const r = evaluate(wf([], { conversion: { loopPolicy: 'flattened-safe', removedEdges: [{ from: 'Set', to: 'Loop' }] } }), { catalog });
-  assert.equal(r.tier, 'ready');
+  assert.equal(r.tier, 'experimental');
+  assert.ok(codes(r).includes('loop-flattened'));
 });
 
 check('verified only through data/verified.json, never over experimental', () => {

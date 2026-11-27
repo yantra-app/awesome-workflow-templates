@@ -5,25 +5,29 @@
   "isPublic": true,
   "nodes": [
     {
-      "nodeId": "node_a69ba23cd6",
-      "actorId": "actor_a69ba23cd6",
-      "type": "NodeStart",
-      "label": "Start",
-      "color": "#22C55E",
+      "nodeId": "node_25a14d83b9",
+      "actorId": "actor_25a14d83b9",
+      "type": "NodeChatTrigger",
+      "label": "When chat message received",
+      "color": "#6366F1",
       "position": {
         "x": 80,
         "y": 100
       },
       "size": {
-        "width": 240,
-        "height": 100
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "bearer",
+        "responseMode": "lastNode"
       }
     },
     {
-      "nodeId": "node_845376bdb5",
-      "actorId": "actor_845376bdb5",
-      "type": "NodeTransform",
-      "label": "Settings",
+      "nodeId": "node_4fabbe6c34",
+      "actorId": "actor_4fabbe6c34",
+      "type": "NodeJavascript",
+      "label": "When chat message received: request",
       "color": "#F59E0B",
       "position": {
         "x": 460,
@@ -34,8 +38,27 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"model\"] = \"deepseek/deepseek-r1-distill-llama-8b\";\n  out[\"prompt\"] = ($json.chatInput);\n  out[\"sessionId\"] = ($json.sessionId);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+        "migratedTransform": true,
+        "logic": "return { action: 'sendMessage', ...source };"
+      }
+    },
+    {
+      "nodeId": "node_845376bdb5",
+      "actorId": "actor_845376bdb5",
+      "type": "NodeJavascript",
+      "label": "Settings",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"model\"] = \"deepseek/deepseek-r1-distill-llama-8b\";\n  out[\"prompt\"] = ($json.chatInput);\n  out[\"sessionId\"] = ($json.sessionId);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
       }
     },
     {
@@ -45,7 +68,7 @@
       "label": "AI Agent",
       "color": "#8B5CF6",
       "position": {
-        "x": 1220,
+        "x": 1600,
         "y": 100
       },
       "size": {
@@ -60,11 +83,11 @@
     {
       "nodeId": "node_020f5187d9",
       "actorId": "actor_020f5187d9",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Prompt: AI Agent",
       "color": "#F59E0B",
       "position": {
-        "x": 840,
+        "x": 1220,
         "y": 100
       },
       "size": {
@@ -72,8 +95,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: AI Agent.\nconst __promptValue = ($json.prompt);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: AI Agent.\nconst __promptValue = ($json.prompt);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
       }
     },
     {
@@ -83,7 +106,7 @@
       "label": "End",
       "color": "#EF4444",
       "position": {
-        "x": 1600,
+        "x": 1980,
         "y": 100
       },
       "size": {
@@ -109,7 +132,6 @@
         "projectId": "",
         "environmentTagId": "",
         "initialContext": {
-          "chatInput": "",
           "sessionId": ""
         }
       }
@@ -117,11 +139,27 @@
   ],
   "edges": [
     {
+      "source": "node_25a14d83b9",
+      "target": "node_4fabbe6c34",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeChatTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_25a14d83b9",
+      "target": "node_4fabbe6c34",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeChatTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
       "source": "node_020f5187d9",
       "target": "node_028ff6d7c2",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdecliAgent"
     },
     {
@@ -129,24 +167,32 @@
       "target": "node_020f5187d9",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_845376bdb5",
       "target": "node_020f5187d9",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
-      "source": "node_a69ba23cd6",
+      "source": "node_4fabbe6c34",
       "target": "node_845376bdb5",
-      "sourceOutput": "trigger",
+      "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_4fabbe6c34",
+      "target": "node_845376bdb5",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_028ff6d7c2",
@@ -165,14 +211,14 @@
     "connectors": [],
     "nodeTypes": [
       "NodeCdecliAgent",
+      "NodeChatTrigger",
       "NodeEnd",
-      "NodeStart",
-      "NodeTransform",
+      "NodeJavascript",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 5,
-      "yantraSteps": 4,
+      "yantraSteps": 5,
       "foldedHelpers": [
         "LLM Model",
         "Chat Memory"
@@ -187,14 +233,14 @@
     "tier": "ready",
     "blockers": [
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "When chat message received",
-        "detail": "@n8n/n8n-nodes-langchain.chatTrigger became the Start node"
+        "detail": "generic trigger URL requires registration"
       }
     ],
     "setup": [
-      "\"When chat message received\" (chatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
-      "Provide run inputs: chatInput, sessionId."
+      "\"When chat message received\": save the workflow, then register node node_25a14d83b9 via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL. Use bearer authentication with credentials supplied at registration.",
+      "Provide run inputs: sessionId."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -221,11 +267,10 @@
         {
           "node": "When chat message received",
           "type": "@n8n/n8n-nodes-langchain.chatTrigger",
-          "as": "NodeStart"
+          "as": "NodeChatTrigger"
         }
       ],
       "hints": [
-        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
         "\"AI Agent\" kept conversation memory (memoryBufferWindow); sessionId is set to the run-input sessionId.",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
       ]
@@ -236,7 +281,11 @@
       "## Model examples\n\n* openai/o3-mini\n* google/gemini-2.0-flash-001\n* deepseek/deepseek-r1-distill-llama-8b\n* mistralai/mistral-small-24b-instruct-2501:free\n* qwen/qwen-turbo\n\nFor more see https://openrouter.ai/models"
     ],
     "nodes": {
-      "node_a69ba23cd6": {
+      "node_25a14d83b9": {
+        "n8n": "When chat message received",
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
+      },
+      "node_4fabbe6c34": {
         "n8n": "When chat message received",
         "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
       },

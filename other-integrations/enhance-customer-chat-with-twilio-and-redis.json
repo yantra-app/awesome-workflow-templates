@@ -63,11 +63,11 @@
       }
     },
     {
-      "nodeId": "node_7278212f18",
-      "actorId": "actor_7278212f18",
-      "type": "NodeTransform",
+      "nodeId": "node_c82801f8ec",
+      "actorId": "actor_c82801f8ec",
+      "type": "NodeWorkflowWait",
       "label": "Wait 5 seconds",
-      "color": "#F59E0B",
+      "color": "#0EA5E9",
       "position": {
         "x": 460,
         "y": 620
@@ -77,8 +77,9 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// The original waited here (1 seconds).\nreturn source;"
+        "mode": "delay",
+        "seconds": 5,
+        "data": "{{ctx}}"
       }
     },
     {
@@ -138,7 +139,7 @@
         "connectorLabel": "Redis",
         "action": "REDIS_GET",
         "params": {
-          "key": "chat-buffer:{{last.transformed.From}}"
+          "key": "chat-buffer:{{last.data.From}}"
         }
       }
     },
@@ -183,7 +184,7 @@
       },
       "inputs": {
         "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Twilio Trigger\": {{ctx}}, \"Get Messages Buffer\": {{steps.xf_f3377bef8c.result}}, \"Add to Messages Stack\": {{steps.REDIS_LPUSH.result}}, \"Wait 5 seconds\": {{steps.xf_7278212f18.result}}, \"Get Latest Message Stack\": {{steps.REDIS_GET.result}}, \"Send Reply\": {{steps.TWILIO_SEND_MESSAGE.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Array.prototype, { last() { return this[this.length - 1]; } });\nreturn Boolean((String(($('Get Latest Message Stack').item.json.messages.last()) ?? '') === String(($('Twilio Trigger').item.json.Body) ?? '')));"
+        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Twilio Trigger\": {{ctx}}, \"Get Messages Buffer\": {{steps.xf_f3377bef8c.result}}, \"Add to Messages Stack\": {{steps.REDIS_LPUSH.result}}, \"Get Latest Message Stack\": {{steps.REDIS_GET.result}}, \"Send Reply\": {{steps.TWILIO_SEND_MESSAGE.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Array.prototype, { last() { return this[this.length - 1]; } });\nreturn Boolean((String(($('Get Latest Message Stack').item.json.messages.last()) ?? '') === String(($('Twilio Trigger').item.json.Body) ?? '')));"
       }
     },
     {
@@ -290,11 +291,11 @@
     },
     {
       "source": "node_a75ee57e3d",
-      "target": "node_7278212f18",
+      "target": "node_c82801f8ec",
       "sourceOutput": "trigger",
       "targetInput": "RUN",
       "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeWorkflowWait"
     },
     {
       "source": "node_e6943fc818",
@@ -313,11 +314,11 @@
       "targetNodeType": "NodeTransform"
     },
     {
-      "source": "node_7278212f18",
+      "source": "node_c82801f8ec",
       "target": "node_e6943fc818",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeWorkflowWait",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -385,7 +386,8 @@
       "NodeEnd",
       "NodeStart",
       "NodeTransform",
-      "NodeWorkflowConfigs"
+      "NodeWorkflowConfigs",
+      "NodeWorkflowWait"
     ],
     "comparison": {
       "n8nSteps": 13,
@@ -419,14 +421,7 @@
       "status": "ready",
       "coverage": 1,
       "unmapped": [],
-      "approximate": [
-        {
-          "node": "Wait 5 seconds",
-          "n8n": "wait",
-          "action": "NodeTransform",
-          "soft": true
-        }
-      ],
+      "approximate": [],
       "folded": [
         {
           "node": "OpenAI Chat Model",
@@ -450,8 +445,6 @@
       ],
       "hints": [
         "The original started from twilioTrigger; Yantra has no webhook slug for it, so run on demand, on a schedule (add a NodeCron), or via the workflow API with the event under the run input `event`.",
-        "\"Wait 5 seconds\" paused the original (1 seconds); Yantra has no delay node, so this step passes data straight through.",
-        "\"Wait 5 seconds\" (wait): Wait/delay is a soft passthrough; add a schedule or external delay if timing matters.",
         "\"AI Agent\" kept conversation memory (memoryBufferWindow); sessionId is set to the run-input sessionId.",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
         "Connect redis: `cdecli credential create -n \"redis\" -p redis --template <formId> --secret <key>=<value>` (see `cdecli credential templates`).",
@@ -478,7 +471,7 @@
         "n8n": "Add to Messages Stack",
         "n8nType": "n8n-nodes-base.redis"
       },
-      "node_7278212f18": {
+      "node_c82801f8ec": {
         "n8n": "Wait 5 seconds",
         "n8nType": "n8n-nodes-base.wait"
       },

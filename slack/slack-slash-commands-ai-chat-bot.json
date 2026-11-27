@@ -5,25 +5,38 @@
   "isPublic": true,
   "nodes": [
     {
-      "nodeId": "node_73a01884b4",
-      "actorId": "actor_73a01884b4",
-      "type": "NodeStart",
-      "label": "Start",
-      "color": "#22C55E",
+      "nodeId": "node_ce6bb4755f",
+      "actorId": "actor_ce6bb4755f",
+      "type": "NodeWebhookTrigger",
+      "label": "Webhook",
+      "color": "#6366F1",
       "position": {
         "x": 80,
         "y": 100
       },
       "size": {
-        "width": 240,
-        "height": 100
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "none",
+        "responseMode": "onReceived",
+        "httpMethod": "POST",
+        "acknowledgement": {
+          "statusCode": 204,
+          "headers": {},
+          "bodyMode": "json",
+          "body": {
+            "message": "Workflow was started"
+          }
+        }
       }
     },
     {
-      "nodeId": "node_7eb7855982",
-      "actorId": "actor_7eb7855982",
-      "type": "NodeTransform",
-      "label": "Switch: ask",
+      "nodeId": "node_0134cff661",
+      "actorId": "actor_0134cff661",
+      "type": "NodeJavascript",
+      "label": "Webhook: request",
       "color": "#F59E0B",
       "position": {
         "x": 460,
@@ -34,8 +47,27 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.body.command) ?? '') === String(\"/ask\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "const ctx = {{ctx}};\nconst request = ctx.nodes?.[\"node_ce6bb4755f\"]?.latest ?? {};\nreturn { body: source, headers: request.headers, query: request.query, params: {}, method: request.method, rawBody: request.rawBody, rawBodyEncoding: request.rawBodyEncoding };"
+      }
+    },
+    {
+      "nodeId": "node_7eb7855982",
+      "actorId": "actor_7eb7855982",
+      "type": "NodeJavascript",
+      "label": "Switch: ask",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.body.command) ?? '') === String(\"/ask\" ?? '')));"
       }
     },
     {
@@ -45,7 +77,7 @@
       "label": "Switch: ask?",
       "color": "#0EA5E9",
       "position": {
-        "x": 840,
+        "x": 1220,
         "y": 100
       },
       "size": {
@@ -56,11 +88,11 @@
     {
       "nodeId": "node_0522eb2820",
       "actorId": "actor_0522eb2820",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Switch: another",
       "color": "#F59E0B",
       "position": {
-        "x": 1220,
+        "x": 1600,
         "y": 100
       },
       "size": {
@@ -68,8 +100,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.body.command) ?? '') === String(\"/another\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.body.command) ?? '') === String(\"/another\" ?? '')));"
       }
     },
     {
@@ -79,7 +111,7 @@
       "label": "Switch: another?",
       "color": "#0EA5E9",
       "position": {
-        "x": 1600,
+        "x": 1980,
         "y": 100
       },
       "size": {
@@ -94,7 +126,7 @@
       "label": "Basic LLM Chain",
       "color": "#8B5CF6",
       "position": {
-        "x": 1220,
+        "x": 1980,
         "y": 360
       },
       "size": {
@@ -102,8 +134,27 @@
         "height": 260
       },
       "inputs": {
-        "prompt": "{{body.text}}",
+        "prompt": "{{last.transformed}}",
         "outputMode": "text"
+      }
+    },
+    {
+      "nodeId": "node_64225c7b2b",
+      "actorId": "actor_64225c7b2b",
+      "type": "NodeJavascript",
+      "label": "Prompt: Basic LLM Chain",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Basic LLM Chain.\nconst __promptValue = ($json.body.text);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
       }
     },
     {
@@ -113,8 +164,8 @@
       "label": "slack/SLACK_CHAT_POST_MESSAGE",
       "color": "#6366F1",
       "position": {
-        "x": 1600,
-        "y": 360
+        "x": 2360,
+        "y": 100
       },
       "size": {
         "width": 280,
@@ -125,7 +176,7 @@
         "connectorLabel": "Slack",
         "action": "SLACK_CHAT_POST_MESSAGE",
         "params": {
-          "channel": "{{body.channel_id}}",
+          "channel": "{{nodes.node_0134cff661.latest.transformed.body.channel_id}}",
           "text": "{{last.text}}"
         }
       }
@@ -137,7 +188,7 @@
       "label": "End",
       "color": "#EF4444",
       "position": {
-        "x": 1980,
+        "x": 2740,
         "y": 100
       },
       "size": {
@@ -161,12 +212,7 @@
       },
       "inputs": {
         "projectId": "",
-        "environmentTagId": "",
-        "initialContext": {
-          "body": {},
-          "query": {},
-          "headers": {}
-        }
+        "environmentTagId": ""
       }
     },
     {
@@ -176,7 +222,7 @@
       "label": "Basic LLM Chain: model",
       "color": "#8B5CF6",
       "position": {
-        "x": 1220,
+        "x": 1980,
         "y": 680
       },
       "size": {
@@ -191,11 +237,27 @@
   ],
   "edges": [
     {
+      "source": "node_ce6bb4755f",
+      "target": "node_0134cff661",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_ce6bb4755f",
+      "target": "node_0134cff661",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
       "source": "node_7eb7855982",
       "target": "node_8814e361ab",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -203,7 +265,7 @@
       "target": "node_8814e361ab",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -212,14 +274,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_0522eb2820",
       "target": "node_2974f9a6b1",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -227,24 +289,56 @@
       "target": "node_2974f9a6b1",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
-      "source": "node_73a01884b4",
-      "target": "node_7eb7855982",
-      "sourceOutput": "trigger",
+      "source": "node_64225c7b2b",
+      "target": "node_55984bef10",
+      "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_0134cff661",
+      "target": "node_7eb7855982",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_0134cff661",
+      "target": "node_7eb7855982",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_0134cff661",
+      "target": "node_0522eb2820",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_8814e361ab",
-      "target": "node_55984bef10",
+      "target": "node_64225c7b2b",
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeLlmChain"
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_0134cff661",
+      "target": "node_64225c7b2b",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_55984bef10",
@@ -285,14 +379,14 @@
       "NodeCdeConnector",
       "NodeChatModel",
       "NodeEnd",
+      "NodeJavascript",
       "NodeLlmChain",
-      "NodeStart",
-      "NodeTransform",
+      "NodeWebhookTrigger",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 5,
-      "yantraSteps": 8,
+      "yantraSteps": 10,
       "foldedHelpers": [
         "OpenAI Chat Model"
       ]
@@ -306,16 +400,16 @@
     "tier": "ready",
     "blockers": [
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "Webhook",
-        "detail": "n8n-nodes-base.webhook became the Start node"
+        "detail": "generic trigger URL requires registration"
       }
     ],
     "setup": [
-      "\"Webhook\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Webhook\": save the workflow, then register node node_ce6bb4755f via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL.",
       "Connect the openai connector (credential).",
       "Connect the slack connector (credential).",
-      "Provide run inputs: body, query, headers."
+      "Provide run inputs: nodes."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -336,11 +430,10 @@
         {
           "node": "Webhook",
           "type": "n8n-nodes-base.webhook",
-          "as": "NodeStart"
+          "as": "NodeWebhookTrigger"
         }
       ],
       "hints": [
-        "The original started from an inbound webhook (POST /1bd05fcf-8286-491f-ae13-f0e6bff4aca6). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
         "Connect slack: `cdecli credential create -n \"slack\" -p slack --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
       ]
@@ -354,7 +447,11 @@
       "## Create an AI chatbot with Slack slash commands! 🤖\n\nIn this tutorial, we'll show you how to create an AI chatbot that works in Slack using n8n. We'll explain step by step how to implement a practical chatbot, from personal messages through slash commands to automatic responses in public channels. We'll cover everything in detail, from Slack app configuration to n8n node setup, webhook trigger configuration, and AI bot integration.\n\nThe YouTube video is provided in Korean.\n\nYoutube Link:\nhttps://www.youtube.com/watch?v=UpudYFCWaIM"
     ],
     "nodes": {
-      "node_73a01884b4": {
+      "node_ce6bb4755f": {
+        "n8n": "Webhook",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_0134cff661": {
         "n8n": "Webhook",
         "n8nType": "n8n-nodes-base.webhook"
       },
@@ -375,6 +472,10 @@
         "n8nType": "n8n-nodes-base.switch"
       },
       "node_55984bef10": {
+        "n8n": "Basic LLM Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
+      },
+      "node_64225c7b2b": {
         "n8n": "Basic LLM Chain",
         "n8nType": "@n8n/n8n-nodes-langchain.chainLlm"
       },

@@ -17,6 +17,7 @@
 import { BLOCKERS, PLACEHOLDER_PATTERNS, SAFE_EMAIL_DOMAINS, PENDING_PUBLISH, statusForTier } from './catalog-fs.mjs';
 import { CHAT_MODEL_PROVIDERS } from './chat-models.mjs';
 import { auditLlmInputs } from './llm-inputs.mjs';
+import { GENERIC_ENTRY_TYPES, transformCode } from './yantra-nodes.mjs';
 
 const PLACEHOLDER_RE = new RegExp(PLACEHOLDER_PATTERNS.map((p) => `(?:${p})`).join('|'));
 const PLACEHOLDER_G = new RegExp(PLACEHOLDER_RE.source, 'g');
@@ -377,7 +378,7 @@ export function evaluate(wf, { catalog, verified = new Map(), path: relPath } = 
       }
       const required = [...(def?.params || []).filter((k) => k.startsWith('*')).map((k) => k.slice(1)), ...(EXTRA_REQUIRED[c]?.[a] || [])];
       const params = inputs.params && typeof inputs.params === 'object' ? inputs.params : {};
-      const builders = fedBy(n.nodeId, 'params').map((b) => String(b.inputs?.jsCode || ''));
+      const builders = fedBy(n.nodeId, 'params').map((b) => String(transformCode(b) || ''));
       // Params a written but unpublished patch adds to a published action (catalog pendingParams).
       if (def && !def.unimplemented && def.pendingParams?.length) {
         const uses = def.pendingParams.filter((k) => !isEmpty(params[k]) || builders.some((code) => new RegExp(`(?:"${k}"|'${k}')\\s*:`).test(codeText(code))));
@@ -405,6 +406,14 @@ export function evaluate(wf, { catalog, verified = new Map(), path: relPath } = 
           `"${name}": after import, register the ${inputs.connector} webhook (\`cdecli webhook endpoint create -c ${inputs.connector}\`, then \`cdecli trigger instance upsert --slug ${inputs.triggerSlug}\`) and set ${missing.join(', ')} on the trigger node.`,
         );
       }
+    }
+
+    if (GENERIC_ENTRY_TYPES.has(n.type)) {
+      const auth = inputs.requiredAuthMode && inputs.requiredAuthMode !== 'none'
+        ? ` Use ${inputs.requiredAuthMode} authentication with credentials supplied at registration.`
+        : '';
+      add('webhook-registration', name, 'generic trigger URL requires registration',
+        `"${name}": save the workflow, then register node ${n.nodeId} via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL.${auth}`);
     }
 
     // An HTTP call: the HTTP node, or the yantra-storage HTTP_SEND action that sends
@@ -445,19 +454,19 @@ export function evaluate(wf, { catalog, verified = new Map(), path: relPath } = 
       if (isEmpty(inputs.url) && !urlBuilders.length) add('missing-required-param', name, 'HTTP request has no URL', `"${name}": set the request URL.`);
       checkHttp({
         url: inputs.url,
-        urlCode: urlBuilders.map((b) => String(b.inputs?.jsCode || '')).join('\n'),
+        urlCode: urlBuilders.map((b) => String(transformCode(b) || '')).join('\n'),
         headers: inputs.headers && typeof inputs.headers === 'object' ? inputs.headers : {},
-        headerCodes: fedBy(n.nodeId, 'headers').map((b) => String(b.inputs?.jsCode || '')),
+        headerCodes: fedBy(n.nodeId, 'headers').map((b) => String(transformCode(b) || '')),
       });
     }
     if (n.type === 'NodeCdeConnector' && inputs.connectorName === 'yantra-storage' && inputs.action === 'YANTRA_STORAGE_HTTP_SEND') {
       const params = inputs.params && typeof inputs.params === 'object' ? inputs.params : {};
-      const codes = fedBy(n.nodeId, 'params').map((b) => codeText(b.inputs?.jsCode || ''));
+      const codes = fedBy(n.nodeId, 'params').map((b) => codeText(transformCode(b) || ''));
       checkHttp({ url: params.url, urlCode: codes.join('\n'), headers: params.headers && typeof params.headers === 'object' ? params.headers : {}, headerCodes: codes });
     }
 
-    if (n.type === 'NodeTransform') {
-      const code = codeText(inputs.jsCode || '');
+    if (transformCode(n)) {
+      const code = codeText(transformCode(n));
       // n8n $env has no Yantra equivalent: unless the converter rebuilt it from the
       // initialContext (setup values / secrets), the shim is empty and the value undefined.
       const envShim = /^const \$env = \{ (.*) \};$/m.exec(code)?.[1] || '';
@@ -517,9 +526,14 @@ export function evaluate(wf, { catalog, verified = new Map(), path: relPath } = 
   const text = JSON.stringify((wf.nodes || []).filter((n) => !nodesMeta[n.nodeId]?.stub));
   if (text.includes('TODO(yantra)')) add('hard-approximation', undefined, 'TODO(yantra) left in a step', 'A step still contains TODO(yantra); finish it before running.');
   if (text.includes('<<n8n:')) add('hard-approximation', undefined, '<<n8n: ...>> marker left in a step', 'Replace the values marked <<n8n: ...>> by hand.');
-  if (conv.loopPolicy === 'flattened' || ((conv.removedEdges || []).length && conv.loopPolicy !== 'flattened-safe')) {
+  if (['flattened', 'flattened-safe'].includes(conv.loopPolicy) || (conv.removedEdges || []).length) {
     const loops = (conv.removedEdges || []).map((e) => `${e.from} -> ${e.to}`).join(', ');
-    add('loop-flattened', undefined, `loop edges removed: ${loops}`, `The original looped (${short(loops, 120)}); here the whole list flows through once. Check the steps inside the loop handle arrays.`);
+    // The validator recomputes setup for catalog entries generated before the loop update.
+    const legacy = Array.isArray(conv.hints) && conv.hints.some((hint) => typeof hint === 'string' && hint.startsWith('Unsupported loop edges from the original were removed'));
+    const setup = legacy
+      ? `The original looped (${short(loops, 120)}); here the whole list flows through once. Check the steps inside the loop handle arrays.`
+      : `Experimental: restore the original feedback paths (${short(loops, 120)}) before running this workflow.`;
+    add('loop-flattened', undefined, `loop edges removed: ${loops}`, setup);
   }
   for (const u of conv.unmapped || []) add('unmapped-node', u.node, `${u.type}: ${u.reason}`, `"${u.node}" is a TODO stub (${u.reason}).`);
   for (const t of conv.triggers || []) {

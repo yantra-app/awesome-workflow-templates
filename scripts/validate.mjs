@@ -17,7 +17,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
-import { NODE_TYPES, socketsCompatible, ENTRY_TYPES } from './lib/yantra-nodes.mjs';
+import { NODE_TYPES, socketsCompatible, ENTRY_TYPES, transformCode } from './lib/yantra-nodes.mjs';
 import { ROOT, listTemplates, loadCatalog, loadVerified, STATUSES } from './lib/catalog-fs.mjs';
 import { evaluate } from './lib/quality.mjs';
 import { validateChainSchema } from './lib/llm-chain.mjs';
@@ -194,18 +194,20 @@ function validateTemplate(rel) {
       if (!known) err(`${where}: webhook connector "${c}" is not in data/connector-actions.json`);
       else if (!known.triggers?.includes(slug)) err(`${where}: trigger slug "${slug}" is not a trigger of "${c}"`);
     }
-    if (n.type === 'NodeTransform') {
-      if (typeof n.inputs?.jsCode !== 'string' || !n.inputs.jsCode.trim()) err(`${where}: NodeTransform needs inputs.jsCode`);
+    if (n.type === 'NodeTransform' || n.type === 'NodeJavascript') {
+      const code = transformCode(n);
+      if (typeof code !== 'string' || !code.trim()) err(`${where}: ${n.type} requires a script`);
       else {
-        const problem = checkJsCode(n.inputs.jsCode);
+        const problem = checkJsCode(code);
         if (problem) err(`${where} "${n.label}": ${problem}`);
       }
-      if (!['pick', 'omit', 'jsCode'].includes(n.inputs?.mode)) err(`${where}: NodeTransform mode must be pick | omit | jsCode`);
+      if (n.type === 'NodeTransform' && !['pick', 'omit', 'jsCode'].includes(n.inputs?.mode)) err(`${where}: NodeTransform mode must be pick | omit | jsCode`);
+      if (n.type === 'NodeJavascript' && n.inputs?.migratedTransform !== true) err(`${where}: NodeJavascript requires migratedTransform mode`);
     }
     if (n.type === 'NodeCron' && !n.inputs?.cronExpression && !n.inputs?.interval) err(`${where}: NodeCron needs cronExpression or interval`);
   }
   if (configs !== 1) err(`exactly one NodeWorkflowConfigs node is required (found ${configs})`);
-  if (entries === 0) err('at least one entry node (NodeStart, NodeCron or NodeCdeWebhookTrigger) is required');
+  if (entries === 0) err('at least one Start, Cron, or trigger entry node is required');
 
   const seen = new Set();
   for (const [i, e] of wf.edges.entries()) {

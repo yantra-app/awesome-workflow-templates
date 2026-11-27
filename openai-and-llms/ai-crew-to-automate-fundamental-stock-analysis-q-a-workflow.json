@@ -5,14 +5,53 @@
   "isPublic": true,
   "nodes": [
     {
-      "nodeId": "node_c393707b1b",
-      "actorId": "actor_c393707b1b",
+      "nodeId": "node_b8c0190b37",
+      "actorId": "actor_b8c0190b37",
+      "type": "NodeWebhookTrigger",
+      "label": "Webhook1",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "none",
+        "responseMode": "responseNode",
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "nodeId": "node_0106238485",
+      "actorId": "actor_0106238485",
+      "type": "NodeJavascript",
+      "label": "Webhook1: request",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "const ctx = {{ctx}};\nconst request = ctx.nodes?.[\"node_b8c0190b37\"]?.latest ?? {};\nreturn { body: source, headers: request.headers, query: request.query, params: {}, method: request.method, rawBody: request.rawBody, rawBodyEncoding: request.rawBodyEncoding };"
+      }
+    },
+    {
+      "nodeId": "node_13fc892832",
+      "actorId": "actor_13fc892832",
       "type": "NodeStart",
       "label": "Start",
       "color": "#22C55E",
       "position": {
         "x": 80,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 240,
@@ -26,7 +65,7 @@
       "label": "Retrieval QA Chain",
       "color": "#8B5CF6",
       "position": {
-        "x": 840,
+        "x": 1980,
         "y": 100
       },
       "size": {
@@ -34,19 +73,19 @@
         "height": 260
       },
       "inputs": {
-        "system": "{{last.transformed}}",
-        "prompt": "{{input}}",
+        "system": "{{llm_system_1cafa42a38}}",
+        "prompt": "{{last.transformed}}",
         "outputMode": "text"
       }
     },
     {
       "nodeId": "node_1cafa42a38",
       "actorId": "actor_1cafa42a38",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "System: Retrieval QA Chain",
       "color": "#F59E0B",
       "position": {
-        "x": 460,
+        "x": 840,
         "y": 100
       },
       "size": {
@@ -54,8 +93,42 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: Retrieval QA Chain.\nconst __promptValue = `Answer the question using only the provided context. If the context is empty, say you do not know.\n\nContext:\n${$json.context || $json.documents || $json.text || ''}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: Retrieval QA Chain.\nconst __promptValue = `Answer the question using only the provided context. If the context is empty, say you do not know.\n\nContext:\n${$json.context || $json.documents || $json.text || ''}`;\nreturn { \"llm_system_1cafa42a38\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_ae34146878",
+      "actorId": "actor_ae34146878",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Retrieval QA Chain",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_f730abf7e9",
+      "actorId": "actor_f730abf7e9",
+      "type": "NodeJavascript",
+      "label": "Prompt: Retrieval QA Chain",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Retrieval QA Chain.\nconst __promptValue = ($json.input);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
       }
     },
     {
@@ -82,24 +155,48 @@
       }
     },
     {
-      "nodeId": "node_a62a694d6f",
-      "actorId": "actor_a62a694d6f",
-      "type": "NodeEnd",
-      "label": "End",
-      "color": "#EF4444",
+      "nodeId": "node_e45d8b44f3",
+      "actorId": "actor_e45d8b44f3",
+      "type": "NodeRespondToWebhook",
+      "label": "Respond to Webhook",
+      "color": "#6366F1",
       "position": {
-        "x": 1220,
+        "x": 2740,
         "y": 100
       },
       "size": {
-        "width": 240,
-        "height": 100
+        "width": 280,
+        "height": 180
+      },
+      "inputs": {
+        "bodyMode": "text",
+        "statusCode": 200,
+        "headers": {}
+      }
+    },
+    {
+      "nodeId": "node_de14ec00bd",
+      "actorId": "actor_de14ec00bd",
+      "type": "NodeJavascript",
+      "label": "Respond to Webhook: body",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst body = ($json);\nreturn String(body ?? \"\");"
       }
     },
     {
       "nodeId": "node_6df72289f6",
       "actorId": "actor_6df72289f6",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Params: Qdrant Vector Store",
       "color": "#F59E0B",
       "position": {
@@ -111,8 +208,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Params for pinecone/PINECONE_UPSERT_RECORDS_NAMESPACE (n8n node \"Qdrant Vector Store\").\nreturn {\n  \"index_host\": \"{{pineconeIndexHost}}\",\n  \"namespace\": \"crowd\",\n  \"records\": (() => {\n  const __docs = __items.flatMap((d) => (Array.isArray(d) ? d : [d]));\n  return __docs.map((d) => {\n    const text = typeof d === 'string' ? d : d?.pageContent ?? d?.text ?? d?.content ?? d?.chunk ?? JSON.stringify(d);\n    const meta = d && typeof d === 'object' ? (d.metadata && typeof d.metadata === 'object' ? d.metadata : d) : {};\n    const flat = {};\n    for (const [k, v] of Object.entries(meta)) if (!['pageContent', 'text', '_id'].includes(k) && ['string', 'number', 'boolean'].includes(typeof v)) flat[k] = v;\n    return { ...flat, _id: String(d?.id ?? meta.id ?? crypto.randomUUID()), text: String(text) };\n  });\n})(),\n};"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\n// Params for pinecone/PINECONE_UPSERT_RECORDS_NAMESPACE (n8n node \"Qdrant Vector Store\").\nreturn {\n  \"index_host\": \"{{pineconeIndexHost}}\",\n  \"namespace\": \"crowd\",\n  \"records\": (() => {\n  const __docs = __items.flatMap((d) => (Array.isArray(d) ? d : [d]));\n  return __docs.map((d) => {\n    const text = typeof d === 'string' ? d : d?.pageContent ?? d?.text ?? d?.content ?? d?.chunk ?? JSON.stringify(d);\n    const meta = d && typeof d === 'object' ? (d.metadata && typeof d.metadata === 'object' ? d.metadata : d) : {};\n    const flat = {};\n    for (const [k, v] of Object.entries(meta)) if (!['pageContent', 'text', '_id'].includes(k) && ['string', 'number', 'boolean'].includes(typeof v)) flat[k] = v;\n    return { ...flat, _id: String(d?.id ?? meta.id ?? crypto.randomUUID()), text: String(text) };\n  });\n})(),\n};"
       }
     },
     {
@@ -136,14 +233,48 @@
       }
     },
     {
-      "nodeId": "node_4564470b8b",
-      "actorId": "actor_4564470b8b",
+      "nodeId": "node_bd583a2d19",
+      "actorId": "actor_bd583a2d19",
+      "type": "NodeJavascript",
+      "label": "Finish after response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "return source ?? {};"
+      }
+    },
+    {
+      "nodeId": "node_21445d4569",
+      "actorId": "actor_21445d4569",
+      "type": "NodeEnd",
+      "label": "End",
+      "color": "#EF4444",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_71ea94b570",
+      "actorId": "actor_71ea94b570",
       "type": "NodeEnd",
       "label": "End 2",
       "color": "#EF4444",
       "position": {
         "x": 1600,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 240,
@@ -168,9 +299,6 @@
         "projectId": "",
         "environmentTagId": "",
         "initialContext": {
-          "body": {},
-          "query": {},
-          "headers": {},
           "pineconeIndexHost": "",
           "driveFileId": ""
         }
@@ -183,8 +311,8 @@
       "label": "Retrieval QA Chain: model",
       "color": "#8B5CF6",
       "position": {
-        "x": 840,
-        "y": 720
+        "x": 1980,
+        "y": 420
       },
       "size": {
         "width": 280,
@@ -198,19 +326,75 @@
   ],
   "edges": [
     {
+      "source": "node_b8c0190b37",
+      "target": "node_0106238485",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_b8c0190b37",
+      "target": "node_0106238485",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
       "source": "node_1cafa42a38",
+      "target": "node_ae34146878",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_1cafa42a38",
+      "target": "node_ae34146878",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_ae34146878",
+      "target": "node_f730abf7e9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_f730abf7e9",
       "target": "node_f7f82a149f",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeLlmChain"
+    },
+    {
+      "source": "node_de14ec00bd",
+      "target": "node_e45d8b44f3",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeRespondToWebhook"
+    },
+    {
+      "source": "node_de14ec00bd",
+      "target": "node_e45d8b44f3",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeRespondToWebhook"
     },
     {
       "source": "node_6df72289f6",
       "target": "node_b49d8c1f54",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -218,27 +402,51 @@
       "target": "node_b49d8c1f54",
       "sourceOutput": "transformed",
       "targetInput": "params",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
       "source": "node_f7f82a149f",
-      "target": "node_a62a694d6f",
-      "sourceOutput": "text",
-      "targetInput": "result",
-      "sourceNodeType": "NodeLlmChain",
-      "targetNodeType": "NodeEnd"
-    },
-    {
-      "source": "node_c393707b1b",
-      "target": "node_1cafa42a38",
-      "sourceOutput": "trigger",
+      "target": "node_de14ec00bd",
+      "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeJavascript"
     },
     {
-      "source": "node_c393707b1b",
+      "source": "node_f7f82a149f",
+      "target": "node_de14ec00bd",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeLlmChain",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_0106238485",
+      "target": "node_1cafa42a38",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_0106238485",
+      "target": "node_1cafa42a38",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_0106238485",
+      "target": "node_f730abf7e9",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_13fc892832",
       "target": "node_96b149c585",
       "sourceOutput": "trigger",
       "targetInput": "RUN",
@@ -251,7 +459,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_96b149c585",
@@ -259,11 +467,35 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_e45d8b44f3",
+      "target": "node_bd583a2d19",
+      "sourceOutput": "onComplete",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_e45d8b44f3",
+      "target": "node_bd583a2d19",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_bd583a2d19",
+      "target": "node_21445d4569",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeEnd"
     },
     {
       "source": "node_b49d8c1f54",
-      "target": "node_4564470b8b",
+      "target": "node_71ea94b570",
       "sourceOutput": "result",
       "targetInput": "result",
       "sourceNodeType": "NodeCdeConnector",
@@ -312,14 +544,17 @@
       "NodeCdeConnector",
       "NodeChatModel",
       "NodeEnd",
+      "NodeJavascript",
       "NodeLlmChain",
+      "NodeRespondToWebhook",
       "NodeStart",
-      "NodeTransform",
+      "NodeUpdateContext",
+      "NodeWebhookTrigger",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 13,
-      "yantraSteps": 7,
+      "yantraSteps": 14,
       "foldedHelpers": [
         "OpenAI Chat Model",
         "Vector Store Retriever",
@@ -336,19 +571,19 @@
     "tier": "ready",
     "blockers": [
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "Webhook1",
-        "detail": "n8n-nodes-base.webhook became the Start node"
+        "detail": "generic trigger URL requires registration"
       }
     ],
     "setup": [
-      "\"Webhook1\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Webhook1\": save the workflow, then register node node_b8c0190b37 via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL.",
       "Setup value pineconeIndexHost: Pinecone index host (create the index with integrated embedding and field map text=text) (for example my-index-abc123.svc.aped-4627-b74a.pinecone.io). Write it into the Workflow Configs initialContext before import.",
       "Setup value driveFileId: Drive File id (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
       "Connect the googlesuper connector (credential).",
       "Connect the openai connector (credential).",
       "Connect the pinecone connector (credential).",
-      "Provide run inputs: body, query, headers, input."
+      "Provide run inputs: llm_system_1cafa42a38."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -404,7 +639,7 @@
         {
           "node": "Webhook1",
           "type": "n8n-nodes-base.webhook",
-          "as": "NodeStart"
+          "as": "NodeWebhookTrigger"
         },
         {
           "node": "When clicking \"Execute Workflow\"",
@@ -413,7 +648,6 @@
         }
       ],
       "hints": [
-        "The original started from an inbound webhook (POST /19f5499a-3083-4783-93a0-e8ed76a9f742). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
         "\"Retrieval QA Chain\" folded a retriever (retrieverVectorStore); retrieved text is expected on the upstream payload as context/documents.",
         "\"Retrieval QA Chain\" (chainRetrievalQa): Retriever output should arrive as context/documents/text on the upstream payload.",
         "\"Qdrant Vector Store\" folded a document (documentBinaryInputLoader); retrieved text is expected on the upstream payload as context/documents.",
@@ -430,12 +664,17 @@
       "## Start here: Step-by Step Youtube Tutorial :star:\n\n[![Building an AI Crew to Analyze Financial Data with CrewAI and n8n](https://img.youtube.com/vi/pMvizUx5n1g/sddefault.jpg)](https://www.youtube.com/watch?v=pMvizUx5n1g)"
     ],
     "nodes": {
-      "node_c393707b1b": {
+      "node_b8c0190b37": {
         "n8n": "Webhook1",
-        "n8nType": "n8n-nodes-base.webhook",
-        "also": [
-          "When clicking \"Execute Workflow\""
-        ]
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_0106238485": {
+        "n8n": "Webhook1",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_13fc892832": {
+        "n8n": "When clicking \"Execute Workflow\"",
+        "n8nType": "n8n-nodes-base.manualTrigger"
       },
       "node_f7f82a149f": {
         "n8n": "Retrieval QA Chain",
@@ -445,11 +684,23 @@
         "n8n": "Retrieval QA Chain",
         "n8nType": "@n8n/n8n-nodes-langchain.chainRetrievalQa"
       },
+      "node_ae34146878": {
+        "n8n": "Retrieval QA Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainRetrievalQa"
+      },
+      "node_f730abf7e9": {
+        "n8n": "Retrieval QA Chain",
+        "n8nType": "@n8n/n8n-nodes-langchain.chainRetrievalQa"
+      },
       "node_96b149c585": {
         "n8n": "Google Drive",
         "n8nType": "n8n-nodes-base.googleDrive"
       },
-      "node_a62a694d6f": {
+      "node_e45d8b44f3": {
+        "n8n": "Respond to Webhook",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_de14ec00bd": {
         "n8n": "Respond to Webhook",
         "n8nType": "n8n-nodes-base.respondToWebhook"
       },
@@ -461,7 +712,15 @@
         "n8n": "Qdrant Vector Store",
         "n8nType": "@n8n/n8n-nodes-langchain.vectorStoreQdrant"
       },
-      "node_4564470b8b": {
+      "node_bd583a2d19": {
+        "n8n": "Respond to Webhook",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_21445d4569": {
+        "n8n": "Respond to Webhook",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_71ea94b570": {
         "n8n": "__end:Qdrant Vector Store",
         "n8nType": "synthetic"
       },

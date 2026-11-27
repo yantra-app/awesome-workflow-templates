@@ -1,3 +1,5 @@
+import { transformCode } from './yantra-nodes.mjs';
+
 // Conservative, offline checks of LLM prompt inputs. Unknown API responses and
 // arbitrary JavaScript are not treated as proof that a field exists or is absent.
 import { NODE_TYPES } from './yantra-nodes.mjs';
@@ -37,8 +39,8 @@ export function auditLlmInputs(wf) {
     const source = () => { const e = incoming(n, 'source'); return e ? shapeOf(byId.get(e.source), e.sourceOutput, seen) : unknown; };
     if (n.type === 'NodeLlmChain' && socket === 'object') shape = fromSchema(n.inputs?.schema);
     else if (NODE_TYPES[n.type]?.outputs[socket]?.type === 'string') shape = { type: 'string' };
-    else if (n.type === 'NodeTransform' && socket === 'transformed') {
-      const code = n.inputs?.jsCode || '';
+    else if (transformCode(n) && socket === 'transformed') {
+      const code = transformCode(n) || '';
       if (code.includes('const __promptValue =')) {
         const key = /return \{ "(llm_(?:prompt|system)_[a-f0-9]{10})":/.exec(code)?.[1];
         shape = key ? object({ [key]: { type: 'string' } }) : { type: 'string' };
@@ -80,7 +82,7 @@ export function auditLlmInputs(wf) {
       let wire = incoming(chain, socket);
       if (!wire && chain.inputs?.[socket] === '{{last.transformed}}') {
         const trigger = incoming(chain, 'RUN');
-        if (byId.get(trigger?.source)?.type === 'NodeTransform') wire = { source: trigger.source, sourceOutput: 'transformed' };
+        if (transformCode(byId.get(trigger?.source))) wire = { source: trigger.source, sourceOutput: 'transformed' };
       }
       // Follow explicit Update Context writers back to their prompt builders.
       const reference = /^\{\{(llm_(?:prompt|system)_([a-f0-9]{10}))\}\}$/.exec(chain.inputs?.[socket] || '');
@@ -96,12 +98,12 @@ export function auditLlmInputs(wf) {
       }
       if (wire) {
         const builder = byId.get(wire.source);
-        if (builder?.type !== 'NodeTransform') { report(socket, builder, wire.sourceOutput, shapeOf(builder, wire.sourceOutput)); continue; }
+        if (!transformCode(builder)) { report(socket, builder, wire.sourceOutput, shapeOf(builder, wire.sourceOutput)); continue; }
         const edge = incoming(builder, 'source');
         const origin = edge && byId.get(edge.source);
         let shape = edge ? shapeOf(origin, edge.sourceOutput) : unknown;
         if (shape.type === 'array') shape = shape.items;
-        const code = builder.inputs?.jsCode || '';
+        const code = transformCode(builder) || '';
         const marker = code.search(/\/\/ (?:Prompt|System):/);
         const body = marker < 0 ? code : code.slice(marker);
         // Check required reads; optional fallback probes (context || documents)

@@ -5,25 +5,38 @@
   "isPublic": true,
   "nodes": [
     {
-      "nodeId": "node_acb4fd2436",
-      "actorId": "actor_acb4fd2436",
-      "type": "NodeStart",
-      "label": "Start",
-      "color": "#22C55E",
+      "nodeId": "node_0215255abb",
+      "actorId": "actor_0215255abb",
+      "type": "NodeWebhookTrigger",
+      "label": "Listen for Telegram Events",
+      "color": "#6366F1",
       "position": {
         "x": 80,
         "y": 100
       },
       "size": {
-        "width": 240,
-        "height": 100
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "none",
+        "responseMode": "onReceived",
+        "httpMethod": "POST",
+        "acknowledgement": {
+          "statusCode": 200,
+          "headers": {},
+          "bodyMode": "json",
+          "body": {
+            "message": "Workflow was started"
+          }
+        }
       }
     },
     {
-      "nodeId": "node_b39ecde26b",
-      "actorId": "actor_b39ecde26b",
-      "type": "NodeTransform",
-      "label": "Telegram Token & Webhooks",
+      "nodeId": "node_eacec0039a",
+      "actorId": "actor_eacec0039a",
+      "type": "NodeJavascript",
+      "label": "Listen for Telegram Events: request",
       "color": "#F59E0B",
       "position": {
         "x": 460,
@@ -34,15 +47,15 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"token\"] = \"bot{{token}}\";\n  out[\"test_url\"] = \"https://{{url}}/webhook-test/{{endpoint}}\";\n  out[\"production_url\"] = \"https://{{url}}/webhook/{{endpoint}}\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+        "migratedTransform": true,
+        "logic": "const ctx = {{ctx}};\nconst request = ctx.nodes?.[\"node_0215255abb\"]?.latest ?? {};\nreturn { body: source, headers: request.headers, query: request.query, params: {}, method: request.method, rawBody: request.rawBody, rawBodyEncoding: request.rawBodyEncoding };"
       }
     },
     {
-      "nodeId": "node_b4edc2942c",
-      "actorId": "actor_b4edc2942c",
-      "type": "NodeTransform",
-      "label": "Validation",
+      "nodeId": "node_b39ecde26b",
+      "actorId": "actor_b39ecde26b",
+      "type": "NodeJavascript",
+      "label": "Telegram Token & Webhooks",
       "color": "#F59E0B",
       "position": {
         "x": 460,
@@ -53,8 +66,27 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"first_name\"] = \"First Name\";\n  out[\"last_name\"] = \"Last Name\";\n  out[\"id\"] = Number(12345678999);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+        "migratedTransform": true,
+        "logic": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"token\"] = \"bot{{token}}\";\n  out[\"test_url\"] = \"https://{{url}}/webhook-test/{{endpoint}}\";\n  out[\"production_url\"] = \"https://{{url}}/webhook/{{endpoint}}\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_b4edc2942c",
+      "actorId": "actor_b4edc2942c",
+      "type": "NodeJavascript",
+      "label": "Validation",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"first_name\"] = \"First Name\";\n  out[\"last_name\"] = \"Last Name\";\n  out[\"id\"] = Number(12345678999);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
       }
     },
     {
@@ -65,7 +97,7 @@
       "color": "#0EA5E9",
       "position": {
         "x": 840,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 280,
@@ -84,7 +116,7 @@
       "color": "#0EA5E9",
       "position": {
         "x": 840,
-        "y": 360
+        "y": 620
       },
       "size": {
         "width": 280,
@@ -103,7 +135,7 @@
       "color": "#0EA5E9",
       "position": {
         "x": 840,
-        "y": 620
+        "y": 880
       },
       "size": {
         "width": 280,
@@ -117,20 +149,20 @@
     {
       "nodeId": "node_4eb3f3ba55",
       "actorId": "actor_4eb3f3ba55",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Check User & Chat ID: condition",
       "color": "#F59E0B",
       "position": {
-        "x": 840,
-        "y": 880
+        "x": 1220,
+        "y": 100
       },
       "size": {
         "width": 280,
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Listen for Telegram Events\": {{ctx}}, \"Telegram Token & Webhooks\": {\"token\":\"bot{{token}}\",\"test_url\":\"https://{{url}}/webhook-test/{{endpoint}}\",\"production_url\":\"https://{{url}}/webhook/{{endpoint}}\"}, \"Validation\": {\"first_name\":\"First Name\",\"last_name\":\"Last Name\",\"id\":12345678999}, \"Set Webhook Production URL\": {{steps.http_3d70034c42.result}}, \"Set Webhook Test URL\": {{steps.http_5f72caa4e0.result}}, \"Get Telegram Webhook Info\": {{steps.http_79a248549c.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Listen for Telegram Events').item.json.body.message.from.first_name) ?? '') === String(($json.first_name) ?? '')) && (String(($('Listen for Telegram Events').item.json.body.message.from.last_name) ?? '') === String(($json.last_name) ?? '')) && (Number(($('Listen for Telegram Events').item.json.body.message.from.id)) === Number(($json.id))));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Listen for Telegram Events\": __namedCtx.nodes?.[\"node_eacec0039a\"]?.latest?.[\"transformed\"], \"Telegram Token & Webhooks\": {\"token\":\"bot{{token}}\",\"test_url\":\"https://{{url}}/webhook-test/{{endpoint}}\",\"production_url\":\"https://{{url}}/webhook/{{endpoint}}\"}, \"Validation\": {\"first_name\":\"First Name\",\"last_name\":\"Last Name\",\"id\":12345678999}, \"Set Webhook Production URL\": {{steps.http_3d70034c42.result}}, \"Set Webhook Test URL\": {{steps.http_5f72caa4e0.result}}, \"Get Telegram Webhook Info\": {{steps.http_79a248549c.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Listen for Telegram Events').item.json.body.message.from.first_name) ?? '') === String(($json.first_name) ?? '')) && (String(($('Listen for Telegram Events').item.json.body.message.from.last_name) ?? '') === String(($json.last_name) ?? '')) && (Number(($('Listen for Telegram Events').item.json.body.message.from.id)) === Number(($json.id))));"
       }
     },
     {
@@ -140,7 +172,7 @@
       "label": "Check User & Chat ID: condition?",
       "color": "#0EA5E9",
       "position": {
-        "x": 1220,
+        "x": 1600,
         "y": 100
       },
       "size": {
@@ -199,7 +231,7 @@
     {
       "nodeId": "node_2a1a5584fe",
       "actorId": "actor_2a1a5584fe",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Params: Get Webhook Status",
       "color": "#F59E0B",
       "position": {
@@ -211,8 +243,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for telegram/TELEGRAM_SEND_MESSAGE (n8n node \"Get Webhook Status\").\nreturn {\n  \"chat_id\": `{{telegramChatId}}`,\n  \"text\": (JSON.stringify($json.result, null, 2)),\n};"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for telegram/TELEGRAM_SEND_MESSAGE (n8n node \"Get Webhook Status\").\nreturn {\n  \"chat_id\": `{{telegramChatId}}`,\n  \"text\": (JSON.stringify($json.result, null, 2)),\n};"
       }
     },
     {
@@ -223,7 +255,7 @@
       "color": "#6366F1",
       "position": {
         "x": 1600,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 280,
@@ -238,20 +270,20 @@
     {
       "nodeId": "node_0258f3650d",
       "actorId": "actor_0258f3650d",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Message Router: audio",
       "color": "#F59E0B",
       "position": {
-        "x": 1600,
-        "y": 360
+        "x": 1980,
+        "y": 100
       },
       "size": {
         "width": 280,
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.body.message.voice)) != null));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.body.message.voice)) != null));"
       }
     },
     {
@@ -261,7 +293,7 @@
       "label": "Message Router: audio?",
       "color": "#0EA5E9",
       "position": {
-        "x": 1980,
+        "x": 2360,
         "y": 100
       },
       "size": {
@@ -272,11 +304,11 @@
     {
       "nodeId": "node_47e1c0ef41",
       "actorId": "actor_47e1c0ef41",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Message Router: text",
       "color": "#F59E0B",
       "position": {
-        "x": 2360,
+        "x": 2740,
         "y": 100
       },
       "size": {
@@ -284,8 +316,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.body.message.text)) != null));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.body.message.text)) != null));"
       }
     },
     {
@@ -295,7 +327,7 @@
       "label": "Message Router: text?",
       "color": "#0EA5E9",
       "position": {
-        "x": 2740,
+        "x": 3120,
         "y": 100
       },
       "size": {
@@ -306,11 +338,11 @@
     {
       "nodeId": "node_d23a4d8989",
       "actorId": "actor_d23a4d8989",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Message Router: image",
       "color": "#F59E0B",
       "position": {
-        "x": 3120,
+        "x": 3500,
         "y": 100
       },
       "size": {
@@ -318,8 +350,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.body.message.photo)) != null));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean(((($json.body.message.photo)) != null));"
       }
     },
     {
@@ -329,7 +361,7 @@
       "label": "Message Router: image?",
       "color": "#0EA5E9",
       "position": {
-        "x": 3500,
+        "x": 3880,
         "y": 100
       },
       "size": {
@@ -344,7 +376,7 @@
       "label": "Get Audio File",
       "color": "#0EA5E9",
       "position": {
-        "x": 2740,
+        "x": 3120,
         "y": 360
       },
       "size": {
@@ -358,11 +390,11 @@
     {
       "nodeId": "node_651b2c5a61",
       "actorId": "actor_651b2c5a61",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "URL: Get Audio File",
       "color": "#F59E0B",
       "position": {
-        "x": 2360,
+        "x": 2740,
         "y": 360
       },
       "size": {
@@ -370,18 +402,18 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request URL for \"Get Audio File\".\nreturn `https://api.telegram.org/bot{{telegramBotToken}}/getFile?file_id=${$json.body.message.voice.file_id}`;"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request URL for \"Get Audio File\".\nreturn `https://api.telegram.org/bot{{telegramBotToken}}/getFile?file_id=${$json.body.message.voice.file_id}`;"
       }
     },
     {
       "nodeId": "node_e815ac7ec7",
       "actorId": "actor_e815ac7ec7",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Edit Fields",
       "color": "#F59E0B",
       "position": {
-        "x": 3120,
+        "x": 3500,
         "y": 360
       },
       "size": {
@@ -389,18 +421,18 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"text\"] = ($json.body.message.text);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"text\"] = ($json.body.message.text);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
       }
     },
     {
       "nodeId": "node_d2f7ec25d4",
       "actorId": "actor_d2f7ec25d4",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Image Schema",
       "color": "#F59E0B",
       "position": {
-        "x": 3880,
+        "x": 4260,
         "y": 100
       },
       "size": {
@@ -408,8 +440,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Array.prototype, { last() { return this[this.length - 1]; } });\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"image_file_id\"] = ($json.body.message.photo.last().file_id);\n  out[\"caption\"] = ($json.body.message.caption);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Array.prototype, { last() { return this[this.length - 1]; } });\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"image_file_id\"] = ($json.body.message.photo.last().file_id);\n  out[\"caption\"] = ($json.body.message.caption);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
       }
     },
     {
@@ -419,7 +451,7 @@
       "label": "telegram/TELEGRAM_SEND_MESSAGE",
       "color": "#6366F1",
       "position": {
-        "x": 3880,
+        "x": 4260,
         "y": 360
       },
       "size": {
@@ -443,7 +475,7 @@
       "label": "yantra-voicebox/YANTRA_VOICEBOX_TRANSCRIBE",
       "color": "#6366F1",
       "position": {
-        "x": 3120,
+        "x": 3500,
         "y": 620
       },
       "size": {
@@ -466,7 +498,7 @@
       "label": "Text Classifier",
       "color": "#8B5CF6",
       "position": {
-        "x": 3880,
+        "x": 4260,
         "y": 620
       },
       "size": {
@@ -500,11 +532,11 @@
     {
       "nodeId": "node_4d5dfc2b7b",
       "actorId": "actor_4d5dfc2b7b",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Prompt: Text Classifier",
       "color": "#F59E0B",
       "position": {
-        "x": 3500,
+        "x": 3880,
         "y": 360
       },
       "size": {
@@ -512,18 +544,18 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Text Classifier.\nconst __promptValue = ($json.text);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Text Classifier.\nconst __promptValue = ($json.text);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
       }
     },
     {
       "nodeId": "node_6f70582649",
       "actorId": "actor_6f70582649",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Text Classifier: category = task",
       "color": "#F59E0B",
       "position": {
-        "x": 4260,
+        "x": 4640,
         "y": 100
       },
       "size": {
@@ -531,8 +563,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return String(source?.category ?? '') === \"task\";"
+        "migratedTransform": true,
+        "logic": "return String(source?.category ?? '') === \"task\";"
       }
     },
     {
@@ -542,7 +574,7 @@
       "label": "Text Classifier: category = task?",
       "color": "#0EA5E9",
       "position": {
-        "x": 4640,
+        "x": 5020,
         "y": 100
       },
       "size": {
@@ -553,11 +585,11 @@
     {
       "nodeId": "node_a1b272201f",
       "actorId": "actor_a1b272201f",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Text Classifier: category = other",
       "color": "#F59E0B",
       "position": {
-        "x": 5020,
+        "x": 5400,
         "y": 100
       },
       "size": {
@@ -565,8 +597,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return String(source?.category ?? '') === \"other\";"
+        "migratedTransform": true,
+        "logic": "return String(source?.category ?? '') === \"other\";"
       }
     },
     {
@@ -576,7 +608,7 @@
       "label": "Text Classifier: category = other?",
       "color": "#0EA5E9",
       "position": {
-        "x": 5400,
+        "x": 5780,
         "y": 100
       },
       "size": {
@@ -591,7 +623,7 @@
       "label": "Get Image",
       "color": "#0EA5E9",
       "position": {
-        "x": 4640,
+        "x": 5020,
         "y": 360
       },
       "size": {
@@ -605,11 +637,11 @@
     {
       "nodeId": "node_0ac1c08c72",
       "actorId": "actor_0ac1c08c72",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "URL: Get Image",
       "color": "#F59E0B",
       "position": {
-        "x": 4260,
+        "x": 4640,
         "y": 360
       },
       "size": {
@@ -617,8 +649,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request URL for \"Get Image\".\nreturn `https://api.telegram.org/bot{{telegramBotToken}}/getFile?file_id=${$json.image_file_id}`;"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Request URL for \"Get Image\".\nreturn `https://api.telegram.org/bot{{telegramBotToken}}/getFile?file_id=${$json.image_file_id}`;"
       }
     },
     {
@@ -628,7 +660,7 @@
       "label": "Text Classifier Audio",
       "color": "#8B5CF6",
       "position": {
-        "x": 3880,
+        "x": 4260,
         "y": 880
       },
       "size": {
@@ -662,11 +694,11 @@
     {
       "nodeId": "node_b67d5313dc",
       "actorId": "actor_b67d5313dc",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Prompt: Text Classifier Audio",
       "color": "#F59E0B",
       "position": {
-        "x": 3500,
+        "x": 3880,
         "y": 620
       },
       "size": {
@@ -674,18 +706,18 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Text Classifier Audio.\nconst __promptValue = ($json.text);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Text Classifier Audio.\nconst __promptValue = ($json.text);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
       }
     },
     {
       "nodeId": "node_8ec7f8f03c",
       "actorId": "actor_8ec7f8f03c",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Text Classifier Audio: category = task",
       "color": "#F59E0B",
       "position": {
-        "x": 4260,
+        "x": 4640,
         "y": 620
       },
       "size": {
@@ -693,8 +725,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return String(source?.category ?? '') === \"task\";"
+        "migratedTransform": true,
+        "logic": "return String(source?.category ?? '') === \"task\";"
       }
     },
     {
@@ -704,7 +736,7 @@
       "label": "Text Classifier Audio: category = task?",
       "color": "#0EA5E9",
       "position": {
-        "x": 4640,
+        "x": 5020,
         "y": 620
       },
       "size": {
@@ -715,11 +747,11 @@
     {
       "nodeId": "node_c0cf918e5f",
       "actorId": "actor_c0cf918e5f",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Text Classifier Audio: category = other",
       "color": "#F59E0B",
       "position": {
-        "x": 5020,
+        "x": 5400,
         "y": 360
       },
       "size": {
@@ -727,8 +759,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return String(source?.category ?? '') === \"other\";"
+        "migratedTransform": true,
+        "logic": "return String(source?.category ?? '') === \"other\";"
       }
     },
     {
@@ -738,7 +770,7 @@
       "label": "Text Classifier Audio: category = other?",
       "color": "#0EA5E9",
       "position": {
-        "x": 5400,
+        "x": 5780,
         "y": 360
       },
       "size": {
@@ -753,7 +785,7 @@
       "label": "telegram/TELEGRAM_SEND_MESSAGE",
       "color": "#6366F1",
       "position": {
-        "x": 5020,
+        "x": 5400,
         "y": 620
       },
       "size": {
@@ -765,7 +797,7 @@
         "connectorLabel": "Telegram",
         "action": "TELEGRAM_SEND_MESSAGE",
         "params": {
-          "chat_id": "{{body.message.chat.id}}",
+          "chat_id": "{{nodes.node_eacec0039a.latest.transformed.body.message.chat.id}}",
           "text": "Task message: <i>{{last.transformed.text}}</i>",
           "parse_mode": "HTML"
         }
@@ -778,7 +810,7 @@
       "label": "telegram/TELEGRAM_SEND_MESSAGE",
       "color": "#6366F1",
       "position": {
-        "x": 5780,
+        "x": 6160,
         "y": 100
       },
       "size": {
@@ -790,7 +822,7 @@
         "connectorLabel": "Telegram",
         "action": "TELEGRAM_SEND_MESSAGE",
         "params": {
-          "chat_id": "{{body.message.chat.id}}",
+          "chat_id": "{{nodes.node_eacec0039a.latest.transformed.body.message.chat.id}}",
           "text": "Other message: <i>{{last.transformed.text}}</i>",
           "parse_mode": "HTML"
         }
@@ -799,11 +831,11 @@
     {
       "nodeId": "node_466aad0cf6",
       "actorId": "actor_466aad0cf6",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Extract from File to Base64",
       "color": "#F59E0B",
       "position": {
-        "x": 5020,
+        "x": 5400,
         "y": 880
       },
       "size": {
@@ -811,8 +843,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// Hand the file content (text or base64) on as a field.\nconst __file = typeof source === 'string' ? source : source?.data ?? source?.content ?? source?.body ?? source;\nconst __text = typeof __file === 'string' ? __file : JSON.stringify(__file ?? '');\nreturn { \"data\": __text };"
+        "migratedTransform": true,
+        "logic": "// Hand the file content (text or base64) on as a field.\nconst __file = typeof source === 'string' ? source : source?.data ?? source?.content ?? source?.body ?? source;\nconst __text = typeof __file === 'string' ? __file : JSON.stringify(__file ?? '');\nreturn { \"data\": __text };"
       }
     },
     {
@@ -822,7 +854,7 @@
       "label": "telegram/TELEGRAM_SEND_MESSAGE",
       "color": "#6366F1",
       "position": {
-        "x": 5020,
+        "x": 5400,
         "y": 1140
       },
       "size": {
@@ -834,7 +866,7 @@
         "connectorLabel": "Telegram",
         "action": "TELEGRAM_SEND_MESSAGE",
         "params": {
-          "chat_id": "{{body.message.chat.id}}",
+          "chat_id": "{{nodes.node_eacec0039a.latest.transformed.body.message.chat.id}}",
           "text": "Task message: <i>{{last.result.text}}</i>",
           "parse_mode": "HTML"
         }
@@ -847,7 +879,7 @@
       "label": "telegram/TELEGRAM_SEND_MESSAGE",
       "color": "#6366F1",
       "position": {
-        "x": 5780,
+        "x": 6160,
         "y": 360
       },
       "size": {
@@ -859,7 +891,7 @@
         "connectorLabel": "Telegram",
         "action": "TELEGRAM_SEND_MESSAGE",
         "params": {
-          "chat_id": "{{body.message.chat.id}}",
+          "chat_id": "{{nodes.node_eacec0039a.latest.transformed.body.message.chat.id}}",
           "text": "Other message: <i>{{last.result.text}}</i>",
           "parse_mode": "HTML"
         }
@@ -868,27 +900,8 @@
     {
       "nodeId": "node_a8abfece79",
       "actorId": "actor_a8abfece79",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Convert to Image File",
-      "color": "#F59E0B",
-      "position": {
-        "x": 5400,
-        "y": 620
-      },
-      "size": {
-        "width": 280,
-        "height": 220
-      },
-      "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// The field already holds base64 file content.\nconst __v = $json?.[\"data\"];\nreturn { data: typeof __v === 'string' ? __v : JSON.stringify(__v), fileName: ($json.result.file_path), mimeType: \"application/octet-stream\", encoding: 'base64' };"
-      }
-    },
-    {
-      "nodeId": "node_fa9d3ee617",
-      "actorId": "actor_fa9d3ee617",
-      "type": "NodeTransform",
-      "label": "Params: Analyze Image",
       "color": "#F59E0B",
       "position": {
         "x": 5780,
@@ -899,8 +912,27 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for openai/OPENAI_CREATE_RESPONSE (n8n node \"Analyze Image\").\nreturn {\n  \"model\": \"gpt-4o-mini\",\n  \"input\": [{ \"role\": \"user\", \"content\": [{ \"type\": \"input_text\", \"text\": \"What is in this image?\" }, { \"type\": \"input_image\", \"image_url\": ('data:' + ($json.mimeType || $json.mime_type || 'image/jpeg') + ';base64,' + ($json.data ?? $json.base64 ?? '')) }] }],\n};"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// The field already holds base64 file content.\nconst __v = $json?.[\"data\"];\nreturn { data: typeof __v === 'string' ? __v : JSON.stringify(__v), fileName: ($json.result.file_path), mimeType: \"application/octet-stream\", encoding: 'base64' };"
+      }
+    },
+    {
+      "nodeId": "node_fa9d3ee617",
+      "actorId": "actor_fa9d3ee617",
+      "type": "NodeJavascript",
+      "label": "Params: Analyze Image",
+      "color": "#F59E0B",
+      "position": {
+        "x": 6160,
+        "y": 620
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for openai/OPENAI_CREATE_RESPONSE (n8n node \"Analyze Image\").\nreturn {\n  \"model\": \"gpt-4o-mini\",\n  \"input\": [{ \"role\": \"user\", \"content\": [{ \"type\": \"input_text\", \"text\": \"What is in this image?\" }, { \"type\": \"input_image\", \"image_url\": ('data:' + ($json.mimeType || $json.mime_type || 'image/jpeg') + ';base64,' + ($json.data ?? $json.base64 ?? '')) }] }],\n};"
       }
     },
     {
@@ -910,7 +942,7 @@
       "label": "openai/OPENAI_CREATE_RESPONSE",
       "color": "#6366F1",
       "position": {
-        "x": 6160,
+        "x": 6540,
         "y": 100
       },
       "size": {
@@ -926,11 +958,11 @@
     {
       "nodeId": "node_a12063ed6a",
       "actorId": "actor_a12063ed6a",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Analyze Image: answer",
       "color": "#F59E0B",
       "position": {
-        "x": 6540,
+        "x": 6920,
         "y": 100
       },
       "size": {
@@ -938,8 +970,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// The Responses API answer as the n8n image-analysis output ({ content }).\nconst __r = source?.data ?? source;\nconst __text = __r?.output_text ?? (__r?.output || []).flatMap((o) => o?.content || []).map((c) => c?.text || '').join('');\nreturn { content: __text, text: __text };"
+        "migratedTransform": true,
+        "logic": "// The Responses API answer as the n8n image-analysis output ({ content }).\nconst __r = source?.data ?? source;\nconst __text = __r?.output_text ?? (__r?.output || []).flatMap((o) => o?.content || []).map((c) => c?.text || '').join('');\nreturn { content: __text, text: __text };"
       }
     },
     {
@@ -949,7 +981,7 @@
       "label": "telegram/TELEGRAM_SEND_MESSAGE",
       "color": "#6366F1",
       "position": {
-        "x": 6920,
+        "x": 7300,
         "y": 100
       },
       "size": {
@@ -961,9 +993,24 @@
         "connectorLabel": "Telegram",
         "action": "TELEGRAM_SEND_MESSAGE",
         "params": {
-          "chat_id": "{{body.message.chat.id}}",
+          "chat_id": "{{nodes.node_eacec0039a.latest.transformed.body.message.chat.id}}",
           "text": "{{last.transformed.content}}"
         }
+      }
+    },
+    {
+      "nodeId": "node_faa4a2e030",
+      "actorId": "actor_faa4a2e030",
+      "type": "NodeStart",
+      "label": "Start",
+      "color": "#22C55E",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 240,
+        "height": 100
       }
     },
     {
@@ -1018,7 +1065,7 @@
       "label": "End 4",
       "color": "#EF4444",
       "position": {
-        "x": 4260,
+        "x": 4640,
         "y": 880
       },
       "size": {
@@ -1033,7 +1080,7 @@
       "label": "End 5",
       "color": "#EF4444",
       "position": {
-        "x": 5400,
+        "x": 5780,
         "y": 880
       },
       "size": {
@@ -1048,7 +1095,7 @@
       "label": "End 6",
       "color": "#EF4444",
       "position": {
-        "x": 6160,
+        "x": 6540,
         "y": 360
       },
       "size": {
@@ -1063,7 +1110,7 @@
       "label": "End 7",
       "color": "#EF4444",
       "position": {
-        "x": 5400,
+        "x": 5780,
         "y": 1140
       },
       "size": {
@@ -1078,7 +1125,7 @@
       "label": "End 8",
       "color": "#EF4444",
       "position": {
-        "x": 6160,
+        "x": 6540,
         "y": 620
       },
       "size": {
@@ -1093,7 +1140,7 @@
       "label": "End 9",
       "color": "#EF4444",
       "position": {
-        "x": 7300,
+        "x": 7680,
         "y": 100
       },
       "size": {
@@ -1119,9 +1166,6 @@
         "projectId": "",
         "environmentTagId": "",
         "initialContext": {
-          "body": {},
-          "query": {},
-          "headers": {},
           "url": "",
           "endpoint": "",
           "telegramChatId": "",
@@ -1141,7 +1185,7 @@
       "label": "Text Classifier: model",
       "color": "#8B5CF6",
       "position": {
-        "x": 3880,
+        "x": 4260,
         "y": 1240
       },
       "size": {
@@ -1160,7 +1204,7 @@
       "label": "Text Classifier Audio: model",
       "color": "#8B5CF6",
       "position": {
-        "x": 3880,
+        "x": 4260,
         "y": 1500
       },
       "size": {
@@ -1175,11 +1219,27 @@
   ],
   "edges": [
     {
+      "source": "node_0215255abb",
+      "target": "node_eacec0039a",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_0215255abb",
+      "target": "node_eacec0039a",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
       "source": "node_4eb3f3ba55",
       "target": "node_5886b6845b",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1187,7 +1247,7 @@
       "target": "node_5886b6845b",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1195,7 +1255,7 @@
       "target": "node_4073a287c9",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -1203,7 +1263,7 @@
       "target": "node_4073a287c9",
       "sourceOutput": "transformed",
       "targetInput": "params",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -1211,7 +1271,7 @@
       "target": "node_22936a12d3",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1219,7 +1279,7 @@
       "target": "node_22936a12d3",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1228,14 +1288,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_47e1c0ef41",
       "target": "node_5a0944773c",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1243,7 +1303,7 @@
       "target": "node_5a0944773c",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1252,14 +1312,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_d23a4d8989",
       "target": "node_f4c5ed9252",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1267,7 +1327,7 @@
       "target": "node_f4c5ed9252",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1275,7 +1335,7 @@
       "target": "node_51e7d9889a",
       "sourceOutput": "transformed",
       "targetInput": "url",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -1283,7 +1343,7 @@
       "target": "node_51e7d9889a",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -1291,7 +1351,7 @@
       "target": "node_8acde0ff25",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeLlmChain"
     },
     {
@@ -1300,7 +1360,7 @@
       "sourceOutput": "object",
       "targetInput": "source",
       "sourceNodeType": "NodeLlmChain",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_8acde0ff25",
@@ -1308,14 +1368,14 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeLlmChain",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_6f70582649",
       "target": "node_07d23ed0d9",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1323,7 +1383,7 @@
       "target": "node_07d23ed0d9",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1332,7 +1392,7 @@
       "sourceOutput": "object",
       "targetInput": "source",
       "sourceNodeType": "NodeLlmChain",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_07d23ed0d9",
@@ -1340,14 +1400,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_a1b272201f",
       "target": "node_6f7dc0d905",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1355,7 +1415,7 @@
       "target": "node_6f7dc0d905",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1363,7 +1423,7 @@
       "target": "node_e00eb45d09",
       "sourceOutput": "transformed",
       "targetInput": "url",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -1371,7 +1431,7 @@
       "target": "node_e00eb45d09",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -1379,7 +1439,7 @@
       "target": "node_4b0c358147",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeLlmChain"
     },
     {
@@ -1388,7 +1448,7 @@
       "sourceOutput": "object",
       "targetInput": "source",
       "sourceNodeType": "NodeLlmChain",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_4b0c358147",
@@ -1396,14 +1456,14 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeLlmChain",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_8ec7f8f03c",
       "target": "node_535a814679",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1411,7 +1471,7 @@
       "target": "node_535a814679",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1420,7 +1480,7 @@
       "sourceOutput": "object",
       "targetInput": "source",
       "sourceNodeType": "NodeLlmChain",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_535a814679",
@@ -1428,14 +1488,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_c0cf918e5f",
       "target": "node_e310d3717f",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1443,7 +1503,7 @@
       "target": "node_e310d3717f",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1451,7 +1511,7 @@
       "target": "node_53f412a8a2",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -1459,7 +1519,7 @@
       "target": "node_53f412a8a2",
       "sourceOutput": "transformed",
       "targetInput": "params",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -1468,7 +1528,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_53f412a8a2",
@@ -1476,7 +1536,7 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_5886b6845b",
@@ -1484,31 +1544,31 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_b4edc2942c",
       "target": "node_0258f3650d",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_b4edc2942c",
       "target": "node_47e1c0ef41",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_b4edc2942c",
       "target": "node_d23a4d8989",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_5886b6845b",
@@ -1519,12 +1579,20 @@
       "targetNodeType": "NodeCdeConnector"
     },
     {
-      "source": "node_acb4fd2436",
+      "source": "node_eacec0039a",
       "target": "node_b4edc2942c",
-      "sourceOutput": "trigger",
+      "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_eacec0039a",
+      "target": "node_b4edc2942c",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_5f72caa4e0",
@@ -1540,7 +1608,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_79a248549c",
@@ -1548,23 +1616,23 @@
       "sourceOutput": "body",
       "targetInput": "source",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_d2f7ec25d4",
       "target": "node_0ac1c08c72",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_d2f7ec25d4",
       "target": "node_0ac1c08c72",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_51e7d9889a",
@@ -1580,7 +1648,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_e00eb45d09",
@@ -1588,14 +1656,14 @@
       "sourceOutput": "body",
       "targetInput": "source",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_a12063ed6a",
       "target": "node_ea3e6d7967",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -1604,7 +1672,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_f1395a2a04",
@@ -1612,7 +1680,7 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_3d70034c42",
@@ -1627,48 +1695,48 @@
       "target": "node_4d5dfc2b7b",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_e815ac7ec7",
       "target": "node_4d5dfc2b7b",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_a8abfece79",
       "target": "node_fa9d3ee617",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_a8abfece79",
       "target": "node_fa9d3ee617",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_466aad0cf6",
       "target": "node_a8abfece79",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_466aad0cf6",
       "target": "node_a8abfece79",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_535a814679",
@@ -1707,7 +1775,7 @@
       "target": "node_3d70034c42",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -1715,7 +1783,7 @@
       "target": "node_5f72caa4e0",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -1723,7 +1791,7 @@
       "target": "node_79a248549c",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -1731,16 +1799,16 @@
       "target": "node_4eb3f3ba55",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_b4edc2942c",
       "target": "node_4eb3f3ba55",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_22936a12d3",
@@ -1748,15 +1816,15 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_b4edc2942c",
       "target": "node_651b2c5a61",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_5a0944773c",
@@ -1764,15 +1832,15 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_b4edc2942c",
       "target": "node_e815ac7ec7",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_f4c5ed9252",
@@ -1780,15 +1848,15 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_b4edc2942c",
       "target": "node_d2f7ec25d4",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_f4c5ed9252",
@@ -1799,12 +1867,12 @@
       "targetNodeType": "NodeCdeConnector"
     },
     {
-      "source": "node_acb4fd2436",
+      "source": "node_faa4a2e030",
       "target": "node_b39ecde26b",
       "sourceOutput": "trigger",
       "targetInput": "RUN",
       "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_2c2f16f55b",
@@ -1966,14 +2034,15 @@
       "NodeChatModel",
       "NodeEnd",
       "NodeHttpRequest",
+      "NodeJavascript",
       "NodeLlmChain",
       "NodeStart",
-      "NodeTransform",
+      "NodeWebhookTrigger",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 29,
-      "yantraSteps": 50,
+      "yantraSteps": 52,
       "foldedHelpers": [
         "gpt-4o-mini1",
         "gpt-4o-mini"
@@ -1993,14 +2062,20 @@
         "detail": "LLM input mismatch: prompt reads $json.text, which Edit Fields does not produce"
       },
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "Listen for Telegram Events",
-        "detail": "n8n-nodes-base.webhook became the Start node"
+        "detail": "generic trigger URL requires registration"
+      },
+      {
+        "code": "entry-point-unsupported",
+        "node": "Listen for Telegram Events",
+        "detail": "n8n-nodes-base.webhook: requires n8n binary item fields; Yantra provides the original bytes as base64"
       }
     ],
     "setup": [
       "\"Text Classifier\": wire the intended prompt data from \"Edit Fields\" and correct $json.text before running.",
-      "\"Listen for Telegram Events\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Listen for Telegram Events\": save the workflow, then register node node_0215255abb via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL.",
+      "\"Listen for Telegram Events\" (n8n-nodes-base.webhook) needs attention before it runs: requires n8n binary item fields; Yantra provides the original bytes as base64.",
       "Setup value url: Url. Write it into the Workflow Configs initialContext before import.",
       "Setup value endpoint: Endpoint. Write it into the Workflow Configs initialContext before import.",
       "Setup value telegramChatId: Telegram chat id (for example 123456789). Write it into the Workflow Configs initialContext before import.",
@@ -2008,7 +2083,7 @@
       "Workflow secret TOKEN: token (read inside the step code). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
       "Connect the openai connector (credential).",
       "Connect the telegram connector (credential).",
-      "Provide run inputs: body, query, headers."
+      "Provide run inputs: nodes."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -2016,6 +2091,13 @@
       "coverage": 1,
       "unmapped": [],
       "approximate": [
+        {
+          "node": "Listen for Telegram Events",
+          "n8n": "n8n-nodes-base.webhook",
+          "action": "NodeTransform",
+          "blocker": "entry-point-unsupported",
+          "reason": "requires n8n binary item fields; Yantra provides the original bytes as base64"
+        },
         {
           "node": "Get Audio File",
           "n8n": "telegram.file.get",
@@ -2070,11 +2152,11 @@
         {
           "node": "Listen for Telegram Events",
           "type": "n8n-nodes-base.webhook",
-          "as": "NodeStart"
+          "as": "NodeWebhookTrigger"
         }
       ],
       "hints": [
-        "The original started from an inbound webhook (POST /your-endpoint). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
+        "\"Listen for Telegram Events\" (n8n-nodes-base.webhook): requires n8n binary item fields; Yantra provides the original bytes as base64",
         "\"Get Audio File\" (telegram.file.get): Uses the Telegram Bot API getFile HTTP call with the bot token from a workflow secret; download file_path from the JSON result.",
         "\"Get Audio File\": the file itself is at https://api.telegram.org/file/bot<token>/<file_path>; the token is the TELEGRAM_BOT_TOKEN workflow secret.",
         "\"Transcribe Recording\" transcribes the Telegram voice file by URL (Bot API file path) with the platform Whisper; no OpenAI key needed.",
@@ -2101,7 +2183,11 @@
       "## Set Webhook for Production"
     ],
     "nodes": {
-      "node_acb4fd2436": {
+      "node_0215255abb": {
+        "n8n": "Listen for Telegram Events",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_eacec0039a": {
         "n8n": "Listen for Telegram Events",
         "n8nType": "n8n-nodes-base.webhook"
       },
@@ -2292,6 +2378,10 @@
       "node_ea3e6d7967": {
         "n8n": "Image Message",
         "n8nType": "n8n-nodes-base.telegram"
+      },
+      "node_faa4a2e030": {
+        "n8n": "__start",
+        "n8nType": "synthetic"
       },
       "node_539bd53510": {
         "n8n": "__end:Production Webhook Status",

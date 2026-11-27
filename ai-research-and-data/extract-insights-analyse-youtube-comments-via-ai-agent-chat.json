@@ -5,14 +5,52 @@
   "isPublic": true,
   "nodes": [
     {
-      "nodeId": "node_2d0265322a",
-      "actorId": "actor_2d0265322a",
+      "nodeId": "node_83339b0128",
+      "actorId": "actor_83339b0128",
+      "type": "NodeChatTrigger",
+      "label": "When chat message received",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "bearer",
+        "responseMode": "lastNode"
+      }
+    },
+    {
+      "nodeId": "node_9add5753f0",
+      "actorId": "actor_9add5753f0",
+      "type": "NodeJavascript",
+      "label": "When chat message received: request",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "return { action: 'sendMessage', ...source };"
+      }
+    },
+    {
+      "nodeId": "node_dbede1136a",
+      "actorId": "actor_dbede1136a",
       "type": "NodeStart",
       "label": "Start",
       "color": "#22C55E",
       "position": {
         "x": 80,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 240,
@@ -26,7 +64,7 @@
       "label": "AI Agent",
       "color": "#8B5CF6",
       "position": {
-        "x": 460,
+        "x": 840,
         "y": 100
       },
       "size": {
@@ -36,13 +74,13 @@
       "inputs": {
         "sessionId": "{{sessionId}}",
         "system": "You are Youtube assistant. \nYou need to process user's requests and run relevant tools for that. \n\nPlan and execute in right order runs of tools to get data for user's request.\n\nIMPORTANT Search query and list of videos for channel tools returns all videos including shorts - use Get Video description tool to identify shorts (less than minute) and filter them out if needed.\n\nFeel free to ask questions before do actions - especially if you noticed some inconcistency in user requests that might be error/misspelling. ",
-        "message": "{{chatInput}}"
+        "message": "{{nodes.node_9add5753f0.latest.transformed.chatInput}}"
       }
     },
     {
       "nodeId": "node_b4373e3315",
       "actorId": "actor_b4373e3315",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Switch: get_channel_details",
       "color": "#F59E0B",
       "position": {
@@ -54,8 +92,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When chat message received\": {{ctx}}, \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Execute Workflow Trigger').item.json.command) ?? '') === String(\"get_channel_details\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When chat message received\": __namedCtx.nodes?.[\"node_9add5753f0\"]?.latest?.[\"transformed\"], \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Execute Workflow Trigger').item.json.command) ?? '') === String(\"get_channel_details\" ?? '')));"
       }
     },
     {
@@ -66,7 +104,7 @@
       "color": "#0EA5E9",
       "position": {
         "x": 840,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 240,
@@ -76,7 +114,7 @@
     {
       "nodeId": "node_3297f57fa6",
       "actorId": "actor_3297f57fa6",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Switch: video_details",
       "color": "#F59E0B",
       "position": {
@@ -88,8 +126,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When chat message received\": {{ctx}}, \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Execute Workflow Trigger').item.json.command) ?? '') === String(\"video_details\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When chat message received\": __namedCtx.nodes?.[\"node_9add5753f0\"]?.latest?.[\"transformed\"], \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Execute Workflow Trigger').item.json.command) ?? '') === String(\"video_details\" ?? '')));"
       }
     },
     {
@@ -110,7 +148,7 @@
     {
       "nodeId": "node_aef37bbb52",
       "actorId": "actor_aef37bbb52",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Switch: comments",
       "color": "#F59E0B",
       "position": {
@@ -122,8 +160,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When chat message received\": {{ctx}}, \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Execute Workflow Trigger').item.json.command) ?? '') === String(\"comments\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When chat message received\": __namedCtx.nodes?.[\"node_9add5753f0\"]?.latest?.[\"transformed\"], \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Execute Workflow Trigger').item.json.command) ?? '') === String(\"comments\" ?? '')));"
       }
     },
     {
@@ -144,7 +182,7 @@
     {
       "nodeId": "node_a39ae7990d",
       "actorId": "actor_a39ae7990d",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Switch: search",
       "color": "#F59E0B",
       "position": {
@@ -156,8 +194,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When chat message received\": {{ctx}}, \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Execute Workflow Trigger').item.json.command) ?? '') === String(\"search\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When chat message received\": __namedCtx.nodes?.[\"node_9add5753f0\"]?.latest?.[\"transformed\"], \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Execute Workflow Trigger').item.json.command) ?? '') === String(\"search\" ?? '')));"
       }
     },
     {
@@ -178,7 +216,7 @@
     {
       "nodeId": "node_ef50aa410b",
       "actorId": "actor_ef50aa410b",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Switch: videos",
       "color": "#F59E0B",
       "position": {
@@ -190,8 +228,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When chat message received\": {{ctx}}, \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Execute Workflow Trigger').item.json.command) ?? '') === String(\"videos\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When chat message received\": __namedCtx.nodes?.[\"node_9add5753f0\"]?.latest?.[\"transformed\"], \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Execute Workflow Trigger').item.json.command) ?? '') === String(\"videos\" ?? '')));"
       }
     },
     {
@@ -212,7 +250,7 @@
     {
       "nodeId": "node_8725531920",
       "actorId": "actor_8725531920",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Switch: analyze_thumbnail",
       "color": "#F59E0B",
       "position": {
@@ -224,8 +262,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When chat message received\": {{ctx}}, \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Execute Workflow Trigger').item.json.command) ?? '') === String(\"analyze_thumbnail\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When chat message received\": __namedCtx.nodes?.[\"node_9add5753f0\"]?.latest?.[\"transformed\"], \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Execute Workflow Trigger').item.json.command) ?? '') === String(\"analyze_thumbnail\" ?? '')));"
       }
     },
     {
@@ -246,7 +284,7 @@
     {
       "nodeId": "node_055e1aaa12",
       "actorId": "actor_055e1aaa12",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Switch: video_transcription",
       "color": "#F59E0B",
       "position": {
@@ -258,8 +296,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When chat message received\": {{ctx}}, \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Execute Workflow Trigger').item.json.command) ?? '') === String(\"video_transcription\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When chat message received\": __namedCtx.nodes?.[\"node_9add5753f0\"]?.latest?.[\"transformed\"], \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Execute Workflow Trigger').item.json.command) ?? '') === String(\"video_transcription\" ?? '')));"
       }
     },
     {
@@ -298,7 +336,7 @@
     {
       "nodeId": "node_7fe4e2422a",
       "actorId": "actor_7fe4e2422a",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "URL: Get Channel Details",
       "color": "#F59E0B",
       "position": {
@@ -310,8 +348,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When chat message received\": {{ctx}}, \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"Get Channel Details\".\nreturn `https://www.googleapis.com/youtube/v3/channels?part=snippet&forHandle=${$('Execute Workflow Trigger').item.json.query.handle}&key={{googleApiKey}}`;"
+        "migratedTransform": true,
+        "logic": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When chat message received\": __namedCtx.nodes?.[\"node_9add5753f0\"]?.latest?.[\"transformed\"], \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"Get Channel Details\".\nreturn `https://www.googleapis.com/youtube/v3/channels?part=snippet&forHandle=${$('Execute Workflow Trigger').item.json.query.handle}&key={{googleApiKey}}`;"
       }
     },
     {
@@ -335,7 +373,7 @@
     {
       "nodeId": "node_d1758e6c87",
       "actorId": "actor_d1758e6c87",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "URL: Get Video Description",
       "color": "#F59E0B",
       "position": {
@@ -347,8 +385,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When chat message received\": {{ctx}}, \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"Get Video Description\".\nreturn `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${$('Execute Workflow Trigger').item.json.query.video_id}&key={{googleApiKey}}`;"
+        "migratedTransform": true,
+        "logic": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When chat message received\": __namedCtx.nodes?.[\"node_9add5753f0\"]?.latest?.[\"transformed\"], \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"Get Video Description\".\nreturn `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${$('Execute Workflow Trigger').item.json.query.video_id}&key={{googleApiKey}}`;"
       }
     },
     {
@@ -372,7 +410,7 @@
     {
       "nodeId": "node_d8cd0bb3c1",
       "actorId": "actor_d8cd0bb3c1",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "URL: Get Comments",
       "color": "#F59E0B",
       "position": {
@@ -384,8 +422,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When chat message received\": {{ctx}}, \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"Get Comments\".\nreturn `https://www.googleapis.com/youtube/v3/commentThreads?part=id,snippet,replies&videoId=${$('Execute Workflow Trigger').item.json.query.video_id}&maxResults=100&key={{googleApiKey}}`;"
+        "migratedTransform": true,
+        "logic": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When chat message received\": __namedCtx.nodes?.[\"node_9add5753f0\"]?.latest?.[\"transformed\"], \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"Get Comments\".\nreturn `https://www.googleapis.com/youtube/v3/commentThreads?part=id,snippet,replies&videoId=${$('Execute Workflow Trigger').item.json.query.video_id}&maxResults=100&key={{googleApiKey}}`;"
       }
     },
     {
@@ -409,7 +447,7 @@
     {
       "nodeId": "node_f9b6d63bb0",
       "actorId": "actor_f9b6d63bb0",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "URL: Run Query",
       "color": "#F59E0B",
       "position": {
@@ -421,8 +459,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When chat message received\": {{ctx}}, \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"Run Query\".\nreturn `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${$('Execute Workflow Trigger').item.json.query.query}&order=${$('Execute Workflow Trigger').item.json.query.order}&type=${$('Execute Workflow Trigger').item.json.query.type}&maxResults=${$('Execute Workflow Trigger').item.json.query.number_of_videos}&publishedAfter=${$('Execute Workflow Trigger').item.json.query.publishedAfter}&key={{googleApiKey}}`;"
+        "migratedTransform": true,
+        "logic": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When chat message received\": __namedCtx.nodes?.[\"node_9add5753f0\"]?.latest?.[\"transformed\"], \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"Run Query\".\nreturn `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${$('Execute Workflow Trigger').item.json.query.query}&order=${$('Execute Workflow Trigger').item.json.query.order}&type=${$('Execute Workflow Trigger').item.json.query.type}&maxResults=${$('Execute Workflow Trigger').item.json.query.number_of_videos}&publishedAfter=${$('Execute Workflow Trigger').item.json.query.publishedAfter}&key={{googleApiKey}}`;"
       }
     },
     {
@@ -446,7 +484,7 @@
     {
       "nodeId": "node_8073539a81",
       "actorId": "actor_8073539a81",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "URL: Get Videos by Channel",
       "color": "#F59E0B",
       "position": {
@@ -458,8 +496,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When chat message received\": {{ctx}}, \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"Get Videos by Channel\".\nreturn `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${$('Execute Workflow Trigger').item.json.query.channel_id}&order=${$('Execute Workflow Trigger').item.json.query.order}&maxResults=${$('Execute Workflow Trigger').item.json.query.number_of_videos}&type=video&publishedAfter=${$('Execute Workflow Trigger').item.json.query.publishedAfter}&key={{googleApiKey}}`;"
+        "migratedTransform": true,
+        "logic": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When chat message received\": __namedCtx.nodes?.[\"node_9add5753f0\"]?.latest?.[\"transformed\"], \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Request URL for \"Get Videos by Channel\".\nreturn `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${$('Execute Workflow Trigger').item.json.query.channel_id}&order=${$('Execute Workflow Trigger').item.json.query.order}&maxResults=${$('Execute Workflow Trigger').item.json.query.number_of_videos}&type=video&publishedAfter=${$('Execute Workflow Trigger').item.json.query.publishedAfter}&key={{googleApiKey}}`;"
       }
     },
     {
@@ -503,7 +541,7 @@
     {
       "nodeId": "node_1ac1ca9113",
       "actorId": "actor_1ac1ca9113",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "OpenAI: answer",
       "color": "#F59E0B",
       "position": {
@@ -515,14 +553,14 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// The Responses API answer as the n8n image-analysis output ({ content }).\nconst __r = source?.data ?? source;\nconst __text = __r?.output_text ?? (__r?.output || []).flatMap((o) => o?.content || []).map((c) => c?.text || '').join('');\nreturn { content: __text, text: __text };"
+        "migratedTransform": true,
+        "logic": "// The Responses API answer as the n8n image-analysis output ({ content }).\nconst __r = source?.data ?? source;\nconst __text = __r?.output_text ?? (__r?.output || []).flatMap((o) => o?.content || []).map((c) => c?.text || '').join('');\nreturn { content: __text, text: __text };"
       }
     },
     {
       "nodeId": "node_407ca2d113",
       "actorId": "actor_407ca2d113",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Params: Get Video Transcription",
       "color": "#F59E0B",
       "position": {
@@ -534,8 +572,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When chat message received\": {{ctx}}, \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}}, \"OpenAI\": {{steps.xf_1ac1ca9113.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for apify/APIFY_RUN_ACTOR_SYNC_GET_DATASET_ITEMS (n8n node \"Get Video Transcription\").\nreturn (() => ({ \"actorId\": \"dB9f4B02ocpTICIEY\", \"input\": (() => { const __v = `{\n \"startUrls\": [\n \"${$('Execute Workflow Trigger').item.json.query.video_url}\"\n ]\n}`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })() }))();"
+        "migratedTransform": true,
+        "logic": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When chat message received\": __namedCtx.nodes?.[\"node_9add5753f0\"]?.latest?.[\"transformed\"], \"Execute Workflow Trigger\": {{ctx}}, \"AI Agent\": {{steps.llm_7b7dc0c299.result}}, \"OpenAI\": {{steps.xf_1ac1ca9113.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Params for apify/APIFY_RUN_ACTOR_SYNC_GET_DATASET_ITEMS (n8n node \"Get Video Transcription\").\nreturn (() => ({ \"actorId\": \"dB9f4B02ocpTICIEY\", \"input\": (() => { const __v = `{\n \"startUrls\": [\n \"${$('Execute Workflow Trigger').item.json.query.video_url}\"\n ]\n}`; if (typeof __v !== 'string') return __v ?? {}; try { return JSON.parse(__v); } catch { return { __raw: __v }; } })() }))();"
       }
     },
     {
@@ -561,7 +599,7 @@
     {
       "nodeId": "node_501b75f31b",
       "actorId": "actor_501b75f31b",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Edit Fields",
       "color": "#F59E0B",
       "position": {
@@ -573,14 +611,14 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"response\"] = (JSON.stringify(` Comments: ${$json.items.map(item => { const topLevelComment = `${item.snippet.topLevelComment.snippet.authorDisplayName}: ${item.snippet.topLevelComment.snippet.textOriginal}`; const replies = item.replies?.comments.map(reply => `${reply.snippet.authorDisplayName}: ${reply.snippet.textOriginal}` ).join('\\n') || ''; return [topLevelComment, replies].filter(Boolean).join('\\n'); }).join('\\n\\n')} `));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"response\"] = (JSON.stringify(` Comments: ${$json.items.map(item => { const topLevelComment = `${item.snippet.topLevelComment.snippet.authorDisplayName}: ${item.snippet.topLevelComment.snippet.textOriginal}`; const replies = item.replies?.comments.map(reply => `${reply.snippet.authorDisplayName}: ${reply.snippet.textOriginal}` ).join('\\n') || ''; return [topLevelComment, replies].filter(Boolean).join('\\n'); }).join('\\n\\n')} `));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
       }
     },
     {
       "nodeId": "node_2811bed165",
       "actorId": "actor_2811bed165",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Response",
       "color": "#F59E0B",
       "position": {
@@ -592,8 +630,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"response\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"response\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
       }
     },
     {
@@ -603,8 +641,8 @@
       "label": "End",
       "color": "#EF4444",
       "position": {
-        "x": 840,
-        "y": 360
+        "x": 1220,
+        "y": 620
       },
       "size": {
         "width": 240,
@@ -644,7 +682,6 @@
         "projectId": "",
         "environmentTagId": "",
         "initialContext": {
-          "chatInput": "",
           "sessionId": "",
           "googleApiKey": {
             "$workflowSecret": "GOOGLE_API_KEY"
@@ -655,11 +692,27 @@
   ],
   "edges": [
     {
+      "source": "node_83339b0128",
+      "target": "node_9add5753f0",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeChatTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_83339b0128",
+      "target": "node_9add5753f0",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeChatTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
       "source": "node_b4373e3315",
       "target": "node_01a4780636",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -667,7 +720,7 @@
       "target": "node_01a4780636",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -676,14 +729,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_3297f57fa6",
       "target": "node_6fb876defa",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -691,7 +744,7 @@
       "target": "node_6fb876defa",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -700,14 +753,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_aef37bbb52",
       "target": "node_2a4cf7772c",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -715,7 +768,7 @@
       "target": "node_2a4cf7772c",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -724,14 +777,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_a39ae7990d",
       "target": "node_5e5afacec3",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -739,7 +792,7 @@
       "target": "node_5e5afacec3",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -748,14 +801,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_ef50aa410b",
       "target": "node_c7c513eff6",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -763,7 +816,7 @@
       "target": "node_c7c513eff6",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -772,14 +825,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_8725531920",
       "target": "node_c5c1a6c10d",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -787,7 +840,7 @@
       "target": "node_c5c1a6c10d",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -796,14 +849,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_055e1aaa12",
       "target": "node_b85a0bf99b",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -811,7 +864,7 @@
       "target": "node_b85a0bf99b",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -819,7 +872,7 @@
       "target": "node_45c7c212db",
       "sourceOutput": "transformed",
       "targetInput": "url",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -827,7 +880,7 @@
       "target": "node_45c7c212db",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -835,7 +888,7 @@
       "target": "node_f33b032201",
       "sourceOutput": "transformed",
       "targetInput": "url",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -843,7 +896,7 @@
       "target": "node_f33b032201",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -851,7 +904,7 @@
       "target": "node_ec4c26e2f6",
       "sourceOutput": "transformed",
       "targetInput": "url",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -859,7 +912,7 @@
       "target": "node_ec4c26e2f6",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -867,7 +920,7 @@
       "target": "node_6bcbede3a5",
       "sourceOutput": "transformed",
       "targetInput": "url",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -875,7 +928,7 @@
       "target": "node_6bcbede3a5",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -883,7 +936,7 @@
       "target": "node_6c297bac45",
       "sourceOutput": "transformed",
       "targetInput": "url",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -891,7 +944,7 @@
       "target": "node_6c297bac45",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeHttpRequest"
     },
     {
@@ -900,7 +953,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_90949fc367",
@@ -908,14 +961,14 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_407ca2d113",
       "target": "node_19a51ec234",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -923,15 +976,15 @@
       "target": "node_19a51ec234",
       "sourceOutput": "transformed",
       "targetInput": "params",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
-      "source": "node_2d0265322a",
+      "source": "node_9add5753f0",
       "target": "node_7b7dc0c299",
-      "sourceOutput": "trigger",
+      "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdecliAgent"
     },
     {
@@ -940,7 +993,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_ec4c26e2f6",
@@ -948,15 +1001,15 @@
       "sourceOutput": "body",
       "targetInput": "source",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
-      "source": "node_2d0265322a",
+      "source": "node_dbede1136a",
       "target": "node_b4373e3315",
       "sourceOutput": "trigger",
       "targetInput": "RUN",
       "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_45c7c212db",
@@ -964,7 +1017,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_45c7c212db",
@@ -972,7 +1025,7 @@
       "sourceOutput": "body",
       "targetInput": "source",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_f33b032201",
@@ -980,7 +1033,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_f33b032201",
@@ -988,23 +1041,23 @@
       "sourceOutput": "body",
       "targetInput": "source",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_501b75f31b",
       "target": "node_2811bed165",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_501b75f31b",
       "target": "node_2811bed165",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_6bcbede3a5",
@@ -1012,7 +1065,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_6bcbede3a5",
@@ -1020,7 +1073,7 @@
       "sourceOutput": "body",
       "targetInput": "source",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_6c297bac45",
@@ -1028,7 +1081,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_6c297bac45",
@@ -1036,7 +1089,7 @@
       "sourceOutput": "body",
       "targetInput": "source",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_01a4780636",
@@ -1044,7 +1097,7 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_6fb876defa",
@@ -1052,7 +1105,7 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_2a4cf7772c",
@@ -1060,7 +1113,7 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_5e5afacec3",
@@ -1068,7 +1121,7 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_c7c513eff6",
@@ -1076,7 +1129,7 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_c5c1a6c10d",
@@ -1092,7 +1145,7 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_19a51ec234",
@@ -1100,7 +1153,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_19a51ec234",
@@ -1108,23 +1161,23 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_1ac1ca9113",
       "target": "node_2811bed165",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_1ac1ca9113",
       "target": "node_2811bed165",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_7b7dc0c299",
@@ -1139,7 +1192,7 @@
       "target": "node_1735208413",
       "sourceOutput": "transformed",
       "targetInput": "result",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeEnd"
     }
   ],
@@ -1172,15 +1225,16 @@
       "NodeBranch",
       "NodeCdeConnector",
       "NodeCdecliAgent",
+      "NodeChatTrigger",
       "NodeEnd",
       "NodeHttpRequest",
+      "NodeJavascript",
       "NodeStart",
-      "NodeTransform",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 22,
-      "yantraSteps": 32,
+      "yantraSteps": 34,
       "foldedHelpers": [
         "OpenAI Chat Model",
         "search",
@@ -1201,23 +1255,23 @@
     "tier": "ready",
     "blockers": [
       {
-        "code": "trigger-replaced",
-        "node": "Execute Workflow Trigger",
-        "detail": "n8n-nodes-base.executeWorkflowTrigger became the Start node"
+        "code": "webhook-registration",
+        "node": "When chat message received",
+        "detail": "generic trigger URL requires registration"
       },
       {
         "code": "trigger-replaced",
-        "node": "When chat message received",
-        "detail": "@n8n/n8n-nodes-langchain.chatTrigger became the Start node"
+        "node": "Execute Workflow Trigger",
+        "detail": "n8n-nodes-base.executeWorkflowTrigger became the Start node"
       }
     ],
     "setup": [
+      "\"When chat message received\": save the workflow, then register node node_83339b0128 via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL. Use bearer authentication with credentials supplied at registration.",
       "\"Execute Workflow Trigger\" (executeWorkflowTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
-      "\"When chat message received\" (chatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
       "Workflow secret GOOGLE_API_KEY: Google API key (YouTube Data API enabled) for www.googleapis.com (query parameter key=<secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
       "Connect the apify connector (credential).",
       "Connect the openai connector (credential).",
-      "Provide run inputs: chatInput, sessionId, query."
+      "Provide run inputs: sessionId, nodes, query."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -1292,7 +1346,7 @@
         {
           "node": "When chat message received",
           "type": "@n8n/n8n-nodes-langchain.chatTrigger",
-          "as": "NodeStart"
+          "as": "NodeChatTrigger"
         },
         {
           "node": "Execute Workflow Trigger",
@@ -1301,7 +1355,6 @@
         }
       ],
       "hints": [
-        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
         "The original was a sub-workflow called by another workflow; pass its inputs as run inputs.",
         "\"AI Agent\" kept conversation memory (memoryPostgresChat); sessionId is set to the run-input sessionId.",
         "\"AI Agent\" used agent tools in the original: search (toolWorkflow), analyze_thumbnail (toolWorkflow), get_list_of_videos (toolWorkflow), get_channel_details (toolWorkflow), video_transcription (toolWorkflow), get_list_of_comments (toolWorkflow), get_video_description (toolWorkflow). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
@@ -1332,12 +1385,17 @@
       "### Replace credentials in all nodes - Apify, OpenAI, Google"
     ],
     "nodes": {
-      "node_2d0265322a": {
+      "node_83339b0128": {
         "n8n": "When chat message received",
-        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger",
-        "also": [
-          "Execute Workflow Trigger"
-        ]
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
+      },
+      "node_9add5753f0": {
+        "n8n": "When chat message received",
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
+      },
+      "node_dbede1136a": {
+        "n8n": "Execute Workflow Trigger",
+        "n8nType": "n8n-nodes-base.executeWorkflowTrigger"
       },
       "node_7b7dc0c299": {
         "n8n": "AI Agent",

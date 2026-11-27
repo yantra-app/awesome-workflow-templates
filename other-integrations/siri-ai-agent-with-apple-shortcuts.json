@@ -5,46 +5,30 @@
   "isPublic": true,
   "nodes": [
     {
-      "nodeId": "node_cdc99def13",
-      "actorId": "actor_cdc99def13",
-      "type": "NodeStart",
-      "label": "Start",
-      "color": "#22C55E",
+      "nodeId": "node_d94cbc0eb3",
+      "actorId": "actor_d94cbc0eb3",
+      "type": "NodeWebhookTrigger",
+      "label": "When called by Apple Shortcut",
+      "color": "#6366F1",
       "position": {
         "x": 80,
         "y": 100
       },
       "size": {
-        "width": 240,
-        "height": 100
-      }
-    },
-    {
-      "nodeId": "node_b44642c97a",
-      "actorId": "actor_b44642c97a",
-      "type": "NodeCdecliAgent",
-      "label": "AI Agent",
-      "color": "#8B5CF6",
-      "position": {
-        "x": 840,
-        "y": 100
-      },
-      "size": {
         "width": 320,
-        "height": 260
+        "height": 220
       },
       "inputs": {
-        "model": "gpt-4o-mini",
-        "sessionId": "",
-        "message": "Here is my request: {{body.input}}\n",
-        "system": "{{last.transformed}}"
+        "requiredAuthMode": "none",
+        "responseMode": "responseNode",
+        "httpMethod": "POST"
       }
     },
     {
-      "nodeId": "node_528abe2e2a",
-      "actorId": "actor_528abe2e2a",
-      "type": "NodeTransform",
-      "label": "System: AI Agent",
+      "nodeId": "node_0451c3fbf7",
+      "actorId": "actor_0451c3fbf7",
+      "type": "NodeJavascript",
+      "label": "When called by Apple Shortcut: request",
       "color": "#F59E0B",
       "position": {
         "x": 460,
@@ -55,18 +39,150 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// System: AI Agent.\nconst __promptValue = `## Task\nYou are a helpful assistant. Provide concise replies as the user receives them via voice on their mobile phone. Avoid using symbols like \"\\\\n\" to prevent them from being narrated.\n\n## Context\n- Today is ${$now.format('dd LLL yy')}.\n- Current time: ${$now.format('h:mm a')} in Berlin, Germany.\n- When asked, you are an AI Agent running as an n8n workflow.\n\n## Output\nKeep responses short and clear, optimized for voice delivery. Don't hallucinate, if you don't know the answer, say you don't know. `;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+        "migratedTransform": true,
+        "logic": "const ctx = {{ctx}};\nconst request = ctx.nodes?.[\"node_d94cbc0eb3\"]?.latest ?? {};\nreturn { body: source, headers: request.headers, query: request.query, params: {}, method: request.method, rawBody: request.rawBody, rawBodyEncoding: request.rawBodyEncoding };"
       }
     },
     {
-      "nodeId": "node_631f3959a8",
-      "actorId": "actor_631f3959a8",
+      "nodeId": "node_b44642c97a",
+      "actorId": "actor_b44642c97a",
+      "type": "NodeCdecliAgent",
+      "label": "AI Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "gpt-4o-mini",
+        "sessionId": "",
+        "system": "{{llm_system_528abe2e2a}}",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_528abe2e2a",
+      "actorId": "actor_528abe2e2a",
+      "type": "NodeJavascript",
+      "label": "System: AI Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// System: AI Agent.\nconst __promptValue = `## Task\nYou are a helpful assistant. Provide concise replies as the user receives them via voice on their mobile phone. Avoid using symbols like \"\\\\n\" to prevent them from being narrated.\n\n## Context\n- Today is ${$now.format('dd LLL yy')}.\n- Current time: ${$now.format('h:mm a')} in Berlin, Germany.\n- When asked, you are an AI Agent running as an n8n workflow.\n\n## Output\nKeep responses short and clear, optimized for voice delivery. Don't hallucinate, if you don't know the answer, say you don't know. `;\nreturn { \"llm_system_528abe2e2a\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_12acb1a6fe",
+      "actorId": "actor_12acb1a6fe",
+      "type": "NodeUpdateContext",
+      "label": "Save System: AI Agent",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_cf6d41dc19",
+      "actorId": "actor_cf6d41dc19",
+      "type": "NodeJavascript",
+      "label": "Prompt: AI Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: AI Agent.\nconst __promptValue = `Here is my request: ${$json.body.input}\n`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_99565e3156",
+      "actorId": "actor_99565e3156",
+      "type": "NodeRespondToWebhook",
+      "label": "Respond to Apple Shortcut",
+      "color": "#6366F1",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 180
+      },
+      "inputs": {
+        "bodyMode": "text",
+        "statusCode": 200,
+        "headers": {}
+      }
+    },
+    {
+      "nodeId": "node_6718a2fcc9",
+      "actorId": "actor_6718a2fcc9",
+      "type": "NodeJavascript",
+      "label": "Respond to Apple Shortcut: body",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst body = ($json);\nreturn String(body ?? \"\");"
+      }
+    },
+    {
+      "nodeId": "node_f685a34780",
+      "actorId": "actor_f685a34780",
+      "type": "NodeJavascript",
+      "label": "Finish after response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "return source ?? {};"
+      }
+    },
+    {
+      "nodeId": "node_5f29cca720",
+      "actorId": "actor_5f29cca720",
       "type": "NodeEnd",
       "label": "End",
       "color": "#EF4444",
       "position": {
-        "x": 1220,
+        "x": 3500,
         "y": 100
       },
       "size": {
@@ -90,39 +206,138 @@
       },
       "inputs": {
         "projectId": "",
-        "environmentTagId": "",
-        "initialContext": {
-          "body": {},
-          "query": {},
-          "headers": {}
-        }
+        "environmentTagId": ""
       }
     }
   ],
   "edges": [
     {
+      "source": "node_d94cbc0eb3",
+      "target": "node_0451c3fbf7",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_d94cbc0eb3",
+      "target": "node_0451c3fbf7",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
       "source": "node_528abe2e2a",
+      "target": "node_12acb1a6fe",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_528abe2e2a",
+      "target": "node_12acb1a6fe",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_12acb1a6fe",
+      "target": "node_cf6d41dc19",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_cf6d41dc19",
       "target": "node_b44642c97a",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdecliAgent"
     },
     {
-      "source": "node_b44642c97a",
-      "target": "node_631f3959a8",
-      "sourceOutput": "text",
-      "targetInput": "result",
-      "sourceNodeType": "NodeCdecliAgent",
-      "targetNodeType": "NodeEnd"
+      "source": "node_6718a2fcc9",
+      "target": "node_99565e3156",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeRespondToWebhook"
     },
     {
-      "source": "node_cdc99def13",
-      "target": "node_528abe2e2a",
-      "sourceOutput": "trigger",
+      "source": "node_6718a2fcc9",
+      "target": "node_99565e3156",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeRespondToWebhook"
+    },
+    {
+      "source": "node_b44642c97a",
+      "target": "node_6718a2fcc9",
+      "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_b44642c97a",
+      "target": "node_6718a2fcc9",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_0451c3fbf7",
+      "target": "node_528abe2e2a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_0451c3fbf7",
+      "target": "node_528abe2e2a",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_0451c3fbf7",
+      "target": "node_cf6d41dc19",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_99565e3156",
+      "target": "node_f685a34780",
+      "sourceOutput": "onComplete",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_99565e3156",
+      "target": "node_f685a34780",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_f685a34780",
+      "target": "node_5f29cca720",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeEnd"
     }
   ],
   "template": {
@@ -134,13 +349,15 @@
     "nodeTypes": [
       "NodeCdecliAgent",
       "NodeEnd",
-      "NodeStart",
-      "NodeTransform",
+      "NodeJavascript",
+      "NodeRespondToWebhook",
+      "NodeUpdateContext",
+      "NodeWebhookTrigger",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 4,
-      "yantraSteps": 3,
+      "yantraSteps": 9,
       "foldedHelpers": [
         "OpenAI Chat Model"
       ]
@@ -153,14 +370,14 @@
     "tier": "ready",
     "blockers": [
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "When called by Apple Shortcut",
-        "detail": "n8n-nodes-base.webhook became the Start node"
+        "detail": "generic trigger URL requires registration"
       }
     ],
     "setup": [
-      "\"When called by Apple Shortcut\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
-      "Provide run inputs: body, query, headers."
+      "\"When called by Apple Shortcut\": save the workflow, then register node node_d94cbc0eb3 via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL.",
+      "Provide run inputs: llm_system_528abe2e2a."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -181,11 +398,10 @@
         {
           "node": "When called by Apple Shortcut",
           "type": "n8n-nodes-base.webhook",
-          "as": "NodeStart"
+          "as": "NodeWebhookTrigger"
         }
       ],
       "hints": [
-        "The original started from an inbound webhook (POST /assistant). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
       ]
     },
@@ -195,7 +411,11 @@
       "### ... or watch set up video [5 min]\n[![Siri Template Thumbnail](https://uploads.n8n.io/devrel/thumb-siri.png#full-width)](https://youtu.be/dewsB-4iGA8)"
     ],
     "nodes": {
-      "node_cdc99def13": {
+      "node_d94cbc0eb3": {
+        "n8n": "When called by Apple Shortcut",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_0451c3fbf7": {
         "n8n": "When called by Apple Shortcut",
         "n8nType": "n8n-nodes-base.webhook"
       },
@@ -207,7 +427,27 @@
         "n8n": "AI Agent",
         "n8nType": "@n8n/n8n-nodes-langchain.agent"
       },
-      "node_631f3959a8": {
+      "node_12acb1a6fe": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_cf6d41dc19": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_99565e3156": {
+        "n8n": "Respond to Apple Shortcut",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_6718a2fcc9": {
+        "n8n": "Respond to Apple Shortcut",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_f685a34780": {
+        "n8n": "Respond to Apple Shortcut",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_5f29cca720": {
         "n8n": "Respond to Apple Shortcut",
         "n8nType": "n8n-nodes-base.respondToWebhook"
       },

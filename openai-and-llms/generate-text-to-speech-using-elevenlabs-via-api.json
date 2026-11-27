@@ -5,25 +5,30 @@
   "isPublic": true,
   "nodes": [
     {
-      "nodeId": "node_691fcb586e",
-      "actorId": "actor_691fcb586e",
-      "type": "NodeStart",
-      "label": "Start",
-      "color": "#22C55E",
+      "nodeId": "node_7f32894467",
+      "actorId": "actor_7f32894467",
+      "type": "NodeWebhookTrigger",
+      "label": "Webhook",
+      "color": "#6366F1",
       "position": {
         "x": 80,
         "y": 100
       },
       "size": {
-        "width": 240,
-        "height": 100
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "none",
+        "responseMode": "responseNode",
+        "httpMethod": "POST"
       }
     },
     {
-      "nodeId": "node_0682f499c7",
-      "actorId": "actor_0682f499c7",
-      "type": "NodeTransform",
-      "label": "If params correct: condition",
+      "nodeId": "node_1700f8dec5",
+      "actorId": "actor_1700f8dec5",
+      "type": "NodeJavascript",
+      "label": "Webhook: request",
       "color": "#F59E0B",
       "position": {
         "x": 460,
@@ -34,8 +39,27 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return Boolean(((\"voice_id\") != null) && ((\"text\") != null));"
+        "migratedTransform": true,
+        "logic": "const ctx = {{ctx}};\nconst request = ctx.nodes?.[\"node_7f32894467\"]?.latest ?? {};\nreturn { body: source, headers: request.headers, query: request.query, params: {}, method: request.method, rawBody: request.rawBody, rawBodyEncoding: request.rawBodyEncoding };"
+      }
+    },
+    {
+      "nodeId": "node_0682f499c7",
+      "actorId": "actor_0682f499c7",
+      "type": "NodeJavascript",
+      "label": "If params correct: condition",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "return Boolean(((\"voice_id\") != null) && ((\"text\") != null));"
       }
     },
     {
@@ -45,7 +69,7 @@
       "label": "If params correct: condition?",
       "color": "#0EA5E9",
       "position": {
-        "x": 840,
+        "x": 1220,
         "y": 100
       },
       "size": {
@@ -60,7 +84,7 @@
       "label": "Generate voice",
       "color": "#0EA5E9",
       "position": {
-        "x": 1220,
+        "x": 1600,
         "y": 100
       },
       "size": {
@@ -69,23 +93,84 @@
       },
       "inputs": {
         "method": "POST",
-        "url": "https://api.elevenlabs.io/v1/text-to-speech/{{body.voice_id}}",
+        "url": "https://api.elevenlabs.io/v1/text-to-speech/{{last.transformed.body.voice_id}}",
         "headers": {
           "Content-Type": "application/json",
           "xi-api-key": "{{elevenlabsApiKey}}"
         },
-        "body": "{\n \"text\": \"{{body.text}}\"\n} "
+        "body": "{\n \"text\": \"{{last.transformed.body.text}}\"\n} "
       }
     },
     {
-      "nodeId": "node_1cad437839",
-      "actorId": "actor_1cad437839",
+      "nodeId": "node_2f2450b539",
+      "actorId": "actor_2f2450b539",
+      "type": "NodeRespondToWebhook",
+      "label": "Error",
+      "color": "#6366F1",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 180
+      },
+      "inputs": {
+        "bodyMode": "json",
+        "statusCode": 200,
+        "headers": {},
+        "body": {
+          "error": "Invalid inputs."
+        }
+      }
+    },
+    {
+      "nodeId": "node_bec01ad976",
+      "actorId": "actor_bec01ad976",
+      "type": "NodeJavascript",
+      "label": "Respond to Webhook",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "throw new Error(\"uses an unsupported explicit response body or output\");"
+      }
+    },
+    {
+      "nodeId": "node_8529c1b4ca",
+      "actorId": "actor_8529c1b4ca",
+      "type": "NodeJavascript",
+      "label": "Finish after response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "return source ?? {};"
+      }
+    },
+    {
+      "nodeId": "node_9324ec5830",
+      "actorId": "actor_9324ec5830",
       "type": "NodeEnd",
       "label": "End",
       "color": "#EF4444",
       "position": {
-        "x": 80,
-        "y": 360
+        "x": 2360,
+        "y": 100
       },
       "size": {
         "width": 240,
@@ -93,14 +178,14 @@
       }
     },
     {
-      "nodeId": "node_8bf8c60659",
-      "actorId": "actor_8bf8c60659",
+      "nodeId": "node_120b99f610",
+      "actorId": "actor_120b99f610",
       "type": "NodeEnd",
       "label": "End 2",
       "color": "#EF4444",
       "position": {
-        "x": 1600,
-        "y": 100
+        "x": 2360,
+        "y": 360
       },
       "size": {
         "width": 240,
@@ -125,9 +210,6 @@
         "projectId": "",
         "environmentTagId": "",
         "initialContext": {
-          "body": {},
-          "query": {},
-          "headers": {},
           "elevenlabsApiKey": {
             "$workflowSecret": "ELEVENLABS_API_KEY"
           }
@@ -137,11 +219,27 @@
   ],
   "edges": [
     {
+      "source": "node_7f32894467",
+      "target": "node_1700f8dec5",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_7f32894467",
+      "target": "node_1700f8dec5",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
       "source": "node_0682f499c7",
       "target": "node_16dc6e9610",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -149,7 +247,7 @@
       "target": "node_16dc6e9610",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -161,19 +259,75 @@
       "targetNodeType": "NodeHttpRequest"
     },
     {
-      "source": "node_691fcb586e",
-      "target": "node_0682f499c7",
-      "sourceOutput": "trigger",
+      "source": "node_16dc6e9610",
+      "target": "node_2f2450b539",
+      "sourceOutput": "FALSE",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeBranch",
+      "targetNodeType": "NodeRespondToWebhook"
+    },
+    {
+      "source": "node_1700f8dec5",
+      "target": "node_0682f499c7",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_1700f8dec5",
+      "target": "node_0682f499c7",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_2769602e9d",
-      "target": "node_8bf8c60659",
-      "sourceOutput": "body",
-      "targetInput": "result",
+      "target": "node_bec01ad976",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
       "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_2769602e9d",
+      "target": "node_bec01ad976",
+      "sourceOutput": "body",
+      "targetInput": "source",
+      "sourceNodeType": "NodeHttpRequest",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_2f2450b539",
+      "target": "node_8529c1b4ca",
+      "sourceOutput": "onComplete",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_2f2450b539",
+      "target": "node_8529c1b4ca",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_8529c1b4ca",
+      "target": "node_9324ec5830",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_bec01ad976",
+      "target": "node_120b99f610",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeEnd"
     }
   ],
@@ -199,13 +353,14 @@
       "NodeBranch",
       "NodeEnd",
       "NodeHttpRequest",
-      "NodeStart",
-      "NodeTransform",
+      "NodeJavascript",
+      "NodeRespondToWebhook",
+      "NodeWebhookTrigger",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 5,
-      "yantraSteps": 4,
+      "yantraSteps": 8,
       "foldedHelpers": []
     },
     "source": {
@@ -213,37 +368,50 @@
       "path": "OpenAI_and_LLMs/Generate Text-to-Speech Using Elevenlabs via API.json",
       "commit": "827110332c21cbe000ab13f6d292d5adb1f1f8db"
     },
-    "tier": "ready",
+    "tier": "experimental",
     "blockers": [
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "Webhook",
-        "detail": "n8n-nodes-base.webhook became the Start node"
+        "detail": "generic trigger URL requires registration"
+      },
+      {
+        "code": "entry-point-unsupported",
+        "node": "Respond to Webhook",
+        "detail": "n8n-nodes-base.respondToWebhook: uses an unsupported explicit response body or output"
       }
     ],
     "setup": [
-      "\"Webhook\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
-      "Workflow secret ELEVENLABS_API_KEY: ElevenLabs API key for api.elevenlabs.io (xi-api-key: <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
-      "Provide run inputs: body, query, headers."
+      "\"Webhook\": save the workflow, then register node node_7f32894467 via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL.",
+      "\"Respond to Webhook\" (n8n-nodes-base.respondToWebhook) needs attention before it runs: uses an unsupported explicit response body or output.",
+      "Workflow secret ELEVENLABS_API_KEY: ElevenLabs API key for api.elevenlabs.io (xi-api-key: <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
-      "status": "ready",
+      "status": "needs-setup",
       "coverage": 1,
       "unmapped": [],
-      "approximate": [],
+      "approximate": [
+        {
+          "node": "Respond to Webhook",
+          "n8n": "n8n-nodes-base.respondToWebhook",
+          "action": "NodeTransform",
+          "blocker": "entry-point-unsupported",
+          "reason": "uses an unsupported explicit response body or output"
+        }
+      ],
       "folded": [],
       "removedEdges": [],
       "triggers": [
         {
           "node": "Webhook",
           "type": "n8n-nodes-base.webhook",
-          "as": "NodeStart"
+          "as": "NodeWebhookTrigger"
         }
       ],
       "hints": [
-        "The original started from an inbound webhook (POST /generate-voice). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
         "\"Generate voice\" authenticated with httpCustomAuth in the original; add the matching Authorization header (or use the service's connector).",
+        "\"Respond to Webhook\" (n8n-nodes-base.respondToWebhook): uses an unsupported explicit response body or output",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
       ]
     },
@@ -251,7 +419,11 @@
       "## Generate Text-to-Speech Using Elevenlabs via API\nThis workflow provides an API endpoint to generate speech from text using [Elevenlabs.io](https://elevenlabs.io/), a popular text-to-speech service.\n\n### Step 1: Configure Custom Credentials in n8n\nTo set up your credentials in n8n, create a new custom authentication entry with the following JSON structure:\n```json\n{\n \"headers\": {\n \"xi-api-key\": \"your-elevenlabs-api-key\"\n }\n}\n```\nReplace `\"your-elevenlabs-api-key\"` with your actual Elevenlabs API key.\n\n### Step 2: Send a POST Request to the Webhook\nSend a POST request to the workflow's webhook endpoint with these two parameters:\n- `voice_id`: The ID of the voice from Elevenlabs that you want to use.\n- `text`: The text you want to convert to speech.\n\nThis workflow has been a significant time-saver in my video production tasks. I hope it proves just as useful to you!\n\nHappy automating! \nThe n8Ninja"
     ],
     "nodes": {
-      "node_691fcb586e": {
+      "node_7f32894467": {
+        "n8n": "Webhook",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_1700f8dec5": {
         "n8n": "Webhook",
         "n8nType": "n8n-nodes-base.webhook"
       },
@@ -268,13 +440,25 @@
         "n8nType": "n8n-nodes-base.httpRequest",
         "auth": "httpCustomAuth"
       },
-      "node_1cad437839": {
+      "node_2f2450b539": {
         "n8n": "Error",
         "n8nType": "n8n-nodes-base.respondToWebhook"
       },
-      "node_8bf8c60659": {
+      "node_bec01ad976": {
         "n8n": "Respond to Webhook",
         "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_8529c1b4ca": {
+        "n8n": "Error",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_9324ec5830": {
+        "n8n": "Error",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_120b99f610": {
+        "n8n": "__end:Respond to Webhook",
+        "n8nType": "synthetic"
       },
       "node_853095e4ed": {
         "n8n": "__configs",

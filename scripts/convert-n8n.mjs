@@ -16,12 +16,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { NODE_TYPES, DATA_OUTPUT, DONE_OUTPUT, RUN_INPUT } from './lib/yantra-nodes.mjs';
+import { NODE_TYPES, DATA_OUTPUT, DONE_OUTPUT, RUN_INPUT, ENTRY_TYPES, GENERIC_ENTRY_TYPES } from './lib/yantra-nodes.mjs';
 import { migrateLlmChains } from './lib/llm-chain.mjs';
 import { simplifyLlmHelpers } from './lib/llm-helpers.mjs';
 import { planItemLoops, isLoopReturn } from './lib/item-loops.mjs';
 import { planRepeatLoops } from './lib/repeat-loops.mjs';
-import { beginRepeat, wireRepeats, buildRepeatWait } from './lib/repeat-converter.mjs';
+import { beginRepeat, wireRepeats } from './lib/repeat-converter.mjs';
+import { buildWorkflowWait } from './lib/wait-converter.mjs';
+import { triggerSettings, explicitResponseSettings } from './lib/generic-entry-points.mjs';
 import * as M from './lib/n8n-mapping.mjs';
 import * as X from './lib/expressions.mjs';
 import { evaluate, scanLiterals, SECRET_NAME, AUTH_HEADER, EXTRA_REQUIRED } from './lib/quality.mjs';
@@ -493,6 +495,7 @@ class Converter {
    */
   stepRefJs(name) {
     const unit = this.units.get(name);
+    if (unit?.entryReference) return `{{nodes.${unit.entryReference.nodeId}.latest.${unit.entryReference.socket}}}`;
     if (unit?.kind === 'start') return '{{ctx}}';
     if (this.repeatLoops?.size) return `$(${JSON.stringify(name)}).first().json`;
     if (unit?.stepKey) return `{{steps.${unit.stepKey}.result}}`;
@@ -555,6 +558,35 @@ class Converter {
     return { key: d.key, nodeType: d.nodeType, unit: this.units.get(inc.src) };
   }
 
+  stringifyItemParameter(value, name, pred, { jsonBody = false } = {}) {
+    if (!X.isExpression(value) || pred.start || this.predOverride || this.repeatLoops?.size || this.loopReturns?.size) {
+      return null;
+    }
+    const incoming = this.incoming.get(name) || [];
+    if (incoming.length !== 1 || pred.unit?.name !== incoming[0].src) return null;
+    const { src, outIdx } = incoming[0];
+    if (this.edgesKept.filter((edge) => edge.src === src && edge.outIdx === outIdx).length !== 1) return null;
+    const exit = pred.unit.exits[outIdx];
+    if (!exit?.data?.nodeId || exit.data.nodeId !== exit.trigger?.nodeId || exit.many) return null;
+    if (['loop', 'mapped', 'initialized'].includes(pred.unit.kind)) return null;
+
+    const segments = X.parseExpression(value);
+    if (!segments.some((segment) => segment.expr !== undefined)) return null;
+    if (jsonBody && segments.length !== 1) return null;
+    if (segments.some((segment) =>
+      segment.expr !== undefined
+        ? !/^JSON\.stringify\(\s*\$json\s*\)$/.test(segment.expr)
+        : segment.text.includes('{{')
+    )) return null;
+
+    // Match the existing Transform's $json selection, including empty arrays
+    // and null first entries. Use the actual data producer behind this trigger.
+    const payload = `nodes[${JSON.stringify(exit.data.nodeId)}].latest[${JSON.stringify(exit.data.key)}]`;
+    const item = `json.isArray(${payload}) ? (${payload}[0] ?? ${payload}) : ${payload}`;
+    if (jsonBody) return `{{= json.parse(json.stringify(${item})) }}`;
+    return segments.map((segment) => segment.text ?? `{{= json.stringify(${item}) }}`).join('');
+  }
+
   // -- expression rendering --------------------------------------------------
 
   /**
@@ -608,24 +640,12 @@ class Converter {
         return `{{last.${pred.key}${path ? '.' + path : ''}}}`;
       }
       const unit = this.units.get(c.node);
+      if (unit?.entryReference) return `{{nodes.${unit.entryReference.nodeId}.latest.${unit.entryReference.socket}${c.path ? '.' + c.path : ''}}}`;
       if (unit?.kind === 'start') return `{{${c.path || 'ctx'}}}`;
       if (this.repeatLoops?.size) return null;
       // Loop item adapters publish by label in both the canvas and server
       // runtime. Resolve named-loop expressions in a wired Transform.
       if (['loop', 'mapped', 'initialized'].includes(unit?.kind)) return null;
-      const srcNode = this.byName.get(c.node);
-      if (
-        srcNode &&
-        (srcNode.type === 'n8n-nodes-base.executeWorkflowTrigger' ||
-          srcNode.type === 'n8n-nodes-base.manualTrigger' ||
-          srcNode.type === 'n8n-nodes-base.webhook' ||
-          srcNode.type === 'n8n-nodes-base.formTrigger' ||
-          srcNode.type === 'n8n-nodes-base.form' ||
-          srcNode.type === '@n8n/n8n-nodes-langchain.chatTrigger' ||
-          srcNode.type === '@n8n/n8n-nodes-langchain.manualChatTrigger')
-      ) {
-        return `{{${c.path || 'ctx'}}}`;
-      }
       if (unit?.stepKey) return `{{steps.${unit.stepKey}.result${c.path ? '.' + c.path : ''}}}`;
       if (unit && pred.unit && unit.name === pred.unit.name) {
         const path = this.stripLlmPath(c.path, pred);
@@ -678,6 +698,10 @@ class Converter {
       const name = this.order[i];
       const n8n = this.byName.get(name);
       const unit = this.units.get(name);
+      if (unit?.entryReference) {
+        map[name] = { kind: 'node', key: unit.entryReference.nodeId, socket: unit.entryReference.socket };
+        continue;
+      }
       if (['loop', 'mapped', 'initialized'].includes(unit?.kind)) {
         const output = unit.kind === 'loop' && !unit.plan.body?.has(currentName) ? unit.doneNode : unit.lastNode;
         map[name] = { kind: 'output', key: output.label, socket: 'transformed' };
@@ -809,6 +833,98 @@ class Converter {
     const node = this.addNode('start', n, 'NodeStart', 'Start', {});
     this.startUnit = { name: n.name, kind: 'start', entry: null, dataIn: null, exits: [{ trigger: this.sock(node, 'trigger'), data: null }], flags: {}, lastNode: node };
     return this.startUnit;
+  }
+
+  reportEntryGap(n, reason) {
+    this.approximateStep(n, n.type, reason, { blocker: 'entry-point-unsupported', reason });
+  }
+
+  unsupportedEntryStep(n, reason) {
+    this.reportEntryGap(n, reason);
+    const body = `throw new Error(${JSON.stringify(reason)});`;
+    return this.simpleUnit(n.name, 'data', this.transformNode(n, 'entry-gap', n.name, body, this.predInfo(n.name)));
+  }
+
+  buildGenericTrigger(n) {
+    let converted;
+    try {
+      converted = triggerSettings(n);
+    } catch (error) {
+      this.reportEntryGap(n, error.message);
+      return this.buildStart(n);
+    }
+    const { type, inputs, gaps } = converted;
+    for (const reason of gaps) this.reportEntryGap(n, reason);
+    if (inputs.responseMode === 'responseNode' && !this.order.some((name) =>
+      this.byName.get(name).type === 'n8n-nodes-base.respondToWebhook' && this.reaches(n.name, name))) {
+      this.reportEntryGap(n, 'requires a supported Respond to Webhook node on this trigger path');
+    }
+    this.report.triggers.push({ node: n.name, type: n.type, as: type });
+    const node = this.addNode('entry-point', n, type, n.name, inputs);
+    let output = node;
+    let trigger = this.sock(node, 'onEvent');
+    if (type !== 'NodeFormTrigger') {
+      const body = type === 'NodeWebhookTrigger'
+        ? [
+            'const ctx = {{ctx}};',
+            `const request = ctx.nodes?.[${JSON.stringify(node.nodeId)}]?.latest ?? {};`,
+            'return { body: source, headers: request.headers, query: request.query, params: {}, method: request.method, rawBody: request.rawBody, rawBodyEncoding: request.rawBodyEncoding };',
+          ].join('\n')
+        : "return { action: 'sendMessage', ...source };";
+      output = this.transformNode(n, 'entry-payload', `${n.name}: request`, body, {});
+      this.addEdge(trigger, this.sock(output, 'RUN'));
+      this.addEdge(this.dataExit(node), this.sock(output, 'source'));
+      trigger = this.sock(output, 'onDone');
+    }
+    const data = this.dataExit(output);
+    return {
+      name: n.name, kind: 'generic-trigger', entry: null, dataIn: null,
+      exits: [{ trigger, data }], flags: { webhook: type === 'NodeWebhookTrigger' },
+      lastNode: output, entryReference: data, entryPoint: node,
+    };
+  }
+
+  buildRespondToWebhook(n) {
+    const owners = [...this.units.values()].filter((unit) => unit.entryPoint && this.reaches(unit.name, n.name));
+    if (!owners.length || owners.some((unit) => unit.entryPoint.inputs.responseMode !== 'responseNode')) {
+      return this.unsupportedEntryStep(n, 'requires a generic trigger using responseNode mode on each incoming path');
+    }
+    let converted;
+    let bodyExpression;
+    try {
+      converted = explicitResponseSettings(n.parameters);
+      const body = n.parameters?.responseBody;
+      if (converted.kind === 'json' && typeof body === 'string' && !X.isExpression(body)) {
+        try {
+          converted.inputs.body = JSON.parse(body || 'null');
+        } catch {
+          throw new Error('requires a valid JSON response body');
+        }
+      } else if (['text', 'json'].includes(converted.kind)) {
+        if (X.containsExpression(body)) bodyExpression = X.toJs(body);
+        else converted.inputs.body = body ?? (converted.kind === 'text' ? '' : null);
+      }
+    } catch (error) {
+      return this.unsupportedEntryStep(n, error.message);
+    }
+    const { kind, inputs } = converted;
+    const respond = this.addNode('respond', n, 'NodeRespondToWebhook', n.name, inputs);
+    const unit = this.simpleUnit(n.name, 'response', respond);
+    unit.exits[0].data = 'inherit'; // n8n continues with its incoming item after sending the response.
+    if (['firstIncomingItem', 'allIncomingItems'].includes(kind) || bodyExpression) {
+      const expr = bodyExpression || (kind === 'allIncomingItems'
+        ? '(Array.isArray(source) ? source : [source])'
+        : '(Array.isArray(source) ? source[0] : source)');
+      const result = kind === 'json'
+        ? "return typeof body === 'string' ? JSON.parse(body) : body;"
+        : kind === 'text' ? 'return String(body ?? "");' : 'return body;';
+      const prep = this.transformNode(n, 'response-body', `${n.name}: body`, `const body = ${expr};\n${result}`, this.predInfo(n.name));
+      this.addEdge(this.sock(prep, 'onDone'), unit.entry);
+      this.addEdge(this.dataExit(prep), this.sock(respond, 'body'));
+      unit.entry = this.sock(prep, 'RUN');
+      unit.dataIn = () => this.sock(prep, 'source');
+    }
+    return unit;
   }
 
   buildCron(n) {
@@ -1761,6 +1877,7 @@ class Converter {
     ({ url, headers } = this.applyHttpAuth(n, url, headers, auth));
     const inputs = { method };
     const builders = [];
+    let inlinedBodyBuilder = false;
     const noteCross = (raw) => {
       const s = typeof raw === 'string' ? raw : JSON.stringify(raw);
       if (/\$\(\s*['"]/.test(s)) {
@@ -1798,7 +1915,11 @@ class Converter {
     }
 
     if (body !== undefined) {
-      const inlineBody = this.inline(body, pred);
+      let inlineBody = this.inline(body, pred);
+      if (inlineBody === null && !builders.length) {
+        inlineBody = this.stringifyItemParameter(body, n.name, pred, { jsonBody: true });
+        inlinedBodyBuilder = inlineBody !== null;
+      }
       if (inlineBody !== null) inputs.body = inlineBody;
       else {
         const bodyJs = typeof body === 'string' && body.startsWith('=') && /^=\s*\{\{[\s\S]*\}\}\s*$/.test(body) ? X.toJs(body) : X.toJs(body);
@@ -1812,7 +1933,12 @@ class Converter {
     }
 
     const node = this.addNode('http', n, 'NodeHttpRequest', n.name, inputs, auth ? { auth } : {});
-    if (!builders.length) return this.simpleUnit(n.name, 'http', node);
+    if (!builders.length) {
+      const unit = this.simpleUnit(n.name, 'http', node);
+      // Keep downstream named-source resolution from the original builder unit.
+      if (inlinedBodyBuilder) delete unit.stepKey;
+      return unit;
+    }
 
     let entry = null;
     let prevDone = null;
@@ -2277,6 +2403,14 @@ class Converter {
     delete inputs.system;
     take(systemRaw, 'system', 'system', `System: ${n.name}`);
     take(textValue, 'prompt', textKey, `Prompt: ${n.name}`);
+    if (builders.length === 1) {
+      const [builder] = builders;
+      const expression = this.stringifyItemParameter(builder.value, n.name, pred);
+      if (expression !== null) {
+        inputs[builder.socket] = expression;
+        builders.pop();
+      }
+    }
 
     if (!builders.length) {
       const node = this.addNode('llm', n, type, label, inputs);
@@ -2846,7 +2980,7 @@ class Converter {
             const hook = [...this.byName.values()].find((x) => x.type === 'n8n-nodes-base.webhook' && x.parameters?.options?.rawBody && code.includes(x.name));
             const header = /['"](x-hub-signature-256|x-shopify-hmac-sha256|x-[\w-]*signature[\w-]*|x-[\w-]*hmac[\w-]*)['"]/i.exec(code)?.[1];
             const reason = hook && /createHmac/.test(code)
-              ? `checks the ${header ? `${header} ` : ''}HMAC over the raw request body of the webhook "${hook.name}"; the Yantra start node passes the webhook body as parsed JSON with no raw bytes, and re-serialised JSON does not match the sender's bytes, so the check cannot be faithful until the webhook trigger exposes the raw body (yantra-storage YANTRA_STORAGE_VERIFY_SIGNATURE can then verify it)`
+              ? `checks the ${header ? `${header} ` : ''}HMAC over the raw request body of the webhook "${hook.name}"; wire the base64 rawBody output of the HTTP Webhook to a signature verification step before enabling this workflow`
               : undefined;
             this.approximateStep(
               n,
@@ -3062,10 +3196,7 @@ class Converter {
         return this.simpleUnit(n.name, 'data', this.transformNode(n, 'crypto', n.name, body, pred), exact ? { approximate: true, soft: true } : { approximate: true });
       }
       case 'n8n-nodes-base.wait':
-        if (this.repeatBody?.has(n.name)) return buildRepeatWait(this, n, pred);
-        this.setup.add(`"${n.name}" paused the original (${p.resume === 'webhook' ? 'until a webhook call' : `${p.amount ?? p.time ?? 1} ${p.unit || 'seconds'}`}); Yantra has no delay node, so this step passes data straight through.`);
-        this.approximateStep(n, 'wait', 'Wait/delay is a soft passthrough; add a schedule or external delay if timing matters.', { soft: true });
-        return this.simpleUnit(n.name, 'data', this.transformNode(n, 'wait', n.name, `// The original waited here (${p.resume === 'webhook' ? 'for a webhook' : `${p.amount ?? p.time ?? 1} ${p.unit || 'seconds'}`}).\nreturn source;`, pred), { approximate: true, soft: true });
+        return buildWorkflowWait(this, n, pred);
       case 'n8n-nodes-base.executeCommand': {
         const cmd = p.command || p.executeCommand || '';
         this.approximateStep(n, 'executeCommand', 'Host shell commands are not run in Transform; use an agent sandbox shell if you need the original command.', { soft: true });
@@ -3111,9 +3242,8 @@ class Converter {
    * n8n Crypto hash / hmac: yantra-storage YANTRA_STORAGE_HASH / YANTRA_STORAGE_HMAC
    * (the Transform runtime has no digest). The HMAC key is a workflow secret,
    * never a literal from the original. A Transform then sets the digest on the
-   * item under the original property name, like n8n. Hashing the raw request
-   * body of a webhook is not possible faithfully: the Yantra start node passes
-   * the body as parsed JSON, so that stays a signature-verification blocker.
+   * item under the original property name, like n8n. A webhook's exact bytes
+   * are passed to the connector in base64 when the source requests rawBody.
    */
   emitCryptoDigest(n, pred, action) {
     const p = n.parameters || {};
@@ -3135,13 +3265,15 @@ class Converter {
     if (p.binaryData) {
       const origin = this.binaryOrigin(n.name);
       const start = origin.ok ? null : [...this.byName.values()].find((x) => x.name === origin.name && x.type === 'n8n-nodes-base.webhook');
-      if (!origin.ok || origin.mode === 'url') {
-        const reason = start
-          ? `${action === 'hmac' ? 'computes an HMAC over' : 'hashes'} the raw request body of the webhook "${start.name}"; the Yantra start node passes the webhook body as parsed JSON with no raw bytes, and re-serialised JSON does not match the sender's bytes, so the digest cannot be computed faithfully until the webhook trigger exposes the raw body (yantra-storage ${actionId} / YANTRA_STORAGE_VERIFY_SIGNATURE then take it as payload)`
+      const entry = this.units.get(start?.name);
+      if (start?.parameters?.options?.rawBody && entry?.entryPoint?.type === 'NodeWebhookTrigger') {
+        params.payload = `={{ $(${JSON.stringify(start.name)}).first().json.rawBody }}`;
+        params.payloadEncoding = 'base64';
+      } else if (!origin.ok || origin.mode === 'url') {
+        this.cryptoGap = start
+          ? `${action} requires the exact raw request body of the webhook "${start.name}"; configure a registered raw body input before computing the digest`
           : `${origin.reason || 'has no file bytes upstream'}; ${actionId} needs the bytes as base64`;
-        this.report.approximate.push({ node: n.name, n8n: `crypto.${action}`, action: `yantra-storage/${actionId}`, blocker: 'signature-verification', reason });
-        this.setup.add(`"${n.name}" (crypto.${action}): ${reason}.`);
-        params.payload = "={{ JSON.stringify($json.body ?? $json) }}";
+        return null;
       } else {
         prelude = FILE_REF;
         params.payload = new X.RawJs(`${this.fileRefJs(origin, p.binaryPropertyName || 'data')}.contentBase64`);
@@ -3258,6 +3390,7 @@ class Converter {
   }
 
   buildEnd(n) {
+    if (n.type === 'n8n-nodes-base.respondToWebhook') return this.buildRespondToWebhook(n);
     if (n.type === 'n8n-nodes-base.stopAndError' && [...(this.repeatLoops?.values() || [])].some((p) => p.exits.some((e) => e.dst === n.name))) {
       return this.simpleUnit(n.name, 'end', this.transformNode(n, 'stop', `Stop: ${n.name}`,
         `throw new Error(String(${X.toJs(n.parameters?.errorMessage || n.parameters?.errorObject || 'Conditional workflow failed')}));`, this.predInfo(n.name)));
@@ -3284,6 +3417,10 @@ class Converter {
     switch (cls) {
       case 'start':
         return this.buildStart(n);
+      case 'generic-trigger':
+        return this.buildGenericTrigger(n);
+      case 'form-page':
+        return this.unsupportedEntryStep(n, 'requires another form page or a custom completion screen');
       case 'cron':
         return this.buildCron(n);
       case 'webhook':
@@ -3620,7 +3757,7 @@ class Converter {
       }
       this.addEdge(start.exits[0].trigger, unit.entry);
     }
-    if (!this.nodes.some((n) => ['NodeStart', 'NodeCron', 'NodeCdeWebhookTrigger'].includes(n.type))) {
+    if (!this.nodes.some((n) => ENTRY_TYPES.has(n.type))) {
       const node = this.addNode('start', { name: '__start', type: 'synthetic' }, 'NodeStart', 'Start', {});
       this.startUnit = { name: '__start', kind: 'start', entry: null, dataIn: null, exits: [{ trigger: this.sock(node, 'trigger'), data: null }], flags: {}, lastNode: node };
     }
@@ -3638,6 +3775,15 @@ class Converter {
         continue;
       }
       if (unit.kind === 'end' || unit.kind === 'start' || outgoing.has(unit.name)) continue;
+      if (unit.kind === 'response') {
+        const n = this.byName.get(unit.name);
+        const finish = this.transformNode(n, 'response-end', 'Finish after response', 'return source ?? {};', {});
+        const end = this.addNode(`end${endCount++}`, n, 'NodeEnd', 'End', {});
+        this.addEdge(unit.exits[0].trigger, this.sock(finish, 'RUN'));
+        this.addEdge(this.dataExit(unit.lastNode), this.sock(finish, 'source'));
+        this.addEdge(this.dataExit(finish), this.sock(end, 'result'));
+        continue;
+      }
       const exit = unit.exits[0];
       if (!exit?.data || exit.data === 'inherit') continue;
       const node = this.addNode(`end${endCount++}`, { name: `__end:${unit.name}`, type: 'synthetic' }, 'NodeEnd', endCount > 1 ? `End ${endCount}` : 'End', {});
@@ -3807,8 +3953,29 @@ class Converter {
     // its final graph through the same code used for the saved templates.
     migrateLlmChains(wf);
     simplifyLlmHelpers(wf);
+    if (wf.nodes.some((node) => GENERIC_ENTRY_TYPES.has(node.type))) migrateEntryPointTransforms(wf);
     return applyQuality(wf, this.info.path);
   }
+}
+
+// Match the core editor's migrated Transform representation for generated scripts.
+function migrateEntryPointTransforms(wf) {
+  const migrated = new Set();
+  for (const node of wf.nodes) {
+    if (node.type !== 'NodeTransform' || node.inputs?.mode !== 'jsCode') continue;
+    const { jsCode, source } = node.inputs;
+    node.type = 'NodeJavascript';
+    node.inputs = { migratedTransform: true, logic: jsCode, ...(source === undefined ? {} : { source }) };
+    migrated.add(node.nodeId);
+  }
+  for (const edge of wf.edges) {
+    if (migrated.has(edge.source)) edge.sourceNodeType = 'NodeJavascript';
+    if (migrated.has(edge.target)) {
+      edge.targetNodeType = 'NodeJavascript';
+      if (edge.targetInput === 'jsCode') edge.targetInput = 'logic';
+    }
+  }
+  wf.template.nodeTypes = [...new Set(wf.nodes.map((node) => node.type))].sort();
 }
 
 /**

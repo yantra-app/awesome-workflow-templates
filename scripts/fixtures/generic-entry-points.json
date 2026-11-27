@@ -1,0 +1,14 @@
+{
+  "name": "Generic entry point contract",
+  "nodes": [
+    { "name": "Receive", "type": "n8n-nodes-base.webhook", "parameters": { "httpMethod": "PATCH", "authentication": "headerAuth", "responseMode": "responseNode", "options": { "rawBody": true } } },
+    { "name": "Reply", "type": "n8n-nodes-base.respondToWebhook", "parameters": { "respondWith": "json", "responseBody": "={{ ({ value: $json.body.value, header: $json.headers['x-example'], query: $('Receive').first().json.query.source, rawBody: $json.rawBody }) }}", "options": { "responseCode": 201, "responseHeaders": { "entries": [{ "name": "X-Result", "value": "created" }] } } } },
+    { "name": "Read", "type": "n8n-nodes-base.webhook", "parameters": { "responseMode": "lastNode", "responseData": "allEntries" } },
+    { "name": "Acknowledge", "type": "n8n-nodes-base.webhook", "parameters": { "httpMethod": "POST", "options": { "responseData": "accepted" } } },
+    { "name": "Form", "type": "n8n-nodes-base.formTrigger", "parameters": { "responseMode": "lastNode", "formFields": { "values": [{ "fieldLabel": "Contact name", "requiredField": true }, { "fieldLabel": "Count", "fieldName": "count", "fieldType": "number" }, { "fieldLabel": "Team", "fieldType": "dropdown", "fieldOptions": { "values": [{ "option": "Ops" }, { "option": "Sales" }] } }] } } },
+    { "name": "Chat", "type": "@n8n/n8n-nodes-langchain.chatTrigger", "parameters": {} }
+  ],
+  "connections": {
+    "Receive": { "main": [[{ "node": "Reply", "type": "main", "index": 0 }]] }
+  }
+}

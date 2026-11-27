@@ -5,46 +5,29 @@
   "isPublic": true,
   "nodes": [
     {
-      "nodeId": "node_ff4233e797",
-      "actorId": "actor_ff4233e797",
-      "type": "NodeStart",
-      "label": "Start",
-      "color": "#22C55E",
+      "nodeId": "node_ce5e3c076c",
+      "actorId": "actor_ce5e3c076c",
+      "type": "NodeChatTrigger",
+      "label": "When chat message received",
+      "color": "#6366F1",
       "position": {
         "x": 80,
         "y": 100
       },
       "size": {
-        "width": 240,
-        "height": 100
-      }
-    },
-    {
-      "nodeId": "node_9c31cebb43",
-      "actorId": "actor_9c31cebb43",
-      "type": "NodeCdecliAgent",
-      "label": "Calendar AI Agent",
-      "color": "#8B5CF6",
-      "position": {
-        "x": 840,
-        "y": 100
-      },
-      "size": {
         "width": 320,
-        "height": 260
+        "height": 220
       },
       "inputs": {
-        "model": "gpt-4o",
-        "sessionId": "{{sessionId}}",
-        "message": "{{chatInput}}",
-        "system": "{{last.transformed}}"
+        "requiredAuthMode": "bearer",
+        "responseMode": "lastNode"
       }
     },
     {
-      "nodeId": "node_ace040ef12",
-      "actorId": "actor_ace040ef12",
-      "type": "NodeTransform",
-      "label": "System: Calendar AI Agent",
+      "nodeId": "node_5c50bcd89a",
+      "actorId": "actor_5c50bcd89a",
+      "type": "NodeJavascript",
+      "label": "When chat message received: request",
       "color": "#F59E0B",
       "position": {
         "x": 460,
@@ -55,8 +38,82 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// System: Calendar AI Agent.\nconst __promptValue = `You are a Google Calendar assistant.\nYour primary goal is to assist the user in managing their calendar effectively using two tools: Event Creation and Event Retrieval. Always base your responses on the current date: \n${DateTime.local().toFormat('cccc d LLLL yyyy')}.\nGeneral Guidelines:\nIf the user's initial message is vague (e.g., \"hello\" or a generic greeting) or does not specify a request, explain your capabilities clearly:\nExample: \"Hello! I can help you manage your Google Calendar. You can ask me to create an event or retrieve event data. What would you like me to do?\"\nIf the user specifies a request in their first message, begin preparing to use the appropriate tool:\nFor event creation, gather necessary details like start date, end date, title, and description.\nFor event retrieval, ask for the date range or time period they want to query.\nTool: Event Creation\nWhen asked to create an event:\n\nRequest the start and end dates/times from the user.\nDate format: YYYY-MM-DD HH:mm:ss\nCollect the following information:\nstart_date: Exact start date and time of the event.\nend_date: Exact end date and time of the event.\nevent_title: Event title in uppercase. Suggest one if not provided.\nevent_description: Generate a brief description and present it for confirmation.\nTool: Event Retrieval\nWhen asked to retrieve events:\n\nAsk for the date range or period they are interested in. Examples:\nFor \"last week,\" retrieve events from Monday of the previous week to Friday of the same week.\nFor \"today,\" use the current date.\nFormat the date range:\nstart_date: Start date and time in YYYY-MM-DD HH:mm:ss.\nend_date: End date and time in YYYY-MM-DD HH:mm:ss.\nKey Behaviors:\nClarity: Provide a clear and helpful introduction when the user's request is unclear.\nValidation: Confirm details with the user before finalizing actions.\nAdaptation: Handle varying levels of detail in requests (e.g., \"Add a meeting for next Monday morning\" or \"Retrieve my events for this weekend\").\nProactivity: Offer suggestions to fill in missing details or clarify ambiguous inputs.\nLanguage Matching: Ensure all interactions, including event titles, descriptions, and messages, are in the user's language to provide a seamless experience.`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+        "migratedTransform": true,
+        "logic": "return { action: 'sendMessage', ...source };"
+      }
+    },
+    {
+      "nodeId": "node_9c31cebb43",
+      "actorId": "actor_9c31cebb43",
+      "type": "NodeCdecliAgent",
+      "label": "Calendar AI Agent",
+      "color": "#8B5CF6",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 260
+      },
+      "inputs": {
+        "model": "gpt-4o",
+        "sessionId": "{{sessionId}}",
+        "system": "{{llm_system_ace040ef12}}",
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_ace040ef12",
+      "actorId": "actor_ace040ef12",
+      "type": "NodeJavascript",
+      "label": "System: Calendar AI Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// System: Calendar AI Agent.\nconst __promptValue = `You are a Google Calendar assistant.\nYour primary goal is to assist the user in managing their calendar effectively using two tools: Event Creation and Event Retrieval. Always base your responses on the current date: \n${DateTime.local().toFormat('cccc d LLLL yyyy')}.\nGeneral Guidelines:\nIf the user's initial message is vague (e.g., \"hello\" or a generic greeting) or does not specify a request, explain your capabilities clearly:\nExample: \"Hello! I can help you manage your Google Calendar. You can ask me to create an event or retrieve event data. What would you like me to do?\"\nIf the user specifies a request in their first message, begin preparing to use the appropriate tool:\nFor event creation, gather necessary details like start date, end date, title, and description.\nFor event retrieval, ask for the date range or time period they want to query.\nTool: Event Creation\nWhen asked to create an event:\n\nRequest the start and end dates/times from the user.\nDate format: YYYY-MM-DD HH:mm:ss\nCollect the following information:\nstart_date: Exact start date and time of the event.\nend_date: Exact end date and time of the event.\nevent_title: Event title in uppercase. Suggest one if not provided.\nevent_description: Generate a brief description and present it for confirmation.\nTool: Event Retrieval\nWhen asked to retrieve events:\n\nAsk for the date range or period they are interested in. Examples:\nFor \"last week,\" retrieve events from Monday of the previous week to Friday of the same week.\nFor \"today,\" use the current date.\nFormat the date range:\nstart_date: Start date and time in YYYY-MM-DD HH:mm:ss.\nend_date: End date and time in YYYY-MM-DD HH:mm:ss.\nKey Behaviors:\nClarity: Provide a clear and helpful introduction when the user's request is unclear.\nValidation: Confirm details with the user before finalizing actions.\nAdaptation: Handle varying levels of detail in requests (e.g., \"Add a meeting for next Monday morning\" or \"Retrieve my events for this weekend\").\nProactivity: Offer suggestions to fill in missing details or clarify ambiguous inputs.\nLanguage Matching: Ensure all interactions, including event titles, descriptions, and messages, are in the user's language to provide a seamless experience.`;\nreturn { \"llm_system_ace040ef12\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+      }
+    },
+    {
+      "nodeId": "node_5b104b7e0f",
+      "actorId": "actor_5b104b7e0f",
+      "type": "NodeUpdateContext",
+      "label": "Save System: Calendar AI Agent",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_0ce0555d22",
+      "actorId": "actor_0ce0555d22",
+      "type": "NodeJavascript",
+      "label": "Prompt: Calendar AI Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Calendar AI Agent.\nconst __promptValue = ($json.chatInput);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
       }
     },
     {
@@ -66,7 +123,7 @@
       "label": "End",
       "color": "#EF4444",
       "position": {
-        "x": 1220,
+        "x": 2360,
         "y": 100
       },
       "size": {
@@ -92,7 +149,6 @@
         "projectId": "",
         "environmentTagId": "",
         "initialContext": {
-          "chatInput": "",
           "sessionId": ""
         }
       }
@@ -100,20 +156,76 @@
   ],
   "edges": [
     {
+      "source": "node_ce5e3c076c",
+      "target": "node_5c50bcd89a",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeChatTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_ce5e3c076c",
+      "target": "node_5c50bcd89a",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeChatTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
       "source": "node_ace040ef12",
+      "target": "node_5b104b7e0f",
+      "sourceOutput": "transformed",
+      "targetInput": "patch",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_ace040ef12",
+      "target": "node_5b104b7e0f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeUpdateContext"
+    },
+    {
+      "source": "node_5b104b7e0f",
+      "target": "node_0ce0555d22",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeUpdateContext",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_0ce0555d22",
       "target": "node_9c31cebb43",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdecliAgent"
     },
     {
-      "source": "node_ff4233e797",
+      "source": "node_5c50bcd89a",
       "target": "node_ace040ef12",
-      "sourceOutput": "trigger",
+      "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_5c50bcd89a",
+      "target": "node_ace040ef12",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_5c50bcd89a",
+      "target": "node_0ce0555d22",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_9c31cebb43",
@@ -134,14 +246,15 @@
     ],
     "nodeTypes": [
       "NodeCdecliAgent",
+      "NodeChatTrigger",
       "NodeEnd",
-      "NodeStart",
-      "NodeTransform",
+      "NodeJavascript",
+      "NodeUpdateContext",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 6,
-      "yantraSteps": 3,
+      "yantraSteps": 6,
       "foldedHelpers": [
         "OpenAI Chat Model",
         "Window Buffer Memory",
@@ -158,15 +271,15 @@
     "tier": "ready",
     "blockers": [
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "When chat message received",
-        "detail": "@n8n/n8n-nodes-langchain.chatTrigger became the Start node"
+        "detail": "generic trigger URL requires registration"
       }
     ],
     "setup": [
-      "\"When chat message received\" (chatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"When chat message received\": save the workflow, then register node node_ce5e3c076c via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL. Use bearer authentication with credentials supplied at registration.",
       "Connect the googlesuper connector (credential).",
-      "Provide run inputs: chatInput, sessionId."
+      "Provide run inputs: sessionId, llm_system_ace040ef12."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -205,11 +318,10 @@
         {
           "node": "When chat message received",
           "type": "@n8n/n8n-nodes-langchain.chatTrigger",
-          "as": "NodeStart"
+          "as": "NodeChatTrigger"
         }
       ],
       "hints": [
-        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
         "\"Calendar AI Agent\" kept conversation memory (memoryBufferWindow); sessionId is set to the run-input sessionId.",
         "\"Calendar AI Agent\" used agent tools in the original: Google Calendar - Get Events (googleCalendarTool), Google Calendar - Create events (googleCalendarTool). The cdecli agent calls connectors directly; connect credentials for the services those tools reached. Prefer connectors: googlesuper.",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
@@ -226,7 +338,11 @@
       "## Having fun with it ? Here’s how to level up this AI agent ! \n\nThis workflow demonstrates **how easily you can set up an AI agent to call tools** for you using **n8n**. \nThe tasks here are **useful but very basic**. \n\nIf you want to **enhance the tool-calling capabilities**, consider the following:\n\n- Explore the **\"options\"** in the Google Calendar nodes to see additional features you can use. \n For example, let the AI agent add attendees to events it creates.\n\n- Implement the AI agent with your **teammates and link it to each calendar**. \n Use a `{{ $fromAI('') }}` variable for the calendar field and refine the prompts to suit your needs.\n\n- Add **more actions** for the AI agent to perform with the **Google Calendar API**, expanding its functionality."
     ],
     "nodes": {
-      "node_ff4233e797": {
+      "node_ce5e3c076c": {
+        "n8n": "When chat message received",
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
+      },
+      "node_5c50bcd89a": {
         "n8n": "When chat message received",
         "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
       },
@@ -235,6 +351,14 @@
         "n8nType": "@n8n/n8n-nodes-langchain.agent"
       },
       "node_ace040ef12": {
+        "n8n": "Calendar AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_5b104b7e0f": {
+        "n8n": "Calendar AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_0ce0555d22": {
         "n8n": "Calendar AI Agent",
         "n8nType": "@n8n/n8n-nodes-langchain.agent"
       },

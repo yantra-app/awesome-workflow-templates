@@ -5,14 +5,52 @@
   "isPublic": true,
   "nodes": [
     {
-      "nodeId": "node_f604124a68",
-      "actorId": "actor_f604124a68",
+      "nodeId": "node_a16dcb534e",
+      "actorId": "actor_a16dcb534e",
+      "type": "NodeChatTrigger",
+      "label": "When chat message received",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 100
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "bearer",
+        "responseMode": "lastNode"
+      }
+    },
+    {
+      "nodeId": "node_ed8224a690",
+      "actorId": "actor_ed8224a690",
+      "type": "NodeJavascript",
+      "label": "When chat message received: request",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "return { action: 'sendMessage', ...source };"
+      }
+    },
+    {
+      "nodeId": "node_f123fa4c83",
+      "actorId": "actor_f123fa4c83",
       "type": "NodeStart",
       "label": "Start",
       "color": "#22C55E",
       "position": {
         "x": 80,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 240,
@@ -27,7 +65,7 @@
       "color": "#6366F1",
       "position": {
         "x": 80,
-        "y": 360
+        "y": 620
       },
       "size": {
         "width": 320,
@@ -43,13 +81,60 @@
       }
     },
     {
+      "nodeId": "node_7bff15a4de",
+      "actorId": "actor_7bff15a4de",
+      "type": "NodeWebhookTrigger",
+      "label": "Webhook",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 880
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "header",
+        "responseMode": "onReceived",
+        "httpMethod": "GET",
+        "acknowledgement": {
+          "statusCode": 200,
+          "headers": {},
+          "bodyMode": "json",
+          "body": {
+            "message": "Workflow was started"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_89f8f34eef",
+      "actorId": "actor_89f8f34eef",
+      "type": "NodeJavascript",
+      "label": "Webhook: request",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "const ctx = {{ctx}};\nconst request = ctx.nodes?.[\"node_7bff15a4de\"]?.latest ?? {};\nreturn { body: source, headers: request.headers, query: request.query, params: {}, method: request.method, rawBody: request.rawBody, rawBodyEncoding: request.rawBodyEncoding };"
+      }
+    },
+    {
       "nodeId": "node_dba8231be8",
       "actorId": "actor_dba8231be8",
       "type": "NodeCdecliAgent",
       "label": "AI Agent",
       "color": "#8B5CF6",
       "position": {
-        "x": 460,
+        "x": 1220,
         "y": 100
       },
       "size": {
@@ -59,14 +144,14 @@
       "inputs": {
         "model": "models/gemini-2.0-flash-exp",
         "sessionId": "",
-        "message": "You are a Proxmox AI Agent expert designed to generate API commands based on user input. \nThis is Proxmox which will help you to get the details of existing Proxmox installations, ensure to append to existing url : https://10.11.12.101:8006/api2/ to get response from existing proxmox \n\nMy prommox nodes are named as psb1, psb2 and psb3\npsb1 : https://10.11.12.101:8006/api2/\npsb2 : https://10.11.12.102:8006/api2/\npsb3 : https://10.11.12.102:8006/api2/\n\nYour objectives are:\n\n### **1. Understand User Intent**\n- Parse user requests related to Proxmox operations.\n- Accurately interpret intent to generate valid Proxmox API commands.\n\n### **2. Refer to tools**\n- **Proxmox API Documentation**\n= ** Proxmox API Wiki**\n- **Proxmox**\n- Ensure every generated command meets the API's specifications, including required fields.\n\n### **3. Structure Responses**\nEvery response must include:\n- `response_type`: The HTTP method (e.g., POST, GET, DELETE).\n- `url`: The API endpoint, complete with placeholders (e.g., `/nodes/{node}/qemu/{vmid}`).\n- `details`: The payload for the request. Exclude optional fields if not explicitly defined by the user to allow default handling by Proxmox.\n\n### **4. Validate Inputs**\n- **Mandatory Fields**:\n - Validate user input for required parameters.\n - If missing fields are detected, respond with:\n {\n \"message\": \"Missing required parameters: [list of missing parameters].\"\n }\n\n- **Optional Fields**:\n - Omit fields not provided by the user to leverage Proxmox's defaults.\n\n### **5. Default Behavior**\n- If the user omits the `node`, default to `psb1`.\n- Automatically generate the next available VM ID (`vmid`) by querying Proxmox for the highest existing ID.\n\n### **6. Rules for Outputs**\n- Always respond in strict JSON format:\n - Start with `{` and end with `}`.\n - Avoid additional information or comments.\n - Do not include sensitive data such as passwords, fingerprints, or keys.\n- If input is unrelated to Proxmox, respond with:\n\n {\n \"response_type\": \"Invalid\"\n }\n\n### **7. Examples**\n\n1. Create a VM\nInput: \"Create a VM with ID 201, 2 cores, 4GB RAM, and 32GB disk on node1 using virtio network and SCSI storage.\"\nOutput:\n{\n \"response_type\": \"POST\",\n \"url\": \"/nodes/node1/qemu\",\n \"details\": {\n \"vmid\": 201,\n \"cores\": 2,\n \"memory\": 1024,\n \"sockets\": 1\"\n }\n}\n\n2. Delete a VM\nInput: \"Delete VM 105 on psb1.\"\nOutput:\n{\n \"response_type\": \"DELETE\",\n \"url\": \"/nodes/psb1/qemu/105\"\n}\n\n3. Start a VM\nInput: \"Start VM 202 on psb1.\"\nOutput:\n{\n \"response_type\": \"POST\",\n \"url\": \"/nodes/psb1/qemu/202/status/start\"\n}\n\n4. Stop a VM\nInput: \"Stop VM 203 on node2.\"\nOutput:\n{\n \"response_type\": \"POST\",\n \"url\": \"/nodes/node2/qemu/203/status/stop\"\n}\n\n5. Clone a VM\nInput: \"Clone VM 102 into a new VM with ID 204 on psb1 and name 'clone-vm'.\"\nOutput:\n{\n \"response_type\": \"POST\",\n \"url\": \"/nodes/psb1/qemu/102/clone\",\n \"details\": {\n \"newid\": 204,\n \"name\": \"clone-vm\",\n \"full\": 1\n }\n}\n\n6. Resize a VM Disk\nInput: \"Resize the disk of VM 105 on node1 to 50GB.\"\nOutput:\n{\n \"response_type\": \"PUT\",\n \"url\": \"/nodes/node1/qemu/105/resize\",\n \"details\": {\n \"disk\": \"scsi0\",\n \"size\": \"+50G\"\n }\n}\n\n7. Query VM Config\nInput: \"Get the configuration of VM 201 on psb1.\"\nOutput:\n{\n \"response_type\": \"GET\",\n \"url\": \"/nodes/psb1/qemu/201/config\"\n}\n\n8. List All VMs on a Node\nInput: \"List all VMs on psb1.\"\nOutput:\n{\n \"response_type\": \"GET\",\n \"url\": \"/nodes/psb1/qemu\"\n}\n\n9. Handle Missing Parameters\nInput: \"Create a VM with 4GB RAM on node1.\"\nOutput:\n{\n \"message\": \"Missing required parameters: [vmid, cores, storage].\"\n}\n\n10. Invalid Input\nInput: \"Tell me a joke.\"\nOutput:\n{\n \"response_type\": \"Invalid\"\n}\n\n11. Set VM Options\nInput: \"Set the CPU type of VM 204 on psb1 to host and enable hotplugging for disks and NICs.\"\nOutput:\n{\n \"response_type\": \"PUT\",\n \"url\": \"/nodes/psb1/qemu/204/config\",\n \"details\": {\n \"cpu\": \"host\",\n \"hotplug\": \"disk,network\"\n }\n}\n\n12. Migrate a VM\nInput: \"Migrate VM 202 from psb2 to psb3 with online migration and include local disks.\"\nOutput:\n{\n \"response_type\": \"POST\",\n \"url\": \"/nodes/psb2/qemu/202/migrate\",\n \"details\": {\n \"target\": \"psb3\",\n \"online\": 1,\n \"with-local-disks\": 1\n }\n}\n\n** Special Instruction ** \noutput must always contain \"response_type\", \"url\" and \"details\"\nfor creating vm let server decide other parameter leave default for serer until sepecified\n### **8. Behavior Guidelines**\n- Be concise, precise, and consistent.\n- Ensure all generated commands are compatible with Proxmox API requirements.\n- Rely on system defaults when user input is incomplete.\n- For unknown or unrelated queries, clearly indicate invalid input.\n\n\nUser Prompt \nHere is request from user : {{chatInput}}\n"
+        "message": "{{last.transformed}}"
       }
     },
     {
-      "nodeId": "node_f01c6837e4",
-      "actorId": "actor_f01c6837e4",
-      "type": "NodeTransform",
-      "label": "Switch: GET",
+      "nodeId": "node_900f8acb3d",
+      "actorId": "actor_900f8acb3d",
+      "type": "NodeJavascript",
+      "label": "Prompt: AI Agent",
       "color": "#F59E0B",
       "position": {
         "x": 840,
@@ -77,30 +162,15 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.response_type) ?? '') === String(\"GET\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: AI Agent.\nconst __promptValue = `You are a Proxmox AI Agent expert designed to generate API commands based on user input. \nThis is Proxmox which will help you to get the details of existing Proxmox installations, ensure to append to existing url : https://10.11.12.101:8006/api2/ to get response from existing proxmox \n\nMy prommox nodes are named as psb1, psb2 and psb3\npsb1 : https://10.11.12.101:8006/api2/\npsb2 : https://10.11.12.102:8006/api2/\npsb3 : https://10.11.12.102:8006/api2/\n\nYour objectives are:\n\n### **1. Understand User Intent**\n- Parse user requests related to Proxmox operations.\n- Accurately interpret intent to generate valid Proxmox API commands.\n\n### **2. Refer to tools**\n- **Proxmox API Documentation**\n= ** Proxmox API Wiki**\n- **Proxmox**\n- Ensure every generated command meets the API's specifications, including required fields.\n\n### **3. Structure Responses**\nEvery response must include:\n- \\`response_type\\`: The HTTP method (e.g., POST, GET, DELETE).\n- \\`url\\`: The API endpoint, complete with placeholders (e.g., \\`/nodes/{node}/qemu/{vmid}\\`).\n- \\`details\\`: The payload for the request. Exclude optional fields if not explicitly defined by the user to allow default handling by Proxmox.\n\n### **4. Validate Inputs**\n- **Mandatory Fields**:\n - Validate user input for required parameters.\n - If missing fields are detected, respond with:\n {\n \"message\": \"Missing required parameters: [list of missing parameters].\"\n }\n\n- **Optional Fields**:\n - Omit fields not provided by the user to leverage Proxmox's defaults.\n\n### **5. Default Behavior**\n- If the user omits the \\`node\\`, default to \\`psb1\\`.\n- Automatically generate the next available VM ID (\\`vmid\\`) by querying Proxmox for the highest existing ID.\n\n### **6. Rules for Outputs**\n- Always respond in strict JSON format:\n - Start with \\`{\\` and end with \\`}\\`.\n - Avoid additional information or comments.\n - Do not include sensitive data such as passwords, fingerprints, or keys.\n- If input is unrelated to Proxmox, respond with:\n\n {\n \"response_type\": \"Invalid\"\n }\n\n### **7. Examples**\n\n1. Create a VM\nInput: \"Create a VM with ID 201, 2 cores, 4GB RAM, and 32GB disk on node1 using virtio network and SCSI storage.\"\nOutput:\n{\n \"response_type\": \"POST\",\n \"url\": \"/nodes/node1/qemu\",\n \"details\": {\n \"vmid\": 201,\n \"cores\": 2,\n \"memory\": 1024,\n \"sockets\": 1\"\n }\n}\n\n2. Delete a VM\nInput: \"Delete VM 105 on psb1.\"\nOutput:\n{\n \"response_type\": \"DELETE\",\n \"url\": \"/nodes/psb1/qemu/105\"\n}\n\n3. Start a VM\nInput: \"Start VM 202 on psb1.\"\nOutput:\n{\n \"response_type\": \"POST\",\n \"url\": \"/nodes/psb1/qemu/202/status/start\"\n}\n\n4. Stop a VM\nInput: \"Stop VM 203 on node2.\"\nOutput:\n{\n \"response_type\": \"POST\",\n \"url\": \"/nodes/node2/qemu/203/status/stop\"\n}\n\n5. Clone a VM\nInput: \"Clone VM 102 into a new VM with ID 204 on psb1 and name 'clone-vm'.\"\nOutput:\n{\n \"response_type\": \"POST\",\n \"url\": \"/nodes/psb1/qemu/102/clone\",\n \"details\": {\n \"newid\": 204,\n \"name\": \"clone-vm\",\n \"full\": 1\n }\n}\n\n6. Resize a VM Disk\nInput: \"Resize the disk of VM 105 on node1 to 50GB.\"\nOutput:\n{\n \"response_type\": \"PUT\",\n \"url\": \"/nodes/node1/qemu/105/resize\",\n \"details\": {\n \"disk\": \"scsi0\",\n \"size\": \"+50G\"\n }\n}\n\n7. Query VM Config\nInput: \"Get the configuration of VM 201 on psb1.\"\nOutput:\n{\n \"response_type\": \"GET\",\n \"url\": \"/nodes/psb1/qemu/201/config\"\n}\n\n8. List All VMs on a Node\nInput: \"List all VMs on psb1.\"\nOutput:\n{\n \"response_type\": \"GET\",\n \"url\": \"/nodes/psb1/qemu\"\n}\n\n9. Handle Missing Parameters\nInput: \"Create a VM with 4GB RAM on node1.\"\nOutput:\n{\n \"message\": \"Missing required parameters: [vmid, cores, storage].\"\n}\n\n10. Invalid Input\nInput: \"Tell me a joke.\"\nOutput:\n{\n \"response_type\": \"Invalid\"\n}\n\n11. Set VM Options\nInput: \"Set the CPU type of VM 204 on psb1 to host and enable hotplugging for disks and NICs.\"\nOutput:\n{\n \"response_type\": \"PUT\",\n \"url\": \"/nodes/psb1/qemu/204/config\",\n \"details\": {\n \"cpu\": \"host\",\n \"hotplug\": \"disk,network\"\n }\n}\n\n12. Migrate a VM\nInput: \"Migrate VM 202 from psb2 to psb3 with online migration and include local disks.\"\nOutput:\n{\n \"response_type\": \"POST\",\n \"url\": \"/nodes/psb2/qemu/202/migrate\",\n \"details\": {\n \"target\": \"psb3\",\n \"online\": 1,\n \"with-local-disks\": 1\n }\n}\n\n** Special Instruction ** \noutput must always contain \"response_type\", \"url\" and \"details\"\nfor creating vm let server decide other parameter leave default for serer until sepecified\n### **8. Behavior Guidelines**\n- Be concise, precise, and consistent.\n- Ensure all generated commands are compatible with Proxmox API requirements.\n- Rely on system defaults when user input is incomplete.\n- For unknown or unrelated queries, clearly indicate invalid input.\n\n\nUser Prompt \nHere is request from user : ${$json.chatInput}\n`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
       }
     },
     {
-      "nodeId": "node_73e19f2123",
-      "actorId": "actor_73e19f2123",
-      "type": "NodeBranch",
-      "label": "Switch: GET?",
-      "color": "#0EA5E9",
-      "position": {
-        "x": 1220,
-        "y": 100
-      },
-      "size": {
-        "width": 240,
-        "height": 140
-      }
-    },
-    {
-      "nodeId": "node_cebf762d45",
-      "actorId": "actor_cebf762d45",
-      "type": "NodeTransform",
-      "label": "Switch: POST",
+      "nodeId": "node_f01c6837e4",
+      "actorId": "actor_f01c6837e4",
+      "type": "NodeJavascript",
+      "label": "Switch: GET",
       "color": "#F59E0B",
       "position": {
         "x": 1600,
@@ -111,15 +181,15 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.response_type) ?? '') === String(\"POST\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.response_type) ?? '') === String(\"GET\" ?? '')));"
       }
     },
     {
-      "nodeId": "node_f1f80d3a45",
-      "actorId": "actor_f1f80d3a45",
+      "nodeId": "node_73e19f2123",
+      "actorId": "actor_73e19f2123",
       "type": "NodeBranch",
-      "label": "Switch: POST?",
+      "label": "Switch: GET?",
       "color": "#0EA5E9",
       "position": {
         "x": 1980,
@@ -131,10 +201,10 @@
       }
     },
     {
-      "nodeId": "node_c3c923eacd",
-      "actorId": "actor_c3c923eacd",
-      "type": "NodeTransform",
-      "label": "Switch: Update",
+      "nodeId": "node_cebf762d45",
+      "actorId": "actor_cebf762d45",
+      "type": "NodeJavascript",
+      "label": "Switch: POST",
       "color": "#F59E0B",
       "position": {
         "x": 2360,
@@ -145,15 +215,15 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.response_type) ?? '') === String(\"PUT\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.response_type) ?? '') === String(\"POST\" ?? '')));"
       }
     },
     {
-      "nodeId": "node_51d1b03eb3",
-      "actorId": "actor_51d1b03eb3",
+      "nodeId": "node_f1f80d3a45",
+      "actorId": "actor_f1f80d3a45",
       "type": "NodeBranch",
-      "label": "Switch: Update?",
+      "label": "Switch: POST?",
       "color": "#0EA5E9",
       "position": {
         "x": 2740,
@@ -165,10 +235,10 @@
       }
     },
     {
-      "nodeId": "node_356bf9ec26",
-      "actorId": "actor_356bf9ec26",
-      "type": "NodeTransform",
-      "label": "Switch: OPTIONS",
+      "nodeId": "node_c3c923eacd",
+      "actorId": "actor_c3c923eacd",
+      "type": "NodeJavascript",
+      "label": "Switch: Update",
       "color": "#F59E0B",
       "position": {
         "x": 3120,
@@ -179,15 +249,15 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.response_type) ?? '') === String(\"OPTIONS\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.response_type) ?? '') === String(\"PUT\" ?? '')));"
       }
     },
     {
-      "nodeId": "node_dc9b8d3f80",
-      "actorId": "actor_dc9b8d3f80",
+      "nodeId": "node_51d1b03eb3",
+      "actorId": "actor_51d1b03eb3",
       "type": "NodeBranch",
-      "label": "Switch: OPTIONS?",
+      "label": "Switch: Update?",
       "color": "#0EA5E9",
       "position": {
         "x": 3500,
@@ -199,10 +269,10 @@
       }
     },
     {
-      "nodeId": "node_120282de67",
-      "actorId": "actor_120282de67",
-      "type": "NodeTransform",
-      "label": "Switch: DELETE",
+      "nodeId": "node_356bf9ec26",
+      "actorId": "actor_356bf9ec26",
+      "type": "NodeJavascript",
+      "label": "Switch: OPTIONS",
       "color": "#F59E0B",
       "position": {
         "x": 3880,
@@ -213,15 +283,15 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.response_type) ?? '') === String(\"DELETE\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.response_type) ?? '') === String(\"OPTIONS\" ?? '')));"
       }
     },
     {
-      "nodeId": "node_9f3e95d72b",
-      "actorId": "actor_9f3e95d72b",
+      "nodeId": "node_dc9b8d3f80",
+      "actorId": "actor_dc9b8d3f80",
       "type": "NodeBranch",
-      "label": "Switch: DELETE?",
+      "label": "Switch: OPTIONS?",
       "color": "#0EA5E9",
       "position": {
         "x": 4260,
@@ -233,10 +303,10 @@
       }
     },
     {
-      "nodeId": "node_0ba7d4b45d",
-      "actorId": "actor_0ba7d4b45d",
-      "type": "NodeTransform",
-      "label": "Switch: INVALID",
+      "nodeId": "node_120282de67",
+      "actorId": "actor_120282de67",
+      "type": "NodeJavascript",
+      "label": "Switch: DELETE",
       "color": "#F59E0B",
       "position": {
         "x": 4640,
@@ -247,8 +317,42 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.response_type) ?? '') === String(\"Invalid\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.response_type) ?? '') === String(\"DELETE\" ?? '')));"
+      }
+    },
+    {
+      "nodeId": "node_9f3e95d72b",
+      "actorId": "actor_9f3e95d72b",
+      "type": "NodeBranch",
+      "label": "Switch: DELETE?",
+      "color": "#0EA5E9",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 140
+      }
+    },
+    {
+      "nodeId": "node_0ba7d4b45d",
+      "actorId": "actor_0ba7d4b45d",
+      "type": "NodeJavascript",
+      "label": "Switch: INVALID",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5400,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.response_type) ?? '') === String(\"Invalid\" ?? '')));"
       }
     },
     {
@@ -258,7 +362,7 @@
       "label": "Switch: INVALID?",
       "color": "#0EA5E9",
       "position": {
-        "x": 5020,
+        "x": 5780,
         "y": 100
       },
       "size": {
@@ -273,7 +377,7 @@
       "label": "HTTP Request",
       "color": "#0EA5E9",
       "position": {
-        "x": 1600,
+        "x": 2360,
         "y": 360
       },
       "size": {
@@ -291,11 +395,11 @@
     {
       "nodeId": "node_a54d07b193",
       "actorId": "actor_a54d07b193",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "If: condition",
       "color": "#F59E0B",
       "position": {
-        "x": 2360,
+        "x": 3120,
         "y": 360
       },
       "size": {
@@ -303,8 +407,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.details) ?? '').trim() !== '') || ((($json.details)) != null));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.details) ?? '').trim() !== '') || ((($json.details)) != null));"
       }
     },
     {
@@ -314,7 +418,7 @@
       "label": "If: condition?",
       "color": "#0EA5E9",
       "position": {
-        "x": 2740,
+        "x": 3500,
         "y": 360
       },
       "size": {
@@ -325,11 +429,11 @@
     {
       "nodeId": "node_42920fcab9",
       "actorId": "actor_42920fcab9",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "If1: condition",
       "color": "#F59E0B",
       "position": {
-        "x": 4640,
+        "x": 5400,
         "y": 360
       },
       "size": {
@@ -337,8 +441,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.details) ?? '').trim() === '') || ((($json.details)) == null));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.details) ?? '').trim() === '') || ((($json.details)) == null));"
       }
     },
     {
@@ -348,7 +452,7 @@
       "label": "If1: condition?",
       "color": "#0EA5E9",
       "position": {
-        "x": 5020,
+        "x": 5780,
         "y": 360
       },
       "size": {
@@ -359,11 +463,11 @@
     {
       "nodeId": "node_be79da1673",
       "actorId": "actor_be79da1673",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Structure Response",
       "color": "#F59E0B",
       "position": {
-        "x": 1980,
+        "x": 2740,
         "y": 360
       },
       "size": {
@@ -371,8 +475,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Structure Response\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Access all items from the incoming node\n  const items = $input.all();\n  \n  // Combine all fields of each item into a single string\n  const combinedData = items.map(item => {\n   const inputData = item.json; // Access the JSON data of the current item\n   \n   // Combine all fields into a single string\n   const combinedField = Object.entries(inputData)\n   .map(([key, value]) => {\n   // Handle objects or arrays by converting them to JSON strings\n   const formattedValue = typeof value === 'object' ? JSON.stringify(value) : value;\n   return `${key}: ${formattedValue}`;\n   })\n   .join(' | '); // Combine key-value pairs as a single string with a delimiter\n  \n   // Return the new structure\n   return {\n   json: {\n   combinedField // Only keep the combined field for table representation\n   },\n   };\n  });\n  \n  // Output the combined data\n  return combinedData;\n  \n})();\nreturn __single(__unwrap(__out));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Structure Response\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Access all items from the incoming node\n  const items = $input.all();\n  \n  // Combine all fields of each item into a single string\n  const combinedData = items.map(item => {\n   const inputData = item.json; // Access the JSON data of the current item\n   \n   // Combine all fields into a single string\n   const combinedField = Object.entries(inputData)\n   .map(([key, value]) => {\n   // Handle objects or arrays by converting them to JSON strings\n   const formattedValue = typeof value === 'object' ? JSON.stringify(value) : value;\n   return `${key}: ${formattedValue}`;\n   })\n   .join(' | '); // Combine key-value pairs as a single string with a delimiter\n  \n   // Return the new structure\n   return {\n   json: {\n   combinedField // Only keep the combined field for table representation\n   },\n   };\n  });\n  \n  // Output the combined data\n  return combinedData;\n  \n})();\nreturn __single(__unwrap(__out));"
       }
     },
     {
@@ -382,7 +486,7 @@
       "label": "HTTP Request1",
       "color": "#0EA5E9",
       "position": {
-        "x": 3120,
+        "x": 3880,
         "y": 360
       },
       "size": {
@@ -406,7 +510,7 @@
       "label": "HTTP Request2",
       "color": "#0EA5E9",
       "position": {
-        "x": 3120,
+        "x": 3880,
         "y": 620
       },
       "size": {
@@ -428,7 +532,7 @@
       "label": "HTTP Request3",
       "color": "#0EA5E9",
       "position": {
-        "x": 5400,
+        "x": 6160,
         "y": 100
       },
       "size": {
@@ -450,7 +554,7 @@
       "label": "HTTP Request4",
       "color": "#0EA5E9",
       "position": {
-        "x": 5400,
+        "x": 6160,
         "y": 360
       },
       "size": {
@@ -472,7 +576,7 @@
       "label": "AI Agent1",
       "color": "#8B5CF6",
       "position": {
-        "x": 2740,
+        "x": 3500,
         "y": 620
       },
       "size": {
@@ -488,11 +592,11 @@
     {
       "nodeId": "node_2645d38c40",
       "actorId": "actor_2645d38c40",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Prompt: AI Agent1",
       "color": "#F59E0B",
       "position": {
-        "x": 2360,
+        "x": 3120,
         "y": 620
       },
       "size": {
@@ -500,8 +604,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When chat message received\": {{ctx}}, \"Telegram Trigger\": {{ctx}}, \"Gmail Trigger\": __namedCtx.steps?.[\"Webhook: googlesuper/GOOGLESUPER_NEW_MESSAGE\"]?.[\"payload\"], \"Webhook\": {{ctx}}, \"AI Agent\": ((text) => ({ text, output: text, content: text, response: { text, output_text: text }, message: { content: text }, choices: [{ message: { content: text }, text }] }))(__namedCtx.steps?.[\"AI Agent\"]?.[\"text\"]), \"HTTP Request\": __namedCtx.steps?.[\"HTTP Request\"]?.[\"body\"], \"Structure Response\": __namedCtx.steps?.[\"Structure Response\"]?.[\"transformed\"], \"HTTP Request1\": __namedCtx.steps?.[\"HTTP Request1\"]?.[\"body\"], \"HTTP Request2\": __namedCtx.steps?.[\"HTTP Request2\"]?.[\"body\"], \"HTTP Request3\": __namedCtx.steps?.[\"HTTP Request3\"]?.[\"body\"], \"HTTP Request4\": __namedCtx.steps?.[\"HTTP Request4\"]?.[\"body\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: AI Agent1.\nconst __promptValue = `You are a are a Proxmox Information Output Expert who will provide the summary of the information generated about proxmox. Here is the information about proxmox : from url${$('AI Agent').item.json.output.properties.url.pattern} ${$json.combinedField}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When chat message received\": __namedCtx.nodes?.[\"node_ed8224a690\"]?.latest?.[\"transformed\"], \"Telegram Trigger\": {{ctx}}, \"Gmail Trigger\": __namedCtx.steps?.[\"Webhook: googlesuper/GOOGLESUPER_NEW_MESSAGE\"]?.[\"payload\"], \"Webhook\": __namedCtx.nodes?.[\"node_89f8f34eef\"]?.latest?.[\"transformed\"], \"AI Agent\": ((text) => ({ text, output: text, content: text, response: { text, output_text: text }, message: { content: text }, choices: [{ message: { content: text }, text }] }))(__namedCtx.steps?.[\"AI Agent\"]?.[\"text\"]), \"HTTP Request\": __namedCtx.steps?.[\"HTTP Request\"]?.[\"body\"], \"Structure Response\": __namedCtx.steps?.[\"Structure Response\"]?.[\"transformed\"], \"HTTP Request1\": __namedCtx.steps?.[\"HTTP Request1\"]?.[\"body\"], \"HTTP Request2\": __namedCtx.steps?.[\"HTTP Request2\"]?.[\"body\"], \"HTTP Request3\": __namedCtx.steps?.[\"HTTP Request3\"]?.[\"body\"], \"HTTP Request4\": __namedCtx.steps?.[\"HTTP Request4\"]?.[\"body\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\n// Prompt: AI Agent1.\nconst __promptValue = `You are a are a Proxmox Information Output Expert who will provide the summary of the information generated about proxmox. Here is the information about proxmox : from url${$('AI Agent').item.json.output.properties.url.pattern} ${$json.combinedField}`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
       }
     },
     {
@@ -511,7 +615,7 @@
       "label": "Merge",
       "color": "#0EA5E9",
       "position": {
-        "x": 3500,
+        "x": 4260,
         "y": 360
       },
       "size": {
@@ -526,7 +630,7 @@
       "label": "Merge1",
       "color": "#0EA5E9",
       "position": {
-        "x": 5780,
+        "x": 6540,
         "y": 100
       },
       "size": {
@@ -537,11 +641,11 @@
     {
       "nodeId": "node_2adb92f9c8",
       "actorId": "actor_2adb92f9c8",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Structgure Response from Proxmox",
       "color": "#F59E0B",
       "position": {
-        "x": 6160,
+        "x": 6920,
         "y": 100
       },
       "size": {
@@ -549,18 +653,18 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Ported from n8n Code node \"Structgure Response from Proxmox\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Access the 'data' field from the input\n  let rawData = $json[\"data\"];\n  \n  // Split the string by colon (:) to extract parts\n  let parts = rawData.split(\":\");\n  \n  // Create an object with the extracted parts\n  return {\n   upid: parts[0], // UPID\n   node: parts[1], // Node (e.g., psb1)\n   processID: parts[2], // Process ID\n   taskID: parts[3], // Task ID\n   timestamp: parts[4], // Timestamp\n   operation: parts[5], // Operation (e.g., aptupdate)\n   user: parts[7] // User (e.g., root@pam!n8n)\n  };\n  \n})();\nreturn __single(__unwrap(__out));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Ported from n8n Code node \"Structgure Response from Proxmox\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Access the 'data' field from the input\n  let rawData = $json[\"data\"];\n  \n  // Split the string by colon (:) to extract parts\n  let parts = rawData.split(\":\");\n  \n  // Create an object with the extracted parts\n  return {\n   upid: parts[0], // UPID\n   node: parts[1], // Node (e.g., psb1)\n   processID: parts[2], // Process ID\n   taskID: parts[3], // Task ID\n   timestamp: parts[4], // Timestamp\n   operation: parts[5], // Operation (e.g., aptupdate)\n   user: parts[7] // User (e.g., root@pam!n8n)\n  };\n  \n})();\nreturn __single(__unwrap(__out));"
       }
     },
     {
       "nodeId": "node_9c87e1fda8",
       "actorId": "actor_9c87e1fda8",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Format Response and Hide Sensitive Data",
       "color": "#F59E0B",
       "position": {
-        "x": 6540,
+        "x": 7300,
         "y": 100
       },
       "size": {
@@ -568,8 +672,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Ported from n8n Code node \"Format Response and Hide Sensitive Data\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Extract required fields from the input\n  let node = $json[\"node\"] || \"unknown node\";\n  let operation = $json[\"operation\"] || \"unknown operation\";\n  let user = $json[\"user\"] || \"unknown user\";\n  let rawTimestamp = $json[\"timestamp\"] || \"unknown timestamp\";\n  \n  // Convert timestamp to a readable format\n  let readableTimestamp = \"Invalid timestamp\";\n  try {\n   let timestamp = parseInt(rawTimestamp, 16) * 1000; // Convert hex to milliseconds\n   readableTimestamp = new Date(timestamp).toLocaleString();\n  } catch (error) {\n   readableTimestamp = \"Unable to parse timestamp\";\n  }\n  \n  // Construct the simple message\n  let message = `The operation '${operation}' was executed successfully on node '${node}' by user '${user}' at '${readableTimestamp}'.`;\n  \n  return {\n   message: message\n  };\n  \n})();\nreturn __single(__unwrap(__out));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Ported from n8n Code node \"Format Response and Hide Sensitive Data\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Extract required fields from the input\n  let node = $json[\"node\"] || \"unknown node\";\n  let operation = $json[\"operation\"] || \"unknown operation\";\n  let user = $json[\"user\"] || \"unknown user\";\n  let rawTimestamp = $json[\"timestamp\"] || \"unknown timestamp\";\n  \n  // Convert timestamp to a readable format\n  let readableTimestamp = \"Invalid timestamp\";\n  try {\n   let timestamp = parseInt(rawTimestamp, 16) * 1000; // Convert hex to milliseconds\n   readableTimestamp = new Date(timestamp).toLocaleString();\n  } catch (error) {\n   readableTimestamp = \"Unable to parse timestamp\";\n  }\n  \n  // Construct the simple message\n  let message = `The operation '${operation}' was executed successfully on node '${node}' by user '${user}' at '${readableTimestamp}'.`;\n  \n  return {\n   message: message\n  };\n  \n})();\nreturn __single(__unwrap(__out));"
       }
     },
     {
@@ -580,6 +684,21 @@
       "color": "#EF4444",
       "position": {
         "x": 460,
+        "y": 620
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      }
+    },
+    {
+      "nodeId": "node_26fd799f04",
+      "actorId": "actor_26fd799f04",
+      "type": "NodeEnd",
+      "label": "End 2",
+      "color": "#EF4444",
+      "position": {
+        "x": 840,
         "y": 360
       },
       "size": {
@@ -588,13 +707,13 @@
       }
     },
     {
-      "nodeId": "node_5838285b57",
-      "actorId": "actor_5838285b57",
+      "nodeId": "node_adbe08bc10",
+      "actorId": "actor_adbe08bc10",
       "type": "NodeEnd",
-      "label": "End 2",
+      "label": "End 3",
       "color": "#EF4444",
       "position": {
-        "x": 3120,
+        "x": 3880,
         "y": 880
       },
       "size": {
@@ -603,13 +722,13 @@
       }
     },
     {
-      "nodeId": "node_5160d20dfb",
-      "actorId": "actor_5160d20dfb",
+      "nodeId": "node_ffc72f2365",
+      "actorId": "actor_ffc72f2365",
       "type": "NodeEnd",
-      "label": "End 3",
+      "label": "End 4",
       "color": "#EF4444",
       "position": {
-        "x": 6920,
+        "x": 7680,
         "y": 100
       },
       "size": {
@@ -635,12 +754,7 @@
         "projectId": "",
         "environmentTagId": "",
         "initialContext": {
-          "chatInput": "",
-          "sessionId": "",
           "event": {},
-          "body": {},
-          "query": {},
-          "headers": {},
           "apiKey": {
             "$workflowSecret": "API_KEY"
           },
@@ -653,11 +767,51 @@
   ],
   "edges": [
     {
+      "source": "node_a16dcb534e",
+      "target": "node_ed8224a690",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeChatTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_a16dcb534e",
+      "target": "node_ed8224a690",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeChatTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_7bff15a4de",
+      "target": "node_89f8f34eef",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_7bff15a4de",
+      "target": "node_89f8f34eef",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_900f8acb3d",
+      "target": "node_dba8231be8",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
       "source": "node_f01c6837e4",
       "target": "node_73e19f2123",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -665,7 +819,7 @@
       "target": "node_73e19f2123",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -674,14 +828,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_cebf762d45",
       "target": "node_f1f80d3a45",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -689,7 +843,7 @@
       "target": "node_f1f80d3a45",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -698,14 +852,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_c3c923eacd",
       "target": "node_51d1b03eb3",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -713,7 +867,7 @@
       "target": "node_51d1b03eb3",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -722,14 +876,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_356bf9ec26",
       "target": "node_dc9b8d3f80",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -737,7 +891,7 @@
       "target": "node_dc9b8d3f80",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -746,14 +900,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_120282de67",
       "target": "node_9f3e95d72b",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -761,7 +915,7 @@
       "target": "node_9f3e95d72b",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -770,14 +924,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_0ba7d4b45d",
       "target": "node_eddb3970aa",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -785,7 +939,7 @@
       "target": "node_eddb3970aa",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -793,7 +947,7 @@
       "target": "node_3670cb3259",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -801,7 +955,7 @@
       "target": "node_3670cb3259",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -809,7 +963,7 @@
       "target": "node_bb23ed08f7",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -817,7 +971,7 @@
       "target": "node_bb23ed08f7",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -825,7 +979,7 @@
       "target": "node_59167b7a61",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdecliAgent"
     },
     {
@@ -842,7 +996,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_24714077bb",
@@ -850,47 +1004,55 @@
       "sourceOutput": "body",
       "targetInput": "source",
       "sourceNodeType": "NodeHttpRequest",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
-      "source": "node_f604124a68",
-      "target": "node_dba8231be8",
-      "sourceOutput": "trigger",
+      "source": "node_ed8224a690",
+      "target": "node_900f8acb3d",
+      "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeCdecliAgent"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_ed8224a690",
+      "target": "node_900f8acb3d",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_be79da1673",
       "target": "node_2645d38c40",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_be79da1673",
       "target": "node_2645d38c40",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_2adb92f9c8",
       "target": "node_9c87e1fda8",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_2adb92f9c8",
       "target": "node_9c87e1fda8",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_3670cb3259",
@@ -922,7 +1084,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeSync",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_c10b9d0e4b",
@@ -930,7 +1092,7 @@
       "sourceOutput": "data1",
       "targetInput": "source",
       "sourceNodeType": "NodeSync",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_97450f28a4",
@@ -970,7 +1132,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeSync",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_8605bc5ecf",
@@ -978,7 +1140,7 @@
       "sourceOutput": "data1",
       "targetInput": "source",
       "sourceNodeType": "NodeSync",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_dba8231be8",
@@ -986,7 +1148,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdecliAgent",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_dba8231be8",
@@ -994,7 +1156,7 @@
       "sourceOutput": "text",
       "targetInput": "source",
       "sourceNodeType": "NodeCdecliAgent",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_dba8231be8",
@@ -1002,7 +1164,7 @@
       "sourceOutput": "text",
       "targetInput": "source",
       "sourceNodeType": "NodeCdecliAgent",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_dba8231be8",
@@ -1010,7 +1172,7 @@
       "sourceOutput": "text",
       "targetInput": "source",
       "sourceNodeType": "NodeCdecliAgent",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_dba8231be8",
@@ -1018,7 +1180,7 @@
       "sourceOutput": "text",
       "targetInput": "source",
       "sourceNodeType": "NodeCdecliAgent",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_dba8231be8",
@@ -1026,7 +1188,7 @@
       "sourceOutput": "text",
       "targetInput": "source",
       "sourceNodeType": "NodeCdecliAgent",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_dba8231be8",
@@ -1034,7 +1196,7 @@
       "sourceOutput": "text",
       "targetInput": "source",
       "sourceNodeType": "NodeCdecliAgent",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_73e19f2123",
@@ -1050,7 +1212,7 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_dba8231be8",
@@ -1058,7 +1220,7 @@
       "sourceOutput": "text",
       "targetInput": "source",
       "sourceNodeType": "NodeCdecliAgent",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_9f3e95d72b",
@@ -1066,7 +1228,7 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_dba8231be8",
@@ -1074,7 +1236,7 @@
       "sourceOutput": "text",
       "targetInput": "source",
       "sourceNodeType": "NodeCdecliAgent",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_af8510dc00",
@@ -1085,8 +1247,16 @@
       "targetNodeType": "NodeEnd"
     },
     {
+      "source": "node_89f8f34eef",
+      "target": "node_26fd799f04",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeEnd"
+    },
+    {
       "source": "node_59167b7a61",
-      "target": "node_5838285b57",
+      "target": "node_adbe08bc10",
       "sourceOutput": "text",
       "targetInput": "result",
       "sourceNodeType": "NodeCdecliAgent",
@@ -1094,10 +1264,10 @@
     },
     {
       "source": "node_9c87e1fda8",
-      "target": "node_5160d20dfb",
+      "target": "node_ffc72f2365",
       "sourceOutput": "transformed",
       "targetInput": "result",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeEnd"
     }
   ],
@@ -1138,16 +1308,18 @@
       "NodeBranch",
       "NodeCdeWebhookTrigger",
       "NodeCdecliAgent",
+      "NodeChatTrigger",
       "NodeEnd",
       "NodeHttpRequest",
+      "NodeJavascript",
       "NodeStart",
       "NodeSync",
-      "NodeTransform",
+      "NodeWebhookTrigger",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 27,
-      "yantraSteps": 31,
+      "yantraSteps": 36,
       "foldedHelpers": [
         "Google Gemini Chat Model",
         "Proxmox",
@@ -1170,30 +1342,30 @@
         "detail": "webhook trigger googlesuper/GOOGLESUPER_NEW_MESSAGE needs webhookEndpointId, connectedAccountId"
       },
       {
+        "code": "webhook-registration",
+        "node": "Webhook",
+        "detail": "generic trigger URL requires registration"
+      },
+      {
+        "code": "webhook-registration",
+        "node": "When chat message received",
+        "detail": "generic trigger URL requires registration"
+      },
+      {
         "code": "trigger-replaced",
         "node": "Telegram Trigger",
         "detail": "n8n-nodes-base.telegramTrigger became the Start node"
-      },
-      {
-        "code": "trigger-replaced",
-        "node": "Webhook",
-        "detail": "n8n-nodes-base.webhook became the Start node"
-      },
-      {
-        "code": "trigger-replaced",
-        "node": "When chat message received",
-        "detail": "@n8n/n8n-nodes-langchain.chatTrigger became the Start node"
       }
     ],
     "setup": [
       "\"Gmail Trigger\": after import, register the googlesuper webhook (`cdecli webhook endpoint create -c googlesuper`, then `cdecli trigger instance upsert --slug GOOGLESUPER_NEW_MESSAGE`) and set webhookEndpointId, connectedAccountId on the trigger node.",
+      "\"Webhook\": save the workflow, then register node node_7bff15a4de via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL. Use header authentication with credentials supplied at registration.",
+      "\"When chat message received\": save the workflow, then register node node_a16dcb534e via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL. Use bearer authentication with credentials supplied at registration.",
       "\"Telegram Trigger\" (telegramTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
-      "\"Webhook\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
-      "\"When chat message received\" (chatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
       "Workflow secret API_KEY: 10.11.12.101 API credential header value (for example \"Bearer <key>\"; rename the header if the API expects another one) for 10.11.12.101 (Authorization: <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
       "Workflow secret PROXMOX_API_KEY: proxmox.syncbricks.com API credential header value (for example \"Bearer <key>\"; rename the header if the API expects another one) for proxmox.syncbricks.com (Authorization: <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
       "Connect the googlesuper connector (credential).",
-      "Provide run inputs: chatInput, sessionId, event, body, query, headers."
+      "Provide run inputs: event."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -1244,7 +1416,7 @@
         {
           "node": "When chat message received",
           "type": "@n8n/n8n-nodes-langchain.chatTrigger",
-          "as": "NodeStart"
+          "as": "NodeChatTrigger"
         },
         {
           "node": "Telegram Trigger",
@@ -1259,14 +1431,12 @@
         {
           "node": "Webhook",
           "type": "n8n-nodes-base.webhook",
-          "as": "NodeStart"
+          "as": "NodeWebhookTrigger"
         }
       ],
       "hints": [
-        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
         "The original started from telegramTrigger; Yantra has no webhook slug for it, so run on demand, on a schedule (add a NodeCron), or via the workflow API with the event under the run input `event`.",
         "\"Gmail Trigger\" is a provider webhook (googlesuper/GOOGLESUPER_NEW_MESSAGE). Create the endpoint and trigger instance, then paste the we_… id and connected account into this node before the first run: `cdecli webhook endpoint create -c googlesuper --client-id <id>`, `cdecli webhook endpoint set-data <we_id> --signing-secret <secret>`, `cdecli trigger instance upsert --slug GOOGLESUPER_NEW_MESSAGE --account <connectedAccountId>`.",
-        "The original started from an inbound webhook (POST /459d848d-72ed-490f-bc48-e5dc60242896). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
         "\"AI Agent\" used agent tools in the original: Proxmox (toolHttpRequest), Proxmox API Wiki (toolHttpRequest), Proxmox API Documentation (toolHttpRequest). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
         "\"HTTP Request\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
         "\"HTTP Request1\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
@@ -1290,19 +1460,35 @@
       "## Developed by Amjid Ali\n\nThank you for using this workflow template. It has taken me countless hours of hard work, research, and dedication to develop, and I sincerely hope it adds value to your work.\n\nIf you find this template helpful, I kindly ask you to consider supporting my efforts. Your support will help me continue improving and creating more valuable resources.\n\nYou can contribute via PayPal here:\n\nhttp://paypal.me/pmptraining\n\nAdditionally, when sharing this template, I would greatly appreciate it if you include my original information to ensure proper credit is given.\n\nThank you for your generosity and support!\nEmail : [email removed]\nhttps://linkedin.com/in/amjidali\nhttps://syncbricks.com\nhttps://youtube.com/@syncbricks"
     ],
     "nodes": {
-      "node_f604124a68": {
+      "node_a16dcb534e": {
         "n8n": "When chat message received",
-        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger",
-        "also": [
-          "Telegram Trigger",
-          "Webhook"
-        ]
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
+      },
+      "node_ed8224a690": {
+        "n8n": "When chat message received",
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
+      },
+      "node_f123fa4c83": {
+        "n8n": "Telegram Trigger",
+        "n8nType": "n8n-nodes-base.telegramTrigger"
       },
       "node_af8510dc00": {
         "n8n": "Gmail Trigger",
         "n8nType": "n8n-nodes-base.gmailTrigger"
       },
+      "node_7bff15a4de": {
+        "n8n": "Webhook",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_89f8f34eef": {
+        "n8n": "Webhook",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
       "node_dba8231be8": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_900f8acb3d": {
         "n8n": "AI Agent",
         "n8nType": "@n8n/n8n-nodes-langchain.agent"
       },
@@ -1427,11 +1613,15 @@
         "n8n": "__end:Gmail Trigger",
         "n8nType": "synthetic"
       },
-      "node_5838285b57": {
+      "node_26fd799f04": {
+        "n8n": "__end:Webhook",
+        "n8nType": "synthetic"
+      },
+      "node_adbe08bc10": {
         "n8n": "__end:AI Agent1",
         "n8nType": "synthetic"
       },
-      "node_5160d20dfb": {
+      "node_ffc72f2365": {
         "n8n": "__end:Format Response and Hide Sensitive Data",
         "n8nType": "synthetic"
       },

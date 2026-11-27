@@ -5,25 +5,29 @@
   "isPublic": true,
   "nodes": [
     {
-      "nodeId": "node_fbf0e4885e",
-      "actorId": "actor_fbf0e4885e",
-      "type": "NodeStart",
-      "label": "Start",
-      "color": "#22C55E",
+      "nodeId": "node_2097a92e4d",
+      "actorId": "actor_2097a92e4d",
+      "type": "NodeChatTrigger",
+      "label": "When chat message received",
+      "color": "#6366F1",
       "position": {
         "x": 80,
         "y": 100
       },
       "size": {
-        "width": 240,
-        "height": 100
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "none",
+        "responseMode": "lastNode"
       }
     },
     {
-      "nodeId": "node_69bbed89e8",
-      "actorId": "actor_69bbed89e8",
-      "type": "NodeTransform",
-      "label": "Params: Notion",
+      "nodeId": "node_582d437bbb",
+      "actorId": "actor_582d437bbb",
+      "type": "NodeJavascript",
+      "label": "When chat message received: request",
       "color": "#F59E0B",
       "position": {
         "x": 460,
@@ -34,8 +38,27 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for notion/NOTION_FETCH_DATABASE (n8n node \"Notion\").\nreturn {\n  \"database_id\": ($json.chatInput.match(/https?:\\/\\/[^\\s/$.?#].[^\\s]*/g)[0]),\n};"
+        "migratedTransform": true,
+        "logic": "return { action: 'sendMessage', ...source };"
+      }
+    },
+    {
+      "nodeId": "node_69bbed89e8",
+      "actorId": "actor_69bbed89e8",
+      "type": "NodeJavascript",
+      "label": "Params: Notion",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Params for notion/NOTION_FETCH_DATABASE (n8n node \"Notion\").\nreturn {\n  \"database_id\": ($json.chatInput.match(/https?:\\/\\/[^\\s/$.?#].[^\\s]*/g)[0]),\n};"
       }
     },
     {
@@ -45,7 +68,7 @@
       "label": "notion/NOTION_FETCH_DATABASE",
       "color": "#6366F1",
       "position": {
-        "x": 840,
+        "x": 1220,
         "y": 100
       },
       "size": {
@@ -53,6 +76,7 @@
         "height": 200
       },
       "inputs": {
+        "onError": "continueErrorOutput",
         "connectorName": "notion",
         "connectorLabel": "Notion",
         "action": "NOTION_FETCH_DATABASE"
@@ -61,46 +85,8 @@
     {
       "nodeId": "node_f0e9c25f23",
       "actorId": "actor_f0e9c25f23",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "standardize schema",
-      "color": "#F59E0B",
-      "position": {
-        "x": 1220,
-        "y": 100
-      },
-      "size": {
-        "width": 280,
-        "height": 220
-      },
-      "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __set = (o, p, v) => { const ks = String(p).split('.'); let c = o; for (const k of ks.slice(0, -1)) { if (c[k] == null || typeof c[k] !== 'object') c[k] = {}; c = c[k]; } c[ks[ks.length - 1]] = v; return o; };\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  __set(out, \"inputDatabase.id\", ($json.id));\n  __set(out, \"inputDatabase.url\", ($json.url));\n  __set(out, \"inputDatabase.public_url\", ($json.public_url));\n  __set(out, \"inputDatabase.name\", ($json.title[0].text.content));\n  __set(out, \"inputDatabase.properties\", ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json.properties)));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
-      }
-    },
-    {
-      "nodeId": "node_5a6bf5e3e3",
-      "actorId": "actor_5a6bf5e3e3",
-      "type": "NodeTransform",
-      "label": "Return error to chat",
-      "color": "#F59E0B",
-      "position": {
-        "x": 1220,
-        "y": 360
-      },
-      "size": {
-        "width": 280,
-        "height": 220
-      },
-      "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When chat message received\": {{ctx}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"sessionId\"] = ($('When chat message received').item.json.sessionId);\n  out[\"output\"] = \"Sorry that doesn't look like a valid notion database url. Try again.\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
-      }
-    },
-    {
-      "nodeId": "node_dff248905f",
-      "actorId": "actor_dff248905f",
-      "type": "NodeTransform",
-      "label": "Simplify properties object",
       "color": "#F59E0B",
       "position": {
         "x": 1600,
@@ -111,15 +97,34 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst items = __items.map((json) => ({ json }));\n// Ported from n8n Code node \"Simplify properties object\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Loop through each incoming item\n  return items.map(item => {\n   const inputDatabase = item.json[\"inputDatabase\"];\n  \n   const simplifiedProperties = Object.fromEntries(Object.entries(inputDatabase.properties).map(([key, value]) => {\n   const simplifiedValue = {\n   id: value.id,\n   name: value.name,\n   type: value.type\n   };\n  \n   // Simplify based on type\n   if (value.type === 'multi_select' || value.type === 'select') {\n   simplifiedValue.options = value.multi_select?.options?.map(option => option.name) || [];\n   }\n   \n   return [key, simplifiedValue];\n   }));\n  \n   // Overwrite the properties object with simplifiedProperties\n   item.json.inputDatabase.properties = simplifiedProperties;\n  \n   return item; // Return the modified item\n  });\n  \n})();\nreturn __single(__unwrap(__out));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __set = (o, p, v) => { const ks = String(p).split('.'); let c = o; for (const k of ks.slice(0, -1)) { if (c[k] == null || typeof c[k] !== 'object') c[k] = {}; c = c[k]; } c[ks[ks.length - 1]] = v; return o; };\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  __set(out, \"inputDatabase.id\", ($json.id));\n  __set(out, \"inputDatabase.url\", ($json.url));\n  __set(out, \"inputDatabase.public_url\", ($json.public_url));\n  __set(out, \"inputDatabase.name\", ($json.title[0].text.content));\n  __set(out, \"inputDatabase.properties\", ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json.properties)));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
       }
     },
     {
-      "nodeId": "node_bd8eda7423",
-      "actorId": "actor_bd8eda7423",
-      "type": "NodeTransform",
-      "label": "Before repeat: Set input data",
+      "nodeId": "node_5a6bf5e3e3",
+      "actorId": "actor_5a6bf5e3e3",
+      "type": "NodeJavascript",
+      "label": "Return error to chat",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1600,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When chat message received\": __namedCtx.nodes?.[\"node_582d437bbb\"]?.latest?.[\"transformed\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"sessionId\"] = ($('When chat message received').item.json.sessionId);\n  out[\"output\"] = \"Sorry that doesn't look like a valid notion database url. Try again.\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_dff248905f",
+      "actorId": "actor_dff248905f",
+      "type": "NodeJavascript",
+      "label": "Simplify properties object",
       "color": "#F59E0B",
       "position": {
         "x": 1980,
@@ -130,8 +135,27 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return source;"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst items = __items.map((json) => ({ json }));\n// Ported from n8n Code node \"Simplify properties object\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Loop through each incoming item\n  return items.map(item => {\n   const inputDatabase = item.json[\"inputDatabase\"];\n  \n   const simplifiedProperties = Object.fromEntries(Object.entries(inputDatabase.properties).map(([key, value]) => {\n   const simplifiedValue = {\n   id: value.id,\n   name: value.name,\n   type: value.type\n   };\n  \n   // Simplify based on type\n   if (value.type === 'multi_select' || value.type === 'select') {\n   simplifiedValue.options = value.multi_select?.options?.map(option => option.name) || [];\n   }\n   \n   return [key, simplifiedValue];\n   }));\n  \n   // Overwrite the properties object with simplifiedProperties\n   item.json.inputDatabase.properties = simplifiedProperties;\n  \n   return item; // Return the modified item\n  });\n  \n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_bd8eda7423",
+      "actorId": "actor_bd8eda7423",
+      "type": "NodeJavascript",
+      "label": "Before repeat: Set input data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "return source;"
       }
     },
     {
@@ -141,7 +165,7 @@
       "label": "Repeat: Set input data",
       "color": "#0EA5E9",
       "position": {
-        "x": 2360,
+        "x": 2740,
         "y": 100
       },
       "size": {
@@ -156,27 +180,8 @@
     {
       "nodeId": "node_19e6cf1e73",
       "actorId": "actor_19e6cf1e73",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Return to repeat: Set input data",
-      "color": "#F59E0B",
-      "position": {
-        "x": 8060,
-        "y": 100
-      },
-      "size": {
-        "width": 280,
-        "height": 220
-      },
-      "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return source;"
-      }
-    },
-    {
-      "nodeId": "node_9fa3a8df7a",
-      "actorId": "actor_9fa3a8df7a",
-      "type": "NodeTransform",
-      "label": "Ready: Set input data",
       "color": "#F59E0B",
       "position": {
         "x": 8440,
@@ -187,18 +192,18 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return source.ready;"
+        "migratedTransform": true,
+        "logic": "return source;"
       }
     },
     {
-      "nodeId": "node_cfc9463c89",
-      "actorId": "actor_cfc9463c89",
-      "type": "NodeTransform",
-      "label": "Check input: Set input data",
+      "nodeId": "node_9fa3a8df7a",
+      "actorId": "actor_9fa3a8df7a",
+      "type": "NodeJavascript",
+      "label": "Ready: Set input data",
       "color": "#F59E0B",
       "position": {
-        "x": 2740,
+        "x": 8820,
         "y": 100
       },
       "size": {
@@ -206,34 +211,15 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "const ctx = {{ctx}};\nreturn ctx.steps?.[\"Repeat: Set input data\"]?.[\"attempt\"] === 1 ? ctx.steps?.[\"Before repeat: Set input data\"]?.[\"transformed\"] : ctx.steps?.[\"Return to repeat: Set input data\"]?.[\"transformed\"]?.value;"
+        "migratedTransform": true,
+        "logic": "return source.ready;"
       }
     },
     {
-      "nodeId": "node_bad971a3ce",
-      "actorId": "actor_bad971a3ce",
-      "type": "NodeTransform",
-      "label": "Failed: Repeat: Set input data",
-      "color": "#F59E0B",
-      "position": {
-        "x": 2740,
-        "y": 360
-      },
-      "size": {
-        "width": 280,
-        "height": 220
-      },
-      "inputs": {
-        "mode": "jsCode",
-        "jsCode": "throw Object.assign(new Error(source?.message || 'Repeat Until failed'), { name: source?.name || 'Error' });"
-      }
-    },
-    {
-      "nodeId": "node_fe4691ae63",
-      "actorId": "actor_fe4691ae63",
-      "type": "NodeTransform",
-      "label": "Set input data",
+      "nodeId": "node_cfc9463c89",
+      "actorId": "actor_cfc9463c89",
+      "type": "NodeJavascript",
+      "label": "Check input: Set input data",
       "color": "#F59E0B",
       "position": {
         "x": 3120,
@@ -244,8 +230,46 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"When chat message received\": {{ctx}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Ported from n8n Code node \"Set input data\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  \n  return [{\n   json: {\n   inputDatabase: $input.first().json.inputDatabase,\n   feedbackPrompt: (typeof yourVariable !== 'undefined' && yourVariable) ? yourVariable : \" \",\n   workflowTemplate: {\n   \"nodes\": [\n   {\n   \"parameters\": {\n   \"model\": \"gpt-4o\",\n   \"options\": {\n   \"temperature\": 0.7,\n   \"timeout\": 25000\n   }\n   },\n   \"id\": \"f262c0b4-d627-4fd4-ad78-0aa2f57d963f\",\n   \"name\": \"OpenAI Chat Model\",\n   \"type\": \"@n8n/n8n-nodes-langchain.lmChatOpenAi\",\n   \"typeVersion\": 1,\n   \"position\": [\n   1320,\n   640\n   ],\n   \"credentials\": {\n   \"openAiApi\": {\n   \"id\": \"AzPPV759YPBxJj3o\",\n   \"name\": \"Max's DevRel OpenAI account\"\n   }\n   }\n   },\n   {\n   \"parameters\": {\n   \"assignments\": {\n   \"assignments\": [\n   {\n   \"id\": \"055e8a80-4aff-4466-aaa5-ac58bb90f2d0\",\n   \"name\": \"databaseName\",\n   \"value\": \"={{ $json.name }}\",\n   \"type\": \"string\"\n   },\n   {\n   \"id\": \"2a61e473-72e7-46f6-98b0-817508d701c7\",\n   \"name\": \"databaseId\",\n   \"value\": \"={{ $json.id }}\",\n   \"type\": \"string\"\n   }\n   ]\n   },\n   \"options\": {}\n   },\n   \"id\": \"fb74819f-660e-479c-9519-73cfc41c7ee0\",\n   \"name\": \"workflow vars\",\n   \"type\": \"n8n-nodes-base.set\",\n   \"typeVersion\": 3.4,\n   \"position\": [\n   940,\n   460\n   ]\n   },\n   {\n   \"parameters\": {\n   \"assignments\": {\n   \"assignments\": [\n   {\n   \"id\": \"a8e58791-ba51-46a2-8645-386dd1a0ff6e\",\n   \"name\": \"sessionId\",\n   \"value\": \"={{ $('When chat message received').item.json.sessionId }}\",\n   \"type\": \"string\"\n   },\n   {\n   \"id\": \"434209de-39d5-43d8-a964-0fcb7396306c\",\n   \"name\": \"action\",\n   \"value\": \"={{ $('When chat message received').item.json.action }}\",\n   \"type\": \"string\"\n   },\n   {\n   \"id\": \"cad4c972-51a9-4e16-a627-b00eea77eb30\",\n   \"name\": \"chatInput\",\n   \"value\": \"={{ $('When chat message received').item.json.chatInput }}\",\n   \"type\": \"string\"\n   }\n   ]\n   },\n   \"options\": {}\n   },\n   \"id\": \"832ec8ce-0f7c-4380-9a24-633f490a60a9\",\n   \"name\": \"format input for agent\",\n   \"type\": \"n8n-nodes-base.set\",\n   \"typeVersion\": 3.4,\n   \"position\": [\n   1160,\n   460\n   ]\n   },\n   {\n   \"parameters\": {\n   \"toolDescription\": \"=Use this tool to search the \\\"{{ $('workflow vars').item.json.databaseName }}\\\" Notion app database.\\n\\nIt is structured with question and answer format. \\nYou can filter query result by:\\n- By keyword\\n- filter by tag.\\n\\nKeyword and Tag have an OR relationship not AND.\\n\\n\",\n   \"method\": \"POST\",\n   \"url\": \"https://api.notion.com/v1/databases/7ea9697d-4875-441e-b262-1105337d232e/query\",\n   \"authentication\": \"predefinedCredentialType\",\n   \"nodeCredentialType\": \"notionApi\",\n   \"sendBody\": true,\n   \"specifyBody\": \"json\",\n   \"jsonBody\": \"{\\n \\\"filter\\\": {\\n \\\"or\\\": [\\n {\\n \\\"property\\\": \\\"question\\\",\\n \\\"rich_text\\\": {\\n \\\"contains\\\": \\\"{keyword}\\\"\\n }\\n },\\n {\\n \\\"property\\\": \\\"tags\\\",\\n \\\"multi_select\\\": {\\n \\\"contains\\\": \\\"{tag}\\\"\\n }\\n }\\n ]\\n },\\n \\\"sorts\\\": [\\n {\\n \\\"property\\\": \\\"updated_at\\\",\\n \\\"direction\\\": \\\"ascending\\\"\\n }\\n ]\\n}\",\n   \"placeholderDefinitions\": {\n   \"values\": [\n   {\n   \"name\": \"keyword\",\n   \"description\": \"Searches question of the record. Use one keyword at a time.\"\n   },\n   {\n   \"name\": \"tag\",\n   \"description\": \"Options: PTO, HR Policy, Health Benefits, Direct Deposit, Payroll, Sick Leave, 1:1 Meetings, Scheduling, Internal Jobs, Performance Review, Diversity, Inclusion, Training, Harassment, Discrimination, Product Roadmap, Development, Feature Request, Product Management, Support, Ticket Submission, Password Reset, Email, Slack, GitHub, Team Collaboration, Development Setup, DevOps, GitHub Profile Analyzer, Security Breach, Incident Report, New Software, Software Request, IT, Hardware, Procurement, Software Licenses, JetBrains, Adobe, Data Backup, IT Policy, Security, MFA, Okta, Device Policy, Support Ticket, Phishing, Office Supplies, Operations, Meeting Room, Berlin Office, Travel Expenses, Reimbursement, Facilities, Maintenance, Equipment, Expense Reimbursement, Mobile Phones, SIM Cards, Parking, OKRs, Dashboard, Catering, Office Events\"\n   }\n   ]\n   }\n   },\n   \"id\": \"f16acb7e-f27d-4a95-845c-c990fc334795\",\n   \"name\": \"Search notion database\",\n   \"type\": \"@n8n/n8n-nodes-langchain.toolHttpRequest\",\n   \"typeVersion\": 1.1,\n   \"position\": [\n   1620,\n   640\n   ],\n   \"credentials\": {\n   \"notionApi\": {\n   \"id\": \"gfNp6Jup8rsmFLRr\",\n   \"name\": \"max-bot\"\n   }\n   }\n   },\n   {\n   \"parameters\": {\n   \"public\": true,\n   \"initialMessages\": \"=Happy {{ $today.weekdayLong }}!\\nKnowledge source assistant at your service. How can I help?\",\n   \"options\": {\n   \"subtitle\": \"\",\n   \"title\": \"Notion Knowledge Base\"\n   }\n   },\n   \"id\": \"9fc1ae38-d115-44d0-a088-7cec7036be6f\",\n   \"name\": \"When chat message received\",\n   \"type\": \"@n8n/n8n-nodes-langchain.chatTrigger\",\n   \"typeVersion\": 1.1,\n   \"position\": [\n   560,\n   460\n   ],\n   \"webhookId\": \"b76d02c0-b406-4d21-b6bf-8ad2c623def3\"\n   },\n   {\n   \"parameters\": {\n   \"resource\": \"database\",\n   \"databaseId\": {\n   \"__rl\": true,\n   \"value\": \"7ea9697d-4875-441e-b262-1105337d232e\",\n   \"mode\": \"list\",\n   \"cachedResultName\": \"StarLens Company Knowledge Base\",\n   \"cachedResultUrl\": \"https://www.notion.so/7ea9697d4875441eb2621105337d232e\"\n   }\n   },\n   \"id\": \"9325e0fe-549f-423b-af48-85e802429a7f\",\n   \"name\": \"Get database details\",\n   \"type\": \"n8n-nodes-base.notion\",\n   \"typeVersion\": 2.2,\n   \"position\": [\n   760,\n   460\n   ],\n   \"credentials\": {\n   \"notionApi\": {\n   \"id\": \"gfNp6Jup8rsmFLRr\",\n   \"name\": \"max-bot\"\n   }\n   }\n   },\n   {\n   \"parameters\": {\n   \"contextWindowLength\": 4\n   },\n   \"id\": \"637f5731-4442-42be-9151-30ee29ad97c6\",\n   \"name\": \"Window Buffer Memory\",\n   \"type\": \"@n8n/n8n-nodes-langchain.memoryBufferWindow\",\n   \"typeVersion\": 1.2,\n   \"position\": [\n   1460,\n   640\n   ]\n   },\n   {\n   \"parameters\": {\n   \"toolDescription\": \"=Use this tool to retrieve Notion page content using the page ID. \\n\\nIt is structured with question and answer format. \\nYou can filter query result by:\\n- By keyword\\n- filter by tag.\\n\\nKeyword and Tag have an OR relationship not AND.\\n\\n\",\n   \"url\": \"https://api.notion.com/v1/blocks/{page_id}/children\",\n   \"authentication\": \"predefinedCredentialType\",\n   \"nodeCredentialType\": \"notionApi\",\n   \"placeholderDefinitions\": {\n   \"values\": [\n   {\n   \"name\": \"page_id\",\n   \"description\": \"Notion page id from 'Search notion database' tool results\"\n   }\n   ]\n   },\n   \"optimizeResponse\": true,\n   \"dataField\": \"results\",\n   \"fieldsToInclude\": \"selected\",\n   \"fields\": \"id, type, paragraph.text, heading_1.text, heading_2.text, heading_3.text, bulleted_list_item.text, numbered_list_item.text, to_do.text, children\"\n   },\n   \"id\": \"6b87ae47-fac9-4ef5-aa9a-f1a1ae1adc5f\",\n   \"name\": \"Search inside database record\",\n   \"type\": \"@n8n/n8n-nodes-langchain.toolHttpRequest\",\n   \"typeVersion\": 1.1,\n   \"position\": [\n   1800,\n   640\n   ],\n   \"credentials\": {\n   \"notionApi\": {\n   \"id\": \"gfNp6Jup8rsmFLRr\",\n   \"name\": \"max-bot\"\n   }\n   }\n   },\n   {\n   \"parameters\": {\n   \"promptType\": \"define\",\n   \"text\": \"={{ $json.chatInput }}\",\n   \"options\": {\n   \"systemMessage\": \"=# Role:\\nYou are a helpful agent. Query the \\\"{{ $('workflow vars').item.json.databaseName }}\\\" Notion database to find relevant records or provide insights based on multiple records.\\n\\n# Behavior:\\n\\nBe clear, very concise, efficient, and accurate in responses. Do not hallucinate.\\nIf the request is ambiguous, ask for clarification. Do not embellish, only use facts from the Notion records. Never offer general advice.\\n\\n# Error Handling:\\n\\nIf no matching records are found, try alternative search criteria. Example: Laptop, then Computer, then Equipment. \\nClearly explain any issues with queries (e.g., missing fields or unsupported filters).\\n\\n# Output:\\n\\nReturn concise, user-friendly results or summaries.\\nFor large sets, show top results by default and offer more if needed. Output URLs in markdown format. \\n\\nWhen a record has the answer to user question, always output the URL to that page. Always list links to records separately at the end of the message like this:\\n\\\"Relevant pages: \\n(links in markdown format)\\\"\\nDo not output links twice, only in Relevant pages section\\n\"\n   }\n   },\n   \"id\": \"17f2c426-c48e-48e0-9c5e-e35bdafe5109\",\n   \"name\": \"AI Agent\",\n   \"type\": \"@n8n/n8n-nodes-langchain.agent\",\n   \"typeVersion\": 1.6,\n   \"position\": [\n   1380,\n   460\n   ]\n   }\n   ],\n   \"connections\": {\n   \"OpenAI Chat Model\": {\n   \"ai_languageModel\": [\n   [\n   {\n   \"node\": \"AI Agent\",\n   \"type\": \"ai_languageModel\",\n   \"index\": 0\n   }\n   ]\n   ]\n   },\n   \"workflow vars\": {\n   \"main\": [\n   [\n   {\n   \"node\": \"format input for agent\",\n   \"type\": \"main\",\n   \"index\": 0\n   }\n   ]\n   ]\n   },\n   \"format input for agent\": {\n   \"main\": [\n   [\n   {\n   \"node\": \"AI Agent\",\n   \"type\": \"main\",\n   \"index\": 0\n   }\n   ]\n   ]\n   },\n   \"Search notion database\": {\n   \"ai_tool\": [\n   [\n   {\n   \"node\": \"AI Agent\",\n   \"type\": \"ai_tool\",\n   \"index\": 0\n   }\n   ]\n   ]\n   },\n   \"When chat message received\": {\n   \"main\": [\n   [\n   {\n   \"node\": \"Get database details\",\n   \"type\": \"main\",\n   \"index\": 0\n   }\n   ]\n   ]\n   },\n   \"Get database details\": {\n   \"main\": [\n   [\n   {\n   \"node\": \"workflow vars\",\n   \"type\": \"main\",\n   \"index\": 0\n   }\n   ]\n   ]\n   },\n   \"Window Buffer Memory\": {\n   \"ai_memory\": [\n   [\n   {\n   \"node\": \"AI Agent\",\n   \"type\": \"ai_memory\",\n   \"index\": 0\n   }\n   ]\n   ]\n   },\n   \"Search inside database record\": {\n   \"ai_tool\": [\n   [\n   {\n   \"node\": \"AI Agent\",\n   \"type\": \"ai_tool\",\n   \"index\": 0\n   }\n   ]\n   ]\n   }\n   },\n   \"pinData\": {}\n  }\n   }\n  }];\n})();\nreturn __single(__unwrap(__out));"
+        "migratedTransform": true,
+        "logic": "const ctx = {{ctx}};\nreturn ctx.steps?.[\"Repeat: Set input data\"]?.[\"attempt\"] === 1 ? ctx.steps?.[\"Before repeat: Set input data\"]?.[\"transformed\"] : ctx.steps?.[\"Return to repeat: Set input data\"]?.[\"transformed\"]?.value;"
+      }
+    },
+    {
+      "nodeId": "node_bad971a3ce",
+      "actorId": "actor_bad971a3ce",
+      "type": "NodeJavascript",
+      "label": "Failed: Repeat: Set input data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3120,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "throw Object.assign(new Error(source?.message || 'Repeat Until failed'), { name: source?.name || 'Error' });"
+      }
+    },
+    {
+      "nodeId": "node_fe4691ae63",
+      "actorId": "actor_fe4691ae63",
+      "type": "NodeJavascript",
+      "label": "Set input data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"When chat message received\": __namedCtx.nodes?.[\"node_582d437bbb\"]?.latest?.[\"transformed\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Ported from n8n Code node \"Set input data\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  \n  return [{\n   json: {\n   inputDatabase: $input.first().json.inputDatabase,\n   feedbackPrompt: (typeof yourVariable !== 'undefined' && yourVariable) ? yourVariable : \" \",\n   workflowTemplate: {\n   \"nodes\": [\n   {\n   \"parameters\": {\n   \"model\": \"gpt-4o\",\n   \"options\": {\n   \"temperature\": 0.7,\n   \"timeout\": 25000\n   }\n   },\n   \"id\": \"f262c0b4-d627-4fd4-ad78-0aa2f57d963f\",\n   \"name\": \"OpenAI Chat Model\",\n   \"type\": \"@n8n/n8n-nodes-langchain.lmChatOpenAi\",\n   \"typeVersion\": 1,\n   \"position\": [\n   1320,\n   640\n   ],\n   \"credentials\": {\n   \"openAiApi\": {\n   \"id\": \"AzPPV759YPBxJj3o\",\n   \"name\": \"Max's DevRel OpenAI account\"\n   }\n   }\n   },\n   {\n   \"parameters\": {\n   \"assignments\": {\n   \"assignments\": [\n   {\n   \"id\": \"055e8a80-4aff-4466-aaa5-ac58bb90f2d0\",\n   \"name\": \"databaseName\",\n   \"value\": \"={{ $json.name }}\",\n   \"type\": \"string\"\n   },\n   {\n   \"id\": \"2a61e473-72e7-46f6-98b0-817508d701c7\",\n   \"name\": \"databaseId\",\n   \"value\": \"={{ $json.id }}\",\n   \"type\": \"string\"\n   }\n   ]\n   },\n   \"options\": {}\n   },\n   \"id\": \"fb74819f-660e-479c-9519-73cfc41c7ee0\",\n   \"name\": \"workflow vars\",\n   \"type\": \"n8n-nodes-base.set\",\n   \"typeVersion\": 3.4,\n   \"position\": [\n   940,\n   460\n   ]\n   },\n   {\n   \"parameters\": {\n   \"assignments\": {\n   \"assignments\": [\n   {\n   \"id\": \"a8e58791-ba51-46a2-8645-386dd1a0ff6e\",\n   \"name\": \"sessionId\",\n   \"value\": \"={{ $('When chat message received').item.json.sessionId }}\",\n   \"type\": \"string\"\n   },\n   {\n   \"id\": \"434209de-39d5-43d8-a964-0fcb7396306c\",\n   \"name\": \"action\",\n   \"value\": \"={{ $('When chat message received').item.json.action }}\",\n   \"type\": \"string\"\n   },\n   {\n   \"id\": \"cad4c972-51a9-4e16-a627-b00eea77eb30\",\n   \"name\": \"chatInput\",\n   \"value\": \"={{ $('When chat message received').item.json.chatInput }}\",\n   \"type\": \"string\"\n   }\n   ]\n   },\n   \"options\": {}\n   },\n   \"id\": \"832ec8ce-0f7c-4380-9a24-633f490a60a9\",\n   \"name\": \"format input for agent\",\n   \"type\": \"n8n-nodes-base.set\",\n   \"typeVersion\": 3.4,\n   \"position\": [\n   1160,\n   460\n   ]\n   },\n   {\n   \"parameters\": {\n   \"toolDescription\": \"=Use this tool to search the \\\"{{ $('workflow vars').item.json.databaseName }}\\\" Notion app database.\\n\\nIt is structured with question and answer format. \\nYou can filter query result by:\\n- By keyword\\n- filter by tag.\\n\\nKeyword and Tag have an OR relationship not AND.\\n\\n\",\n   \"method\": \"POST\",\n   \"url\": \"https://api.notion.com/v1/databases/7ea9697d-4875-441e-b262-1105337d232e/query\",\n   \"authentication\": \"predefinedCredentialType\",\n   \"nodeCredentialType\": \"notionApi\",\n   \"sendBody\": true,\n   \"specifyBody\": \"json\",\n   \"jsonBody\": \"{\\n \\\"filter\\\": {\\n \\\"or\\\": [\\n {\\n \\\"property\\\": \\\"question\\\",\\n \\\"rich_text\\\": {\\n \\\"contains\\\": \\\"{keyword}\\\"\\n }\\n },\\n {\\n \\\"property\\\": \\\"tags\\\",\\n \\\"multi_select\\\": {\\n \\\"contains\\\": \\\"{tag}\\\"\\n }\\n }\\n ]\\n },\\n \\\"sorts\\\": [\\n {\\n \\\"property\\\": \\\"updated_at\\\",\\n \\\"direction\\\": \\\"ascending\\\"\\n }\\n ]\\n}\",\n   \"placeholderDefinitions\": {\n   \"values\": [\n   {\n   \"name\": \"keyword\",\n   \"description\": \"Searches question of the record. Use one keyword at a time.\"\n   },\n   {\n   \"name\": \"tag\",\n   \"description\": \"Options: PTO, HR Policy, Health Benefits, Direct Deposit, Payroll, Sick Leave, 1:1 Meetings, Scheduling, Internal Jobs, Performance Review, Diversity, Inclusion, Training, Harassment, Discrimination, Product Roadmap, Development, Feature Request, Product Management, Support, Ticket Submission, Password Reset, Email, Slack, GitHub, Team Collaboration, Development Setup, DevOps, GitHub Profile Analyzer, Security Breach, Incident Report, New Software, Software Request, IT, Hardware, Procurement, Software Licenses, JetBrains, Adobe, Data Backup, IT Policy, Security, MFA, Okta, Device Policy, Support Ticket, Phishing, Office Supplies, Operations, Meeting Room, Berlin Office, Travel Expenses, Reimbursement, Facilities, Maintenance, Equipment, Expense Reimbursement, Mobile Phones, SIM Cards, Parking, OKRs, Dashboard, Catering, Office Events\"\n   }\n   ]\n   }\n   },\n   \"id\": \"f16acb7e-f27d-4a95-845c-c990fc334795\",\n   \"name\": \"Search notion database\",\n   \"type\": \"@n8n/n8n-nodes-langchain.toolHttpRequest\",\n   \"typeVersion\": 1.1,\n   \"position\": [\n   1620,\n   640\n   ],\n   \"credentials\": {\n   \"notionApi\": {\n   \"id\": \"gfNp6Jup8rsmFLRr\",\n   \"name\": \"max-bot\"\n   }\n   }\n   },\n   {\n   \"parameters\": {\n   \"public\": true,\n   \"initialMessages\": \"=Happy {{ $today.weekdayLong }}!\\nKnowledge source assistant at your service. How can I help?\",\n   \"options\": {\n   \"subtitle\": \"\",\n   \"title\": \"Notion Knowledge Base\"\n   }\n   },\n   \"id\": \"9fc1ae38-d115-44d0-a088-7cec7036be6f\",\n   \"name\": \"When chat message received\",\n   \"type\": \"@n8n/n8n-nodes-langchain.chatTrigger\",\n   \"typeVersion\": 1.1,\n   \"position\": [\n   560,\n   460\n   ],\n   \"webhookId\": \"b76d02c0-b406-4d21-b6bf-8ad2c623def3\"\n   },\n   {\n   \"parameters\": {\n   \"resource\": \"database\",\n   \"databaseId\": {\n   \"__rl\": true,\n   \"value\": \"7ea9697d-4875-441e-b262-1105337d232e\",\n   \"mode\": \"list\",\n   \"cachedResultName\": \"StarLens Company Knowledge Base\",\n   \"cachedResultUrl\": \"https://www.notion.so/7ea9697d4875441eb2621105337d232e\"\n   }\n   },\n   \"id\": \"9325e0fe-549f-423b-af48-85e802429a7f\",\n   \"name\": \"Get database details\",\n   \"type\": \"n8n-nodes-base.notion\",\n   \"typeVersion\": 2.2,\n   \"position\": [\n   760,\n   460\n   ],\n   \"credentials\": {\n   \"notionApi\": {\n   \"id\": \"gfNp6Jup8rsmFLRr\",\n   \"name\": \"max-bot\"\n   }\n   }\n   },\n   {\n   \"parameters\": {\n   \"contextWindowLength\": 4\n   },\n   \"id\": \"637f5731-4442-42be-9151-30ee29ad97c6\",\n   \"name\": \"Window Buffer Memory\",\n   \"type\": \"@n8n/n8n-nodes-langchain.memoryBufferWindow\",\n   \"typeVersion\": 1.2,\n   \"position\": [\n   1460,\n   640\n   ]\n   },\n   {\n   \"parameters\": {\n   \"toolDescription\": \"=Use this tool to retrieve Notion page content using the page ID. \\n\\nIt is structured with question and answer format. \\nYou can filter query result by:\\n- By keyword\\n- filter by tag.\\n\\nKeyword and Tag have an OR relationship not AND.\\n\\n\",\n   \"url\": \"https://api.notion.com/v1/blocks/{page_id}/children\",\n   \"authentication\": \"predefinedCredentialType\",\n   \"nodeCredentialType\": \"notionApi\",\n   \"placeholderDefinitions\": {\n   \"values\": [\n   {\n   \"name\": \"page_id\",\n   \"description\": \"Notion page id from 'Search notion database' tool results\"\n   }\n   ]\n   },\n   \"optimizeResponse\": true,\n   \"dataField\": \"results\",\n   \"fieldsToInclude\": \"selected\",\n   \"fields\": \"id, type, paragraph.text, heading_1.text, heading_2.text, heading_3.text, bulleted_list_item.text, numbered_list_item.text, to_do.text, children\"\n   },\n   \"id\": \"6b87ae47-fac9-4ef5-aa9a-f1a1ae1adc5f\",\n   \"name\": \"Search inside database record\",\n   \"type\": \"@n8n/n8n-nodes-langchain.toolHttpRequest\",\n   \"typeVersion\": 1.1,\n   \"position\": [\n   1800,\n   640\n   ],\n   \"credentials\": {\n   \"notionApi\": {\n   \"id\": \"gfNp6Jup8rsmFLRr\",\n   \"name\": \"max-bot\"\n   }\n   }\n   },\n   {\n   \"parameters\": {\n   \"promptType\": \"define\",\n   \"text\": \"={{ $json.chatInput }}\",\n   \"options\": {\n   \"systemMessage\": \"=# Role:\\nYou are a helpful agent. Query the \\\"{{ $('workflow vars').item.json.databaseName }}\\\" Notion database to find relevant records or provide insights based on multiple records.\\n\\n# Behavior:\\n\\nBe clear, very concise, efficient, and accurate in responses. Do not hallucinate.\\nIf the request is ambiguous, ask for clarification. Do not embellish, only use facts from the Notion records. Never offer general advice.\\n\\n# Error Handling:\\n\\nIf no matching records are found, try alternative search criteria. Example: Laptop, then Computer, then Equipment. \\nClearly explain any issues with queries (e.g., missing fields or unsupported filters).\\n\\n# Output:\\n\\nReturn concise, user-friendly results or summaries.\\nFor large sets, show top results by default and offer more if needed. Output URLs in markdown format. \\n\\nWhen a record has the answer to user question, always output the URL to that page. Always list links to records separately at the end of the message like this:\\n\\\"Relevant pages: \\n(links in markdown format)\\\"\\nDo not output links twice, only in Relevant pages section\\n\"\n   }\n   },\n   \"id\": \"17f2c426-c48e-48e0-9c5e-e35bdafe5109\",\n   \"name\": \"AI Agent\",\n   \"type\": \"@n8n/n8n-nodes-langchain.agent\",\n   \"typeVersion\": 1.6,\n   \"position\": [\n   1380,\n   460\n   ]\n   }\n   ],\n   \"connections\": {\n   \"OpenAI Chat Model\": {\n   \"ai_languageModel\": [\n   [\n   {\n   \"node\": \"AI Agent\",\n   \"type\": \"ai_languageModel\",\n   \"index\": 0\n   }\n   ]\n   ]\n   },\n   \"workflow vars\": {\n   \"main\": [\n   [\n   {\n   \"node\": \"format input for agent\",\n   \"type\": \"main\",\n   \"index\": 0\n   }\n   ]\n   ]\n   },\n   \"format input for agent\": {\n   \"main\": [\n   [\n   {\n   \"node\": \"AI Agent\",\n   \"type\": \"main\",\n   \"index\": 0\n   }\n   ]\n   ]\n   },\n   \"Search notion database\": {\n   \"ai_tool\": [\n   [\n   {\n   \"node\": \"AI Agent\",\n   \"type\": \"ai_tool\",\n   \"index\": 0\n   }\n   ]\n   ]\n   },\n   \"When chat message received\": {\n   \"main\": [\n   [\n   {\n   \"node\": \"Get database details\",\n   \"type\": \"main\",\n   \"index\": 0\n   }\n   ]\n   ]\n   },\n   \"Get database details\": {\n   \"main\": [\n   [\n   {\n   \"node\": \"workflow vars\",\n   \"type\": \"main\",\n   \"index\": 0\n   }\n   ]\n   ]\n   },\n   \"Window Buffer Memory\": {\n   \"ai_memory\": [\n   [\n   {\n   \"node\": \"AI Agent\",\n   \"type\": \"ai_memory\",\n   \"index\": 0\n   }\n   ]\n   ]\n   },\n   \"Search inside database record\": {\n   \"ai_tool\": [\n   [\n   {\n   \"node\": \"AI Agent\",\n   \"type\": \"ai_tool\",\n   \"index\": 0\n   }\n   ]\n   ]\n   }\n   },\n   \"pinData\": {}\n  }\n   }\n  }];\n})();\nreturn __single(__unwrap(__out));"
       }
     },
     {
@@ -255,7 +279,7 @@
       "label": "Generate Workflow Agent",
       "color": "#8B5CF6",
       "position": {
-        "x": 3880,
+        "x": 4260,
         "y": 100
       },
       "size": {
@@ -270,11 +294,11 @@
     {
       "nodeId": "node_32793a7b5b",
       "actorId": "actor_32793a7b5b",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Prompt: Generate Workflow Agent",
       "color": "#F59E0B",
       "position": {
-        "x": 3500,
+        "x": 3880,
         "y": 100
       },
       "size": {
@@ -282,34 +306,15 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Array.prototype, { toJsonString() { return JSON.stringify(this); } });\n__def(Object.prototype, { toJsonString() { return JSON.stringify(this); } });\n// Prompt: Generate Workflow Agent.\nconst __promptValue = `Your task is to output a modified version of a n8n workflow template so it works with the provided new notion database schema. \n\n\n# new notion database details\n${$json.inputDatabase.toJsonString()}\n\n# n8n workflow template to use as reference\n${$json.workflowTemplate.toJsonString()}\n\nJSON Output:\n- Ensure valid JSON with properly quoted keys and values, no trailing commas, and correctly nested braces \\`{}\\` and brackets \\`[]\\`. If unable to format, return an error or a valid example.\n- Output linebreaks so user can copy working JSON`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(Array.prototype, { toJsonString() { return JSON.stringify(this); } });\n__def(Object.prototype, { toJsonString() { return JSON.stringify(this); } });\n// Prompt: Generate Workflow Agent.\nconst __promptValue = `Your task is to output a modified version of a n8n workflow template so it works with the provided new notion database schema. \n\n\n# new notion database details\n${$json.inputDatabase.toJsonString()}\n\n# n8n workflow template to use as reference\n${$json.workflowTemplate.toJsonString()}\n\nJSON Output:\n- Ensure valid JSON with properly quoted keys and values, no trailing commas, and correctly nested braces \\`{}\\` and brackets \\`[]\\`. If unable to format, return an error or a valid example.\n- Output linebreaks so user can copy working JSON`;\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
       }
     },
     {
       "nodeId": "node_c2dcadeedc",
       "actorId": "actor_c2dcadeedc",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Set schema for eval",
-      "color": "#F59E0B",
-      "position": {
-        "x": 4260,
-        "y": 100
-      },
-      "size": {
-        "width": 280,
-        "height": 220
-      },
-      "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Set input data\": __namedCtx.steps?.[\"Set input data\"]?.[\"transformed\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(String.prototype, { parseJson() { try { return JSON.parse(String(this)); } catch { return undefined; } } });\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"searchNotionDBJsonBody\"] = ($json.output.workflowJson.parseJson().nodes.find(node => node.name === \"Search notion database\").parameters.jsonBody);\n  out[\"generatedWorkflow\"] = ($json.output.workflowJson);\n  out[\"inputDatabase\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($('Set input data').first().json.inputDatabase));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
-      }
-    },
-    {
-      "nodeId": "node_939e96e8c9",
-      "actorId": "actor_939e96e8c9",
-      "type": "NodeTransform",
-      "label": "Check for WF JSON errors: Placeholder jsonBody in tool",
       "color": "#F59E0B",
       "position": {
         "x": 4640,
@@ -320,8 +325,27 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.searchNotionDBJsonBody) ?? '').includes(String(\"object Object\" ?? ''))));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Set input data\": __namedCtx.steps?.[\"Set input data\"]?.[\"transformed\"] };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// n8n data transformation helpers used by this step.\nconst __def = (proto, fns) => { for (const [k, f] of Object.entries(fns)) if (!(k in proto)) Object.defineProperty(proto, k, { value: f, writable: true, configurable: true }); };\n__def(String.prototype, { parseJson() { try { return JSON.parse(String(this)); } catch { return undefined; } } });\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"searchNotionDBJsonBody\"] = ($json.output.workflowJson.parseJson().nodes.find(node => node.name === \"Search notion database\").parameters.jsonBody);\n  out[\"generatedWorkflow\"] = ($json.output.workflowJson);\n  out[\"inputDatabase\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($('Set input data').first().json.inputDatabase));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_939e96e8c9",
+      "actorId": "actor_939e96e8c9",
+      "type": "NodeJavascript",
+      "label": "Check for WF JSON errors: Placeholder jsonBody in tool",
+      "color": "#F59E0B",
+      "position": {
+        "x": 5020,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json.searchNotionDBJsonBody) ?? '').includes(String(\"object Object\" ?? ''))));"
       }
     },
     {
@@ -331,7 +355,7 @@
       "label": "Check for WF JSON errors: Placeholder jsonBody in tool?",
       "color": "#0EA5E9",
       "position": {
-        "x": 5020,
+        "x": 5400,
         "y": 100
       },
       "size": {
@@ -342,11 +366,11 @@
     {
       "nodeId": "node_2cf013ef0a",
       "actorId": "actor_2cf013ef0a",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Add feedback prompt",
       "color": "#F59E0B",
       "position": {
-        "x": 5400,
+        "x": 5780,
         "y": 100
       },
       "size": {
@@ -354,8 +378,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"feedbackPrompt\"] = `You attempted the below task and outputted incorrect JSON. Below is your incorrect attempt and original task prompt. Try again.\n\n# Incorrect task prompt\n`;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node), keeping the other input fields: once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = { ...__in };\n  out[\"feedbackPrompt\"] = `You attempted the below task and outputted incorrect JSON. Below is your incorrect attempt and original task prompt. Try again.\n\n# Incorrect task prompt\n`;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
       }
     },
     {
@@ -365,7 +389,7 @@
       "label": "Valid n8n workflow JSON?",
       "color": "#8B5CF6",
       "position": {
-        "x": 5780,
+        "x": 6160,
         "y": 100
       },
       "size": {
@@ -399,11 +423,11 @@
     {
       "nodeId": "node_f0d725202d",
       "actorId": "actor_f0d725202d",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Prompt: Valid n8n workflow JSON?",
       "color": "#F59E0B",
       "position": {
-        "x": 5400,
+        "x": 5780,
         "y": 360
       },
       "size": {
@@ -411,18 +435,18 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Valid n8n workflow JSON?.\nconst __promptValue = ($json.generatedWorkflow);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Valid n8n workflow JSON?.\nconst __promptValue = ($json.generatedWorkflow);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
       }
     },
     {
       "nodeId": "node_545312059d",
       "actorId": "actor_545312059d",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Valid n8n workflow JSON?: category = invalidJSON",
       "color": "#F59E0B",
       "position": {
-        "x": 6160,
+        "x": 6540,
         "y": 100
       },
       "size": {
@@ -430,8 +454,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return String(source?.category ?? '') === \"invalidJSON\";"
+        "migratedTransform": true,
+        "logic": "return String(source?.category ?? '') === \"invalidJSON\";"
       }
     },
     {
@@ -441,7 +465,7 @@
       "label": "Valid n8n workflow JSON?: category = invalidJSON?",
       "color": "#0EA5E9",
       "position": {
-        "x": 6540,
+        "x": 6920,
         "y": 100
       },
       "size": {
@@ -452,11 +476,11 @@
     {
       "nodeId": "node_6c8c23e1dd",
       "actorId": "actor_6c8c23e1dd",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Valid n8n workflow JSON?: category = validJSON",
       "color": "#F59E0B",
       "position": {
-        "x": 6920,
+        "x": 7300,
         "y": 100
       },
       "size": {
@@ -464,8 +488,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return String(source?.category ?? '') === \"validJSON\";"
+        "migratedTransform": true,
+        "logic": "return String(source?.category ?? '') === \"validJSON\";"
       }
     },
     {
@@ -475,7 +499,7 @@
       "label": "Valid n8n workflow JSON?: category = validJSON?",
       "color": "#0EA5E9",
       "position": {
-        "x": 7300,
+        "x": 7680,
         "y": 100
       },
       "size": {
@@ -486,46 +510,8 @@
     {
       "nodeId": "node_e6b1f3af3f",
       "actorId": "actor_e6b1f3af3f",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Set schem for rerun",
-      "color": "#F59E0B",
-      "position": {
-        "x": 6920,
-        "y": 360
-      },
-      "size": {
-        "width": 280,
-        "height": 220
-      },
-      "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"inputDatabase\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json.inputDatabase));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
-      }
-    },
-    {
-      "nodeId": "node_4906f8d05f",
-      "actorId": "actor_4906f8d05f",
-      "type": "NodeTransform",
-      "label": "Return success to chat",
-      "color": "#F59E0B",
-      "position": {
-        "x": 3880,
-        "y": 360
-      },
-      "size": {
-        "width": 280,
-        "height": 220
-      },
-      "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"output\"] = `Created workflow:\n\\`\\`\\`\n${$json.generatedWorkflow}\n\\`\\`\\`\n\n☝️ Copy and paste JSON above into an n8n workflow canvas (on v 1.52.0+)`;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
-      }
-    },
-    {
-      "nodeId": "node_1edd5f59e2",
-      "actorId": "actor_1edd5f59e2",
-      "type": "NodeTransform",
-      "label": "Retry: Set schem for rerun (0)",
       "color": "#F59E0B",
       "position": {
         "x": 7300,
@@ -536,18 +522,56 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return { ready: false, route: 0, value: source };"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"inputDatabase\"] = ((v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return v; } })(($json.inputDatabase));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_4906f8d05f",
+      "actorId": "actor_4906f8d05f",
+      "type": "NodeJavascript",
+      "label": "Return success to chat",
+      "color": "#F59E0B",
+      "position": {
+        "x": 4260,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"output\"] = `Created workflow:\n\\`\\`\\`\n${$json.generatedWorkflow}\n\\`\\`\\`\n\n☝️ Copy and paste JSON above into an n8n workflow canvas (on v 1.52.0+)`;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_1edd5f59e2",
+      "actorId": "actor_1edd5f59e2",
+      "type": "NodeJavascript",
+      "label": "Retry: Set schem for rerun (0)",
+      "color": "#F59E0B",
+      "position": {
+        "x": 7680,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "return { ready: false, route: 0, value: source };"
       }
     },
     {
       "nodeId": "node_feb62d6466",
       "actorId": "actor_feb62d6466",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Finish: Valid n8n workflow JSON? (1)",
       "color": "#F59E0B",
       "position": {
-        "x": 7680,
+        "x": 8060,
         "y": 100
       },
       "size": {
@@ -555,18 +579,18 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return { ready: true, route: 1, value: source };"
+        "migratedTransform": true,
+        "logic": "return { ready: true, route: 1, value: source };"
       }
     },
     {
       "nodeId": "node_2b42fb9beb",
       "actorId": "actor_2b42fb9beb",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Exit 1: Set input data",
       "color": "#F59E0B",
       "position": {
-        "x": 2740,
+        "x": 3120,
         "y": 620
       },
       "size": {
@@ -574,8 +598,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return source.route === 1;"
+        "migratedTransform": true,
+        "logic": "return source.route === 1;"
       }
     },
     {
@@ -585,7 +609,7 @@
       "label": "Select exit 1: Set input data",
       "color": "#0EA5E9",
       "position": {
-        "x": 3120,
+        "x": 3500,
         "y": 360
       },
       "size": {
@@ -596,11 +620,11 @@
     {
       "nodeId": "node_b7339e3374",
       "actorId": "actor_b7339e3374",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Result 1: Set input data",
       "color": "#F59E0B",
       "position": {
-        "x": 3500,
+        "x": 3880,
         "y": 360
       },
       "size": {
@@ -608,18 +632,18 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return source.value;"
+        "migratedTransform": true,
+        "logic": "return source.value;"
       }
     },
     {
       "nodeId": "node_de259561fa",
       "actorId": "actor_de259561fa",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Finish: Valid n8n workflow JSON? (2)",
       "color": "#F59E0B",
       "position": {
-        "x": 7680,
+        "x": 8060,
         "y": 360
       },
       "size": {
@@ -627,18 +651,18 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return { ready: true, route: 2, value: source };"
+        "migratedTransform": true,
+        "logic": "return { ready: true, route: 2, value: source };"
       }
     },
     {
       "nodeId": "node_ff5f79fdc0",
       "actorId": "actor_ff5f79fdc0",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Exit 2: Set input data",
       "color": "#F59E0B",
       "position": {
-        "x": 2740,
+        "x": 3120,
         "y": 880
       },
       "size": {
@@ -646,8 +670,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return source.route === 2;"
+        "migratedTransform": true,
+        "logic": "return source.route === 2;"
       }
     },
     {
@@ -657,7 +681,7 @@
       "label": "Select exit 2: Set input data",
       "color": "#0EA5E9",
       "position": {
-        "x": 3120,
+        "x": 3500,
         "y": 620
       },
       "size": {
@@ -668,11 +692,11 @@
     {
       "nodeId": "node_877587e5f8",
       "actorId": "actor_877587e5f8",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Result 2: Set input data",
       "color": "#F59E0B",
       "position": {
-        "x": 3500,
+        "x": 3880,
         "y": 620
       },
       "size": {
@@ -680,8 +704,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return source.value;"
+        "migratedTransform": true,
+        "logic": "return source.value;"
       }
     },
     {
@@ -691,7 +715,7 @@
       "label": "End: Valid n8n workflow JSON? (2)",
       "color": "#EF4444",
       "position": {
-        "x": 3880,
+        "x": 4260,
         "y": 620
       },
       "size": {
@@ -706,7 +730,7 @@
       "label": "End",
       "color": "#EF4444",
       "position": {
-        "x": 1600,
+        "x": 1980,
         "y": 360
       },
       "size": {
@@ -721,7 +745,7 @@
       "label": "End 2",
       "color": "#EF4444",
       "position": {
-        "x": 4260,
+        "x": 4640,
         "y": 360
       },
       "size": {
@@ -747,8 +771,6 @@
         "projectId": "",
         "environmentTagId": "",
         "initialContext": {
-          "chatInput": "",
-          "sessionId": "",
           "llmModel_f1a0e94470": ""
         }
       }
@@ -760,7 +782,7 @@
       "label": "Valid n8n workflow JSON?: model",
       "color": "#8B5CF6",
       "position": {
-        "x": 5780,
+        "x": 6160,
         "y": 420
       },
       "size": {
@@ -775,11 +797,27 @@
   ],
   "edges": [
     {
+      "source": "node_2097a92e4d",
+      "target": "node_582d437bbb",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeChatTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_2097a92e4d",
+      "target": "node_582d437bbb",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeChatTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
       "source": "node_69bbed89e8",
       "target": "node_77e7f7a0ba",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -787,7 +825,7 @@
       "target": "node_77e7f7a0ba",
       "sourceOutput": "transformed",
       "targetInput": "params",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -795,7 +833,7 @@
       "target": "node_e99cbdc8e2",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeRepeatUntil"
     },
     {
@@ -803,23 +841,23 @@
       "target": "node_9fa3a8df7a",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_19e6cf1e73",
       "target": "node_9fa3a8df7a",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_9fa3a8df7a",
       "target": "node_e99cbdc8e2",
       "sourceOutput": "onDone",
       "targetInput": "NEXT",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeRepeatUntil"
     },
     {
@@ -827,7 +865,7 @@
       "target": "node_e99cbdc8e2",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeRepeatUntil"
     },
     {
@@ -835,7 +873,7 @@
       "target": "node_e99cbdc8e2",
       "sourceOutput": "transformed",
       "targetInput": "result",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeRepeatUntil"
     },
     {
@@ -844,7 +882,7 @@
       "sourceOutput": "onCheck",
       "targetInput": "RUN",
       "sourceNodeType": "NodeRepeatUntil",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_e99cbdc8e2",
@@ -852,7 +890,7 @@
       "sourceOutput": "onError",
       "targetInput": "RUN",
       "sourceNodeType": "NodeRepeatUntil",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_e99cbdc8e2",
@@ -860,14 +898,14 @@
       "sourceOutput": "error",
       "targetInput": "source",
       "sourceNodeType": "NodeRepeatUntil",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_32793a7b5b",
       "target": "node_0e6b69c9ce",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdecliAgent"
     },
     {
@@ -875,7 +913,7 @@
       "target": "node_00b489aa4a",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -883,7 +921,7 @@
       "target": "node_00b489aa4a",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -891,7 +929,7 @@
       "target": "node_f1a0e94470",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeLlmChain"
     },
     {
@@ -900,7 +938,7 @@
       "sourceOutput": "object",
       "targetInput": "source",
       "sourceNodeType": "NodeLlmChain",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_f1a0e94470",
@@ -908,14 +946,14 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeLlmChain",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_545312059d",
       "target": "node_c0db7560c2",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -923,7 +961,7 @@
       "target": "node_c0db7560c2",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -932,7 +970,7 @@
       "sourceOutput": "object",
       "targetInput": "source",
       "sourceNodeType": "NodeLlmChain",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_c0db7560c2",
@@ -940,14 +978,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_6c8c23e1dd",
       "target": "node_b2abfa645a",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -955,7 +993,7 @@
       "target": "node_b2abfa645a",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -964,7 +1002,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_77e7f7a0ba",
@@ -972,87 +1010,87 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_77e7f7a0ba",
       "target": "node_5a6bf5e3e3",
-      "sourceOutput": "onDone",
+      "sourceOutput": "onError",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_77e7f7a0ba",
       "target": "node_5a6bf5e3e3",
-      "sourceOutput": "result",
+      "sourceOutput": "error",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_c2dcadeedc",
       "target": "node_939e96e8c9",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_c2dcadeedc",
       "target": "node_939e96e8c9",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_f0e9c25f23",
       "target": "node_dff248905f",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_f0e9c25f23",
       "target": "node_dff248905f",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_fe4691ae63",
       "target": "node_32793a7b5b",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_fe4691ae63",
       "target": "node_32793a7b5b",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_2cf013ef0a",
       "target": "node_e6b1f3af3f",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_2cf013ef0a",
       "target": "node_e6b1f3af3f",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_00b489aa4a",
@@ -1060,15 +1098,15 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_c2dcadeedc",
       "target": "node_2cf013ef0a",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_00b489aa4a",
@@ -1076,15 +1114,15 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_c2dcadeedc",
       "target": "node_f0d725202d",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_0e6b69c9ce",
@@ -1092,7 +1130,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdecliAgent",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_0e6b69c9ce",
@@ -1100,15 +1138,23 @@
       "sourceOutput": "text",
       "targetInput": "source",
       "sourceNodeType": "NodeCdecliAgent",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
-      "source": "node_fbf0e4885e",
+      "source": "node_582d437bbb",
       "target": "node_69bbed89e8",
-      "sourceOutput": "trigger",
+      "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_582d437bbb",
+      "target": "node_69bbed89e8",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_c0db7560c2",
@@ -1116,79 +1162,79 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_c2dcadeedc",
       "target": "node_e6b1f3af3f",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_cfc9463c89",
       "target": "node_fe4691ae63",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_cfc9463c89",
       "target": "node_fe4691ae63",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_dff248905f",
       "target": "node_bd8eda7423",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_dff248905f",
       "target": "node_bd8eda7423",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_e6b1f3af3f",
       "target": "node_1edd5f59e2",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_e6b1f3af3f",
       "target": "node_1edd5f59e2",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_1edd5f59e2",
       "target": "node_19e6cf1e73",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_1edd5f59e2",
       "target": "node_19e6cf1e73",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_b2abfa645a",
@@ -1196,31 +1242,31 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_c2dcadeedc",
       "target": "node_feb62d6466",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_feb62d6466",
       "target": "node_19e6cf1e73",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_feb62d6466",
       "target": "node_19e6cf1e73",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_e99cbdc8e2",
@@ -1228,7 +1274,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeRepeatUntil",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_e99cbdc8e2",
@@ -1236,14 +1282,14 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeRepeatUntil",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_2b42fb9beb",
       "target": "node_037fd70830",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1251,7 +1297,7 @@
       "target": "node_037fd70830",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1260,7 +1306,7 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_e99cbdc8e2",
@@ -1268,23 +1314,23 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeRepeatUntil",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_b7339e3374",
       "target": "node_4906f8d05f",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_b7339e3374",
       "target": "node_4906f8d05f",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_b2abfa645a",
@@ -1292,31 +1338,31 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_c2dcadeedc",
       "target": "node_de259561fa",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_de259561fa",
       "target": "node_19e6cf1e73",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_de259561fa",
       "target": "node_19e6cf1e73",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_e99cbdc8e2",
@@ -1324,7 +1370,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeRepeatUntil",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_e99cbdc8e2",
@@ -1332,14 +1378,14 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeRepeatUntil",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_ff5f79fdc0",
       "target": "node_e1f1c54533",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1347,7 +1393,7 @@
       "target": "node_e1f1c54533",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -1356,7 +1402,7 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_e99cbdc8e2",
@@ -1364,14 +1410,14 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeRepeatUntil",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_877587e5f8",
       "target": "node_7ce01c5b7f",
       "sourceOutput": "transformed",
       "targetInput": "result",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeEnd"
     },
     {
@@ -1379,7 +1425,7 @@
       "target": "node_893089a61a",
       "sourceOutput": "transformed",
       "targetInput": "result",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeEnd"
     },
     {
@@ -1387,7 +1433,7 @@
       "target": "node_0f5ec2c260",
       "sourceOutput": "transformed",
       "targetInput": "result",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeEnd"
     },
     {
@@ -1423,16 +1469,16 @@
       "NodeCdeConnector",
       "NodeCdecliAgent",
       "NodeChatModel",
+      "NodeChatTrigger",
       "NodeEnd",
+      "NodeJavascript",
       "NodeLlmChain",
       "NodeRepeatUntil",
-      "NodeStart",
-      "NodeTransform",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 18,
-      "yantraSteps": 37,
+      "yantraSteps": 38,
       "foldedHelpers": [
         "Anthropic Chat Model",
         "Auto-fixing Output Parser",
@@ -1457,26 +1503,40 @@
         "detail": "LLM input mismatch: prompt reads $json.generatedWorkflow, which Set schema for eval does not produce"
       },
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "When chat message received",
-        "detail": "@n8n/n8n-nodes-langchain.chatTrigger became the Start node"
+        "detail": "generic trigger URL requires registration"
+      },
+      {
+        "code": "entry-point-unsupported",
+        "node": "When chat message received",
+        "detail": "@n8n/n8n-nodes-langchain.chatTrigger: requires chat uploads, session history or cross-origin behavior beyond the hosted Yantra form"
       }
     ],
     "setup": [
       "\"Valid n8n workflow JSON?\": the original provider \"anthropic\" and model are preserved. Select a supported Chat Model provider and matching model, or add its adapter in Yantra before running.",
       "\"Valid n8n workflow JSON?\": wire the intended prompt data from \"Set schema for eval\" and correct $json.generatedWorkflow before running.",
-      "\"When chat message received\" (chatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"When chat message received\": save the workflow, then register node node_2097a92e4d via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL.",
+      "\"When chat message received\" (@n8n/n8n-nodes-langchain.chatTrigger) needs attention before it runs: requires chat uploads, session history or cross-origin behavior beyond the hosted Yantra form.",
       "Setup value llmModel_f1a0e94470: anthropic model ID for Valid n8n workflow JSON? (not recorded by the original conversion). Write it into the Workflow Configs initialContext before import.",
       "Connect the anthropic connector (credential).",
       "Connect the notion connector (credential).",
-      "Provide run inputs: chatInput, sessionId, $, $json, $today."
+      "Provide run inputs: $, $json, $today."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
       "status": "needs-setup",
       "coverage": 1,
       "unmapped": [],
-      "approximate": [],
+      "approximate": [
+        {
+          "node": "When chat message received",
+          "n8n": "@n8n/n8n-nodes-langchain.chatTrigger",
+          "action": "NodeTransform",
+          "blocker": "entry-point-unsupported",
+          "reason": "requires chat uploads, session history or cross-origin behavior beyond the hosted Yantra form"
+        }
+      ],
       "folded": [
         {
           "node": "Anthropic Chat Model",
@@ -1501,11 +1561,11 @@
         {
           "node": "When chat message received",
           "type": "@n8n/n8n-nodes-langchain.chatTrigger",
-          "as": "NodeStart"
+          "as": "NodeChatTrigger"
         }
       ],
       "hints": [
-        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
+        "\"When chat message received\" (@n8n/n8n-nodes-langchain.chatTrigger): requires chat uploads, session history or cross-origin behavior beyond the hosted Yantra form",
         "\"Repeat: Set input data\" uses NodeRepeatUntil: carry each retry's state, return readiness through NEXT, and resume the selected exit only after onDone. Original interval waits are preserved. The attempt limit defaults to 30; adjust maxAttempts for the service or retry budget. Exhaustion stops with an error.",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
         "Connect notion: `cdecli credential create -n \"notion\" -p notion --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
@@ -1520,7 +1580,11 @@
       "## Watch a quick set up video 👇\n[![Notion AI Assistant Generator](https://uploads.n8n.io/devrel/notion-db-assistant-thumb#full-width)](https://youtu.be/iK87ppcaNgM)"
     ],
     "nodes": {
-      "node_fbf0e4885e": {
+      "node_2097a92e4d": {
+        "n8n": "When chat message received",
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
+      },
+      "node_582d437bbb": {
         "n8n": "When chat message received",
         "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
       },

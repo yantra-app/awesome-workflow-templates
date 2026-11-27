@@ -5,25 +5,30 @@
   "isPublic": true,
   "nodes": [
     {
-      "nodeId": "node_2db6d895ba",
-      "actorId": "actor_2db6d895ba",
-      "type": "NodeStart",
-      "label": "Start",
-      "color": "#22C55E",
+      "nodeId": "node_a9d7bf1739",
+      "actorId": "actor_a9d7bf1739",
+      "type": "NodeWebhookTrigger",
+      "label": "Call Received",
+      "color": "#6366F1",
       "position": {
         "x": 80,
         "y": 100
       },
       "size": {
-        "width": 240,
-        "height": 100
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "none",
+        "responseMode": "responseNode",
+        "httpMethod": "POST"
       }
     },
     {
-      "nodeId": "node_de4aa893e9",
-      "actorId": "actor_de4aa893e9",
-      "type": "NodeTransform",
-      "label": "Parse Call",
+      "nodeId": "node_16b792ddd4",
+      "actorId": "actor_16b792ddd4",
+      "type": "NodeJavascript",
+      "label": "Call Received: request",
       "color": "#F59E0B",
       "position": {
         "x": 460,
@@ -34,15 +39,15 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Parse Call\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  try {\n    const b = $input.first().json.body || $input.first().json;\n    return [{ json: { callId: b.call_id || undefined.randomUUID(), caller: b.caller_name || b.from || 'Unknown', phone: b.caller_phone || b.from || '', duration: b.duration || 0, transcript: b.transcript || '', summary: b.summary || '', receivedAt: new Date().toISOString() } }];\n  } catch (e) { throw new Error('Parse failed: ' + e.message); }\n})();\nreturn __single(__unwrap(__out));"
+        "migratedTransform": true,
+        "logic": "const ctx = {{ctx}};\nconst request = ctx.nodes?.[\"node_a9d7bf1739\"]?.latest ?? {};\nreturn { body: source, headers: request.headers, query: request.query, params: {}, method: request.method, rawBody: request.rawBody, rawBodyEncoding: request.rawBodyEncoding };"
       }
     },
     {
-      "nodeId": "node_72a51f64aa",
-      "actorId": "actor_72a51f64aa",
-      "type": "NodeTransform",
-      "label": "Params: Log to Sheets",
+      "nodeId": "node_de4aa893e9",
+      "actorId": "actor_de4aa893e9",
+      "type": "NodeJavascript",
+      "label": "Parse Call",
       "color": "#F59E0B",
       "position": {
         "x": 840,
@@ -53,8 +58,27 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// n8n $env values come from the Workflow Configs initialContext (setup values and workflow secrets).\nconst __envCtx = {{ctx}};\nconst $env = { \"VOICEAGENT_SHEET_ID\": __envCtx[\"voiceagentSheetId\"] };\n// Params for googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND (n8n node \"Log to Sheets\").\nreturn {\n  \"spreadsheetId\": ($env.VOICEAGENT_SHEET_ID),\n  \"range\": \"Lite Call Log\",\n  \"values\": [[($json.callId), ($json.receivedAt), ($json.caller), ($json.phone), ($json.duration), ($json.summary), ($json.transcript.substring(0,500))]],\n  \"valueInputOption\": \"USER_ENTERED\",\n};"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Parse Call\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  try {\n    const b = $input.first().json.body || $input.first().json;\n    return [{ json: { callId: b.call_id || undefined.randomUUID(), caller: b.caller_name || b.from || 'Unknown', phone: b.caller_phone || b.from || '', duration: b.duration || 0, transcript: b.transcript || '', summary: b.summary || '', receivedAt: new Date().toISOString() } }];\n  } catch (e) { throw new Error('Parse failed: ' + e.message); }\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_72a51f64aa",
+      "actorId": "actor_72a51f64aa",
+      "type": "NodeJavascript",
+      "label": "Params: Log to Sheets",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// n8n $env values come from the Workflow Configs initialContext (setup values and workflow secrets).\nconst __envCtx = {{ctx}};\nconst $env = { \"VOICEAGENT_SHEET_ID\": __envCtx[\"voiceagentSheetId\"] };\n// Params for googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND (n8n node \"Log to Sheets\").\nreturn {\n  \"spreadsheetId\": ($env.VOICEAGENT_SHEET_ID),\n  \"range\": \"Lite Call Log\",\n  \"values\": [[($json.callId), ($json.receivedAt), ($json.caller), ($json.phone), ($json.duration), ($json.summary), ($json.transcript.substring(0,500))]],\n  \"valueInputOption\": \"USER_ENTERED\",\n};"
       }
     },
     {
@@ -64,7 +88,7 @@
       "label": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
       "color": "#6366F1",
       "position": {
-        "x": 1220,
+        "x": 1600,
         "y": 100
       },
       "size": {
@@ -72,19 +96,79 @@
         "height": 200
       },
       "inputs": {
+        "retryOnFail": true,
+        "maxTries": 2,
         "connectorName": "googlesuper",
         "connectorLabel": "Google Sheets",
         "action": "GOOGLESUPER_SPREADSHEETS_VALUES_APPEND"
       }
     },
     {
-      "nodeId": "node_7665b903fb",
-      "actorId": "actor_7665b903fb",
+      "nodeId": "node_867ced9399",
+      "actorId": "actor_867ced9399",
+      "type": "NodeRespondToWebhook",
+      "label": "Respond",
+      "color": "#6366F1",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 180
+      },
+      "inputs": {
+        "bodyMode": "json",
+        "statusCode": 200,
+        "headers": {}
+      }
+    },
+    {
+      "nodeId": "node_0bc382bb2f",
+      "actorId": "actor_0bc382bb2f",
+      "type": "NodeJavascript",
+      "label": "Respond: body",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst body = (JSON.stringify({ success: true, callId: $json.callId, caller: $json.caller }));\nreturn typeof body === 'string' ? JSON.parse(body) : body;"
+      }
+    },
+    {
+      "nodeId": "node_51a7e397f4",
+      "actorId": "actor_51a7e397f4",
+      "type": "NodeJavascript",
+      "label": "Finish after response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "return source ?? {};"
+      }
+    },
+    {
+      "nodeId": "node_23a7810d19",
+      "actorId": "actor_23a7810d19",
       "type": "NodeEnd",
       "label": "End",
       "color": "#EF4444",
       "position": {
-        "x": 1600,
+        "x": 3120,
         "y": 100
       },
       "size": {
@@ -110,9 +194,6 @@
         "projectId": "",
         "environmentTagId": "",
         "initialContext": {
-          "body": {},
-          "query": {},
-          "headers": {},
           "voiceagentSheetId": ""
         }
       }
@@ -120,11 +201,27 @@
   ],
   "edges": [
     {
+      "source": "node_a9d7bf1739",
+      "target": "node_16b792ddd4",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_a9d7bf1739",
+      "target": "node_16b792ddd4",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
       "source": "node_72a51f64aa",
       "target": "node_36a1d12259",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -132,39 +229,95 @@
       "target": "node_36a1d12259",
       "sourceOutput": "transformed",
       "targetInput": "params",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
-      "source": "node_2db6d895ba",
-      "target": "node_de4aa893e9",
-      "sourceOutput": "trigger",
+      "source": "node_0bc382bb2f",
+      "target": "node_867ced9399",
+      "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeRespondToWebhook"
+    },
+    {
+      "source": "node_0bc382bb2f",
+      "target": "node_867ced9399",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeRespondToWebhook"
+    },
+    {
+      "source": "node_16b792ddd4",
+      "target": "node_de4aa893e9",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_16b792ddd4",
+      "target": "node_de4aa893e9",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_de4aa893e9",
       "target": "node_72a51f64aa",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_de4aa893e9",
       "target": "node_72a51f64aa",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_36a1d12259",
-      "target": "node_7665b903fb",
-      "sourceOutput": "result",
-      "targetInput": "result",
+      "target": "node_0bc382bb2f",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_36a1d12259",
+      "target": "node_0bc382bb2f",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_867ced9399",
+      "target": "node_51a7e397f4",
+      "sourceOutput": "onComplete",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_867ced9399",
+      "target": "node_51a7e397f4",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_51a7e397f4",
+      "target": "node_23a7810d19",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeEnd"
     }
   ],
@@ -189,13 +342,14 @@
     "nodeTypes": [
       "NodeCdeConnector",
       "NodeEnd",
-      "NodeStart",
-      "NodeTransform",
+      "NodeJavascript",
+      "NodeRespondToWebhook",
+      "NodeWebhookTrigger",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 4,
-      "yantraSteps": 4,
+      "yantraSteps": 8,
       "foldedHelpers": []
     },
     "source": {
@@ -207,16 +361,15 @@
     "tier": "ready",
     "blockers": [
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "Call Received",
-        "detail": "n8n-nodes-base.webhook became the Start node"
+        "detail": "generic trigger URL requires registration"
       }
     ],
     "setup": [
-      "\"Call Received\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Call Received\": save the workflow, then register node node_a9d7bf1739 via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL.",
       "Setup value voiceagentSheetId: voiceagent sheet id (was the n8n environment variable VOICEAGENT_SHEET_ID). Write it into the Workflow Configs initialContext before import.",
-      "Connect the googlesuper connector (credential).",
-      "Provide run inputs: body, query, headers."
+      "Connect the googlesuper connector (credential)."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -237,11 +390,10 @@
         {
           "node": "Call Received",
           "type": "n8n-nodes-base.webhook",
-          "as": "NodeStart"
+          "as": "NodeWebhookTrigger"
         }
       ],
       "hints": [
-        "The original started from an inbound webhook (POST /voiceagent-lite). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
         "\"Parse Call\" (code.require): Allowlisted require() calls were rewritten or dropped for Transform (no module system).",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
         "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
@@ -251,7 +403,11 @@
       "## VoiceAgent Lite\nSimple call logging.\nNo AI analysis, no calendar.\nJust log calls to Sheets."
     ],
     "nodes": {
-      "node_2db6d895ba": {
+      "node_a9d7bf1739": {
+        "n8n": "Call Received",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_16b792ddd4": {
         "n8n": "Call Received",
         "n8nType": "n8n-nodes-base.webhook"
       },
@@ -267,7 +423,19 @@
         "n8n": "Log to Sheets",
         "n8nType": "n8n-nodes-base.googleSheets"
       },
-      "node_7665b903fb": {
+      "node_867ced9399": {
+        "n8n": "Respond",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_0bc382bb2f": {
+        "n8n": "Respond",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_51a7e397f4": {
+        "n8n": "Respond",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_23a7810d19": {
         "n8n": "Respond",
         "n8nType": "n8n-nodes-base.respondToWebhook"
       },

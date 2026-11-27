@@ -20,10 +20,29 @@
       }
     },
     {
-      "nodeId": "node_3033c59204",
-      "actorId": "actor_3033c59204",
-      "type": "NodeTransform",
-      "label": "Set Google Sheet URL",
+      "nodeId": "node_d98bbb7524",
+      "actorId": "actor_d98bbb7524",
+      "type": "NodeChatTrigger",
+      "label": "Chat Trigger",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "bearer",
+        "responseMode": "lastNode"
+      }
+    },
+    {
+      "nodeId": "node_ea220c3de9",
+      "actorId": "actor_ea220c3de9",
+      "type": "NodeJavascript",
+      "label": "Chat Trigger: request",
       "color": "#F59E0B",
       "position": {
         "x": 460,
@@ -34,8 +53,27 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"sheetUrl\"] = \"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit#gid=736425281\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+        "migratedTransform": true,
+        "logic": "return { action: 'sendMessage', ...source };"
+      }
+    },
+    {
+      "nodeId": "node_3033c59204",
+      "actorId": "actor_3033c59204",
+      "type": "NodeJavascript",
+      "label": "Set Google Sheet URL",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"sheetUrl\"] = \"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit#gid=736425281\";\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
       }
     },
     {
@@ -45,8 +83,8 @@
       "label": "AI Agent",
       "color": "#8B5CF6",
       "position": {
-        "x": 460,
-        "y": 360
+        "x": 1220,
+        "y": 100
       },
       "size": {
         "width": 320,
@@ -55,7 +93,26 @@
       "inputs": {
         "model": "gpt-3.5-turbo-0125",
         "sessionId": "",
-        "message": "{{chatInput}}"
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_a60177acd7",
+      "actorId": "actor_a60177acd7",
+      "type": "NodeJavascript",
+      "label": "Prompt: AI Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: AI Agent.\nconst __promptValue = ($json.chatInput);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
       }
     },
     {
@@ -66,7 +123,7 @@
       "color": "#6366F1",
       "position": {
         "x": 840,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 280,
@@ -87,20 +144,20 @@
     {
       "nodeId": "node_02a7aaaa69",
       "actorId": "actor_02a7aaaa69",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Check operation: col names",
       "color": "#F59E0B",
       "position": {
         "x": 1220,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 280,
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Execute Workflow Trigger\": {{ctx}}, \"Chat Trigger\": {{ctx}}, \"Set Google Sheet URL\": {\"sheetUrl\":\"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit#gid=736425281\"}, \"AI Agent\": {{steps.llm_8bf2e834db.result}}, \"Get Google sheet contents\": {{steps.GOOGLESUPER_BATCH_GET.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Execute Workflow Trigger').item.json.operation) ?? '') === String(\"column_names\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Execute Workflow Trigger\": {{ctx}}, \"Chat Trigger\": __namedCtx.nodes?.[\"node_ea220c3de9\"]?.latest?.[\"transformed\"], \"Set Google Sheet URL\": {\"sheetUrl\":\"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit#gid=736425281\"}, \"Get Google sheet contents\": {{steps.GOOGLESUPER_BATCH_GET.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Execute Workflow Trigger').item.json.operation) ?? '') === String(\"column_names\" ?? '')));"
       }
     },
     {
@@ -121,7 +178,7 @@
     {
       "nodeId": "node_3620530d6e",
       "actorId": "actor_3620530d6e",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Check operation: col values",
       "color": "#F59E0B",
       "position": {
@@ -133,8 +190,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Execute Workflow Trigger\": {{ctx}}, \"Chat Trigger\": {{ctx}}, \"Set Google Sheet URL\": {\"sheetUrl\":\"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit#gid=736425281\"}, \"AI Agent\": {{steps.llm_8bf2e834db.result}}, \"Get Google sheet contents\": {{steps.GOOGLESUPER_BATCH_GET.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Execute Workflow Trigger').item.json.operation) ?? '') === String(\"column_values\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Execute Workflow Trigger\": {{ctx}}, \"Chat Trigger\": __namedCtx.nodes?.[\"node_ea220c3de9\"]?.latest?.[\"transformed\"], \"Set Google Sheet URL\": {\"sheetUrl\":\"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit#gid=736425281\"}, \"Get Google sheet contents\": {{steps.GOOGLESUPER_BATCH_GET.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Execute Workflow Trigger').item.json.operation) ?? '') === String(\"column_values\" ?? '')));"
       }
     },
     {
@@ -155,7 +212,7 @@
     {
       "nodeId": "node_931f949b4f",
       "actorId": "actor_931f949b4f",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Check operation: rows",
       "color": "#F59E0B",
       "position": {
@@ -167,8 +224,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Execute Workflow Trigger\": {{ctx}}, \"Chat Trigger\": {{ctx}}, \"Set Google Sheet URL\": {\"sheetUrl\":\"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit#gid=736425281\"}, \"AI Agent\": {{steps.llm_8bf2e834db.result}}, \"Get Google sheet contents\": {{steps.GOOGLESUPER_BATCH_GET.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Execute Workflow Trigger').item.json.operation) ?? '') === String(\"row\" ?? '')));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Execute Workflow Trigger\": {{ctx}}, \"Chat Trigger\": __namedCtx.nodes?.[\"node_ea220c3de9\"]?.latest?.[\"transformed\"], \"Set Google Sheet URL\": {\"sheetUrl\":\"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit#gid=736425281\"}, \"Get Google sheet contents\": {{steps.GOOGLESUPER_BATCH_GET.result}} };\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn Boolean((String(($('Execute Workflow Trigger').item.json.operation) ?? '') === String(\"row\" ?? '')));"
       }
     },
     {
@@ -189,7 +246,7 @@
     {
       "nodeId": "node_4b4b084f55",
       "actorId": "actor_4b4b084f55",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Get column names",
       "color": "#F59E0B",
       "position": {
@@ -201,14 +258,14 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"response\"] = (Object.keys($json));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"response\"] = (Object.keys($json));\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
       }
     },
     {
       "nodeId": "node_068b30ff87",
       "actorId": "actor_068b30ff87",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Prepare column data",
       "color": "#F59E0B",
       "position": {
@@ -220,14 +277,14 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Execute Workflow Trigger\": {{ctx}}, \"Chat Trigger\": {{ctx}}, \"Set Google Sheet URL\": {\"sheetUrl\":\"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit#gid=736425281\"}, \"AI Agent\": {{steps.llm_8bf2e834db.result}}, \"Get Google sheet contents\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Get column names\": {{steps.xf_4b4b084f55.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __set = (o, p, v) => { const ks = String(p).split('.'); let c = o; for (const k of ks.slice(0, -1)) { if (c[k] == null || typeof c[k] !== 'object') c[k] = {}; c = c[k]; } c[ks[ks.length - 1]] = v; return o; };\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  __set(out, \"={{ $('Execute Workflow Trigger').item.json.query }}\", ($json[$('Execute Workflow Trigger').item.json.query]));\n  out[\"row_number\"] = ($json.row_number);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Execute Workflow Trigger\": {{ctx}}, \"Chat Trigger\": __namedCtx.nodes?.[\"node_ea220c3de9\"]?.latest?.[\"transformed\"], \"Set Google Sheet URL\": {\"sheetUrl\":\"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit#gid=736425281\"}, \"Get Google sheet contents\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Get column names\": {{steps.xf_4b4b084f55.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __set = (o, p, v) => { const ks = String(p).split('.'); let c = o; for (const k of ks.slice(0, -1)) { if (c[k] == null || typeof c[k] !== 'object') c[k] = {}; c = c[k]; } c[ks[ks.length - 1]] = v; return o; };\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  __set(out, \"={{ $('Execute Workflow Trigger').item.json.query }}\", ($json[$('Execute Workflow Trigger').item.json.query]));\n  out[\"row_number\"] = ($json.row_number);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
       }
     },
     {
       "nodeId": "node_656912eb89",
       "actorId": "actor_656912eb89",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Filter",
       "color": "#F59E0B",
       "position": {
@@ -239,14 +296,14 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __named = { \"Execute Workflow Trigger\": {{ctx}}, \"Chat Trigger\": {{ctx}}, \"Set Google Sheet URL\": {\"sheetUrl\":\"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit#gid=736425281\"}, \"AI Agent\": {{steps.llm_8bf2e834db.result}}, \"Get Google sheet contents\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Get column names\": {{steps.xf_4b4b084f55.result}}, \"Prepare column data\": {{steps.xf_068b30ff87.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn __items.filter(($json) => Boolean((Number(($json.row_number)) === Number(($('Execute Workflow Trigger').item.json.query)))));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __namedCtx = {{ctx}};\nconst __named = { \"Execute Workflow Trigger\": {{ctx}}, \"Chat Trigger\": __namedCtx.nodes?.[\"node_ea220c3de9\"]?.latest?.[\"transformed\"], \"Set Google Sheet URL\": {\"sheetUrl\":\"https://docs.google.com/spreadsheets/d/{{spreadsheetId}}/edit#gid=736425281\"}, \"Get Google sheet contents\": {{steps.GOOGLESUPER_BATCH_GET.result}}, \"Get column names\": {{steps.xf_4b4b084f55.result}}, \"Prepare column data\": {{steps.xf_068b30ff87.result}} };\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Cross-node references ($('Node')) resolve via __named when known, else the immediate upstream.\nconst $ = (name) => { const json = (typeof __named !== \"undefined\" && name in __named) ? __named[name] : source; const items = Array.isArray(json) ? json : json == null ? [] : [json]; const first = items[0] ?? json; return { item: { json: first }, first: () => ({ json: first }), last: () => ({ json: items[items.length - 1] ?? json }), all: () => items.map((j) => ({ json: j })), params: {}, isExecuted: true }; };\nreturn __items.filter(($json) => Boolean((Number(($json.row_number)) === Number(($('Execute Workflow Trigger').item.json.query)))));"
       }
     },
     {
       "nodeId": "node_3dd6bab0d6",
       "actorId": "actor_3dd6bab0d6",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Prepare output",
       "color": "#F59E0B",
       "position": {
@@ -258,8 +315,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Prepare output\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  return {\n   'response': JSON.stringify($input.all().map(x => x.json))\n  }\n})();\nreturn __single(__unwrap(__out));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Prepare output\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  return {\n   'response': JSON.stringify($input.all().map(x => x.json))\n  }\n})();\nreturn __single(__unwrap(__out));"
       }
     },
     {
@@ -269,7 +326,7 @@
       "label": "End",
       "color": "#EF4444",
       "position": {
-        "x": 840,
+        "x": 1600,
         "y": 360
       },
       "size": {
@@ -310,8 +367,6 @@
         "projectId": "",
         "environmentTagId": "",
         "initialContext": {
-          "chatInput": "",
-          "sessionId": "",
           "spreadsheetId": ""
         }
       }
@@ -319,11 +374,35 @@
   ],
   "edges": [
     {
+      "source": "node_d98bbb7524",
+      "target": "node_ea220c3de9",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeChatTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_d98bbb7524",
+      "target": "node_ea220c3de9",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeChatTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_a60177acd7",
+      "target": "node_8bf2e834db",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeCdecliAgent"
+    },
+    {
       "source": "node_02a7aaaa69",
       "target": "node_a5dd538d41",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -331,7 +410,7 @@
       "target": "node_a5dd538d41",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -340,14 +419,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_3620530d6e",
       "target": "node_4616110e43",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -355,7 +434,7 @@
       "target": "node_4616110e43",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -364,14 +443,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_931f949b4f",
       "target": "node_263bd2a8c1",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -379,7 +458,7 @@
       "target": "node_263bd2a8c1",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -388,7 +467,7 @@
       "sourceOutput": "trigger",
       "targetInput": "RUN",
       "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_aa56e436ff",
@@ -396,7 +475,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_aa56e436ff",
@@ -404,7 +483,7 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_aa56e436ff",
@@ -412,7 +491,7 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_aa56e436ff",
@@ -420,14 +499,14 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_3033c59204",
       "target": "node_aa56e436ff",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -435,48 +514,48 @@
       "target": "node_3dd6bab0d6",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_4b4b084f55",
       "target": "node_3dd6bab0d6",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_068b30ff87",
       "target": "node_3dd6bab0d6",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_068b30ff87",
       "target": "node_3dd6bab0d6",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_656912eb89",
       "target": "node_3dd6bab0d6",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_656912eb89",
       "target": "node_3dd6bab0d6",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_a5dd538d41",
@@ -484,7 +563,7 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_aa56e436ff",
@@ -492,7 +571,7 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_4616110e43",
@@ -500,7 +579,7 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_aa56e436ff",
@@ -508,7 +587,7 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_263bd2a8c1",
@@ -516,7 +595,7 @@
       "sourceOutput": "TRUE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_aa56e436ff",
@@ -524,15 +603,23 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
-      "source": "node_31f153ff4f",
-      "target": "node_8bf2e834db",
-      "sourceOutput": "trigger",
+      "source": "node_ea220c3de9",
+      "target": "node_a60177acd7",
+      "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeCdecliAgent"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_ea220c3de9",
+      "target": "node_a60177acd7",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_8bf2e834db",
@@ -547,7 +634,7 @@
       "target": "node_402e7aaa97",
       "sourceOutput": "transformed",
       "targetInput": "result",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeEnd"
     }
   ],
@@ -577,14 +664,15 @@
       "NodeBranch",
       "NodeCdeConnector",
       "NodeCdecliAgent",
+      "NodeChatTrigger",
       "NodeEnd",
+      "NodeJavascript",
       "NodeStart",
-      "NodeTransform",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 14,
-      "yantraSteps": 14,
+      "yantraSteps": 17,
       "foldedHelpers": [
         "OpenAI Chat Model",
         "Get customer tool",
@@ -601,9 +689,9 @@
     "tier": "ready",
     "blockers": [
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "Chat Trigger",
-        "detail": "@n8n/n8n-nodes-langchain.chatTrigger became the Start node"
+        "detail": "generic trigger URL requires registration"
       },
       {
         "code": "trigger-replaced",
@@ -612,11 +700,11 @@
       }
     ],
     "setup": [
-      "\"Chat Trigger\" (chatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Chat Trigger\": save the workflow, then register node node_d98bbb7524 via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL. Use bearer authentication with credentials supplied at registration.",
       "\"Execute Workflow Trigger\" (executeWorkflowTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
       "Setup value spreadsheetId: Google Sheets spreadsheet id (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
       "Connect the googlesuper connector (credential).",
-      "Provide run inputs: chatInput, sessionId, $."
+      "Provide run inputs: $."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -660,12 +748,11 @@
         {
           "node": "Chat Trigger",
           "type": "@n8n/n8n-nodes-langchain.chatTrigger",
-          "as": "NodeStart"
+          "as": "NodeChatTrigger"
         }
       ],
       "hints": [
         "The original was a sub-workflow called by another workflow; pass its inputs as run inputs.",
-        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
         "\"AI Agent\" used agent tools in the original: Get customer tool (toolWorkflow), List columns tool (toolWorkflow), Get column values tool (toolWorkflow). The cdecli agent calls connectors directly; connect credentials for the services those tools reached.",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
         "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
@@ -681,16 +768,25 @@
     "nodes": {
       "node_31f153ff4f": {
         "n8n": "Execute Workflow Trigger",
-        "n8nType": "n8n-nodes-base.executeWorkflowTrigger",
-        "also": [
-          "Chat Trigger"
-        ]
+        "n8nType": "n8n-nodes-base.executeWorkflowTrigger"
+      },
+      "node_d98bbb7524": {
+        "n8n": "Chat Trigger",
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
+      },
+      "node_ea220c3de9": {
+        "n8n": "Chat Trigger",
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
       },
       "node_3033c59204": {
         "n8n": "Set Google Sheet URL",
         "n8nType": "n8n-nodes-base.set"
       },
       "node_8bf2e834db": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_a60177acd7": {
         "n8n": "AI Agent",
         "n8nType": "@n8n/n8n-nodes-langchain.agent"
       },

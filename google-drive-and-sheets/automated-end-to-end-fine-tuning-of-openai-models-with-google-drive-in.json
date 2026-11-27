@@ -20,6 +20,44 @@
       }
     },
     {
+      "nodeId": "node_63eb5010b4",
+      "actorId": "actor_63eb5010b4",
+      "type": "NodeChatTrigger",
+      "label": "When chat message received",
+      "color": "#6366F1",
+      "position": {
+        "x": 80,
+        "y": 360
+      },
+      "size": {
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "bearer",
+        "responseMode": "lastNode"
+      }
+    },
+    {
+      "nodeId": "node_6605618389",
+      "actorId": "actor_6605618389",
+      "type": "NodeJavascript",
+      "label": "When chat message received: request",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "return { action: 'sendMessage', ...source };"
+      }
+    },
+    {
       "nodeId": "node_2108e196ea",
       "actorId": "actor_2108e196ea",
       "type": "NodeCdeConnector",
@@ -27,7 +65,7 @@
       "color": "#6366F1",
       "position": {
         "x": 460,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 280,
@@ -49,8 +87,8 @@
       "label": "AI Agent",
       "color": "#8B5CF6",
       "position": {
-        "x": 460,
-        "y": 360
+        "x": 1220,
+        "y": 100
       },
       "size": {
         "width": 320,
@@ -59,7 +97,26 @@
       "inputs": {
         "model": "ft:gpt-4o-mini-2024-07-18:n3w-italia::AsVfsl7B",
         "sessionId": "",
-        "message": "{{chatInput}}"
+        "message": "{{last.transformed}}"
+      }
+    },
+    {
+      "nodeId": "node_7b31f53872",
+      "actorId": "actor_7b31f53872",
+      "type": "NodeJavascript",
+      "label": "Prompt: AI Agent",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: AI Agent.\nconst __promptValue = ($json.chatInput);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
       }
     },
     {
@@ -70,7 +127,7 @@
       "color": "#6366F1",
       "position": {
         "x": 840,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 280,
@@ -94,7 +151,7 @@
       "color": "#0EA5E9",
       "position": {
         "x": 1220,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 280,
@@ -117,8 +174,8 @@
       "label": "End",
       "color": "#EF4444",
       "position": {
-        "x": 840,
-        "y": 360
+        "x": 1600,
+        "y": 100
       },
       "size": {
         "width": 240,
@@ -133,7 +190,7 @@
       "color": "#EF4444",
       "position": {
         "x": 1600,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 240,
@@ -158,8 +215,6 @@
         "projectId": "",
         "environmentTagId": "",
         "initialContext": {
-          "chatInput": "",
-          "sessionId": "",
           "driveFileId": "",
           "openaiApiKey": {
             "$workflowSecret": "OPENAI_API_KEY"
@@ -169,6 +224,30 @@
     }
   ],
   "edges": [
+    {
+      "source": "node_63eb5010b4",
+      "target": "node_6605618389",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeChatTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_63eb5010b4",
+      "target": "node_6605618389",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeChatTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_7b31f53872",
+      "target": "node_bf07b7ca17",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeCdecliAgent"
+    },
     {
       "source": "node_855360c4b9",
       "target": "node_2108e196ea",
@@ -186,12 +265,20 @@
       "targetNodeType": "NodeCdeConnector"
     },
     {
-      "source": "node_855360c4b9",
-      "target": "node_bf07b7ca17",
-      "sourceOutput": "trigger",
+      "source": "node_6605618389",
+      "target": "node_7b31f53872",
+      "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeCdecliAgent"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_6605618389",
+      "target": "node_7b31f53872",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_22faeca7a9",
@@ -253,14 +340,16 @@
     "nodeTypes": [
       "NodeCdeConnector",
       "NodeCdecliAgent",
+      "NodeChatTrigger",
       "NodeEnd",
       "NodeHttpRequest",
+      "NodeJavascript",
       "NodeStart",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 7,
-      "yantraSteps": 5,
+      "yantraSteps": 8,
       "foldedHelpers": [
         "OpenAI Chat Model"
       ]
@@ -274,18 +363,17 @@
     "tier": "ready",
     "blockers": [
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "When chat message received",
-        "detail": "@n8n/n8n-nodes-langchain.chatTrigger became the Start node"
+        "detail": "generic trigger URL requires registration"
       }
     ],
     "setup": [
-      "\"When chat message received\" (chatTrigger) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"When chat message received\": save the workflow, then register node node_63eb5010b4 via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL. Use bearer authentication with credentials supplied at registration.",
       "Setup value driveFileId: Drive File id (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
       "Workflow secret OPENAI_API_KEY: OpenAI API key for api.openai.com (Authorization: Bearer <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
       "Connect the googlesuper connector (credential).",
-      "Connect the openai connector (credential).",
-      "Provide run inputs: chatInput, sessionId."
+      "Connect the openai connector (credential)."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -318,11 +406,10 @@
         {
           "node": "When chat message received",
           "type": "@n8n/n8n-nodes-langchain.chatTrigger",
-          "as": "NodeStart"
+          "as": "NodeChatTrigger"
         }
       ],
       "hints": [
-        "Provide `chatInput` (and optionally `sessionId`) as run inputs; the original started from a chat message.",
         "\"Upload File\" used OpenAI file (upload); mapped to openai/OPENAI_UPLOAD_FILE - wire file bytes/base64 into the file param.",
         "\"Create Fine-tuning Job\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
@@ -337,16 +424,25 @@
     "nodes": {
       "node_855360c4b9": {
         "n8n": "When clicking ‘Test workflow’",
-        "n8nType": "n8n-nodes-base.manualTrigger",
-        "also": [
-          "When chat message received"
-        ]
+        "n8nType": "n8n-nodes-base.manualTrigger"
+      },
+      "node_63eb5010b4": {
+        "n8n": "When chat message received",
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
+      },
+      "node_6605618389": {
+        "n8n": "When chat message received",
+        "n8nType": "@n8n/n8n-nodes-langchain.chatTrigger"
       },
       "node_2108e196ea": {
         "n8n": "Google Drive",
         "n8nType": "n8n-nodes-base.googleDrive"
       },
       "node_bf07b7ca17": {
+        "n8n": "AI Agent",
+        "n8nType": "@n8n/n8n-nodes-langchain.agent"
+      },
+      "node_7b31f53872": {
         "n8n": "AI Agent",
         "n8nType": "@n8n/n8n-nodes-langchain.agent"
       },

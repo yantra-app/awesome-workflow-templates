@@ -5,25 +5,38 @@
   "isPublic": true,
   "nodes": [
     {
-      "nodeId": "node_cbcd676b34",
-      "actorId": "actor_cbcd676b34",
-      "type": "NodeStart",
-      "label": "Start",
-      "color": "#22C55E",
+      "nodeId": "node_7583b9fdbf",
+      "actorId": "actor_7583b9fdbf",
+      "type": "NodeWebhookTrigger",
+      "label": "WhatsApp Incoming Message",
+      "color": "#6366F1",
       "position": {
         "x": 80,
         "y": 100
       },
       "size": {
-        "width": 240,
-        "height": 100
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "none",
+        "responseMode": "onReceived",
+        "httpMethod": "POST",
+        "acknowledgement": {
+          "statusCode": 200,
+          "headers": {},
+          "bodyMode": "json",
+          "body": {
+            "message": "Workflow was started"
+          }
+        }
       }
     },
     {
-      "nodeId": "node_a9262046fc",
-      "actorId": "actor_a9262046fc",
-      "type": "NodeTransform",
-      "label": "Normalize Lead Data",
+      "nodeId": "node_e0ea631ec8",
+      "actorId": "actor_e0ea631ec8",
+      "type": "NodeJavascript",
+      "label": "WhatsApp Incoming Message: request",
       "color": "#F59E0B",
       "position": {
         "x": 460,
@@ -34,8 +47,27 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Ported from n8n Code node \"Normalize Lead Data\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Accepts WAHA (waha.devlike.pro) and Meta WhatsApp Cloud API webhooks.\n  // Extracts sender name, message text and a normalized Israeli phone number.\n  const req = $input.first().json;\n  const body = req.body ?? req;\n  \n  let raw = '';\n  let text = '';\n  let name = '';\n  \n  if (body.payload) {\n    // WAHA payload: { event: 'message', payload: { from, body, fromMe, _data } }\n    const p = body.payload;\n    if (p.fromMe) return []; // ignore messages sent by us\n    raw = p.from ?? '';\n    if (String(raw).endsWith('@g.us')) return []; // ignore group chats\n    text = p.body ?? '';\n    name = p._data?.notifyName ?? p.notifyName ?? '';\n  } else if (body.entry) {\n    // WhatsApp Cloud API payload: entry[0].changes[0].value\n    const value = body.entry?.[0]?.changes?.[0]?.value ?? {};\n    const msg = value.messages?.[0];\n    if (!msg) return []; // ignore delivery/status callbacks\n    raw = msg.from ?? '';\n    text = msg.text?.body ?? '';\n    name = value.contacts?.[0]?.profile?.name ?? '';\n  } else {\n    return []; // unknown payload shape\n  }\n  \n  if (!raw) return [];\n  \n  // Normalize to Israeli E.164 (+972...). Adjust the prefix for other countries.\n  let digits = String(raw).replace(/@.*$/, '').replace(/\\D/g, '');\n  if (digits.startsWith('0')) digits = '972' + digits.slice(1);\n  if (!digits.startsWith('972')) digits = '972' + digits;\n  \n  return [{\n    json: {\n      name: name || 'New WhatsApp lead',\n      phone: '+' + digits,\n      chatId: digits + '@c.us',\n      message: text,\n      receivedAt: $now.toISO(),\n      source: 'WhatsApp',\n    },\n  }];\n})();\nreturn __single(__unwrap(__out));"
+        "migratedTransform": true,
+        "logic": "const ctx = {{ctx}};\nconst request = ctx.nodes?.[\"node_7583b9fdbf\"]?.latest ?? {};\nreturn { body: source, headers: request.headers, query: request.query, params: {}, method: request.method, rawBody: request.rawBody, rawBodyEncoding: request.rawBodyEncoding };"
+      }
+    },
+    {
+      "nodeId": "node_a9262046fc",
+      "actorId": "actor_a9262046fc",
+      "type": "NodeJavascript",
+      "label": "Normalize Lead Data",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\nconst __dt = (d) => { const x = new Date(d); Object.defineProperties(x, { year: { get() { return this.getFullYear(); } }, month: { get() { return this.getMonth() + 1; } }, day: { get() { return this.getDate(); } }, hour: { get() { return this.getHours(); } }, minute: { get() { return this.getMinutes(); } }, second: { get() { return this.getSeconds(); } }, millisecond: { get() { return this.getMilliseconds(); } }, weekNumber: { get() { const t = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())); const dayNum = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil((((t - yearStart) / 86400000) + 1) / 7); } } }); x.toISO = () => x.toISOString(); x.toISODate = () => x.toISOString().slice(0, 10); x.toFormat = () => x.toISOString(); x.format = () => x.toISOString(); x.plus = (o) => { const y = new Date(x); if (o?.days) y.setDate(y.getDate() + o.days); if (o?.hours) y.setHours(y.getHours() + o.hours); if (o?.minutes) y.setMinutes(y.getMinutes() + o.minutes); if (o?.months) y.setMonth(y.getMonth() + o.months); if (o?.years) y.setFullYear(y.getFullYear() + o.years); return __dt(y); }; x.minus = (o) => { const n = {}; for (const k of Object.keys(o || {})) n[k] = -(o[k]); return x.plus(n); }; x.startOf = () => x; x.endOf = () => x; x.toMillis = () => x.getTime(); x.toSeconds = () => Math.floor(x.getTime() / 1000); return x; };\nconst $now = __dt(Date.now()); const $today = __dt(new Date().setHours(0, 0, 0, 0));\nconst DateTime = { now: () => __dt(Date.now()), fromISO: (s) => __dt(s), fromMillis: (n) => __dt(n), fromSeconds: (n) => __dt(n * 1000), fromJSDate: (d) => __dt(d) };\n// Ported from n8n Code node \"Normalize Lead Data\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  // Accepts WAHA (waha.devlike.pro) and Meta WhatsApp Cloud API webhooks.\n  // Extracts sender name, message text and a normalized Israeli phone number.\n  const req = $input.first().json;\n  const body = req.body ?? req;\n  \n  let raw = '';\n  let text = '';\n  let name = '';\n  \n  if (body.payload) {\n    // WAHA payload: { event: 'message', payload: { from, body, fromMe, _data } }\n    const p = body.payload;\n    if (p.fromMe) return []; // ignore messages sent by us\n    raw = p.from ?? '';\n    if (String(raw).endsWith('@g.us')) return []; // ignore group chats\n    text = p.body ?? '';\n    name = p._data?.notifyName ?? p.notifyName ?? '';\n  } else if (body.entry) {\n    // WhatsApp Cloud API payload: entry[0].changes[0].value\n    const value = body.entry?.[0]?.changes?.[0]?.value ?? {};\n    const msg = value.messages?.[0];\n    if (!msg) return []; // ignore delivery/status callbacks\n    raw = msg.from ?? '';\n    text = msg.text?.body ?? '';\n    name = value.contacts?.[0]?.profile?.name ?? '';\n  } else {\n    return []; // unknown payload shape\n  }\n  \n  if (!raw) return [];\n  \n  // Normalize to Israeli E.164 (+972...). Adjust the prefix for other countries.\n  let digits = String(raw).replace(/@.*$/, '').replace(/\\D/g, '');\n  if (digits.startsWith('0')) digits = '972' + digits.slice(1);\n  if (!digits.startsWith('972')) digits = '972' + digits;\n  \n  return [{\n    json: {\n      name: name || 'New WhatsApp lead',\n      phone: '+' + digits,\n      chatId: digits + '@c.us',\n      message: text,\n      receivedAt: $now.toISO(),\n      source: 'WhatsApp',\n    },\n  }];\n})();\nreturn __single(__unwrap(__out));"
       }
     },
     {
@@ -45,7 +77,7 @@
       "label": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
       "color": "#6366F1",
       "position": {
-        "x": 840,
+        "x": 1220,
         "y": 100
       },
       "size": {
@@ -79,7 +111,7 @@
       "label": "Send WhatsApp Auto-Reply (WAHA)",
       "color": "#0EA5E9",
       "position": {
-        "x": 1220,
+        "x": 1600,
         "y": 100
       },
       "size": {
@@ -102,7 +134,7 @@
       "label": "End",
       "color": "#EF4444",
       "position": {
-        "x": 1600,
+        "x": 1980,
         "y": 100
       },
       "size": {
@@ -128,9 +160,6 @@
         "projectId": "",
         "environmentTagId": "",
         "initialContext": {
-          "body": {},
-          "query": {},
-          "headers": {},
           "sheetName": "",
           "spreadsheetId": "",
           "wahaServer": "",
@@ -143,19 +172,43 @@
   ],
   "edges": [
     {
-      "source": "node_cbcd676b34",
-      "target": "node_a9262046fc",
-      "sourceOutput": "trigger",
+      "source": "node_7583b9fdbf",
+      "target": "node_e0ea631ec8",
+      "sourceOutput": "onEvent",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_7583b9fdbf",
+      "target": "node_e0ea631ec8",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_e0ea631ec8",
+      "target": "node_a9262046fc",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_e0ea631ec8",
+      "target": "node_a9262046fc",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_a9262046fc",
       "target": "node_6c08085002",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -227,13 +280,13 @@
       "NodeCdeConnector",
       "NodeEnd",
       "NodeHttpRequest",
-      "NodeStart",
-      "NodeTransform",
+      "NodeJavascript",
+      "NodeWebhookTrigger",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 4,
-      "yantraSteps": 4,
+      "yantraSteps": 5,
       "foldedHelpers": []
     },
     "source": {
@@ -245,19 +298,18 @@
     "tier": "ready",
     "blockers": [
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "WhatsApp Incoming Message",
-        "detail": "n8n-nodes-base.webhook became the Start node"
+        "detail": "generic trigger URL requires registration"
       }
     ],
     "setup": [
-      "\"WhatsApp Incoming Message\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"WhatsApp Incoming Message\": save the workflow, then register node node_7583b9fdbf via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL.",
       "Setup value sheetName: Sheet tab name (for example Sheet1). Write it into the Workflow Configs initialContext before import.",
       "Setup value spreadsheetId: Google Sheets spreadsheet id (from the sheet URL) (for example 1AbC...xyz). Write it into the Workflow Configs initialContext before import.",
       "Setup value wahaServer: Waha Server. Write it into the Workflow Configs initialContext before import.",
       "Workflow secret WAHA_SERVER_API_KEY: your-waha-server API credential header value (for example \"Bearer <key>\"; rename the header if the API expects another one) for your-waha-server (Authorization: <secret>). Add it in the workflow editor's Secrets panel after import; never paste it in chat.",
-      "Connect the googlesuper connector (credential).",
-      "Provide run inputs: body, query, headers."
+      "Connect the googlesuper connector (credential)."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -271,11 +323,10 @@
         {
           "node": "WhatsApp Incoming Message",
           "type": "n8n-nodes-base.webhook",
-          "as": "NodeStart"
+          "as": "NodeWebhookTrigger"
         }
       ],
       "hints": [
-        "The original started from an inbound webhook (POST /whatsapp-lead-intake). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
         "\"Send WhatsApp Auto-Reply (WAHA)\" authenticated with httpHeaderAuth in the original; add the matching Authorization header (or use the service's connector).",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
         "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
@@ -287,7 +338,11 @@
       "## Adapting this template\n- **WAHA vs WhatsApp Cloud API:** the Code node handles both payload shapes automatically.\n- **Not in Israel?** Change the `972` country prefix inside the Code node.\n- **Reply via Cloud API instead of WAHA:** swap the HTTP node for the official WhatsApp Business Cloud node (message → send).\n- **Want lead alerts too?** Branch after the Sheets node into Telegram / Email / Slack."
     ],
     "nodes": {
-      "node_cbcd676b34": {
+      "node_7583b9fdbf": {
+        "n8n": "WhatsApp Incoming Message",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_e0ea631ec8": {
         "n8n": "WhatsApp Incoming Message",
         "n8nType": "n8n-nodes-base.webhook"
       },

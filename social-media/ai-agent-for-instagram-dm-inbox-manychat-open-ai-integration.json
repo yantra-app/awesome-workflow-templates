@@ -5,25 +5,30 @@
   "isPublic": true,
   "nodes": [
     {
-      "nodeId": "node_7c7b9ba4d8",
-      "actorId": "actor_7c7b9ba4d8",
-      "type": "NodeStart",
-      "label": "Start",
-      "color": "#22C55E",
+      "nodeId": "node_84141ee876",
+      "actorId": "actor_84141ee876",
+      "type": "NodeWebhookTrigger",
+      "label": "Getting message from Instagram",
+      "color": "#6366F1",
       "position": {
         "x": 80,
         "y": 100
       },
       "size": {
-        "width": 240,
-        "height": 100
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "none",
+        "responseMode": "responseNode",
+        "httpMethod": "POST"
       }
     },
     {
-      "nodeId": "node_dda8344921",
-      "actorId": "actor_dda8344921",
-      "type": "NodeTransform",
-      "label": "Set your system promt for AI",
+      "nodeId": "node_15bc11d088",
+      "actorId": "actor_15bc11d088",
+      "type": "NodeJavascript",
+      "label": "Getting message from Instagram: request",
       "color": "#F59E0B",
       "position": {
         "x": 460,
@@ -34,8 +39,27 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"prompt\"] = `Persona: You are a instagram influencer.\nContext: You receive a messages from your subscribers\nTask: Answer questions in your writing style and patterns according to your previous posts text. Use your post only for style and patterns reference.\nStyle rules:\nsimple answers`;\n  out[\"sessionId\"] = ($json.body.session_id);\n  out[\"chatInput\"] = ($json.body.text);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+        "migratedTransform": true,
+        "logic": "const ctx = {{ctx}};\nconst request = ctx.nodes?.[\"node_84141ee876\"]?.latest ?? {};\nreturn { body: source, headers: request.headers, query: request.query, params: {}, method: request.method, rawBody: request.rawBody, rawBodyEncoding: request.rawBodyEncoding };"
+      }
+    },
+    {
+      "nodeId": "node_dda8344921",
+      "actorId": "actor_dda8344921",
+      "type": "NodeJavascript",
+      "label": "Set your system promt for AI",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"prompt\"] = `Persona: You are a instagram influencer.\nContext: You receive a messages from your subscribers\nTask: Answer questions in your writing style and patterns according to your previous posts text. Use your post only for style and patterns reference.\nStyle rules:\nsimple answers`;\n  out[\"sessionId\"] = ($json.body.session_id);\n  out[\"chatInput\"] = ($json.body.text);\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
       }
     },
     {
@@ -45,7 +69,7 @@
       "label": "AI Agent",
       "color": "#8B5CF6",
       "position": {
-        "x": 1980,
+        "x": 2360,
         "y": 100
       },
       "size": {
@@ -61,11 +85,11 @@
     {
       "nodeId": "node_251eaf3be8",
       "actorId": "actor_251eaf3be8",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "System: AI Agent",
       "color": "#F59E0B",
       "position": {
-        "x": 840,
+        "x": 1220,
         "y": 100
       },
       "size": {
@@ -73,8 +97,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: AI Agent.\nconst __promptValue = ($json.prompt);\nreturn { \"llm_system_251eaf3be8\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// System: AI Agent.\nconst __promptValue = ($json.prompt);\nreturn { \"llm_system_251eaf3be8\": typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '') };"
       }
     },
     {
@@ -84,7 +108,7 @@
       "label": "Save System: AI Agent",
       "color": "#0EA5E9",
       "position": {
-        "x": 1220,
+        "x": 1600,
         "y": 100
       },
       "size": {
@@ -95,11 +119,11 @@
     {
       "nodeId": "node_86dc698766",
       "actorId": "actor_86dc698766",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Prompt: AI Agent",
       "color": "#F59E0B",
       "position": {
-        "x": 1600,
+        "x": 1980,
         "y": 100
       },
       "size": {
@@ -107,18 +131,76 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: AI Agent.\nconst __promptValue = ($json.chatInput);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: AI Agent.\nconst __promptValue = ($json.chatInput);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
       }
     },
     {
-      "nodeId": "node_c20eaf9b8a",
-      "actorId": "actor_c20eaf9b8a",
+      "nodeId": "node_c632488bd4",
+      "actorId": "actor_c632488bd4",
+      "type": "NodeRespondToWebhook",
+      "label": "Send respond",
+      "color": "#6366F1",
+      "position": {
+        "x": 3120,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 180
+      },
+      "inputs": {
+        "bodyMode": "json",
+        "statusCode": 200,
+        "headers": {}
+      }
+    },
+    {
+      "nodeId": "node_485a16935b",
+      "actorId": "actor_485a16935b",
+      "type": "NodeJavascript",
+      "label": "Send respond : body",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "const body = (Array.isArray(source) ? source[0] : source);\nreturn body;"
+      }
+    },
+    {
+      "nodeId": "node_eaf3c30016",
+      "actorId": "actor_eaf3c30016",
+      "type": "NodeJavascript",
+      "label": "Finish after response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 3500,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "return source ?? {};"
+      }
+    },
+    {
+      "nodeId": "node_6f8f94b406",
+      "actorId": "actor_6f8f94b406",
       "type": "NodeEnd",
       "label": "End",
       "color": "#EF4444",
       "position": {
-        "x": 2360,
+        "x": 3880,
         "y": 100
       },
       "size": {
@@ -144,9 +226,6 @@
         "projectId": "",
         "environmentTagId": "",
         "initialContext": {
-          "body": {},
-          "query": {},
-          "headers": {},
           "sessionId": ""
         }
       }
@@ -154,11 +233,27 @@
   ],
   "edges": [
     {
+      "source": "node_84141ee876",
+      "target": "node_15bc11d088",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_84141ee876",
+      "target": "node_15bc11d088",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
       "source": "node_251eaf3be8",
       "target": "node_ab8741607e",
       "sourceOutput": "transformed",
       "targetInput": "patch",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeUpdateContext"
     },
     {
@@ -166,7 +261,7 @@
       "target": "node_ab8741607e",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeUpdateContext"
     },
     {
@@ -175,54 +270,110 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeUpdateContext",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_86dc698766",
       "target": "node_c44aba5183",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdecliAgent"
+    },
+    {
+      "source": "node_485a16935b",
+      "target": "node_c632488bd4",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeRespondToWebhook"
+    },
+    {
+      "source": "node_485a16935b",
+      "target": "node_c632488bd4",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeRespondToWebhook"
     },
     {
       "source": "node_dda8344921",
       "target": "node_251eaf3be8",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_dda8344921",
       "target": "node_251eaf3be8",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_dda8344921",
       "target": "node_86dc698766",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
-      "source": "node_7c7b9ba4d8",
+      "source": "node_15bc11d088",
       "target": "node_dda8344921",
-      "sourceOutput": "trigger",
+      "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_15bc11d088",
+      "target": "node_dda8344921",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_c44aba5183",
-      "target": "node_c20eaf9b8a",
-      "sourceOutput": "text",
-      "targetInput": "result",
+      "target": "node_485a16935b",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
       "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_c44aba5183",
+      "target": "node_485a16935b",
+      "sourceOutput": "text",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdecliAgent",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_c632488bd4",
+      "target": "node_eaf3c30016",
+      "sourceOutput": "onComplete",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_c632488bd4",
+      "target": "node_eaf3c30016",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_eaf3c30016",
+      "target": "node_6f8f94b406",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeEnd"
     }
   ],
@@ -235,14 +386,15 @@
     "nodeTypes": [
       "NodeCdecliAgent",
       "NodeEnd",
-      "NodeStart",
-      "NodeTransform",
+      "NodeJavascript",
+      "NodeRespondToWebhook",
       "NodeUpdateContext",
+      "NodeWebhookTrigger",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 6,
-      "yantraSteps": 6,
+      "yantraSteps": 10,
       "foldedHelpers": [
         "ChatGPT model",
         "Local n8n memory"
@@ -257,14 +409,14 @@
     "tier": "ready",
     "blockers": [
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "Getting message from Instagram",
-        "detail": "n8n-nodes-base.webhook became the Start node"
+        "detail": "generic trigger URL requires registration"
       }
     ],
     "setup": [
-      "\"Getting message from Instagram\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
-      "Provide run inputs: body, query, headers, sessionId, llm_system_251eaf3be8."
+      "\"Getting message from Instagram\": save the workflow, then register node node_84141ee876 via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL.",
+      "Provide run inputs: sessionId, llm_system_251eaf3be8."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -290,11 +442,10 @@
         {
           "node": "Getting message from Instagram",
           "type": "n8n-nodes-base.webhook",
-          "as": "NodeStart"
+          "as": "NodeWebhookTrigger"
         }
       ],
       "hints": [
-        "The original started from an inbound webhook (POST /instagram_chat). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
         "\"AI Agent\" kept conversation memory (memoryBufferWindow); sessionId is set to the run-input sessionId.",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below."
       ]
@@ -307,7 +458,11 @@
       "## 4) Respond webhook\n\nNo edits needed"
     ],
     "nodes": {
-      "node_7c7b9ba4d8": {
+      "node_84141ee876": {
+        "n8n": "Getting message from Instagram",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_15bc11d088": {
         "n8n": "Getting message from Instagram",
         "n8nType": "n8n-nodes-base.webhook"
       },
@@ -331,7 +486,19 @@
         "n8n": "AI Agent",
         "n8nType": "@n8n/n8n-nodes-langchain.agent"
       },
-      "node_c20eaf9b8a": {
+      "node_c632488bd4": {
+        "n8n": "Send respond ",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_485a16935b": {
+        "n8n": "Send respond ",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_eaf3c30016": {
+        "n8n": "Send respond ",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_6f8f94b406": {
         "n8n": "Send respond ",
         "n8nType": "n8n-nodes-base.respondToWebhook"
       },

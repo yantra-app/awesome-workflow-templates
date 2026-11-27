@@ -23,18 +23,50 @@
       }
     },
     {
-      "nodeId": "node_dd9ce804bc",
-      "actorId": "actor_dd9ce804bc",
-      "type": "NodeStart",
-      "label": "Start",
-      "color": "#22C55E",
+      "nodeId": "node_a53e4116e9",
+      "actorId": "actor_a53e4116e9",
+      "type": "NodeWebhookTrigger",
+      "label": "Webhook",
+      "color": "#6366F1",
       "position": {
         "x": 80,
         "y": 360
       },
       "size": {
-        "width": 240,
-        "height": 100
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "none",
+        "responseMode": "onReceived",
+        "httpMethod": "POST",
+        "acknowledgement": {
+          "statusCode": 200,
+          "headers": {},
+          "bodyMode": "json",
+          "body": {
+            "message": "Workflow was started"
+          }
+        }
+      }
+    },
+    {
+      "nodeId": "node_a3792846ab",
+      "actorId": "actor_a3792846ab",
+      "type": "NodeJavascript",
+      "label": "Webhook: request",
+      "color": "#F59E0B",
+      "position": {
+        "x": 460,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "const ctx = {{ctx}};\nconst request = ctx.nodes?.[\"node_a53e4116e9\"]?.latest ?? {};\nreturn { body: source, headers: request.headers, query: request.query, params: {}, method: request.method, rawBody: request.rawBody, rawBodyEncoding: request.rawBodyEncoding };"
       }
     },
     {
@@ -45,7 +77,7 @@
       "color": "#6366F1",
       "position": {
         "x": 460,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 280,
@@ -63,27 +95,8 @@
     {
       "nodeId": "node_b2a6919a9c",
       "actorId": "actor_b2a6919a9c",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Simplify Webhook Result",
-      "color": "#F59E0B",
-      "position": {
-        "x": 460,
-        "y": 360
-      },
-      "size": {
-        "width": 280,
-        "height": 220
-      },
-      "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"Content\"] = ($json[\"body\"][\"data\"][\"fields\"][1][\"value\"]);\n  out[\"Author\"] = ($json[\"body\"][\"data\"][\"fields\"][0][\"value\"]);\n  out[\"Created\"] = (new Date().toISOString());\n  out[\"URL\"] = null;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
-      }
-    },
-    {
-      "nodeId": "node_3e457585a4",
-      "actorId": "actor_3e457585a4",
-      "type": "NodeTransform",
-      "label": "Simplify Result",
       "color": "#F59E0B",
       "position": {
         "x": 840,
@@ -94,8 +107,27 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"Content\"] = ($json[\"full_text\"].replace(/(?:https?|ftp):\\/\\/[\\n\\S]+/g, ''));\n  out[\"Author\"] = `${$json[\"user\"][\"name\"]} (@${$json[\"user\"][\"screen_name\"]})`;\n  out[\"Created\"] = (new Date($json[\"created_at\"]).toISOString());\n  out[\"URL\"] = `https://twitter.com/${$json[\"user\"][\"screen_name\"]}/status/${$json[\"id_str\"]}`;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"Content\"] = ($json[\"body\"][\"data\"][\"fields\"][1][\"value\"]);\n  out[\"Author\"] = ($json[\"body\"][\"data\"][\"fields\"][0][\"value\"]);\n  out[\"Created\"] = (new Date().toISOString());\n  out[\"URL\"] = null;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
+      }
+    },
+    {
+      "nodeId": "node_3e457585a4",
+      "actorId": "actor_3e457585a4",
+      "type": "NodeJavascript",
+      "label": "Simplify Result",
+      "color": "#F59E0B",
+      "position": {
+        "x": 840,
+        "y": 360
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst item = { json: __items[0] ?? source, binary: {} };\n// Set fields (n8n Set node): once per input item, like n8n.\nconst __out = __items.map(($json) => {\n  const __in = $json && typeof $json === \"object\" && !Array.isArray($json) ? $json : {};\n  const out = {};\n  out[\"Content\"] = ($json[\"full_text\"].replace(/(?:https?|ftp):\\/\\/[\\n\\S]+/g, ''));\n  out[\"Author\"] = `${$json[\"user\"][\"name\"]} (@${$json[\"user\"][\"screen_name\"]})`;\n  out[\"Created\"] = (new Date($json[\"created_at\"]).toISOString());\n  out[\"URL\"] = `https://twitter.com/${$json[\"user\"][\"screen_name\"]}/status/${$json[\"id_str\"]}`;\n  return out;\n});\nreturn __out.length === 1 ? __out[0] : __out;"
       }
     },
     {
@@ -105,7 +137,7 @@
       "label": "Analyze Form Submission",
       "color": "#8B5CF6",
       "position": {
-        "x": 1220,
+        "x": 1600,
         "y": 100
       },
       "size": {
@@ -140,30 +172,11 @@
     {
       "nodeId": "node_7cb0e9bfc9",
       "actorId": "actor_7cb0e9bfc9",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Prompt: Analyze Form Submission",
       "color": "#F59E0B",
       "position": {
-        "x": 840,
-        "y": 360
-      },
-      "size": {
-        "width": 280,
-        "height": 220
-      },
-      "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Analyze Form Submission.\nconst __promptValue = ($json[\"Content\"]);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
-      }
-    },
-    {
-      "nodeId": "node_70b76f1dbc",
-      "actorId": "actor_70b76f1dbc",
-      "type": "NodeTransform",
-      "label": "Analyze Form Submission: sentiment = Positive",
-      "color": "#F59E0B",
-      "position": {
-        "x": 1600,
+        "x": 1220,
         "y": 100
       },
       "size": {
@@ -171,8 +184,27 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return String(source?.sentiment ?? '') === \"Positive\";"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Analyze Form Submission.\nconst __promptValue = ($json[\"Content\"]);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+      }
+    },
+    {
+      "nodeId": "node_70b76f1dbc",
+      "actorId": "actor_70b76f1dbc",
+      "type": "NodeJavascript",
+      "label": "Analyze Form Submission: sentiment = Positive",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "return String(source?.sentiment ?? '') === \"Positive\";"
       }
     },
     {
@@ -182,7 +214,7 @@
       "label": "Analyze Form Submission: sentiment = Positive?",
       "color": "#0EA5E9",
       "position": {
-        "x": 1980,
+        "x": 2360,
         "y": 100
       },
       "size": {
@@ -193,11 +225,11 @@
     {
       "nodeId": "node_d13c564d5e",
       "actorId": "actor_d13c564d5e",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Analyze Form Submission: sentiment = Neutral",
       "color": "#F59E0B",
       "position": {
-        "x": 2360,
+        "x": 2740,
         "y": 100
       },
       "size": {
@@ -205,8 +237,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return String(source?.sentiment ?? '') === \"Neutral\";"
+        "migratedTransform": true,
+        "logic": "return String(source?.sentiment ?? '') === \"Neutral\";"
       }
     },
     {
@@ -216,7 +248,7 @@
       "label": "Analyze Form Submission: sentiment = Neutral?",
       "color": "#0EA5E9",
       "position": {
-        "x": 2740,
+        "x": 3120,
         "y": 100
       },
       "size": {
@@ -227,11 +259,11 @@
     {
       "nodeId": "node_2ec2cbfb6e",
       "actorId": "actor_2ec2cbfb6e",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Analyze Form Submission: sentiment = Negative",
       "color": "#F59E0B",
       "position": {
-        "x": 3120,
+        "x": 3500,
         "y": 100
       },
       "size": {
@@ -239,8 +271,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return String(source?.sentiment ?? '') === \"Negative\";"
+        "migratedTransform": true,
+        "logic": "return String(source?.sentiment ?? '') === \"Negative\";"
       }
     },
     {
@@ -250,7 +282,7 @@
       "label": "Analyze Form Submission: sentiment = Negative?",
       "color": "#0EA5E9",
       "position": {
-        "x": 3500,
+        "x": 3880,
         "y": 100
       },
       "size": {
@@ -261,7 +293,7 @@
     {
       "nodeId": "node_9996f05caa",
       "actorId": "actor_9996f05caa",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Is Retweet or Old?: condition",
       "color": "#F59E0B",
       "position": {
@@ -273,8 +305,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json[\"Content\"]) ?? '').startsWith(String(\"RT @\" ?? ''))) || (new Date(($json[\"Created\"])) < new Date((new Date(new Date().getTime() - 30 * 60 * 1000)))));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((String(($json[\"Content\"]) ?? '').startsWith(String(\"RT @\" ?? ''))) || (new Date(($json[\"Created\"])) < new Date((new Date(new Date().getTime() - 30 * 60 * 1000)))));"
       }
     },
     {
@@ -299,7 +331,7 @@
       "label": "Merge Form Sentiment with Source",
       "color": "#0EA5E9",
       "position": {
-        "x": 840,
+        "x": 1220,
         "y": 620
       },
       "size": {
@@ -349,7 +381,7 @@
     {
       "nodeId": "node_22e6f02118",
       "actorId": "actor_22e6f02118",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Prompt: Analyze Tweet",
       "color": "#F59E0B",
       "position": {
@@ -361,14 +393,14 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Analyze Tweet.\nconst __promptValue = ($json[\"Content\"]);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// Prompt: Analyze Tweet.\nconst __promptValue = ($json[\"Content\"]);\nreturn typeof __promptValue === 'string' ? __promptValue : JSON.stringify(__promptValue ?? '');"
       }
     },
     {
       "nodeId": "node_93b9fa7b69",
       "actorId": "actor_93b9fa7b69",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Analyze Tweet: sentiment = Positive",
       "color": "#F59E0B",
       "position": {
@@ -380,8 +412,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return String(source?.sentiment ?? '') === \"Positive\";"
+        "migratedTransform": true,
+        "logic": "return String(source?.sentiment ?? '') === \"Positive\";"
       }
     },
     {
@@ -402,7 +434,7 @@
     {
       "nodeId": "node_30577505ef",
       "actorId": "actor_30577505ef",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Analyze Tweet: sentiment = Neutral",
       "color": "#F59E0B",
       "position": {
@@ -414,8 +446,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return String(source?.sentiment ?? '') === \"Neutral\";"
+        "migratedTransform": true,
+        "logic": "return String(source?.sentiment ?? '') === \"Neutral\";"
       }
     },
     {
@@ -426,7 +458,7 @@
       "color": "#0EA5E9",
       "position": {
         "x": 3880,
-        "y": 100
+        "y": 360
       },
       "size": {
         "width": 240,
@@ -436,7 +468,7 @@
     {
       "nodeId": "node_dfa43af1b0",
       "actorId": "actor_dfa43af1b0",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Analyze Tweet: sentiment = Negative",
       "color": "#F59E0B",
       "position": {
@@ -448,8 +480,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "return String(source?.sentiment ?? '') === \"Negative\";"
+        "migratedTransform": true,
+        "logic": "return String(source?.sentiment ?? '') === \"Negative\";"
       }
     },
     {
@@ -470,11 +502,11 @@
     {
       "nodeId": "node_f3f35f6606",
       "actorId": "actor_f3f35f6606",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Positive Form Sentiment?: condition",
       "color": "#F59E0B",
       "position": {
-        "x": 1220,
+        "x": 1600,
         "y": 620
       },
       "size": {
@@ -482,8 +514,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((Number(($json[\"documentSentiment\"][\"score\"])) > Number(0.4)));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((Number(($json[\"documentSentiment\"][\"score\"])) > Number(0.4)));"
       }
     },
     {
@@ -493,7 +525,7 @@
       "label": "Positive Form Sentiment?: condition?",
       "color": "#0EA5E9",
       "position": {
-        "x": 1600,
+        "x": 1980,
         "y": 620
       },
       "size": {
@@ -523,7 +555,7 @@
       "label": "strapi/STRAPI_CREATE_ENTRY",
       "color": "#6366F1",
       "position": {
-        "x": 1980,
+        "x": 2360,
         "y": 620
       },
       "size": {
@@ -543,7 +575,7 @@
     {
       "nodeId": "node_909360d19f",
       "actorId": "actor_909360d19f",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Positive Tweet Sentiment?: condition",
       "color": "#F59E0B",
       "position": {
@@ -555,8 +587,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((Number(($json[\"documentSentiment\"][\"score\"])) > Number(0.3)));"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nreturn Boolean((Number(($json[\"documentSentiment\"][\"score\"])) > Number(0.3)));"
       }
     },
     {
@@ -582,7 +614,7 @@
       "color": "#6366F1",
       "position": {
         "x": 2360,
-        "y": 620
+        "y": 880
       },
       "size": {
         "width": 280,
@@ -605,8 +637,8 @@
       "label": "End",
       "color": "#EF4444",
       "position": {
-        "x": 2360,
-        "y": 880
+        "x": 2740,
+        "y": 620
       },
       "size": {
         "width": 240,
@@ -621,7 +653,7 @@
       "color": "#EF4444",
       "position": {
         "x": 2740,
-        "y": 620
+        "y": 880
       },
       "size": {
         "width": 240,
@@ -644,12 +676,7 @@
       },
       "inputs": {
         "projectId": "",
-        "environmentTagId": "",
-        "initialContext": {
-          "body": {},
-          "query": {},
-          "headers": {}
-        }
+        "environmentTagId": ""
       }
     },
     {
@@ -659,7 +686,7 @@
       "label": "Analyze Form Submission: model",
       "color": "#8B5CF6",
       "position": {
-        "x": 1220,
+        "x": 1600,
         "y": 1320
       },
       "size": {
@@ -693,11 +720,27 @@
   ],
   "edges": [
     {
+      "source": "node_a53e4116e9",
+      "target": "node_a3792846ab",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_a53e4116e9",
+      "target": "node_a3792846ab",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
       "source": "node_7cb0e9bfc9",
       "target": "node_196de8bca8",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeLlmChain"
     },
     {
@@ -706,7 +749,7 @@
       "sourceOutput": "object",
       "targetInput": "source",
       "sourceNodeType": "NodeLlmChain",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_196de8bca8",
@@ -714,14 +757,14 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeLlmChain",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_70b76f1dbc",
       "target": "node_94c6d227ee",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -729,7 +772,7 @@
       "target": "node_94c6d227ee",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -738,7 +781,7 @@
       "sourceOutput": "object",
       "targetInput": "source",
       "sourceNodeType": "NodeLlmChain",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_94c6d227ee",
@@ -746,14 +789,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_d13c564d5e",
       "target": "node_0bec6ffb8e",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -761,7 +804,7 @@
       "target": "node_0bec6ffb8e",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -770,7 +813,7 @@
       "sourceOutput": "object",
       "targetInput": "source",
       "sourceNodeType": "NodeLlmChain",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_0bec6ffb8e",
@@ -778,14 +821,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_2ec2cbfb6e",
       "target": "node_ae7691bce0",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -793,7 +836,7 @@
       "target": "node_ae7691bce0",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -801,7 +844,7 @@
       "target": "node_fef3dd0a0a",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -809,7 +852,7 @@
       "target": "node_fef3dd0a0a",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -817,7 +860,7 @@
       "target": "node_a15a349519",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeLlmChain"
     },
     {
@@ -826,7 +869,7 @@
       "sourceOutput": "object",
       "targetInput": "source",
       "sourceNodeType": "NodeLlmChain",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_a15a349519",
@@ -834,14 +877,14 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeLlmChain",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_93b9fa7b69",
       "target": "node_7d66634dd6",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -849,7 +892,7 @@
       "target": "node_7d66634dd6",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -858,7 +901,7 @@
       "sourceOutput": "object",
       "targetInput": "source",
       "sourceNodeType": "NodeLlmChain",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_7d66634dd6",
@@ -866,14 +909,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_30577505ef",
       "target": "node_134b7e739c",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -881,7 +924,7 @@
       "target": "node_134b7e739c",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -890,7 +933,7 @@
       "sourceOutput": "object",
       "targetInput": "source",
       "sourceNodeType": "NodeLlmChain",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_134b7e739c",
@@ -898,14 +941,14 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_dfa43af1b0",
       "target": "node_34ead1e98a",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -913,7 +956,7 @@
       "target": "node_34ead1e98a",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -921,7 +964,7 @@
       "target": "node_8d0ad8a9d7",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -929,7 +972,7 @@
       "target": "node_8d0ad8a9d7",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -937,7 +980,7 @@
       "target": "node_3820d7e653",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -945,7 +988,7 @@
       "target": "node_3820d7e653",
       "sourceOutput": "transformed",
       "targetInput": "condition",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeBranch"
     },
     {
@@ -953,16 +996,16 @@
       "target": "node_9996f05caa",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_3e457585a4",
       "target": "node_9996f05caa",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_d5c7b94c24",
@@ -978,22 +1021,22 @@
       "sourceOutput": "FALSE",
       "targetInput": "RUN",
       "sourceNodeType": "NodeBranch",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_3e457585a4",
       "target": "node_22e6f02118",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_3e457585a4",
       "target": "node_0198077bb4",
       "sourceOutput": "transformed",
       "targetInput": "data1",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeSync"
     },
     {
@@ -1002,7 +1045,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_7647097caa",
@@ -1010,38 +1053,46 @@
       "sourceOutput": "result",
       "targetInput": "source",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
-      "source": "node_dd9ce804bc",
+      "source": "node_a3792846ab",
       "target": "node_b2a6919a9c",
-      "sourceOutput": "trigger",
+      "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_a3792846ab",
+      "target": "node_b2a6919a9c",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_b2a6919a9c",
       "target": "node_7cb0e9bfc9",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_b2a6919a9c",
       "target": "node_7cb0e9bfc9",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_b2a6919a9c",
       "target": "node_d8467c5b41",
       "sourceOutput": "transformed",
       "targetInput": "data2",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeSync"
     },
     {
@@ -1049,7 +1100,7 @@
       "target": "node_d8467c5b41",
       "sourceOutput": "transformed",
       "targetInput": "data1",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeSync"
     },
     {
@@ -1057,7 +1108,7 @@
       "target": "node_0198077bb4",
       "sourceOutput": "transformed",
       "targetInput": "data2",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeSync"
     },
     {
@@ -1066,7 +1117,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeSync",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_d8467c5b41",
@@ -1074,7 +1125,7 @@
       "sourceOutput": "data1",
       "targetInput": "source",
       "sourceNodeType": "NodeSync",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_0198077bb4",
@@ -1082,7 +1133,7 @@
       "sourceOutput": "onDone",
       "targetInput": "RUN",
       "sourceNodeType": "NodeSync",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_0198077bb4",
@@ -1090,7 +1141,7 @@
       "sourceOutput": "data1",
       "targetInput": "source",
       "sourceNodeType": "NodeSync",
-      "targetNodeType": "NodeTransform"
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_8d0ad8a9d7",
@@ -1158,15 +1209,15 @@
       "NodeChatModel",
       "NodeCron",
       "NodeEnd",
+      "NodeJavascript",
       "NodeLlmChain",
-      "NodeStart",
       "NodeSync",
-      "NodeTransform",
+      "NodeWebhookTrigger",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 14,
-      "yantraSteps": 33,
+      "yantraSteps": 34,
       "foldedHelpers": []
     },
     "source": {
@@ -1177,18 +1228,17 @@
     "tier": "ready",
     "blockers": [
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "Webhook",
-        "detail": "n8n-nodes-base.webhook became the Start node"
+        "detail": "generic trigger URL requires registration"
       }
     ],
     "setup": [
-      "\"Webhook\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"Webhook\": save the workflow, then register node node_a53e4116e9 via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL.",
       "Connect the openai connector (credential).",
       "Connect the strapi connector (credential).",
       "Connect the twitter connector (credential).",
-      "After import, start the schedule: cdecli cron activate automate-testimonials-in-strapi.",
-      "Provide run inputs: body, query, headers."
+      "After import, start the schedule: cdecli cron activate automate-testimonials-in-strapi."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -1207,11 +1257,10 @@
         {
           "node": "Webhook",
           "type": "n8n-nodes-base.webhook",
-          "as": "NodeStart"
+          "as": "NodeWebhookTrigger"
         }
       ],
       "hints": [
-        "The original started from an inbound webhook (POST /6f833370-9068-44ef-8e56-4ceb563a851e). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
         "\"Merge Form Sentiment with Source\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was mergeByIndex).",
         "\"Merge Tweet Sentiment with Source\" merged two branches; NodeSync waits for both inputs and exposes them as data1/data2 (the original merge mode was mergeByIndex).",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
@@ -1225,7 +1274,11 @@
         "n8n": "Every 30 Minutes",
         "n8nType": "n8n-nodes-base.interval"
       },
-      "node_dd9ce804bc": {
+      "node_a53e4116e9": {
+        "n8n": "Webhook",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_a3792846ab": {
         "n8n": "Webhook",
         "n8nType": "n8n-nodes-base.webhook"
       },

@@ -5,25 +5,30 @@
   "isPublic": true,
   "nodes": [
     {
-      "nodeId": "node_62c74186e7",
-      "actorId": "actor_62c74186e7",
-      "type": "NodeStart",
-      "label": "Start",
-      "color": "#22C55E",
+      "nodeId": "node_0e807a2415",
+      "actorId": "actor_0e807a2415",
+      "type": "NodeWebhookTrigger",
+      "label": "New Client",
+      "color": "#6366F1",
       "position": {
         "x": 80,
         "y": 100
       },
       "size": {
-        "width": 240,
-        "height": 100
+        "width": 320,
+        "height": 220
+      },
+      "inputs": {
+        "requiredAuthMode": "none",
+        "responseMode": "responseNode",
+        "httpMethod": "POST"
       }
     },
     {
-      "nodeId": "node_97f988a7f0",
-      "actorId": "actor_97f988a7f0",
-      "type": "NodeTransform",
-      "label": "Validate",
+      "nodeId": "node_cb3c71a100",
+      "actorId": "actor_cb3c71a100",
+      "type": "NodeJavascript",
+      "label": "New Client: request",
       "color": "#F59E0B",
       "position": {
         "x": 460,
@@ -34,15 +39,15 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// This step follows the Start node: n8n item data comes from the run inputs.\nconst __ctx = {{ctx}};\nconst __hasUpstream = source != null && source !== '' && !(typeof source === 'object' && !Array.isArray(source) && Object.keys(source).length === 0);\nsource = __hasUpstream ? source : { ...__ctx, ...(__ctx && typeof __ctx.body === 'object' && !Array.isArray(__ctx.body) ? __ctx.body : {}) };\n// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Validate\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  try {\n    const b = $input.first().json.body || $input.first().json;\n    if (!b.name && !b.client_name) throw new Error('Client name required.');\n    return [{ json: { name: b.client_name || b.name, email: b.client_email || b.email || '', company: b.company_name || b.company || '', projectType: b.project_type || 'General', clientId: 'CF-' + Date.now().toString(36).toUpperCase(), onboardedAt: new Date().toISOString() } }];\n  } catch (e) { throw new Error('Invalid data: ' + e.message); }\n})();\nreturn __single(__unwrap(__out));"
+        "migratedTransform": true,
+        "logic": "const ctx = {{ctx}};\nconst request = ctx.nodes?.[\"node_0e807a2415\"]?.latest ?? {};\nreturn { body: source, headers: request.headers, query: request.query, params: {}, method: request.method, rawBody: request.rawBody, rawBodyEncoding: request.rawBodyEncoding };"
       }
     },
     {
-      "nodeId": "node_be6d874c80",
-      "actorId": "actor_be6d874c80",
-      "type": "NodeTransform",
-      "label": "Params: Gmail: Welcome Email",
+      "nodeId": "node_97f988a7f0",
+      "actorId": "actor_97f988a7f0",
+      "type": "NodeJavascript",
+      "label": "Validate",
       "color": "#F59E0B",
       "position": {
         "x": 840,
@@ -53,8 +58,27 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// n8n $env values come from the Workflow Configs initialContext (setup values and workflow secrets).\nconst __envCtx = {{ctx}};\nconst $env = { \"CLIENTFLOW_SENDER_NAME\": __envCtx[\"clientflowSenderName\"] };\n// Params for googlesuper/GOOGLESUPER_SEND_EMAIL (n8n node \"Gmail: Welcome Email\").\nreturn {\n  \"recipient_email\": ($json.email),\n  \"subject\": `Welcome aboard, ${$json.name}!`,\n  \"body\": `Hi ${$json.name},\n\nWelcome! We're excited to start working on your ${$json.projectType} project.\n\nWe'll be in touch soon with next steps and a kick-off meeting invite.\n\nBest regards,\n${$env.CLIENTFLOW_SENDER_NAME || 'The Team'}`,\n};"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $input = { all: () => __items.map((json) => ({ json })), first: () => ({ json: __items[0] }), last: () => ({ json: __items[__items.length - 1] }), item: { json: __items[0] } };\nconst $items = () => $input.all();\n// Ported from n8n Code node \"Validate\".\nconst __unwrap = (v) => Array.isArray(v) ? v.map((i) => (i && typeof i === 'object' && 'json' in i ? i.json : i)) : v && typeof v === 'object' && 'json' in v && Object.keys(v).length <= 3 ? v.json : v;\nconst __single = (v) => (Array.isArray(v) && v.length === 1 ? v[0] : v);\nconst __out = (() => {\n  try {\n    const b = $input.first().json.body || $input.first().json;\n    if (!b.name && !b.client_name) throw new Error('Client name required.');\n    return [{ json: { name: b.client_name || b.name, email: b.client_email || b.email || '', company: b.company_name || b.company || '', projectType: b.project_type || 'General', clientId: 'CF-' + Date.now().toString(36).toUpperCase(), onboardedAt: new Date().toISOString() } }];\n  } catch (e) { throw new Error('Invalid data: ' + e.message); }\n})();\nreturn __single(__unwrap(__out));"
+      }
+    },
+    {
+      "nodeId": "node_be6d874c80",
+      "actorId": "actor_be6d874c80",
+      "type": "NodeJavascript",
+      "label": "Params: Gmail: Welcome Email",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1220,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// n8n $env values come from the Workflow Configs initialContext (setup values and workflow secrets).\nconst __envCtx = {{ctx}};\nconst $env = { \"CLIENTFLOW_SENDER_NAME\": __envCtx[\"clientflowSenderName\"] };\n// Params for googlesuper/GOOGLESUPER_SEND_EMAIL (n8n node \"Gmail: Welcome Email\").\nreturn {\n  \"recipient_email\": ($json.email),\n  \"subject\": `Welcome aboard, ${$json.name}!`,\n  \"body\": `Hi ${$json.name},\n\nWelcome! We're excited to start working on your ${$json.projectType} project.\n\nWe'll be in touch soon with next steps and a kick-off meeting invite.\n\nBest regards,\n${$env.CLIENTFLOW_SENDER_NAME || 'The Team'}`,\n};"
       }
     },
     {
@@ -64,7 +88,7 @@
       "label": "googlesuper/GOOGLESUPER_SEND_EMAIL",
       "color": "#6366F1",
       "position": {
-        "x": 1220,
+        "x": 1600,
         "y": 100
       },
       "size": {
@@ -72,6 +96,8 @@
         "height": 200
       },
       "inputs": {
+        "retryOnFail": true,
+        "maxTries": 2,
         "connectorName": "googlesuper",
         "connectorLabel": "Gmail",
         "action": "GOOGLESUPER_SEND_EMAIL"
@@ -80,11 +106,11 @@
     {
       "nodeId": "node_4c6091efe2",
       "actorId": "actor_4c6091efe2",
-      "type": "NodeTransform",
+      "type": "NodeJavascript",
       "label": "Params: Log to Sheets",
       "color": "#F59E0B",
       "position": {
-        "x": 840,
+        "x": 1220,
         "y": 360
       },
       "size": {
@@ -92,8 +118,8 @@
         "height": 220
       },
       "inputs": {
-        "mode": "jsCode",
-        "jsCode": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// n8n $env values come from the Workflow Configs initialContext (setup values and workflow secrets).\nconst __envCtx = {{ctx}};\nconst $env = { \"CLIENTFLOW_SHEET_ID\": __envCtx[\"clientflowSheetId\"] };\n// Params for googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND (n8n node \"Log to Sheets\").\nreturn {\n  \"spreadsheetId\": ($env.CLIENTFLOW_SHEET_ID),\n  \"range\": \"Lite Pipeline\",\n  \"values\": [[($json.clientId), ($json.name), ($json.email), ($json.company), ($json.projectType), ($json.onboardedAt)]],\n  \"valueInputOption\": \"USER_ENTERED\",\n};"
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\n// n8n $env values come from the Workflow Configs initialContext (setup values and workflow secrets).\nconst __envCtx = {{ctx}};\nconst $env = { \"CLIENTFLOW_SHEET_ID\": __envCtx[\"clientflowSheetId\"] };\n// Params for googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND (n8n node \"Log to Sheets\").\nreturn {\n  \"spreadsheetId\": ($env.CLIENTFLOW_SHEET_ID),\n  \"range\": \"Lite Pipeline\",\n  \"values\": [[($json.clientId), ($json.name), ($json.email), ($json.company), ($json.projectType), ($json.onboardedAt)]],\n  \"valueInputOption\": \"USER_ENTERED\",\n};"
       }
     },
     {
@@ -103,7 +129,7 @@
       "label": "googlesuper/GOOGLESUPER_SPREADSHEETS_VALUES_APPEND",
       "color": "#6366F1",
       "position": {
-        "x": 1220,
+        "x": 1600,
         "y": 360
       },
       "size": {
@@ -111,20 +137,61 @@
         "height": 200
       },
       "inputs": {
+        "retryOnFail": true,
+        "maxTries": 2,
         "connectorName": "googlesuper",
         "connectorLabel": "Google Sheets",
         "action": "GOOGLESUPER_SPREADSHEETS_VALUES_APPEND"
       }
     },
     {
-      "nodeId": "node_8afe3c79e9",
-      "actorId": "actor_8afe3c79e9",
+      "nodeId": "node_8f741c012a",
+      "actorId": "actor_8f741c012a",
+      "type": "NodeRespondToWebhook",
+      "label": "Respond",
+      "color": "#6366F1",
+      "position": {
+        "x": 2360,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 180
+      },
+      "inputs": {
+        "bodyMode": "json",
+        "statusCode": 200,
+        "headers": {}
+      }
+    },
+    {
+      "nodeId": "node_d541455517",
+      "actorId": "actor_d541455517",
+      "type": "NodeJavascript",
+      "label": "Respond: body",
+      "color": "#F59E0B",
+      "position": {
+        "x": 1980,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "// n8n compatibility shims (generated). `source` is the upstream node output.\nconst __items = Array.isArray(source) ? source : source == null ? [] : [source];\nconst $json = __items[0] ?? source;\nconst body = (JSON.stringify({ success: true, clientId: $json.clientId, name: $json.name }));\nreturn typeof body === 'string' ? JSON.parse(body) : body;"
+      }
+    },
+    {
+      "nodeId": "node_53bab13d04",
+      "actorId": "actor_53bab13d04",
       "type": "NodeEnd",
       "label": "End",
       "color": "#EF4444",
       "position": {
-        "x": 1600,
-        "y": 100
+        "x": 1980,
+        "y": 360
       },
       "size": {
         "width": 240,
@@ -132,14 +199,33 @@
       }
     },
     {
-      "nodeId": "node_53bab13d04",
-      "actorId": "actor_53bab13d04",
+      "nodeId": "node_ded823bcdb",
+      "actorId": "actor_ded823bcdb",
+      "type": "NodeJavascript",
+      "label": "Finish after response",
+      "color": "#F59E0B",
+      "position": {
+        "x": 2740,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 220
+      },
+      "inputs": {
+        "migratedTransform": true,
+        "logic": "return source ?? {};"
+      }
+    },
+    {
+      "nodeId": "node_2025ba44e3",
+      "actorId": "actor_2025ba44e3",
       "type": "NodeEnd",
       "label": "End 2",
       "color": "#EF4444",
       "position": {
-        "x": 1600,
-        "y": 360
+        "x": 3120,
+        "y": 100
       },
       "size": {
         "width": 240,
@@ -164,9 +250,6 @@
         "projectId": "",
         "environmentTagId": "",
         "initialContext": {
-          "body": {},
-          "query": {},
-          "headers": {},
           "clientflowSenderName": "",
           "clientflowSheetId": ""
         }
@@ -175,11 +258,27 @@
   ],
   "edges": [
     {
+      "source": "node_0e807a2415",
+      "target": "node_cb3c71a100",
+      "sourceOutput": "onEvent",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_0e807a2415",
+      "target": "node_cb3c71a100",
+      "sourceOutput": "payload",
+      "targetInput": "source",
+      "sourceNodeType": "NodeWebhookTrigger",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
       "source": "node_be6d874c80",
       "target": "node_a354942b9a",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -187,7 +286,7 @@
       "target": "node_a354942b9a",
       "sourceOutput": "transformed",
       "targetInput": "params",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -195,7 +294,7 @@
       "target": "node_8b3c934f2d",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
@@ -203,56 +302,88 @@
       "target": "node_8b3c934f2d",
       "sourceOutput": "transformed",
       "targetInput": "params",
-      "sourceNodeType": "NodeTransform",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeCdeConnector"
     },
     {
-      "source": "node_62c74186e7",
+      "source": "node_d541455517",
+      "target": "node_8f741c012a",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeRespondToWebhook"
+    },
+    {
+      "source": "node_d541455517",
+      "target": "node_8f741c012a",
+      "sourceOutput": "transformed",
+      "targetInput": "body",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeRespondToWebhook"
+    },
+    {
+      "source": "node_cb3c71a100",
       "target": "node_97f988a7f0",
-      "sourceOutput": "trigger",
+      "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeStart",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_cb3c71a100",
+      "target": "node_97f988a7f0",
+      "sourceOutput": "transformed",
+      "targetInput": "source",
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_97f988a7f0",
       "target": "node_be6d874c80",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_97f988a7f0",
       "target": "node_be6d874c80",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_97f988a7f0",
       "target": "node_4c6091efe2",
       "sourceOutput": "onDone",
       "targetInput": "RUN",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_97f988a7f0",
       "target": "node_4c6091efe2",
       "sourceOutput": "transformed",
       "targetInput": "source",
-      "sourceNodeType": "NodeTransform",
-      "targetNodeType": "NodeTransform"
+      "sourceNodeType": "NodeJavascript",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_8b3c934f2d",
-      "target": "node_8afe3c79e9",
-      "sourceOutput": "result",
-      "targetInput": "result",
+      "target": "node_d541455517",
+      "sourceOutput": "onDone",
+      "targetInput": "RUN",
       "sourceNodeType": "NodeCdeConnector",
-      "targetNodeType": "NodeEnd"
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_8b3c934f2d",
+      "target": "node_d541455517",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeJavascript"
     },
     {
       "source": "node_a354942b9a",
@@ -260,6 +391,30 @@
       "sourceOutput": "result",
       "targetInput": "result",
       "sourceNodeType": "NodeCdeConnector",
+      "targetNodeType": "NodeEnd"
+    },
+    {
+      "source": "node_8f741c012a",
+      "target": "node_ded823bcdb",
+      "sourceOutput": "onComplete",
+      "targetInput": "RUN",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_8f741c012a",
+      "target": "node_ded823bcdb",
+      "sourceOutput": "result",
+      "targetInput": "source",
+      "sourceNodeType": "NodeRespondToWebhook",
+      "targetNodeType": "NodeJavascript"
+    },
+    {
+      "source": "node_ded823bcdb",
+      "target": "node_2025ba44e3",
+      "sourceOutput": "transformed",
+      "targetInput": "result",
+      "sourceNodeType": "NodeJavascript",
       "targetNodeType": "NodeEnd"
     }
   ],
@@ -292,13 +447,14 @@
     "nodeTypes": [
       "NodeCdeConnector",
       "NodeEnd",
-      "NodeStart",
-      "NodeTransform",
+      "NodeJavascript",
+      "NodeRespondToWebhook",
+      "NodeWebhookTrigger",
       "NodeWorkflowConfigs"
     ],
     "comparison": {
       "n8nSteps": 5,
-      "yantraSteps": 6,
+      "yantraSteps": 10,
       "foldedHelpers": []
     },
     "source": {
@@ -310,17 +466,16 @@
     "tier": "ready",
     "blockers": [
       {
-        "code": "trigger-replaced",
+        "code": "webhook-registration",
         "node": "New Client",
-        "detail": "n8n-nodes-base.webhook became the Start node"
+        "detail": "generic trigger URL requires registration"
       }
     ],
     "setup": [
-      "\"New Client\" (webhook) started the original; run this workflow on demand, through the workflow API, or add a schedule.",
+      "\"New Client\": save the workflow, then register node node_0e807a2415 via POST /api/workflow/entry-points/registrations. Register drafts as test and published versions as production. Point clients to the returned URL.",
       "Setup value clientflowSenderName: clientflow sender name (was the n8n environment variable CLIENTFLOW_SENDER_NAME). Write it into the Workflow Configs initialContext before import.",
       "Setup value clientflowSheetId: clientflow sheet id (was the n8n environment variable CLIENTFLOW_SHEET_ID). Write it into the Workflow Configs initialContext before import.",
-      "Connect the googlesuper connector (credential).",
-      "Provide run inputs: body, query, headers."
+      "Connect the googlesuper connector (credential)."
     ],
     "conversion": {
       "tool": "scripts/convert-n8n.mjs",
@@ -334,11 +489,10 @@
         {
           "node": "New Client",
           "type": "n8n-nodes-base.webhook",
-          "as": "NodeStart"
+          "as": "NodeWebhookTrigger"
         }
       ],
       "hints": [
-        "The original started from an inbound webhook (POST /clientflow-lite). Run it with `cdecli workflow run <slug> --ver <version> -d '{\"body\": {...}}'` or through the workflow API.",
         "Select the Project and Environment on the Workflow Configs node (the ids from `cdecli auth status`), then connect a credential for each connector below.",
         "Connect googlesuper: `cdecli credential create -n \"googlesuper\" -p googlesuper --template <formId> --secret <key>=<value>` (see `cdecli credential templates`)."
       ]
@@ -347,7 +501,11 @@
       "## ClientFlow Lite\n\nSimplest onboarding: welcome email + sheet log.\nNo Stripe, Calendar, or Slack.\nPerfect for solo freelancers."
     ],
     "nodes": {
-      "node_62c74186e7": {
+      "node_0e807a2415": {
+        "n8n": "New Client",
+        "n8nType": "n8n-nodes-base.webhook"
+      },
+      "node_cb3c71a100": {
         "n8n": "New Client",
         "n8nType": "n8n-nodes-base.webhook"
       },
@@ -371,13 +529,25 @@
         "n8n": "Log to Sheets",
         "n8nType": "n8n-nodes-base.googleSheets"
       },
-      "node_8afe3c79e9": {
+      "node_8f741c012a": {
+        "n8n": "Respond",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_d541455517": {
         "n8n": "Respond",
         "n8nType": "n8n-nodes-base.respondToWebhook"
       },
       "node_53bab13d04": {
         "n8n": "__end:Gmail: Welcome Email",
         "n8nType": "synthetic"
+      },
+      "node_ded823bcdb": {
+        "n8n": "Respond",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
+      },
+      "node_2025ba44e3": {
+        "n8n": "Respond",
+        "n8nType": "n8n-nodes-base.respondToWebhook"
       },
       "node_cbf2e9a834": {
         "n8n": "__configs",
